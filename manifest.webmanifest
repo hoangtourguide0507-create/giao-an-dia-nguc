@@ -1,7 +1,8 @@
 {
-  "name": "Sổ Tạ",
-  "short_name": "Sổ Tạ",
-  "description": "Ghi mức tạ từng bài, gợi ý thời điểm tăng tạ, theo dõi tuần và chỉ số cơ thể.",
+  "id": "./",
+  "name": "Giáo Án Địa Ngục",
+  "short_name": "Địa Ngục",
+  "description": "Ghi mức tạ từng bài, lộ trình tăng tạ theo tuần, đồng hồ nghỉ, chỉ số và ảnh body.",
   "lang": "vi",
   "start_url": "./",
   "scope": "./",
