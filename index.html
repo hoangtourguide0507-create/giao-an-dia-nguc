@@ -1,0 +1,1809 @@
+<!doctype html>
+<html lang="vi" data-pwa="1">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sổ Tạ">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Sổ Tạ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: app một cột kiểu super-app — thẻ hero vàng cho buổi tiếp theo, thẻ bo tròn lớn, thanh tab nổi dưới đáy. Một giao diện tối duy nhất: đen than + vàng gold. */
+:root{
+  --bg:#0a0a0b; --surface:#151517; --surface-2:#1d1d21; --surface-3:#27272c; --line:rgba(255,255,255,.07); --line-2:rgba(255,255,255,.12);
+  --fg:#f6f3ec; --fg-2:#bdb7aa; --muted:#827d72;
+  --gold:#d9b45b; --gold-hi:#f2d68d; --gold-lo:#b8862f; --gold-ink:#1b1406; --gold-soft:rgba(217,180,91,.14);
+  --up:#46d38f; --hold:#93b6ff; --down:#ff7470; --almost:#f2d68d;
+  --font:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --r-lg:22px; --r:16px; --r-sm:12px; --nav-h:68px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;background:var(--bg)}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.5;margin:0;-webkit-font-smoothing:antialiased;
+  padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 32px);-webkit-tap-highlight-color:transparent}
+body.resting{padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 120px)}
+button,input,select,textarea{font:inherit;color:inherit}
+button,label[for]{cursor:pointer}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.wrap{max-width:560px;margin:0 auto;padding-inline:16px}
+.ico{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.tn{font-variant-numeric:tabular-nums}
+.ico .d{fill:none}
+.nav button[aria-current="page"] .ico .d{fill:currentColor;fill-opacity:.22}
+.muted{color:var(--muted)} .small{font-size:13px}
+
+/* header */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:rgba(10,10,11,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:12px;padding-block:10px}
+.avatar{width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;
+  color:var(--gold-ink);background:linear-gradient(140deg,var(--gold-hi),var(--gold-lo))}
+.hello{min-width:0;flex:1}
+.hello b{display:block;font-size:16px;font-weight:700;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hello span{font-size:12.5px;color:var(--muted)}
+.cycle{font-size:12px;font-weight:700;color:var(--gold);background:var(--gold-soft);border:1px solid rgba(217,180,91,.28);padding:6px 11px;border-radius:999px;white-space:nowrap}
+.cycle.deload{color:var(--gold-ink);background:var(--gold)}
+
+/* type */
+main{padding-block:18px}
+.sec{margin-bottom:28px}
+.sec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.h{font-size:19px;font-weight:700;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.h1{font-size:28px;font-weight:800;margin:0;line-height:1.15;letter-spacing:-.02em;text-wrap:balance}
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--gold)}
+.sub{color:var(--fg-2);margin:6px 0 0}
+.link{border:0;background:none;color:var(--gold);font-weight:600;font-size:14px;padding:4px 0}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:8px 18px;border-radius:14px;border:1px solid var(--line-2);
+  background:var(--surface-2);font-weight:600;font-size:14.5px;color:var(--fg);text-decoration:none;transition:transform .12s}
+.btn:active{transform:scale(.97)}
+.btn.gold{border:0;color:var(--gold-ink);background:linear-gradient(135deg,var(--gold-hi),var(--gold) 55%,var(--gold-lo));box-shadow:0 8px 24px -10px rgba(217,180,91,.6)}
+.btn.ghost{background:transparent}
+.btn.sm{min-height:36px;padding:4px 14px;font-size:13.5px;border-radius:12px}
+.btn.big{min-height:54px;font-size:16px;width:100%;border-radius:16px}
+.btn.danger{color:var(--down)}
+.btn.danger-fill{background:var(--down);color:#1a0505;border:0}
+.btn:disabled{opacity:.4;cursor:default}
+.btn .ico{width:19px;height:19px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.stack{display:flex;flex-direction:column;gap:10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px}
+.empty{border:1.5px dashed var(--line-2);border-radius:var(--r);padding:18px;color:var(--fg-2);font-size:14px}
+
+/* chips & badges */
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:4px 9px;border-radius:999px;background:var(--surface-3);color:var(--fg-2);white-space:nowrap}
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;letter-spacing:.04em;padding:4px 9px;border-radius:999px;white-space:nowrap}
+.badge.up{color:var(--up);background:rgba(70,211,143,.13)}
+.badge.almost,.badge.deload{color:var(--gold-hi);background:var(--gold-soft)}
+.badge.hold,.badge.start{color:var(--hold);background:rgba(147,182,255,.13)}
+.badge.down{color:var(--down);background:rgba(255,116,112,.13)}
+.badge.new{color:var(--fg-2);background:var(--surface-3)}
+
+/* banners */
+.banner{display:flex;gap:12px;padding:14px;border-radius:var(--r);margin-bottom:16px;background:var(--surface);border:1px solid rgba(217,180,91,.3)}
+.banner .bi{width:36px;height:36px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--gold-soft);color:var(--gold);font-weight:800}
+.banner.info{border-color:rgba(147,182,255,.28)} .banner.info .bi{background:rgba(147,182,255,.13);color:var(--hold)}
+.banner b{display:block;font-size:14.5px}
+.banner p{margin:2px 0 10px;color:var(--fg-2);font-size:13.5px}
+.banner p:last-child{margin-bottom:0}
+
+/* hero */
+.hero{position:relative;overflow:hidden;border-radius:26px;padding:20px 18px 18px;margin-bottom:22px;border:1px solid rgba(217,180,91,.32);
+  background:radial-gradient(130% 120% at 100% 0%,rgba(242,214,141,.30),rgba(217,180,91,.08) 45%,transparent 70%),linear-gradient(180deg,#1b1812,#121213)}
+.hero::after{content:"";position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;border:22px solid rgba(217,180,91,.10);pointer-events:none}
+.hero .h1{margin-top:6px;font-size:30px}
+.hero .meta{color:var(--fg-2);font-size:13.5px;margin-top:4px}
+.hero ul{list-style:none;margin:16px 0 18px;padding:0;display:flex;flex-direction:column;gap:8px}
+.hero li{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:14px}
+.hero li span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg-2)}
+.hero li b{font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.hero li b.up{color:var(--up)}
+.hero .more{font-size:12.5px;color:var(--muted)}
+
+/* day scroller */
+.hscroll{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px;margin-inline:-16px;padding-inline:16px;scrollbar-width:none}
+.hscroll::-webkit-scrollbar{display:none}
+.dcard{scroll-snap-align:start;flex:0 0 152px;text-align:left;display:flex;flex-direction:column;gap:3px;padding:14px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line);min-height:118px}
+.dcard b{font-size:16.5px;font-weight:700;line-height:1.25}
+.dcard span{font-size:12.5px;color:var(--fg-2)}
+.dcard .last{margin-top:auto;color:var(--muted);font-size:12px}
+
+/* week mini */
+.wk{display:flex;flex-direction:column;gap:14px}
+.dots{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.dots div{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--muted)}
+.dots i{width:30px;height:30px;border-radius:50%;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:12px;font-weight:700;color:var(--fg-2)}
+.dots .on i{background:linear-gradient(140deg,var(--gold-hi),var(--gold-lo));color:var(--gold-ink)}
+.dots .today i{box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--gold)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kpi{padding:12px;border-radius:14px;background:var(--surface-2)}
+.kpi .k{font-size:24px;font-weight:800;line-height:1.1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:12px;color:var(--fg-2)}
+
+/* lists */
+.list{display:flex;flex-direction:column;gap:8px}
+.li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 14px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line);width:100%;text-align:left}
+.li .lt{font-weight:600;font-size:14.5px;display:block;min-width:0;overflow-wrap:anywhere}
+.li .ls{font-size:12.5px;color:var(--muted)}
+.li .lr{text-align:right;flex:none}
+.li .big{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.arrow{color:var(--up);font-weight:700}
+.delta{font-size:12px;font-weight:600}
+.delta.good{color:var(--up)} .delta.flat{color:var(--muted)} .delta.other{color:var(--fg-2)}
+
+/* session */
+.sbar{position:sticky;top:calc(env(safe-area-inset-top,0px) + 61px);z-index:15;background:var(--bg);padding-block:6px 12px;margin-bottom:6px}
+.sbar-top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.elapsed{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--gold)}
+.prog{height:6px;border-radius:3px;background:var(--surface-3);margin-top:10px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--gold-lo),var(--gold-hi));border-radius:3px;transition:width .25s}
+.prog-l{font-size:12px;color:var(--muted);margin-top:5px}
+.ex{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:14px;overflow:hidden}
+.ex-photo{position:relative;display:block;width:100%;aspect-ratio:16/8;max-width:100%;background:var(--surface-2)}
+.ex-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.ex-photo .cnt{position:absolute;left:12px;bottom:10px;font-size:11.5px;font-weight:600;background:rgba(0,0,0,.6);padding:3px 8px;border-radius:999px}
+.camfab{position:absolute;right:10px;bottom:10px;width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(10,10,11,.72);color:var(--gold);border:1px solid rgba(217,180,91,.4)}
+.camfab .ico{width:20px;height:20px}
+.cam-empty{display:flex;align-items:center;gap:12px;margin:14px 14px 0;padding:12px;border-radius:14px;border:1.5px dashed rgba(217,180,91,.35);color:var(--fg-2);font-size:13px;background:rgba(217,180,91,.04)}
+.cam-empty .ci{width:42px;height:42px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--gold-soft);color:var(--gold)}
+.cam-empty b{display:block;color:var(--fg);font-size:14px}
+.ex-body{padding:14px}
+.ex-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.ex-name{font-weight:700;font-size:17px;line-height:1.3;min-width:0;overflow-wrap:anywhere}
+.ex-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.target{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:12px 14px;border-radius:14px;background:var(--surface-2)}
+.target .tl{font-size:12px;color:var(--fg-2)}
+.target .tv{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.15;font-variant-numeric:tabular-nums}
+.target .tv small{font-size:14px;font-weight:600;color:var(--fg-2)}
+.target .tv.up{color:var(--up)}
+.target .prev{text-align:right;font-size:12px;color:var(--muted)}
+.target .prev b{display:block;font-size:14px;color:var(--fg-2);font-weight:600}
+.sug{margin:10px 0 0;font-size:13.5px;color:var(--fg-2)}
+.sug strong{color:var(--fg)}
+details.setup{margin-top:10px;font-size:13.5px}
+details.setup summary{color:var(--gold);font-weight:600;list-style:none}
+details.setup summary::-webkit-details-marker{display:none}
+details.setup p{margin:6px 0 0;white-space:pre-wrap;color:var(--fg-2)}
+.sets{margin-top:14px;display:flex;flex-direction:column;gap:7px}
+.sethead,.setrow{display:grid;grid-template-columns:24px 1fr 1fr 46px;gap:8px;align-items:center}
+.sethead{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sethead span:nth-child(2),.sethead span:nth-child(3){text-align:center}
+.setno{font-weight:800;font-size:15px;color:var(--muted);text-align:center}
+.setrow.drop .setno{color:var(--gold)}
+.stepper{display:flex;align-items:stretch;border-radius:13px;background:var(--surface-2);border:1px solid var(--line);overflow:hidden;min-width:0;transition:background .15s}
+.stepper button{width:34px;border:0;background:transparent;font-size:20px;color:var(--fg-2);flex:none}
+.stepper button:active{background:var(--surface-3)}
+.stepper input{width:100%;min-width:0;border:0;background:transparent;text-align:center;font-weight:700;font-size:19px;font-variant-numeric:tabular-nums;height:46px;padding:0}
+.stepper input:focus{outline:none;background:var(--surface-3)}
+.setrow.done .stepper{background:rgba(70,211,143,.08);border-color:rgba(70,211,143,.25)}
+.check{width:46px;height:46px;border-radius:14px;border:1.5px solid var(--line-2);background:transparent;display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.check[aria-pressed="true"]{background:var(--up);border-color:var(--up);color:#06170e}
+.check .ico{stroke-width:2.6}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.note{width:100%;margin-top:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);padding:10px 12px;font-size:14px;resize:vertical;min-height:44px;color:var(--fg)}
+.note::placeholder,.inp::placeholder{color:var(--muted)}
+.sess-actions{display:flex;flex-direction:column;gap:8px;margin-top:20px}
+
+/* plan */
+.pday{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:12px;overflow:hidden}
+.pday-h{display:flex;align-items:center;gap:12px;padding:16px;width:100%;border:0;background:transparent;text-align:left}
+.pday-h .t{flex:1;min-width:0}
+.pday-h b{display:block;font-size:18px;font-weight:700}
+.pday-h span{font-size:13px;color:var(--fg-2)}
+.chev{color:var(--muted);transition:transform .2s}
+.pday.open .chev{transform:rotate(90deg)}
+.exl{list-style:none;margin:0;padding:0 16px}
+.exr{display:flex;align-items:center;gap:10px;border-top:1px solid var(--line);padding-block:10px}
+.exr-main{flex:1;min-width:0;display:flex;align-items:center;gap:12px;border:0;background:transparent;text-align:left;padding:0}
+.exr-main .t{min-width:0;flex:1}
+.exr-main .n{display:block;font-weight:600;font-size:14.5px;line-height:1.3;overflow-wrap:anywhere}
+.exr-main .m{font-size:12px;color:var(--muted)}
+.exr-kg{text-align:right;flex:none}
+.exr-kg b{display:block;font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.exr-kg span{font-size:11.5px;color:var(--up);font-weight:600;white-space:nowrap}
+.exr-kg span.none{color:var(--gold)}
+.thumb{width:48px;height:48px;border-radius:13px;object-fit:cover;background:var(--surface-3);display:flex;align-items:center;justify-content:center;color:var(--muted);flex:none}
+img.thumb{display:block}
+.thumb .ico{width:22px;height:22px}
+.mv{display:flex;flex-direction:column;gap:3px}
+.mv button{width:30px;height:24px;border-radius:7px;border:1px solid var(--line);background:transparent;color:var(--fg-2);padding:0;display:flex;align-items:center;justify-content:center}
+.mv .ico{width:16px;height:16px}
+.pday-a .btn .ico{width:17px;height:17px}
+.mv button:disabled{opacity:.3}
+.pday-a{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px 16px;border-top:1px solid var(--line)}
+
+/* progress tab */
+.weeknav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px}
+.weeknav .btn{width:44px;padding:0}
+.weeknav .wl{font-size:19px;font-weight:700;text-align:center}
+.vol{display:flex;flex-direction:column;gap:12px}
+.vrow{display:grid;grid-template-columns:84px 1fr 56px;gap:10px;align-items:center}
+.vrow .vn{font-size:13.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vtrack{position:relative;height:12px;border-radius:6px;background:var(--surface-3)}
+.vband{position:absolute;top:0;bottom:0;background:rgba(217,180,91,.16);border-left:1.5px solid rgba(217,180,91,.55);border-right:1.5px solid rgba(217,180,91,.55)}
+.vfill{position:absolute;left:0;top:3px;bottom:3px;border-radius:0 4px 4px 0;background:var(--fg-2)}
+.vrow .vv{font-size:16px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums;line-height:1.1}
+.vrow .vv small{display:block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.st-low{color:var(--gold-hi)} .st-ok{color:var(--up)} .st-high{color:var(--hold)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:12px}
+.legend i{display:inline-block;width:18px;height:9px;border-radius:3px;vertical-align:middle;margin-right:6px;background:rgba(217,180,91,.16);border:1.5px solid rgba(217,180,91,.55)}
+
+/* body */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:18px}
+.tile{padding:13px 14px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line)}
+.tile .tl{font-size:12px;font-weight:600;color:var(--fg-2)}
+.tile .tv{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.2;font-variant-numeric:tabular-nums}
+.tile .tv small{font-size:13px;font-weight:600;color:var(--fg-2);margin-left:3px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:10px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;border:1px solid var(--line-2);background:var(--surface);border-radius:999px;padding:7px 13px;font-size:13px;font-weight:600;color:var(--fg-2)}
+.chips button[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink);border-color:var(--gold)}
+.chart{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:10px 6px 4px;margin-bottom:18px;touch-action:pan-y}
+.sheet-panel .chart{background:var(--surface-2)}
+.chart svg{display:block;width:100%}
+.chart .ctitle{font-size:13px;font-weight:600;color:var(--fg-2);padding:2px 10px 0}
+.chart .tip{position:absolute;pointer-events:none;background:var(--fg);color:var(--bg);font-size:12px;padding:5px 9px;border-radius:9px;white-space:nowrap;transform:translate(-50%,-100%)}
+.chart .tip b{font-size:14px}
+.chart .nodata{padding:28px 12px;text-align:center;color:var(--muted);font-size:14px}
+
+/* roadmap */
+.road{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px}
+.road::-webkit-scrollbar{display:none}
+.road div{flex:0 0 auto;min-width:78px;padding:10px 12px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line)}
+.sheet-panel .road div{background:var(--surface-3)}
+.road div.now{border-color:var(--gold);background:var(--gold-soft)}
+.road div.dl{border-style:dashed;border-color:var(--line-2)}
+.road span{display:block;font-size:11px;font-weight:600;color:var(--muted);white-space:nowrap}
+.road b{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.road div.hit b{color:var(--up)}
+.eta{font-size:13.5px;color:var(--fg-2);margin:10px 0 0}
+.eta b{color:var(--fg)}
+
+/* forms */
+.fsec{margin-top:20px}
+.fsec > .eyebrow{display:block;margin-bottom:10px}
+.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--fg-2);min-width:0}
+label.f.full,.full{grid-column:1/-1}
+.inp{width:100%;min-height:48px;border:1px solid var(--line-2);border-radius:13px;background:var(--surface-2);padding:10px 12px;font-size:16px;color:var(--fg);font-weight:500}
+.inp:focus{outline:none;border-color:var(--gold)}
+select.inp{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 18px) 21px,calc(100% - 13px) 21px;background-size:5px 5px;background-repeat:no-repeat;padding-right:30px}
+textarea.inp{min-height:88px;resize:vertical}
+.inp.kg{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+.unit{font-weight:500;color:var(--muted)}
+.fhint{font-size:12px;color:var(--muted);font-weight:400;margin:0}
+.toggle{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:48px;padding:0 4px;font-size:14.5px;font-weight:600}
+.toggle input{appearance:none;-webkit-appearance:none;width:48px;height:28px;border-radius:999px;background:var(--surface-3);position:relative;transition:background .2s;flex:none;margin:0}
+.toggle input::after{content:"";position:absolute;left:3px;top:3px;width:22px;height:22px;border-radius:50%;background:var(--fg-2);transition:transform .2s,background .2s}
+.toggle input:checked{background:var(--gold)}
+.toggle input:checked::after{transform:translateX(20px);background:var(--gold-ink)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line)}
+.seg button{border:0;background:transparent;border-radius:10px;min-height:40px;font-size:13.5px;font-weight:600;color:var(--fg-2);padding:4px 6px}
+.seg button[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink)}
+.photos{display:flex;gap:8px;flex-wrap:wrap}
+.ph{position:relative}
+.ph img{width:78px;height:78px;object-fit:cover;border-radius:13px;display:block;background:var(--surface-3)}
+.ph button{position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;border:2px solid var(--surface);background:var(--fg);color:var(--bg);padding:0;display:flex;align-items:center;justify-content:center}
+.ph button .ico{width:13px;height:13px;stroke-width:2.6}
+.addph{width:78px;height:78px;border-radius:13px;border:1.5px dashed rgba(217,180,91,.45);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:600;color:var(--gold);background:rgba(217,180,91,.05)}
+.addph.lib{border-color:var(--line-2);color:var(--fg-2);background:transparent}
+.qpick{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.qpick button{border:1px solid var(--line-2);background:var(--surface-2);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:500}
+
+/* me */
+.set-card{margin-bottom:12px}
+.set-card h3{font-size:16px;font-weight:700;margin:0 0 4px}
+.set-card > p{margin:0 0 12px;color:var(--fg-2);font-size:13.5px}
+.rules{font-size:13.5px;color:var(--fg-2)}
+.rules h4{font-size:14px;color:var(--fg);margin:14px 0 4px}
+.rules ul{margin:0;padding-left:18px}
+.rules li{margin-bottom:4px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:6px}
+.tbl th,.tbl td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.tbl-wrap{overflow-x:auto}
+
+/* nav */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:30;padding:0 12px calc(10px + env(safe-area-inset-bottom,0px));pointer-events:none}
+.nav .bar{max-width:536px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);height:var(--nav-h);padding:6px;border-radius:24px;pointer-events:auto;
+  background:rgba(24,24,27,.92);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border:1px solid var(--line-2);box-shadow:0 12px 30px -12px rgba(0,0,0,.8)}
+.nav button{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:0;background:transparent;color:var(--muted);font-size:10.5px;font-weight:600;border-radius:18px}
+.nav button[aria-current="page"]{color:var(--gold);background:var(--gold-soft)}
+.nav .dot{position:absolute;top:8px;left:calc(50% + 8px);width:8px;height:8px;border-radius:50%;background:var(--down);box-shadow:0 0 0 2px #18181b}
+
+/* rest */
+.rest{position:fixed;left:0;right:0;z-index:29;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 16px);padding-inline:12px}
+.rest-in{position:relative;overflow:hidden;max-width:536px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:12px 14px 14px;border-radius:20px;
+  background:linear-gradient(135deg,var(--gold-hi),var(--gold) 60%,var(--gold-lo));color:var(--gold-ink);box-shadow:0 12px 30px -10px rgba(217,180,91,.55)}
+.rest-bar{position:absolute;left:0;bottom:0;height:4px;width:100%;background:rgba(27,20,6,.55);transform-origin:left}
+.rest-l{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+.rest-t{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1;letter-spacing:-.02em}
+.rest button{border:0;background:rgba(27,20,6,.14);color:var(--gold-ink);border-radius:11px;padding:8px 12px;font-size:13px;font-weight:700}
+.rest .sp{margin-left:auto}
+
+/* sheet */
+.sheet{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet-bg{position:absolute;inset:0;background:rgba(0,0,0,.66)}
+.sheet-panel{position:relative;width:100%;max-width:560px;max-height:93vh;max-height:93dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--surface);
+  border-radius:26px 26px 0 0;border-top:1px solid var(--line-2);padding:10px 16px calc(22px + env(safe-area-inset-bottom,0px))}
+.sheet-panel .inp{background:var(--surface-2)}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--surface-3);margin:0 auto 14px}
+.sh-title{font-size:22px;font-weight:800;margin:0 0 4px;line-height:1.2;letter-spacing:-.01em;text-wrap:balance}
+.sh-text{color:var(--fg-2);margin:0 0 14px;font-size:14px}
+.sh-actions{display:flex;flex-direction:column;gap:8px;margin-top:20px}
+.pr{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;word-break:break-all}
+
+/* viewer */
+.viewer{position:fixed;inset:0;z-index:60;background:#000;display:flex;flex-direction:column;color:#f6f3ec;
+  padding:calc(12px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.viewer .vtop{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.viewer .vtop b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.viewer button,.viewer label{border:1px solid rgba(255,255,255,.22);background:transparent;color:#f6f3ec;border-radius:12px;min-height:40px;padding:6px 14px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:6px}
+.viewer label{color:#d9b45b;border-color:rgba(217,180,91,.45)}
+.viewer .vimg{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding-block:12px}
+.viewer .vimg img{max-height:100%;max-width:100%;object-fit:contain;border-radius:12px}
+.viewer .vcap{white-space:pre-wrap;font-size:14px;color:#cfc9bd;max-height:26vh;overflow:auto;background:#141416;border-radius:14px;padding:12px}
+.viewer .vnav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 100px);z-index:70;
+  background:var(--fg);color:var(--bg);padding:11px 18px;border-radius:14px;font-size:14px;font-weight:600;width:max-content;max-width:calc(100% - 32px);text-align:center;box-shadow:0 10px 30px -10px rgba(0,0,0,.8)}
+/* sync */
+.sync-h{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.sync-h h3{margin:0}
+.sync-dot{width:10px;height:10px;border-radius:50%;background:var(--muted);flex:none}
+.sync.ok .sync-dot{background:var(--up);box-shadow:0 0 0 4px rgba(70,211,143,.15)}
+.sync.warn{border-color:rgba(217,180,91,.35)} .sync.warn .sync-dot{background:var(--gold)}
+/* warm-up */
+.warm{margin-top:12px;padding:10px 12px;border-radius:14px;border:1px dashed var(--line-2)}
+.warm-h{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:var(--gold)}
+.warm-h .ico{width:16px;height:16px}
+.warm-h span{font-weight:500;color:var(--muted);margin-left:auto;font-size:12px}
+.warm-sets{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.warm-sets button{border:1px solid var(--line-2);background:var(--surface-2);border-radius:10px;padding:6px 10px;font-size:13.5px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--fg)}
+.warm-sets button small{font-weight:500;color:var(--muted);margin-left:2px}
+.warm-sets button[aria-pressed="true"]{background:rgba(70,211,143,.12);border-color:rgba(70,211,143,.35);color:var(--up)}
+/* body photos */
+.bp-strip{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;margin-bottom:14px}
+.bp-strip::-webkit-scrollbar{display:none}
+.bp-strip button{flex:0 0 auto;width:86px;border:0;padding:0;background:none;text-align:left;color:var(--fg-2);display:flex;flex-direction:column;gap:4px}
+.bp-strip img{width:86px;height:114px;object-fit:cover;border-radius:12px;display:block;background:var(--surface-3)}
+.bp-strip span{font-size:11.5px;font-weight:600}
+.cmp-sel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.cmp-sel .inp{min-height:42px;font-size:14px}
+.cmp{position:relative;aspect-ratio:3/4;max-width:100%;border-radius:18px;overflow:hidden;background:var(--surface-2);user-select:none;-webkit-user-select:none;touch-action:pan-y}
+.cmp img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+.cmp .handle{position:absolute;top:0;bottom:0;left:50%;width:2px;background:var(--gold);transform:translateX(-1px);pointer-events:none}
+.cmp .handle i{position:absolute;top:50%;left:50%;width:36px;height:36px;border-radius:50%;transform:translate(-50%,-50%);background:var(--gold);color:var(--gold-ink);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+.cmp .handle .ico{width:18px;height:18px;stroke-width:2.2}
+.cmp .tag{position:absolute;top:10px;font-size:12px;font-weight:700;background:rgba(0,0,0,.65);padding:4px 9px;border-radius:999px;color:#f6f3ec}
+.cmp .tag.l{left:10px} .cmp .tag.r{right:10px;color:var(--gold-hi)}
+.cmp-range{width:100%;margin:12px 0 0;accent-color:var(--gold)}
+.note-line{font-size:12.5px;color:var(--muted);margin:10px 0 0}
+/* schedule */
+.sched{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.sched label{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--fg-2)}
+.sched select{width:100%;min-height:58px;border-radius:12px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--fg);font-size:11px;font-weight:600;padding:4px 2px;text-align:center;text-align-last:center;appearance:none;-webkit-appearance:none;white-space:normal}
+.sched select.on{border-color:var(--gold);background:var(--gold-soft);color:var(--gold-hi)}
+.dots .plan i{box-shadow:inset 0 0 0 1.5px var(--gold);background:transparent;color:var(--gold)}
+.miss{color:var(--gold);font-weight:600}
+.restcard{display:flex;align-items:center;gap:12px;padding:14px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line);margin-bottom:14px;font-size:14px;color:var(--fg-2)}
+.restcard .bi{width:36px;height:36px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;background:rgba(147,182,255,.13);color:var(--hold)}
+.restcard b{display:block;color:var(--fg);font-size:14.5px}
+.viewer .vdel{color:#ff7470;border-color:rgba(255,116,112,.4)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:360px){.stepper button{width:28px}.sethead,.setrow{grid-template-columns:18px 1fr 1fr 44px;gap:6px}.check{width:44px}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="avatar" id="avatar" aria-hidden="true">ST</div>
+    <div class="hello"><b id="hello">Sổ Tạ</b><span id="today-l"></span></div>
+    <div id="cycle"></div>
+  </div>
+</header>
+
+<main class="wrap" id="view"></main>
+
+<div class="rest" id="rest" hidden>
+  <div class="rest-in" role="timer" aria-live="polite">
+    <div><div class="rest-l" id="rest-l">Nghỉ</div><div class="rest-t" id="rest-t">0:00</div></div>
+    <span class="sp"></span>
+    <button type="button" data-act="rest-add">+15s</button>
+    <button type="button" data-act="rest-skip">Bỏ qua</button>
+    <span class="rest-bar" id="rest-bar"></span>
+  </div>
+</div>
+
+<nav class="nav" aria-label="Điều hướng">
+  <div class="bar">
+    <button type="button" data-act="tab" data-tab="today"><svg class="ico" viewBox="0 0 24 24"><rect class="d" x="5" y="6.5" width="3.4" height="11" rx="1.4"/><rect class="d" x="15.6" y="6.5" width="3.4" height="11" rx="1.4"/><path d="M2.6 9.8v4.4M21.4 9.8v4.4M8.4 12h7.2"/></svg>Tập<span class="dot" id="dot-active" hidden></span></button>
+    <button type="button" data-act="tab" data-tab="plan"><svg class="ico" viewBox="0 0 24 24"><rect class="d" x="4.5" y="3.5" width="15" height="17" rx="3.2"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4.2"/></svg>Giáo án</button>
+    <button type="button" data-act="tab" data-tab="week"><svg class="ico" viewBox="0 0 24 24"><path class="d" d="M3.5 20V16l5-5 4 3.5 8-7.5v13z" stroke="none"/><path d="M3.5 16l5-5 4 3.5 8-7.5"/><path d="M15.5 7h5v5"/></svg>Tiến độ</button>
+    <button type="button" data-act="tab" data-tab="body"><svg class="ico" viewBox="0 0 24 24"><path class="d" d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/><path d="M7.2 12.4h2.4l1.3-2.2 2 4.4 1.3-2.2h2.6"/></svg>Cơ thể</button>
+    <button type="button" data-act="tab" data-tab="more"><svg class="ico" viewBox="0 0 24 24"><circle class="d" cx="12" cy="8.5" r="4"/><path d="M4.5 20.5c.9-3.8 3.9-6 7.5-6s6.6 2.2 7.5 6"/></svg>Tôi</button>
+  </div>
+</nav>
+
+<div class="sheet" id="sheet" hidden>
+  <div class="sheet-bg" data-act="close-sheet"></div>
+  <div class="sheet-panel" id="sheet-body" role="dialog" aria-modal="true"></div>
+</div>
+<div class="viewer" id="viewer" hidden></div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ---------- tiện ích ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const pad = n => String(n).padStart(2, '0');
+const ymd = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseYmd = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (s, n) => { const d = parseYmd(s); d.setDate(d.getDate() + n); return ymd(d); };
+const dm = s => { const d = parseYmd(s); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`; };
+const DOW = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const DOWL = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+const num = v => { if (v === '' || v == null) return null; const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) ? n : null; };
+const r2 = v => Math.round(v * 100) / 100;
+const fmt = (v, dec = 1) => v == null || v === '' ? '–' : Number(r2(v)).toLocaleString('vi-VN', { maximumFractionDigits: dec });
+const fmtIn = v => v == null || v === '' ? '' : String(r2(v)).replace('.', ',');
+const daysBetween = (a, b) => Math.round((parseYmd(b) - parseYmd(a)) / 86400000);
+const fmtDur = ms => { const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? `${h}:${pad(m)}:${pad(x)}` : `${m}:${pad(x)}`; };
+const ago = d => { const n = daysBetween(d, ymd()); return n <= 0 ? 'hôm nay' : n === 1 ? 'hôm qua' : `${n} ngày trước`; };
+const e1rm = (kg, reps) => kg > 0 && reps > 0 ? kg * (1 + reps / 30) : 0;
+const shortName = n => String(n).replace(/\s*\(.*\)\s*$/, '');
+
+const IC = (body, cls = '') => `<svg class="ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${body}</svg>`;
+const ICON = {
+  check: IC('<path d="M5 12.5l4.5 4.5L19 7.5"/>'),
+  cam: IC('<path d="M4 9a2 2 0 0 1 2-2h1.8l1.4-2.2h5.6L16.2 7H18a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.8" r="3.3"/>'),
+  img: IC('<rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="10" r="1.6"/><path d="M4 17.5l5-4.5 4 3.5 3-2.5 4.5 3.5"/>'),
+  bolt: IC('<path d="M13 3L5 13.5h6L10 21l8-10.5h-6z"/>'),
+  heart: IC('<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/>'),
+  chev: IC('<path d="M9 6l6 6-6 6"/>', 'chev'),
+  chevL: IC('<path d="M15 6l-6 6 6 6"/>'),
+  chevR: IC('<path d="M9 6l6 6-6 6"/>'),
+  up: IC('<path d="M6 15l6-6 6 6"/>'),
+  down: IC('<path d="M6 9l6 6 6-6"/>'),
+  x: IC('<path d="M7 7l10 10M17 7L7 17"/>'),
+  alert: IC('<path d="M12 4.5l8.5 15H3.5z"/><path d="M12 10v4.2M12 17v.2"/>'),
+  flame: IC('<path d="M12 21c-3.9 0-6.5-2.6-6.5-6.1 0-3.4 2.4-5.3 3.6-7.7.4 1.8 1.3 2.9 2.4 3.5.2-2.8 1.3-5.3 3.4-7.2-.1 3 1.1 4.9 2.4 6.5 1 1.3 1.7 2.8 1.7 4.8 0 3.6-3 6.2-7 6.2z"/>'),
+  bell: IC('<path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 2h-14z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>'),
+  cal: IC('<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>'),
+  moon: IC('<path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z"/>'),
+  swap: IC('<path d="M9 7l-4 5 4 5M15 7l4 5-4 5"/>'),
+  play: '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor" stroke="none"/></svg>'
+};
+
+/* ---------- dữ liệu nền ---------- */
+const MUSCLES = ['Ngực', 'Lưng', 'Vai', 'Tay trước', 'Tay sau', 'Đùi trước', 'Đùi sau', 'Mông', 'Bắp chân', 'Bụng', 'Cẳng tay', 'Khác'];
+const TYPES = {
+  lower: { label: 'Bài lớn · chân/hông', step: 2.5, rest: 150 },
+  upper: { label: 'Bài lớn · thân trên', step: 2.5, rest: 120 },
+  iso:   { label: 'Bài cô lập', step: 1, rest: 75 }
+};
+const PACE = {
+  slow: { label: 'Thận trọng', rate: { lower: 0.025, upper: 0.025, iso: 0.02 }, need: 2, desc: 'Tăng khoảng 2,5% sau 2 tuần liền đạt đủ rep. Hợp người mới quay lại tập hoặc từng chấn thương.' },
+  std:  { label: 'Chuẩn', rate: { lower: 0.05, upper: 0.05, iso: 0.025 }, need: 1, desc: 'Tăng khoảng 5% mỗi tuần khi đạt đủ rep. Mức phổ biến cho người mới và trung cấp.' },
+  fast: { label: 'Nhanh', rate: { lower: 0.075, upper: 0.075, iso: 0.05 }, need: 1, desc: 'Tăng khoảng 7,5% mỗi tuần. Vẫn trong khoảng 2–10% ACSM khuyến nghị, nhưng dễ chững sớm hơn.' }
+};
+const LIB = [
+  ['Kéo xô (Lat pulldown)','Lưng','upper'],['Chèo cáp ngồi (Seated cable row)','Lưng','upper'],['Chèo tạ đòn (Barbell row)','Lưng','upper'],
+  ['Chèo tạ đơn (Dumbbell row)','Lưng','upper'],['Chèo máy (Machine row)','Lưng','upper'],['Chèo T-bar (T-bar row)','Lưng','upper'],
+  ['Hít xà (Pull-up)','Lưng','upper'],['Kéo xô tay thẳng (Straight-arm pulldown)','Lưng','iso'],['Deadlift','Lưng','lower'],
+  ['Đẩy ngực tạ đòn (Bench press)','Ngực','upper'],['Đẩy ngực dốc lên (Incline press)','Ngực','upper'],['Đẩy ngực máy (Chest press)','Ngực','upper'],
+  ['Đẩy ngực tạ đơn (Dumbbell press)','Ngực','upper'],['Ép ngực máy (Pec deck)','Ngực','iso'],['Ép cáp (Cable fly)','Ngực','iso'],['Xà kép (Dips)','Ngực','upper'],
+  ['Đẩy vai tạ đơn (Dumbbell shoulder press)','Vai','upper'],['Đẩy vai máy (Machine shoulder press)','Vai','upper'],['Nâng vai ngang (Lateral raise)','Vai','iso'],
+  ['Nâng vai trước (Front raise)','Vai','iso'],['Bay vai sau (Rear delt fly)','Vai','iso'],['Kéo cáp mặt (Face pull)','Vai','iso'],
+  ['Cuốn tạ đòn (Barbell curl)','Tay trước','iso'],['Cuốn tạ đơn (Dumbbell curl)','Tay trước','iso'],['Cuốn búa (Hammer curl)','Tay trước','iso'],
+  ['Cuốn ghế dốc (Preacher curl)','Tay trước','iso'],['Cuốn cáp (Cable curl)','Tay trước','iso'],
+  ['Đẩy cáp tay sau (Triceps pushdown)','Tay sau','iso'],['Kéo cáp qua đầu (Overhead extension)','Tay sau','iso'],['Skull crusher','Tay sau','iso'],
+  ['Đẩy ngực tay hẹp (Close-grip bench)','Tay sau','upper'],
+  ['Squat','Đùi trước','lower'],['Đạp đùi (Leg press)','Đùi trước','lower'],['Hack squat','Đùi trước','lower'],['Đá đùi (Leg extension)','Đùi trước','iso'],
+  ['Bulgarian split squat','Đùi trước','lower'],['Chùng chân (Lunge)','Đùi trước','lower'],
+  ['Romanian deadlift','Đùi sau','lower'],['Móc đùi nằm (Lying leg curl)','Đùi sau','iso'],['Móc đùi ngồi (Seated leg curl)','Đùi sau','iso'],
+  ['Hip thrust','Mông','lower'],['Đá mông cáp (Cable kickback)','Mông','iso'],['Máy dạng hông (Hip abduction)','Mông','iso'],
+  ['Nhón bắp chân đứng (Standing calf raise)','Bắp chân','iso'],['Nhón bắp chân ngồi (Seated calf raise)','Bắp chân','iso'],
+  ['Gập bụng cáp (Cable crunch)','Bụng','iso'],['Nâng chân treo (Hanging leg raise)','Bụng','iso'],['Cuốn cổ tay (Wrist curl)','Cẳng tay','iso']
+];
+const SAMPLE = [
+  ['Lưng', ['Kéo xô (Lat pulldown)','Chèo cáp ngồi (Seated cable row)','Chèo tạ đơn (Dumbbell row)','Chèo máy (Machine row)','Kéo xô tay thẳng (Straight-arm pulldown)']],
+  ['Ngực + Tay sau', ['Đẩy ngực tạ đòn (Bench press)','Đẩy ngực dốc lên (Incline press)','Ép ngực máy (Pec deck)','Đẩy cáp tay sau (Triceps pushdown)','Kéo cáp qua đầu (Overhead extension)']],
+  ['Chân', ['Đạp đùi (Leg press)','Đá đùi (Leg extension)','Móc đùi nằm (Lying leg curl)','Romanian deadlift','Nhón bắp chân đứng (Standing calf raise)']],
+  ['Vai + Tay trước', ['Đẩy vai máy (Machine shoulder press)','Nâng vai ngang (Lateral raise)','Bay vai sau (Rear delt fly)','Cuốn tạ đơn (Dumbbell curl)','Cuốn búa (Hammer curl)']]
+];
+const METRICS = [
+  { k: 'weight', label: 'Cân nặng', unit: 'kg', dec: 1, good: 0 },
+  { k: 'bodyFat', label: 'Tỉ lệ mỡ', unit: '%', dec: 1, good: -1 },
+  { k: 'muscle', label: 'Khối cơ', unit: 'kg', dec: 1, good: 1 },
+  { k: 'restHR', label: 'Nhịp tim nghỉ', unit: 'bpm', dec: 0, good: -1 },
+  { k: 'hrv', label: 'HRV', unit: 'ms', dec: 0, good: 1 },
+  { k: 'vo2', label: 'VO₂ max', unit: '', dec: 1, good: 1 },
+  { k: 'sleep', label: 'Giấc ngủ', unit: 'giờ', dec: 1, good: 1 },
+  { k: 'steps', label: 'Bước chân', unit: 'bước', dec: 0, good: 1 },
+  { k: 'spo2', label: 'SpO₂', unit: '%', dec: 0, good: 0 },
+  { k: 'kcal', label: 'Calo vận động', unit: 'kcal', dec: 0, good: 0 },
+  { k: 'waist', label: 'Vòng eo', unit: 'cm', dec: 1, good: 0 }
+];
+const DERIVED = [
+  { k: 'lean', label: 'Khối nạc ước tính', unit: 'kg', dec: 1, good: 1, calc: e => e.weight && e.bodyFat != null ? e.weight * (1 - e.bodyFat / 100) : null },
+  { k: 'bmi', label: 'BMI', unit: '', dec: 1, good: 0, calc: e => e.weight && state.settings.height ? e.weight / Math.pow(state.settings.height / 100, 2) : null }
+];
+const ALLM = [...METRICS.slice(0, 3), DERIVED[0], ...METRICS.slice(3), DERIVED[1]];
+const mval = (e, m) => m.calc ? m.calc(e) : (e[m.k] ?? null);
+
+function newEx(name) {
+  const lib = LIB.find(l => l[0] === name);
+  const type = lib ? lib[2] : 'upper';
+  return { id: uid(), name, muscle: lib ? lib[1] : 'Khác', type, sets: 3, repTarget: 10, repMin: 8, repMax: 12, dropSet: false,
+    step: TYPES[type].step, rest: TYPES[type].rest, setup: '', photos: [], currentKg: null, targetKg: null, kgSetAt: null, warmup: type !== 'iso' };
+}
+function migrateEx(ex) {
+  if (ex.repMin == null) ex.repMin = 8;
+  if (ex.repMax == null) ex.repMax = 12;
+  if (ex.repTarget == null) ex.repTarget = Math.min(ex.repMax, Math.max(ex.repMin, 10));
+  if (!('currentKg' in ex)) ex.currentKg = null;
+  if (!('targetKg' in ex)) ex.targetKg = null;
+  if (!ex.photos) ex.photos = [];
+  if (ex.warmup == null) ex.warmup = ex.type !== 'iso';
+  return ex;
+}
+
+/* ---------- lưu trữ: máy này (IndexedDB) + tài khoản Claude (db) ---------- */
+const LDB = {
+  db: null, mem: { kv: {}, photos: {} },
+  async open() {
+    try {
+      this.db = await new Promise((res, rej) => {
+        const r = indexedDB.open('so-ta', 1);
+        r.onupgradeneeded = () => { const d = r.result; d.createObjectStore('kv'); d.createObjectStore('photos'); };
+        r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+      });
+    } catch (e) { this.db = null; }
+    try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+  },
+  req(store, mode, fn) {
+    return new Promise((res, rej) => {
+      const t = this.db.transaction(store, mode); const q = fn(t.objectStore(store));
+      t.oncomplete = () => res(q && q.result); t.onerror = () => rej(t.error);
+    });
+  },
+  async get(store, key) { if (this.db) { try { return await this.req(store, 'readonly', s => s.get(key)); } catch (e) {} } return this.mem[store][key]; },
+  async put(store, key, val) { this.mem[store][key] = val; if (this.db) { try { await this.req(store, 'readwrite', s => s.put(val, key)); } catch (e) {} } },
+  async del(store, key) { delete this.mem[store][key]; if (this.db) { try { await this.req(store, 'readwrite', s => s.delete(key)); } catch (e) {} } },
+  async keys(store) { if (this.db) { try { return await this.req(store, 'readonly', s => s.getAllKeys()); } catch (e) {} } return Object.keys(this.mem[store]); },
+  async clear(store) { this.mem[store] = {}; if (this.db) { try { await this.req(store, 'readwrite', s => s.clear()); } catch (e) {} } }
+};
+let inArtifact = !!(window.claude && typeof window.claude.use === 'function');
+async function detectArtifact() {
+  for (let i = 0; i < 20 && !inArtifact; i++) { await new Promise(r => setTimeout(r, 100)); inArtifact = !!(window.claude && typeof window.claude.use === 'function'); }
+  return inArtifact;
+}
+let syncStatus = 'device';
+function setSyncStatus(st) { syncStatus = st; const el = $('#sync'); if (el) el.outerHTML = syncCardHtml(); }
+const Cloud = {
+  ok: false, base: null, user: null, lastMain: null, lastSess: new Map(), q: Promise.resolve(), timer: null,
+  async init() {
+    if (!inArtifact) return false;
+    try {
+      const [db, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
+      if (!db || !user) return false;
+      const id = await user.id(); if (!id) return false;
+      this.user = user; this.base = db.doc('data/users/' + id + '/app'); return true;
+    } catch (e) { return false; }
+  },
+  col(n) { return this.base.collection(n); },
+  enqueue(fn) { const run = this.q.then(() => (this.ok ? fn() : null)); this.q = run.catch(e => this.fail(e)); return this.q; },
+  fail(e) {
+    const c = e && e.code;
+    if (['invalid_argument', 'not_granted', 'revoked', 'capability_disabled', 'capability_removed', 'transform_error'].includes(c)) { this.ok = false; setSyncStatus('readonly'); }
+    else if (c === 'quota_exceeded') setSyncStatus('full');
+    else setSyncStatus('retry');
+  },
+  async pull() {
+    const snap = await this.base.get();
+    if (!snap.exists) return null;
+    const main = JSON.parse(JSON.stringify(snap.data()));
+    const sessions = []; let after = -1;
+    for (let guard = 0; guard < 50; guard++) {
+      const qs = await this.col('sessions').where('startedAt', '>', after).orderBy('startedAt').limit(1000).get();
+      qs.docs.forEach(d => sessions.push(JSON.parse(JSON.stringify(d.data()))));
+      if (qs.size < 1000) break;
+      after = sessions[sessions.length - 1].startedAt;
+    }
+    return { ...main, sessions };
+  },
+  remember(remote) {
+    if (!remote) { this.lastMain = null; this.lastSess = new Map(); return; }
+    const m = { ...remote }; delete m.sessions;
+    this.lastMain = JSON.stringify(m);
+    this.lastSess = new Map((remote.sessions || []).map(x => [x.id, JSON.stringify(x)]));
+  },
+  async pushNow() {
+    const main = { ...state }; delete main.sessions;
+    const mj = JSON.stringify(main);
+    const cur = new Map(state.sessions.map(x => [x.id, JSON.stringify(x)]));
+    const dirty = mj !== this.lastMain || [...cur].some(([k, v]) => this.lastSess.get(k) !== v) || [...this.lastSess.keys()].some(k => !cur.has(k));
+    if (!dirty) { if (syncStatus !== 'cloud') setSyncStatus('cloud'); return; }
+    setSyncStatus('saving');
+    if (mj !== this.lastMain) { await this.base.set(JSON.parse(mj)); this.lastMain = mj; }
+    for (const [k, v] of cur) if (this.lastSess.get(k) !== v) { await this.col('sessions').doc(k).set(JSON.parse(v)); this.lastSess.set(k, v); }
+    for (const k of [...this.lastSess.keys()]) if (!cur.has(k)) { await this.col('sessions').doc(k).delete(); this.lastSess.delete(k); }
+    setSyncStatus('cloud');
+  },
+  sync(now) { clearTimeout(this.timer); if (!this.ok) return; if (now) return this.enqueue(() => this.pushNow()); this.timer = setTimeout(() => this.enqueue(() => this.pushNow()), 1200); }
+};
+const DB = {
+  open: () => LDB.open(),
+  async get(store, key) {
+    let v = await LDB.get(store, key);
+    if (v == null && store === 'photos' && Cloud.ok) {
+      try { const snap = await Cloud.col('photos').doc(key).get(); v = snap.exists ? snap.data().d : undefined; if (v) LDB.put('photos', key, v); } catch (e) {}
+    }
+    return v;
+  },
+  async put(store, key, val) { await LDB.put(store, key, val); if (store === 'photos') Cloud.enqueue(() => Cloud.col('photos').doc(key).set({ d: val })); },
+  async del(store, key) { await LDB.del(store, key); if (store === 'photos') Cloud.enqueue(() => Cloud.col('photos').doc(key).delete()); },
+  keys: store => LDB.keys(store),
+  async clear(store, cloudIds) { await LDB.clear(store); if (store === 'photos') (cloudIds || []).forEach(k => Cloud.enqueue(() => Cloud.col('photos').doc(k).delete())); }
+};
+const usedPhotoIds = () => [...state.days.flatMap(d => d.exercises.flatMap(e => e.photos || [])), ...state.bodyPhotos.map(b => b.photoId)];
+async function connectCloud(local) {
+  if (!(await detectArtifact())) return;
+  if (syncStatus === 'device') setSyncStatus('connecting');
+  if (!(await Cloud.init())) { setSyncStatus('readonly'); return; }
+  try {
+    const canWrite = await Cloud.user.can('data.write');
+    if (canWrite === false) { setSyncStatus('readonly'); return; }
+    const remote = await Cloud.pull();
+    Cloud.ok = true;
+    if (remote && (!local || (remote.updatedAt || 0) >= (local.updatedAt || 0))) {
+      loadState(remote); Cloud.remember(remote);
+      LDB.put('kv', 'state', JSON.parse(JSON.stringify(state)));
+      setSyncStatus('cloud'); if (!state.active || ui.tab !== 'today') render(true);
+    } else {
+      if (remote) { const have = new Set(state.sessions.map(x => x.id)); remote.sessions.forEach(x => { if (!have.has(x.id)) state.sessions.push(x); }); }
+      Cloud.remember(remote);
+      const hasData = state.days.length || state.sessions.length || state.body.length;
+      if (hasData) {
+        await Cloud.sync(true);
+        if (Cloud.ok && !remote) { for (const id of usedPhotoIds()) { const v = await LDB.get('photos', id); if (v) Cloud.enqueue(() => Cloud.col('photos').doc(id).set({ d: v })); } toast('Đã đưa dữ liệu lên tài khoản Claude của bạn'); }
+      } else setSyncStatus('cloud');
+      render(true);
+    }
+  } catch (e) { Cloud.ok = false; const c = e && e.code; setSyncStatus(['invalid_argument', 'not_granted', 'revoked'].includes(c) ? 'readonly' : 'retry'); }
+}
+function syncCardHtml() {
+  const M = {
+    device: ['Lưu trên máy này', 'Dữ liệu nằm trong trình duyệt của điện thoại. Thỉnh thoảng tải file sao lưu để không mất khi đổi máy.', ''],
+    connecting: ['Đang kết nối tài khoản Claude…', 'Bạn vẫn dùng app bình thường trong lúc chờ.', ''],
+    saving: ['Đang lưu lên tài khoản…', 'Giáo án, buổi tập, số đo và ảnh được lưu vào tài khoản Claude của bạn.', 'ok'],
+    cloud: ['Đã đồng bộ với tài khoản Claude', 'Dữ liệu lưu riêng trong tài khoản của bạn. Mở link này trên điện thoại hay máy tính đều thấy, người khác mở link không xem được dữ liệu của bạn.', 'ok'],
+    retry: ['Chưa lưu được lên tài khoản', 'Có thể do mất mạng. Dữ liệu vẫn giữ trên máy này, app sẽ thử lại khi bạn mở lại.', 'warn'],
+    full: ['Bộ nhớ đồng bộ đã đầy', 'Xoá bớt ảnh máy tập hoặc ảnh body cũ để lưu tiếp lên tài khoản.', 'warn'],
+    readonly: ['Chỉ lưu trên máy này', 'Với quyền truy cập hiện tại, app không lưu được lên tài khoản. Dữ liệu nằm trong trình duyệt và có thể mất, hãy tải file sao lưu thường xuyên.', 'warn']
+  };
+  const [t, d, k] = M[syncStatus] || M.device;
+  return `<div class="card set-card sync ${k}" id="sync"><div class="sync-h"><span class="sync-dot"></span><h3>${t}</h3></div><p>${d}</p></div>`;
+}
+const freshState = () => ({ v: 3, days: [], sessions: [], body: [], bodyPhotos: [], active: null,
+  settings: { name: '', height: null, setMin: 10, setMax: 20, deloadEvery: 6, cycleStart: null, progMode: 'linear', pace: 'std', schedule: {}, remindTime: '18:00', remindBefore: 30 } });
+let state = freshState();
+function loadState(s) {
+  state = { ...freshState(), ...s, settings: { ...freshState().settings, ...(s.settings || {}) } };
+  state.days.forEach(d => d.exercises.forEach(migrateEx));
+  if (!Array.isArray(state.bodyPhotos)) state.bodyPhotos = [];
+  if (!state.settings.schedule || typeof state.settings.schedule !== 'object') state.settings.schedule = {};
+}
+let saveT = null;
+function save() { state.updatedAt = Date.now(); clearTimeout(saveT); saveT = setTimeout(flush, 300); }
+function flush(now) { clearTimeout(saveT); saveT = null; LDB.put('kv', 'state', JSON.parse(JSON.stringify(state))); Cloud.sync(now); }
+
+/* ---------- truy vấn ---------- */
+const findDay = id => state.days.find(d => d.id === id);
+function findEx(id) { for (const d of state.days) { const e = d.exercises.find(x => x.id === id); if (e) return e; } return null; }
+function dayOfEx(id) { return state.days.find(d => d.exercises.some(e => e.id === id)); }
+const allEx = () => state.days.flatMap(d => d.exercises.map(e => ({ ex: e, dayName: d.name })));
+function exHistory(exId) {
+  const out = [];
+  for (const s of state.sessions) {
+    const en = s.entries.find(e => e.exId === exId); if (!en) continue;
+    const sets = en.sets.filter(x => x.reps > 0); if (!sets.length) continue;
+    out.push({ date: s.date, t: s.startedAt, sid: s.id, sets, drop: en.drop && en.drop.reps > 0 ? en.drop : null, note: en.note, deload: !!s.deload });
+  }
+  return out.sort((a, b) => b.t - a.t);
+}
+const wt = h => Math.max(0, ...h.sets.map(s => s.kg || 0));
+const repsAt = (h, W) => h.sets.filter(s => (s.kg || 0) >= W).reduce((a, s) => a + s.reps, 0);
+const setsStr = sets => sets.map(s => `${fmt(s.kg)}×${s.reps}`).join(' · ');
+const bestE1 = h => Math.max(0, ...h.sets.map(s => e1rm(s.kg || 0, s.reps)));
+const volOf = h => h.sets.reduce((a, s) => a + (s.kg || 0) * s.reps, 0) + (h.drop ? (h.drop.kg || 0) * h.drop.reps : 0);
+function roundStep(v, step) { step = step > 0 ? step : 1; return Math.max(0, r2(Math.round(v / step) * step)); }
+function incFor(ex, W) {
+  const st = ex.step > 0 ? ex.step : 1;
+  const rate = (PACE[state.settings.pace] || PACE.std).rate[ex.type] || 0.05;
+  return Math.max(st, roundStep(W * rate, st));
+}
+/* lịch sử bỏ qua buổi deload; mức tạ người dùng tự nhập được ưu tiên nếu mới hơn buổi tập gần nhất */
+const workHistory = ex => exHistory(ex.id).filter(h => !h.deload);
+function manualOverride(ex, H) { return ex.currentKg != null && !!ex.kgSetAt && (!H.length || ex.kgSetAt > H[0].t); }
+function baseKg(ex) { const H = workHistory(ex); if (!H.length || manualOverride(ex, H)) return ex.currentKg; return wt(H[0]); }
+
+/* ---------- chu kỳ & deload ---------- */
+function cycleInfo() {
+  const st = state.settings.cycleStart; if (!st) return null;
+  return { week: Math.floor(daysBetween(st, ymd()) / 7) + 1, every: state.settings.deloadEvery || 6 };
+}
+const isDeload = () => { const c = cycleInfo(); return !!c && c.week > c.every; };
+
+/* ---------- gợi ý mức tạ ---------- */
+function suggest(ex) {
+  const H = workHistory(ex);
+  const tgt = ex.repTarget || 10;
+  const fill = r => Array(ex.sets).fill(r);
+  if (!H.length || manualOverride(ex, H)) {
+    if (ex.currentKg != null) return { kind: 'start', label: 'BẮT ĐẦU', kg: ex.currentKg, reps: fill(tgt),
+      text: `Tập ở <strong>${fmt(ex.currentKg)} kg</strong>, mục tiêu ${ex.sets}×${tgt}. Đạt đủ là tuần sau tăng lên ${fmt(roundStep(ex.currentKg + incFor(ex, ex.currentKg), ex.step))} kg.` };
+    return { kind: 'new', label: 'BUỔI ĐẦU', kg: null, reps: fill(tgt),
+      text: `Chọn mức tạ làm được <strong>${tgt} rep</strong> mà vẫn còn dư 2–3 rep, hoặc điền “Mức tạ đang tập” trong Giáo án.` };
+  }
+  const W = wt(H[0]);
+  if (isDeload()) { const kg = roundStep(W * 0.9, ex.step); return { kind: 'deload', label: 'DELOAD', kg, reps: fill(tgt),
+    text: `Tuần deload: <strong>${fmt(kg)} kg</strong>, chỉ tập khoảng một nửa số set. Tuần sau quay lại ${fmt(W)} kg.` }; }
+  return state.settings.progMode === 'double' ? suggestDouble(ex, H, W) : suggestLinear(ex, H, W);
+}
+function suggestLinear(ex, H, W) {
+  const [a, b, c] = H, tgt = ex.repTarget || 10, fill = r => Array(ex.sets).fill(r);
+  const ok = h => h.sets.filter(s => (s.kg || 0) >= W && s.reps >= tgt).length >= ex.sets;
+  const low = h => h.sets.some(s => (s.kg || 0) >= W && s.reps < ex.repMin);
+  const need = (PACE[state.settings.pace] || PACE.std).need;
+  const nextKg = roundStep(W + incFor(ex, W), ex.step);
+  if (ok(a) && (need === 1 || (b && wt(b) === W && ok(b)))) {
+    let first = a; for (const h of H) { if (wt(h) === W) first = h; else break; }
+    const gate = addDays(first.date, 6);
+    if (ymd() >= gate) return { kind: 'up', label: 'TĂNG TẠ', kg: nextKg, prev: W, reps: fill(Math.max(ex.repMin, tgt - 2)),
+      text: `Tuần trước đạt đủ ${ex.sets}×${tgt} ở ${fmt(W)} kg. Tuần này lên <strong>${fmt(nextKg)} kg</strong> (+${fmt(nextKg - W)}); rep tụt 1–2 là bình thường.` };
+    return { kind: 'almost', label: 'ĐÃ ĐẠT', kg: W, next: nextKg, reps: fill(tgt),
+      text: `Đã đạt đủ rep ở ${fmt(W)} kg. Mỗi tuần chỉ tăng một lần: từ ${DOW[parseYmd(gate).getDay()]} ${dm(gate)} lên <strong>${fmt(nextKg)} kg</strong>.` };
+  }
+  if (ok(a)) return { kind: 'almost', label: 'SẮP TĂNG', kg: W, next: nextKg, reps: fill(tgt), text: `Đạt đủ rep 1 tuần. Đạt thêm 1 tuần ở <strong>${fmt(W)} kg</strong> là lên ${fmt(nextKg)} kg (tốc độ Thận trọng).` };
+  if (c && wt(b) === W && wt(c) === W && !ok(b) && !ok(c) && repsAt(a, W) <= repsAt(c, W)) {
+    const kg = roundStep(W * 0.9, ex.step);
+    return { kind: 'down', label: 'GIẢM', kg, reps: fill(tgt), text: `3 buổi liền chưa tiến bộ ở ${fmt(W)} kg. Giảm khoảng 10% còn <strong>${fmt(kg)} kg</strong>, tăng dần lại, hoặc đổi biến thể bài.` };
+  }
+  if (low(a) && b && wt(b) === W && low(b)) {
+    const kg = roundStep(Math.max(0, W - (ex.step || 1)), ex.step);
+    return { kind: 'down', label: 'GIẢM', kg, reps: fill(tgt), text: `2 buổi liền có set dưới ${ex.repMin} rep. Giảm 1 nấc còn <strong>${fmt(kg)} kg</strong> để giữ form chuẩn.` };
+  }
+  const reps = Array.from({ length: ex.sets }, (_, i) => Math.min(tgt, ((a.sets[i] || a.sets[a.sets.length - 1]).reps || ex.repMin) + 1));
+  return { kind: 'hold', label: 'GIỮ', kg: W, reps, text: `Giữ <strong>${fmt(W)} kg</strong>, cố đạt đủ ${ex.sets}×${tgt}. Đạt là tuần sau lên ${fmt(nextKg)} kg.` };
+}
+function suggestDouble(ex, H, W) {
+  const [a, b, c] = H, fill = r => Array(ex.sets).fill(r);
+  const top = h => h.sets.filter(s => (s.kg || 0) >= W && s.reps >= ex.repMax).length >= ex.sets;
+  const low = h => h.sets.some(s => (s.kg || 0) >= W && s.reps < ex.repMin);
+  if (top(a) && b && wt(b) === W && top(b)) { const kg = roundStep(W + incFor(ex, W), ex.step);
+    return { kind: 'up', label: 'TĂNG TẠ', kg, prev: W, reps: fill(ex.repMin), text: `Đạt ${ex.repMax} rep mọi set trong 2 buổi liên tiếp. Lên <strong>${fmt(kg)} kg</strong>; rep tụt về khoảng ${ex.repMin} là bình thường.` }; }
+  if (top(a)) return { kind: 'almost', label: 'SẮP TĂNG', kg: W, reps: fill(ex.repMax), text: `Đã đạt ${ex.repMax} rep mọi set. Giữ <strong>${fmt(W)} kg</strong> thêm 1 buổi; đạt lại là tăng tạ.` };
+  if (c && wt(b) === W && wt(c) === W && repsAt(a, W) <= repsAt(c, W)) { const kg = roundStep(W * 0.9, ex.step);
+    return { kind: 'down', label: 'GIẢM', kg, reps: fill(ex.repMax), text: `3 buổi liền chưa tăng rep ở ${fmt(W)} kg. Giảm khoảng 10% còn <strong>${fmt(kg)} kg</strong> rồi tăng dần lại.` }; }
+  if (low(a) && b && wt(b) === W && low(b)) { const kg = roundStep(Math.max(0, W - (ex.step || 1)), ex.step);
+    return { kind: 'down', label: 'GIẢM', kg, reps: fill(ex.repMin), text: `2 buổi liền có set dưới ${ex.repMin} rep. Giảm 1 nấc còn <strong>${fmt(kg)} kg</strong>.` }; }
+  const reps = Array.from({ length: ex.sets }, (_, i) => Math.min(ex.repMax, ((a.sets[i] || a.sets[a.sets.length - 1]).reps || ex.repMin) + 1));
+  return { kind: 'hold', label: 'GIỮ', kg: W, reps, text: `Giữ <strong>${fmt(W)} kg</strong>, cố thêm 1 rep mỗi set (mục tiêu ${ex.repMax}).` };
+}
+/* lộ trình các tuần tới, giả định tuần nào cũng đạt đủ rep */
+function roadmap(ex, weeks = 8) {
+  const sg = suggest(ex);
+  const base0 = sg.kind === 'deload' ? baseKg(ex) : sg.kg; if (base0 == null) return null;
+  const pace = PACE[state.settings.pace] || PACE.std;
+  const every = state.settings.deloadEvery || 6; const c = cycleInfo(); const w0 = c ? c.week : 1;
+  const mon = weekDaysOf(0)[0];
+  let base = base0, streak = sg.kind === 'almost' ? pace.need - 1 : 0, hitWeek = null;
+  const out = [];
+  const dl0 = sg.kind === 'deload';
+  const isDl = i => i === 0 ? dl0 : dl0 ? i % (every + 1) === 0 : ((w0 + i - 1) % (every + 1)) + 1 === every + 1;
+  for (let i = 0; i < 156; i++) {
+    const dl = isDl(i);
+    let kg;
+    if (i === 0) kg = dl0 ? sg.kg : base;
+    else if (dl) kg = roundStep(base * 0.9, ex.step);
+    else {
+      if (!isDl(i - 1)) { streak++; if (streak >= pace.need) { base = roundStep(base + incFor(ex, base), ex.step); streak = 0; } }
+      kg = base;
+    }
+    if (ex.targetKg && hitWeek == null && !dl && kg >= ex.targetKg) hitWeek = i;
+    if (i < weeks) out.push({ i, kg, dl, date: addDays(mon, i * 7) });
+    if (i >= weeks - 1 && (!ex.targetKg || hitWeek != null)) break;
+  }
+  return { weeks: out, hitWeek, hitDate: hitWeek != null ? addDays(mon, hitWeek * 7) : null };
+}
+
+/* ---------- trạng thái giao diện ---------- */
+const ui = { tab: 'today', weekOff: 0, openDay: null, metric: 'weight', pm: 'kg', progEx: null, draft: null, importDays: null, restoreData: null, pose: 'Trước', cmpA: null, cmpB: null };
+const POSES = ['Trước', 'Nghiêng', 'Sau'];
+let pendingConfirm = null, deferredInstall = null, wake = null, audio = null;
+
+function render(keepScroll) {
+  const y = window.scrollY;
+  const v = $('#view');
+  v.innerHTML = ui.tab === 'today' ? viewToday() : ui.tab === 'plan' ? viewPlan() : ui.tab === 'week' ? viewWeek() : ui.tab === 'body' ? viewBody() : viewMore();
+  $$('.nav [data-tab]').forEach(b => { if (b.dataset.tab === ui.tab) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  $('#dot-active').hidden = !state.active;
+  renderHeader();
+  hydratePhotos(v);
+  if (ui.tab === 'body') { drawBodyChart(); bindCompare(); }
+  if (ui.tab === 'today' && state.active) { requestWake(); updateProgress(); }
+  window.scrollTo(0, keepScroll ? y : 0);
+}
+function renderHeader() {
+  const n = (state.settings.name || '').trim();
+  $('#avatar').textContent = n ? n.split(/\s+/).map(w => w[0]).slice(-2).join('').toUpperCase() : 'ST';
+  $('#hello').textContent = n ? `Chào ${n}` : 'Sổ Tạ';
+  const d = new Date(); $('#today-l').textContent = `${DOWL[d.getDay()]}, ${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
+  const c = cycleInfo();
+  $('#cycle').innerHTML = !c ? '' : c.week > c.every ? '<span class="cycle deload">Tuần deload</span>' : `<span class="cycle">Tuần ${c.week}/${c.every}</span>`;
+}
+
+function deloadBanner() {
+  if (!isDeload()) return '';
+  const c = cycleInfo();
+  return `<div class="banner"><span class="bi">${ICON.bolt}</span><div><b>Tuần deload</b><p>Bạn đã tập ${c.every} tuần liên tục. Tuần này app gợi ý giảm ~10% tạ và chỉ tập khoảng một nửa số set để cơ phục hồi rồi tăng tiếp.</p>
+    <button class="btn sm" data-act="deload-done">Xong deload, bắt đầu chu kỳ mới</button></div></div>`;
+}
+function recoveryHint() {
+  const B = [...state.body].sort((a, b) => a.date.localeCompare(b.date));
+  const last = B[B.length - 1]; if (!last || daysBetween(last.date, ymd()) > 1) return '';
+  const prev = B.filter(e => e !== last && daysBetween(e.date, last.date) <= 14);
+  const avg = k => { const v = prev.map(e => e[k]).filter(x => x != null); return v.length >= 4 ? v.reduce((a, x) => a + x, 0) / v.length : null; };
+  const msg = [];
+  const hr = avg('restHR'); if (hr != null && last.restHR != null && last.restHR >= hr + 5) msg.push(`nhịp tim nghỉ cao hơn mức thường ngày khoảng ${Math.round(last.restHR - hr)} bpm`);
+  const hv = avg('hrv'); if (hv != null && last.hrv != null && last.hrv <= hv * 0.85) msg.push(`HRV thấp hơn mức thường ngày khoảng ${Math.round((1 - last.hrv / hv) * 100)}%`);
+  if (!msg.length) return '';
+  return `<div class="banner info"><span class="bi">${ICON.heart}</span><div><b>Cơ thể có thể chưa hồi phục hết</b><p>Số đo gần nhất cho thấy ${msg.join(' và ')}. Cân nhắc tập nhẹ hơn hoặc ngủ thêm hôm nay.</p></div></div>`;
+}
+
+/* ---------- TAB: TẬP ---------- */
+function lastSessionOfDay(id) { let best = null; for (const s of state.sessions) if (s.dayId === id && (!best || s.startedAt > best.startedAt)) best = s; return best; }
+function nextDayId() {
+  let id = null, oldest = Infinity;
+  for (const d of state.days) { const l = lastSessionOfDay(d.id); const t = l ? l.startedAt : -1; if (t < oldest) { oldest = t; id = d.id; } }
+  return id;
+}
+const sched = () => state.settings.schedule || {};
+const hasSchedule = () => Object.values(sched()).some(v => v && findDay(v));
+function schedNext() {
+  if (!hasSchedule()) return null;
+  const today = ymd();
+  for (let k = 0; k < 8; k++) {
+    const date = addDays(today, k), id = sched()[parseYmd(date).getDay()];
+    if (!id || !findDay(id)) continue;
+    if (k === 0 && state.sessions.some(s => s.date === today && s.dayId === id)) continue;
+    return { dayId: id, date, k };
+  }
+  return null;
+}
+function dotsHtml(days, ws) {
+  const today = ymd();
+  return `<div class="dots">${days.map(d => { const dt = parseYmd(d), on = ws.some(s => s.date === d), plan = !on && d >= today && sched()[dt.getDay()] && findDay(sched()[dt.getDay()]);
+    return `<div class="${on ? 'on' : ''} ${plan ? 'plan' : ''} ${d === today ? 'today' : ''}">${DOW[dt.getDay()]}<i>${dt.getDate()}</i></div>`; }).join('')}</div>`;
+}
+function bodyPhotoBanner() {
+  const P = state.bodyPhotos; if (!P.length) return '';
+  const last = P.reduce((a, b) => a.date > b.date ? a : b).date, n = daysBetween(last, ymd());
+  if (n < 28) return '';
+  return `<div class="banner"><span class="bi">${ICON.cam}</span><div><b>Đến lúc chụp ảnh body tháng này</b><p>Đã ${n} ngày kể từ lần chụp trước. Chụp lại để so sánh trước và sau.</p><button class="btn sm" data-act="tab" data-tab="body">Mở mục ảnh body</button></div></div>`;
+}
+function viewToday() {
+  if (state.active) return viewSession(state.active);
+  let h = deloadBanner() + recoveryHint() + bodyPhotoBanner();
+  if (!state.days.length) return h + onboarding();
+  const today = ymd(), si = schedNext(), tm = state.settings.remindTime || '';
+  let nid = nextDayId(), eyebrow = 'Buổi tiếp theo';
+  if (si) {
+    nid = si.dayId; const dt = parseYmd(si.date);
+    eyebrow = si.k === 0 ? `Hôm nay theo lịch${tm ? ' · ' + tm : ''}` : `Buổi tới · ${DOWL[dt.getDay()]} ${dm(si.date)}${tm ? ' · ' + tm : ''}`;
+    const doneToday = state.sessions.some(s => s.date === today);
+    if (si.k > 0) h += doneToday ? `<div class="restcard"><span class="bi">${ICON.check}</span><div><b>Đã xong buổi hôm nay</b>Nghỉ ngơi và ăn đủ đạm để cơ phục hồi.</div></div>`
+      : `<div class="restcard"><span class="bi">${ICON.moon}</span><div><b>Hôm nay nghỉ theo lịch</b>Cơ lớn lên trong lúc nghỉ. Muốn tập thêm vẫn bấm bắt đầu được.</div></div>`;
+  }
+  const nd = findDay(nid), l = lastSessionOfDay(nid);
+  const nsets = nd.exercises.reduce((a, e) => a + e.sets, 0);
+  const y = addDays(today, -1), yId = sched()[parseYmd(y).getDay()];
+  const missed = yId && findDay(yId) && !state.sessions.some(s => s.date === y) ? `<div class="meta miss">Hôm qua lỡ buổi ${esc(findDay(yId).name)}</div>` : '';
+  h += `<section class="hero"><div class="eyebrow">${eyebrow}</div><div class="h1">${esc(nd.name)}</div>
+    <div class="meta">${nd.exercises.length} bài · ${nsets} set · ${l ? 'lần cuối ' + ago(l.date) : 'chưa tập lần nào'}</div>${missed}<ul>`;
+  nd.exercises.slice(0, 4).forEach(ex => { const sg = suggest(ex);
+    h += `<li><span>${esc(shortName(ex.name))}</span><b class="${sg.kind === 'up' ? 'up' : ''}">${sg.kg != null ? fmt(sg.kg) + ' kg' : '—'}${sg.kind === 'up' ? ' ▲' : ''}</b></li>`; });
+  if (nd.exercises.length > 4) h += `<li class="more">+${nd.exercises.length - 4} bài khác</li>`;
+  h += `</ul><button class="btn gold big" data-act="start-day" data-id="${nid}" ${nd.exercises.length ? '' : 'disabled'}>${ICON.play} Bắt đầu tập</button></section>`;
+  const others = state.days.filter(d => d.id !== nid);
+  if (others.length) {
+    h += `<section class="sec"><div class="sec-head"><h2 class="h">Ngày tập khác</h2></div><div class="hscroll">`;
+    for (const d of others) { const ls = lastSessionOfDay(d.id);
+      h += `<button type="button" class="dcard" data-act="start-day" data-id="${d.id}"><b>${esc(d.name)}</b><span>${d.exercises.length} bài</span><span class="last">${ls ? ago(ls.date) : 'Chưa tập'}</span></button>`; }
+    h += `</div></section>`;
+  }
+  const ups = allEx().map(x => ({ ...x, sg: suggest(x.ex) })).filter(x => x.sg.kind === 'up');
+  if (ups.length) {
+    h += `<section class="sec"><div class="sec-head"><h2 class="h">Tuần này tăng tạ</h2><span class="chip">${ups.length} bài</span></div><div class="list">`;
+    for (const x of ups.slice(0, 6)) h += `<button type="button" class="li" data-act="prog" data-id="${x.ex.id}"><span style="min-width:0"><span class="lt">${esc(shortName(x.ex.name))}</span><span class="ls">${esc(x.dayName)}</span></span>
+      <span class="lr"><span class="ls tn">${fmt(x.sg.prev)} kg</span> <span class="arrow">→</span> <span class="big" style="color:var(--up)">${fmt(x.sg.kg)}</span></span></button>`;
+    h += `</div></section>`;
+  }
+  const days = weekDaysOf(0); const ws = state.sessions.filter(s => s.date >= days[0] && s.date <= days[6]);
+  const sets = ws.reduce((a, s) => a + s.entries.reduce((b, e) => b + e.sets.length + (e.drop ? 1 : 0), 0), 0);
+  const vol = ws.reduce((a, s) => a + s.entries.reduce((b, e) => b + e.sets.reduce((x, y) => x + (y.kg || 0) * y.reps, 0), 0), 0);
+  h += `<section class="sec"><div class="sec-head"><h2 class="h">Tuần này</h2><button class="link" data-act="tab" data-tab="week">Xem tiến độ ›</button></div>
+    <div class="card wk">${dotsHtml(days, ws)}
+    <div class="kpis"><div class="kpi"><div class="k">${ws.length}</div><div class="l">buổi tập</div></div><div class="kpi"><div class="k">${sets}</div><div class="l">set</div></div><div class="kpi"><div class="k">${fmt(vol / 1000, 1)}</div><div class="l">tấn tạ</div></div></div></div></section>`;
+  return h;
+}
+function onboarding() {
+  return `<section class="hero"><div class="eyebrow">Chào mừng</div><div class="h1">Cuốn sổ tạ trong túi bạn</div>
+    <p class="sub">Tạo các ngày tập, điền mức tạ đang tập, chụp ảnh máy. Mỗi tuần app nhắc bạn nên lên bao nhiêu kg cho từng bài.</p>
+    <div class="stack" style="margin-top:18px"><button class="btn gold big" data-act="onb-new">Tạo ngày tập đầu tiên</button>
+    <button class="btn big" data-act="onb-sample">Dùng giáo án mẫu 4 ngày</button>
+    <button class="btn ghost big" data-act="import-open">Nhập giáo án người khác gửi</button></div></section>`;
+}
+function thumbHtml(ex) {
+  const id = ex.photos && ex.photos[0];
+  return id ? `<img class="thumb" data-photo="${id}" alt="">` : `<span class="thumb">${ICON.cam}</span>`;
+}
+function viewSession(a) {
+  let h = `<section class="sbar"><div class="sbar-top"><div><div class="eyebrow">Đang tập · ${DOW[parseYmd(a.date).getDay()]} ${dm(a.date)}${a.deload ? ' · deload' : ''}</div><div class="h1">${esc(a.dayName)}</div></div>
+    <div class="elapsed" id="elapsed">${fmtDur(Date.now() - a.startedAt)}</div></div><div class="prog"><i id="prog-bar"></i></div><div class="prog-l" id="prog-l"></div></section>`;
+  a.entries.forEach((en, i) => { h += entryCard(en, i); });
+  h += `<div class="sess-actions"><button class="btn gold big" data-act="finish">Kết thúc buổi tập</button><button class="btn ghost" data-act="cancel-session">Huỷ buổi này</button></div>`;
+  return h;
+}
+function updateProgress() {
+  const a = state.active; if (!a) return;
+  let done = 0, total = 0; for (const en of a.entries) { total += en.sets.length + (en.drop ? 1 : 0); done += en.sets.filter(s => s.done).length + (en.drop && en.drop.done ? 1 : 0); }
+  const b = $('#prog-bar'), l = $('#prog-l'); if (b) b.style.width = (total ? done / total * 100 : 0) + '%'; if (l) l.textContent = `${done}/${total} set đã xong · bấm ✓ sau mỗi set để lưu và đếm giờ nghỉ`;
+}
+function exOrSnap(en) {
+  return findEx(en.exId) || { id: en.exId, name: en.name, muscle: en.muscle, type: 'upper', sets: en.sets.length, repTarget: 10, repMin: 8, repMax: 12, step: 2.5, rest: 120, setup: '', photos: [], ghost: true };
+}
+function stepper(i, j, f, v, label) {
+  return `<div class="stepper"><button type="button" data-act="step" data-e="${i}" data-s="${j}" data-f="${f}" data-d="-1" aria-label="Giảm ${label}">−</button>
+    <input data-bind="set" data-e="${i}" data-s="${j}" data-f="${f}" inputmode="decimal" autocomplete="off" value="${fmtIn(v)}" aria-label="${label}">
+    <button type="button" data-act="step" data-e="${i}" data-s="${j}" data-f="${f}" data-d="1" aria-label="Tăng ${label}">+</button></div>`;
+}
+function setRow(i, j, s, label) {
+  return `<div class="setrow ${s.done ? 'done' : ''} ${j === 'drop' ? 'drop' : ''}" id="row-${i}-${j}"><span class="setno">${label}</span>${stepper(i, j, 'kg', s.kg, 'kg')}${stepper(i, j, 'reps', s.reps, 'rep')}
+    <button type="button" class="check" data-act="set-done" data-e="${i}" data-s="${j}" aria-pressed="${!!s.done}" aria-label="Xong set ${label}">${ICON.check}</button></div>`;
+}
+function warmSets(ex, W) {
+  if (!(W > 0)) return [];
+  const scheme = W >= 40 ? [[0.5, 10], [0.7, 5], [0.85, 2]] : [[0.5, 10], [0.75, 5]];
+  const out = [];
+  for (const [p, r] of scheme) { const kg = roundStep(W * p, ex.step > 0 ? ex.step : 1); if (kg > 0 && kg < W && !out.some(o => o.kg === kg)) out.push({ kg, reps: r }); }
+  return out;
+}
+function warmInner(en, i) {
+  const ex = exOrSnap(en), ws = warmSets(ex, en.sets[0] && en.sets[0].kg);
+  if (!ws.length) return '<span class="note-line" style="margin:0">Nhập mức tạ để app tính set khởi động.</span>';
+  en.warm = en.warm || [];
+  return ws.map((w, k) => `<button type="button" data-act="warm" data-e="${i}" data-w="${k}" aria-pressed="${!!en.warm[k]}">${fmt(w.kg)}<small>×${w.reps}</small></button>`).join('');
+}
+function needsWarm(en, i) {
+  const ex = exOrSnap(en); if (ex.ghost || !ex.warmup) return false;
+  return !state.active.entries.slice(0, i).some(o => { const e2 = exOrSnap(o); return o.muscle === en.muscle && e2.warmup; });
+}
+function camInput(exId) { return `<input type="file" accept="image/*" capture="environment" id="cap-${exId}" data-cap="${exId}" hidden>`; }
+function entryCard(en, i) {
+  const ex = exOrSnap(en), sg = suggest(ex), last = workHistory(ex)[0];
+  let h = `<article class="ex">`;
+  if (!ex.ghost) {
+    if (ex.photos.length) h += `<div class="ex-photo"><button type="button" style="all:unset;display:block;width:100%;height:100%;cursor:pointer" data-act="view-photo" data-ex="${ex.id}" aria-label="Xem ảnh máy tập"><img data-photo="${ex.photos[0]}" alt="Ảnh máy ${esc(ex.name)}"></button>
+      ${ex.photos.length > 1 ? `<span class="cnt">${ex.photos.length} ảnh</span>` : ''}<label class="camfab" for="cap-${ex.id}" aria-label="Chụp thêm ảnh">${ICON.cam}</label>${camInput(ex.id)}</div>`;
+    else h += `<label class="cam-empty" for="cap-${ex.id}"><span class="ci">${ICON.cam}</span><span><b>Chụp ảnh máy tập</b>Bấm để mở camera, lưu cách chỉnh máy cho lần sau</span></label>${camInput(ex.id)}`;
+  }
+  const tReps = en.sets[0] ? en.sets[0].reps : sg.reps[0];
+  h += `<div class="ex-body"><div class="ex-head"><div style="min-width:0"><div class="ex-name">${esc(ex.name)}</div><div class="ex-sub">${esc(ex.muscle)} · ${ex.sets}×${ex.repTarget || 10} · nghỉ ${fmtDur(ex.rest * 1000)}</div></div><span class="badge ${sg.kind}">${sg.label}</span></div>
+    <div class="target"><div><div class="tl">Mục tiêu hôm nay</div><div class="tv ${sg.kind === 'up' ? 'up' : ''}">${sg.kg != null ? fmt(sg.kg) : '—'}<small> kg × ${tReps ?? '–'}</small></div></div>
+    ${last ? `<div class="prev">Lần trước ${dm(last.date)}<b class="tn">${fmt(wt(last))} kg × ${last.sets.map(s => s.reps).join('·')}</b></div>` : ''}</div>
+    <p class="sug">${sg.text}</p>`;
+  if (ex.setup) h += `<details class="setup"><summary>Cách chỉnh máy ›</summary><p>${esc(ex.setup)}</p></details>`;
+  if (needsWarm(en, i)) h += `<div class="warm"><div class="warm-h">${ICON.flame} Set khởi động<span>không tính vào khối lượng</span></div><div class="warm-sets" id="warm-${i}">${warmInner(en, i)}</div></div>`;
+  h += `<div class="sets"><div class="sethead"><span></span><span>Kg</span><span>Rep</span><span></span></div>`;
+  en.sets.forEach((s, j) => { h += setRow(i, j, s, j + 1); });
+  if (en.drop) h += setRow(i, 'drop', en.drop, 'D');
+  h += `</div><div class="tools"><button class="btn sm" data-act="add-set" data-e="${i}">+ Set</button>
+    ${en.sets.length > 1 ? `<button class="btn sm ghost" data-act="rm-set" data-e="${i}">− Set</button>` : ''}
+    <button class="btn sm ${en.drop ? 'ghost' : ''}" data-act="drop-toggle" data-e="${i}">${en.drop ? 'Bỏ drop set' : '+ Drop set'}</button></div>
+    <textarea class="note" data-bind="note" data-e="${i}" rows="1" placeholder="Ghi chú: đau, form, cảm giác…">${esc(en.note || '')}</textarea></div></article>`;
+  return h;
+}
+function startSession(dayId) {
+  if (state.active) { ui.tab = 'today'; render(); return; }
+  const d = findDay(dayId); if (!d) return;
+  if (!d.exercises.length) { toast('Ngày này chưa có bài tập. Thêm bài trong Giáo án.'); return; }
+  const dl = isDeload();
+  state.active = { id: uid(), dayId: d.id, dayName: d.name, date: ymd(), startedAt: Date.now(), deload: dl,
+    entries: d.exercises.map(ex => {
+      const sg = suggest(ex);
+      const n = sg.kind === 'deload' ? Math.max(1, Math.ceil(ex.sets / 2)) : ex.sets;
+      return { exId: ex.id, name: ex.name, muscle: ex.muscle, note: '',
+        sets: Array.from({ length: n }, (_, j) => ({ kg: sg.kg, reps: sg.reps[j] ?? ex.repTarget, done: false })),
+        drop: ex.dropSet && sg.kind !== 'deload' ? { kg: sg.kg != null ? roundStep(sg.kg * 0.7, ex.step) : null, reps: null, done: false } : null };
+    }) };
+  save(); ui.tab = 'today'; render();
+}
+function refreshWarm(i) { const box = $('#warm-' + i); if (box && state.active) box.innerHTML = warmInner(state.active.entries[i], i); }
+function getSet(i, j) { const en = state.active.entries[i]; return j === 'drop' ? en.drop : en.sets[+j]; }
+
+/* ---------- đồng hồ nghỉ ---------- */
+const rest = { end: 0, total: 0, iv: null, hideT: null };
+function startRest(sec) {
+  clearTimeout(rest.hideT); clearInterval(rest.iv);
+  rest.total = sec * 1000; rest.end = Date.now() + rest.total;
+  $('#rest').hidden = false; document.body.classList.add('resting'); $('#rest-l').textContent = 'Đang nghỉ';
+  tickRest(); rest.iv = setInterval(tickRest, 250);
+}
+function tickRest() {
+  const left = rest.end - Date.now();
+  if (left <= 0) { clearInterval(rest.iv); $('#rest-t').textContent = '0:00'; $('#rest-l').textContent = 'Hết giờ nghỉ · vào set tiếp'; $('#rest-bar').style.transform = 'scaleX(0)';
+    try { navigator.vibrate && navigator.vibrate([250, 120, 250]); } catch (e) {} beep();
+    rest.hideT = setTimeout(() => { $('#rest').hidden = true; document.body.classList.remove('resting'); }, 6000); return; }
+  $('#rest-t').textContent = fmtDur(left + 999); $('#rest-bar').style.transform = `scaleX(${Math.min(1, left / rest.total)})`;
+}
+function stopRest() { clearInterval(rest.iv); clearTimeout(rest.hideT); $('#rest').hidden = true; document.body.classList.remove('resting'); }
+function initAudio() { try { if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch (e) { audio = null; } }
+function beep() {
+  if (!audio) return;
+  try { [0, 0.25].forEach(t => { const o = audio.createOscillator(), g = audio.createGain(); o.frequency.value = 880; o.connect(g); g.connect(audio.destination);
+    const s = audio.currentTime + t; g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(0.3, s + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, s + 0.18); o.start(s); o.stop(s + 0.2); }); } catch (e) {}
+}
+async function requestWake() { try { if (!wake && 'wakeLock' in navigator && document.visibilityState === 'visible') { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } } catch (e) { wake = null; } }
+function releaseWake() { try { wake && wake.release(); } catch (e) {} wake = null; }
+
+function finishSummary() {
+  const a = state.active; let sets = 0, vol = 0; const prs = [];
+  for (const en of a.entries) {
+    const done = en.sets.filter(s => s.done && s.reps > 0);
+    sets += done.length + (en.drop && en.drop.done && en.drop.reps > 0 ? 1 : 0);
+    vol += done.reduce((x, s) => x + (s.kg || 0) * s.reps, 0) + (en.drop && en.drop.done ? (en.drop.kg || 0) * (en.drop.reps || 0) : 0);
+    const best = Math.max(0, ...done.map(s => e1rm(s.kg || 0, s.reps)));
+    const prev = Math.max(0, ...exHistory(en.exId).map(bestE1));
+    if (best > 0 && prev > 0 && best > prev + 0.01) prs.push({ name: en.name, best, prev });
+  }
+  if (!sets) { confirmSheet({ title: 'Chưa có set nào xong', text: 'Bấm ✓ ở các set đã tập rồi kết thúc. Nếu hôm nay không tập, bạn có thể huỷ buổi này.', ok: 'Huỷ buổi này', danger: true, onOk: discardSession }); return; }
+  let h = `<h3 class="sh-title">Kết thúc ${esc(a.dayName)}?</h3>
+    <div class="kpis" style="margin-top:14px"><div class="kpi"><div class="k">${fmtDur(Date.now() - a.startedAt)}</div><div class="l">thời gian</div></div>
+    <div class="kpi"><div class="k">${sets}</div><div class="l">set</div></div><div class="kpi"><div class="k">${fmt(vol / 1000, 2)}</div><div class="l">tấn tạ</div></div></div>`;
+  if (prs.length) { h += `<div class="eyebrow" style="margin-top:18px">Kỷ lục mới · 1RM ước tính</div>`; for (const p of prs) h += `<div class="pr"><span>${esc(shortName(p.name))}</span><span class="tn"><b style="color:var(--up)">${fmt(p.best)} kg</b> <span class="muted">(trước ${fmt(p.prev)})</span></span></div>`; }
+  h += `<div class="sh-actions"><button class="btn gold big" data-act="save-session">Lưu buổi tập</button><button class="btn ghost" data-act="close-sheet">Tập tiếp</button></div>`;
+  openSheet(h);
+}
+function saveSession() {
+  const a = state.active;
+  a.finishedAt = Date.now();
+  a.entries = a.entries.map(en => ({ ...en, sets: en.sets.filter(s => s.done && s.reps > 0).map(s => ({ kg: s.kg ?? 0, reps: s.reps })),
+    drop: en.drop && en.drop.done && en.drop.reps > 0 ? { kg: en.drop.kg ?? 0, reps: en.drop.reps } : null, warm: undefined })).filter(en => en.sets.length || en.drop);
+  state.sessions.push(a);
+  if (!a.deload) for (const en of a.entries) { const ex = findEx(en.exId); if (ex && en.sets.length) { ex.currentKg = Math.max(...en.sets.map(s => s.kg || 0)); ex.kgSetAt = null; } }
+  state.active = null;
+  if (!state.settings.cycleStart) state.settings.cycleStart = a.date;
+  save(); stopRest(); releaseWake(); closeSheet(); render(); toast('Đã lưu buổi tập');
+}
+function discardSession() { state.active = null; save(); stopRest(); releaseWake(); render(); toast('Đã huỷ buổi tập'); }
+
+/* ---------- TAB: GIÁO ÁN ---------- */
+function viewPlan() {
+  let h = `<section class="sec"><div class="sec-head"><h2 class="h1">Giáo án</h2><button class="btn sm gold" data-act="add-day">+ Ngày tập</button></div>`;
+  if (!state.days.length) h += `<div class="empty">Chưa có ngày tập nào. Bấm “+ Ngày tập” để tạo, ví dụ Lưng, Ngực, Chân. Hoặc vào tab Tôi để nhập giáo án người khác gửi.</div>`;
+  state.days.forEach((d, i) => {
+    const open = ui.openDay === d.id;
+    h += `<article class="pday ${open ? 'open' : ''}"><button type="button" class="pday-h" data-act="toggle-day" data-id="${d.id}" aria-expanded="${open}">
+      <span class="t"><b>${esc(d.name)}</b><span>${d.exercises.length} bài · ${d.exercises.reduce((a, e) => a + e.sets + (e.dropSet ? 1 : 0), 0)} set${d.sample ? ' · mẫu' : ''}</span></span>${ICON.chev}</button>`;
+    if (open) {
+      h += `<ol class="exl">`;
+      d.exercises.forEach((ex, j) => {
+        const b = baseKg(ex), sg = suggest(ex);
+        const sub = b == null ? '<span class="none">Điền mức tạ</span>' : sg.kind === 'up' ? `<span>▲ ${fmt(sg.kg)} tuần này</span>` : sg.next ? `<span>▲ ${fmt(sg.next)} tuần sau</span>` : ex.targetKg ? `<span style="color:var(--muted)">mục tiêu ${fmt(ex.targetKg)}</span>` : '';
+        h += `<li class="exr"><button type="button" class="exr-main" data-act="edit-ex" data-day="${d.id}" data-id="${ex.id}">${thumbHtml(ex)}
+          <span class="t"><span class="n">${esc(ex.name)}</span><span class="m">${esc(ex.muscle)} · ${ex.sets}×${ex.repTarget}${ex.dropSet ? ' + drop' : ''}</span></span>
+          <span class="exr-kg"><b>${b != null ? fmt(b) + ' kg' : '—'}</b>${sub}</span></button>
+          <div class="mv"><button type="button" data-act="move-ex" data-day="${d.id}" data-id="${ex.id}" data-d="-1" aria-label="Đưa lên" ${j === 0 ? 'disabled' : ''}>${ICON.up}</button>
+          <button type="button" data-act="move-ex" data-day="${d.id}" data-id="${ex.id}" data-d="1" aria-label="Đưa xuống" ${j === d.exercises.length - 1 ? 'disabled' : ''}>${ICON.down}</button></div></li>`;
+      });
+      if (!d.exercises.length) h += `<li class="exr muted small">Chưa có bài tập.</li>`;
+      h += `</ol><div class="pday-a"><button class="btn sm gold" data-act="add-ex" data-day="${d.id}">+ Bài tập</button>
+        <button class="btn sm" data-act="rename-day" data-id="${d.id}">Đổi tên</button>
+        <button class="btn sm" data-act="move-day" data-id="${d.id}" data-d="-1" ${i === 0 ? 'disabled' : ''} aria-label="Đưa ngày lên">${ICON.up}</button>
+        <button class="btn sm" data-act="move-day" data-id="${d.id}" data-d="1" ${i === state.days.length - 1 ? 'disabled' : ''} aria-label="Đưa ngày xuống">${ICON.down}</button>
+        <button class="btn sm ghost danger" data-act="del-day" data-id="${d.id}">Xoá</button></div>`;
+    }
+    h += `</article>`;
+  });
+  return h + `</section>`;
+}
+function dayNameSheet(day) {
+  openSheet(`<h3 class="sh-title">${day ? 'Đổi tên ngày tập' : 'Ngày tập mới'}</h3>
+    <label class="f full" style="margin-top:12px">Tên ngày tập<input class="inp" id="f-dayname" maxlength="40" value="${esc(day ? day.name : '')}" placeholder="Ví dụ: Lưng"></label>
+    <div class="qpick">${['Lưng', 'Ngực', 'Chân', 'Vai', 'Tay', 'Ngực + Tay sau', 'Lưng + Tay trước', 'Push', 'Pull', 'Legs', 'Toàn thân'].map(n => `<button type="button" data-act="qpick" data-v="${n}">${n}</button>`).join('')}</div>
+    <div class="sh-actions"><button class="btn gold big" data-act="save-day" data-id="${day ? day.id : ''}">Lưu</button><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
+}
+const restOpts = (v) => [60, 75, 90, 120, 150, 180, 240].map(s => `<option value="${s}" ${s === v ? 'selected' : ''}>${fmtDur(s * 1000)} phút</option>`).join('');
+function exSheet() {
+  const d = ui.draft;
+  const opt = (arr, v) => arr.map(([val, lab]) => `<option value="${esc(val)}" ${val === v ? 'selected' : ''}>${esc(lab)}</option>`).join('');
+  const dbl = state.settings.progMode === 'double';
+  const hasHist = !d.isNew && workHistory(d).length > 0;
+  openSheet(`<h3 class="sh-title">${d.isNew ? 'Thêm bài tập' : 'Sửa bài tập'}</h3>
+    <div class="fsec"><div class="formgrid">
+      <label class="f full">Tên bài tập<input class="inp" id="f-name" list="lib" maxlength="80" value="${esc(d.name)}" placeholder="Gõ để chọn, ví dụ: Kéo xô"></label>
+      <datalist id="lib">${LIB.map(l => `<option value="${esc(l[0])}">`).join('')}</datalist>
+      <label class="f">Nhóm cơ chính<select class="inp" id="f-muscle">${opt(MUSCLES.map(m => [m, m]), d.muscle)}</select></label>
+      <label class="f">Loại bài<select class="inp" id="f-type">${opt(Object.entries(TYPES).map(([k, t]) => [k, t.label]), d.type)}</select></label>
+    </div></div>
+    <div class="fsec"><span class="eyebrow">Mức tạ</span><div class="formgrid">
+      <label class="f"><span>Đang tập <span class="unit">kg</span></span><input class="inp kg" id="f-cur" inputmode="decimal" value="${fmtIn(d.isNew ? d.currentKg : baseKg(d))}" placeholder="40"></label>
+      <label class="f"><span>Mục tiêu <span class="unit">kg</span></span><input class="inp kg" id="f-tgt" inputmode="decimal" value="${fmtIn(d.targetKg)}" placeholder="Tuỳ chọn"></label>
+      <label class="f"><span>Bước tăng <span class="unit">kg</span></span><input class="inp" id="f-step" inputmode="decimal" value="${fmtIn(d.step)}"></label>
+      <p class="fhint" style="align-self:end;padding-bottom:6px">Nấc nhỏ nhất của máy hoặc cặp tạ, ví dụ 2,5 hay 5 kg.</p>
+      ${hasHist ? `<p class="fhint full">Ô “Đang tập” tự cập nhật sau mỗi buổi. Sửa tay nếu bạn đã tập mức khác ở ngoài app.</p>` : ''}
+    </div><div id="f-road" style="margin-top:12px"></div></div>
+    <div class="fsec"><span class="eyebrow">Set & rep</span><div class="formgrid">
+      <label class="f">Số set<input class="inp" id="f-sets" inputmode="numeric" value="${d.sets}"></label>
+      <label class="f">Rep mục tiêu<input class="inp" id="f-rtgt" inputmode="numeric" value="${d.repTarget}"></label>
+      <label class="f">Rep tối thiểu<input class="inp" id="f-rmin" inputmode="numeric" value="${d.repMin}"></label>
+      ${dbl ? `<label class="f">Rep tối đa<input class="inp" id="f-rmax" inputmode="numeric" value="${d.repMax}"></label><label class="f full">Nghỉ giữa set<select class="inp" id="f-rest">${restOpts(d.rest)}</select></label>`
+            : `<label class="f">Nghỉ giữa set<select class="inp" id="f-rest">${restOpts(d.rest)}</select></label>`}
+      <label class="toggle full">Có drop set<input type="checkbox" id="f-drop" ${d.dropSet ? 'checked' : ''}></label>
+      <label class="toggle full"><span>Gợi ý set khởi động<br><span class="fhint">Chỉ hiện ở bài đầu tiên của mỗi nhóm cơ trong buổi</span></span><input type="checkbox" id="f-warm" ${d.warmup ? 'checked' : ''}></label>
+    </div></div>
+    <div class="fsec"><span class="eyebrow">Ảnh máy tập & cách chỉnh máy</span>
+      <div class="photos" id="f-photos">${d.photos.map(id => `<div class="ph"><img data-photo="${id}" alt=""><button type="button" data-act="ph-rm" data-id="${id}" aria-label="Xoá ảnh">${ICON.x}</button></div>`).join('')}
+        <label class="addph" for="f-photo-cam">${ICON.cam}Chụp ảnh</label><label class="addph lib" for="f-photo-lib">${ICON.img}Thư viện</label></div>
+      <input type="file" id="f-photo-cam" accept="image/*" capture="environment" hidden><input type="file" id="f-photo-lib" accept="image/*" multiple hidden>
+      <label class="f full" style="margin-top:12px">Cách chỉnh máy<textarea class="inp" id="f-setup" placeholder="Ví dụ: ghế nấc 4, đệm đùi nấc 3, tay cầm rộng">${esc(d.setup)}</textarea></label></div>
+    <div class="sh-actions"><button class="btn gold big" data-act="save-ex">Lưu bài tập</button>
+      ${d.isNew ? '' : '<button class="btn ghost danger" data-act="del-ex">Xoá bài tập</button>'}<button class="btn ghost" data-act="cancel-ex">Huỷ</button></div>`);
+  hydratePhotos($('#sheet-body')); draftRoad();
+}
+function readDraft() {
+  const d = ui.draft; const v = id => $(id) ? $(id).value : null;
+  d.name = (v('#f-name') || '').trim(); d.muscle = v('#f-muscle'); d.type = v('#f-type');
+  d.sets = num(v('#f-sets')); d.repTarget = num(v('#f-rtgt')); d.repMin = num(v('#f-rmin'));
+  if ($('#f-rmax')) d.repMax = num(v('#f-rmax'));
+  d.step = num(v('#f-step')); d.rest = +v('#f-rest'); d.dropSet = $('#f-drop').checked; d.warmup = $('#f-warm').checked; d.setup = (v('#f-setup') || '').trim();
+  d.curIn = num(v('#f-cur')); d.targetKg = num(v('#f-tgt'));
+}
+function roadHtml(ex, r) {
+  if (!r) return '';
+  let h = `<div class="road">${r.weeks.map(w => `<div class="${w.i === 0 ? 'now' : ''} ${w.dl ? 'dl' : ''} ${ex.targetKg && w.kg >= ex.targetKg && !w.dl ? 'hit' : ''}"><span>${w.i === 0 ? 'Tuần này' : w.i === 1 ? 'Tuần sau' : 'Tuần ' + dm(w.date)}${w.dl ? ' · deload' : ''}</span><b>${fmt(w.kg)}</b></div>`).join('')}</div>`;
+  if (ex.targetKg) h += `<p class="eta">${r.hitWeek == null ? `Mục tiêu <b>${fmt(ex.targetKg)} kg</b> cần hơn 3 năm theo tốc độ hiện tại. Thử đặt mục tiêu gần hơn.` : r.hitWeek === 0 ? `Bạn đã ở mức mục tiêu <b>${fmt(ex.targetKg)} kg</b>. Đặt mục tiêu mới nhé.` : `Dự kiến đạt <b>${fmt(ex.targetKg)} kg</b> sau khoảng <b>${r.hitWeek} tuần</b> (tuần ${dm(r.hitDate)}), nếu tuần nào cũng đạt đủ rep.`}</p>`;
+  else h += `<p class="eta">Lộ trình giả định tuần nào cũng đạt đủ ${ex.sets}×${ex.repTarget}. Tuần nào chưa đạt thì app giữ mức tạ.</p>`;
+  return h;
+}
+function draftRoad() {
+  const box = $('#f-road'); if (!box || !ui.draft) return;
+  readDraft();
+  const d = ui.draft;
+  if (d.curIn == null || !(d.step > 0)) { box.innerHTML = '<p class="eta">Điền mức tạ đang tập để xem lộ trình tăng tạ các tuần tới.</p>'; return; }
+  const changed = d.isNew || d.curIn !== baseKg(d);
+  const tmp = { ...d, id: d.isNew ? '__draft' : d.id, currentKg: d.curIn, kgSetAt: changed ? Date.now() : d.kgSetAt, sets: d.sets || 3, repTarget: d.repTarget || 10, repMin: d.repMin || 8 };
+  box.innerHTML = roadHtml(tmp, roadmap(tmp, 8));
+}
+async function compressImage(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    let out = '';
+    for (const [max, q] of [[1200, 0.74], [1100, 0.62], [960, 0.55], [800, 0.5], [640, 0.45]]) {
+      const sc = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * sc); c.height = Math.round(img.naturalHeight * sc);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      out = c.toDataURL('image/jpeg', q);
+      if (out.length < 230000) break;
+    }
+    return out;
+  } finally { URL.revokeObjectURL(url); }
+}
+async function storePhoto(file) { const data = await compressImage(file); const id = uid(); await DB.put('photos', id, data); photoCache.set(id, data); return id; }
+const photoCache = new Map();
+async function hydratePhotos(root) {
+  for (const img of $$('img[data-photo]', root)) {
+    const id = img.dataset.photo; let src = photoCache.get(id);
+    if (!src) { src = await DB.get('photos', id); if (src) photoCache.set(id, src); }
+    if (src) img.src = src;
+  }
+}
+
+/* ---------- TAB: TIẾN ĐỘ ---------- */
+function weekDaysOf(off) {
+  const t = new Date(); t.setHours(0, 0, 0, 0);
+  const mon = new Date(t); mon.setDate(t.getDate() - (t.getDay() + 6) % 7 + off * 7);
+  return Array.from({ length: 7 }, (_, i) => { const d = new Date(mon); d.setDate(mon.getDate() + i); return ymd(d); });
+}
+function viewWeek() {
+  const days = weekDaysOf(ui.weekOff), today = ymd();
+  const ws = state.sessions.filter(s => s.date >= days[0] && s.date <= days[6]).sort((a, b) => a.startedAt - b.startedAt);
+  let sets = 0, vol = 0; const per = {};
+  for (const s of ws) for (const en of s.entries) { const n = en.sets.length + (en.drop ? 1 : 0); sets += n; per[en.muscle] = (per[en.muscle] || 0) + n;
+    vol += en.sets.reduce((a, x) => a + (x.kg || 0) * x.reps, 0) + (en.drop ? (en.drop.kg || 0) * en.drop.reps : 0); }
+  const label = ui.weekOff === 0 ? 'Tuần này' : ui.weekOff === -1 ? 'Tuần trước' : `${dm(days[0])} – ${dm(days[6])}`;
+  let h = `<section class="sec"><h2 class="h1" style="margin-bottom:14px">Tiến độ</h2><div class="weeknav"><button class="btn" data-act="week" data-d="-1" aria-label="Tuần trước">${ICON.chevL}</button>
+    <div><div class="wl">${label}</div><div class="small muted" style="text-align:center">${dm(days[0])} – ${dm(days[6])}</div></div>
+    <button class="btn" data-act="week" data-d="1" aria-label="Tuần sau" ${ui.weekOff >= 0 ? 'disabled' : ''}>${ICON.chevR}</button></div>
+    <div class="card wk">${dotsHtml(days, ws)}
+    <div class="kpis"><div class="kpi"><div class="k">${ws.length}</div><div class="l">buổi tập</div></div><div class="kpi"><div class="k">${sets}</div><div class="l">set</div></div><div class="kpi"><div class="k">${fmt(vol / 1000, 1)}</div><div class="l">tấn tạ</div></div></div></div></section>`;
+  h += viewProgressList();
+  const mset = new Set([...state.days.flatMap(d => d.exercises.map(e => e.muscle)), ...Object.keys(per)]);
+  const muscles = MUSCLES.filter(m => mset.has(m));
+  const { setMin: lo, setMax: hi } = state.settings;
+  h += `<section class="sec"><h3 class="h">Số set mỗi nhóm cơ</h3><p class="small muted" style="margin:2px 0 14px">Mục tiêu tăng cơ: ${lo}–${hi} set nặng mỗi nhóm cơ mỗi tuần. Drop set tính 1 set.</p>`;
+  if (!muscles.length) h += `<div class="empty">Thêm bài tập trong Giáo án để theo dõi số set từng nhóm cơ.</div>`;
+  else {
+    const scale = Math.max(hi * 1.25, ...muscles.map(m => per[m] || 0));
+    h += `<div class="card"><div class="vol">`;
+    for (const m of muscles) { const v = per[m] || 0; const st = v < lo ? ['st-low', 'Thiếu'] : v > hi ? ['st-high', 'Cao'] : ['st-ok', 'Đạt'];
+      h += `<div class="vrow"><span class="vn">${esc(m)}</span><div class="vtrack" role="img" aria-label="${esc(m)}: ${v} set"><span class="vband" style="left:${lo / scale * 100}%;width:${(hi - lo) / scale * 100}%"></span><span class="vfill" style="width:${v / scale * 100}%"></span></div>
+        <span class="vv">${v}<small class="${st[0]}">${st[1]}</small></span></div>`; }
+    h += `</div><div class="legend"><span><i></i>Vùng ${lo}–${hi} set</span></div></div>`;
+  }
+  h += `</section><section class="sec"><h3 class="h" style="margin-bottom:12px">Buổi đã tập</h3>`;
+  if (!ws.length) h += `<div class="empty">Chưa có buổi tập nào trong tuần này.</div>`;
+  else { h += `<div class="list">`; for (const s of [...ws].reverse()) { const n = s.entries.reduce((a, e) => a + e.sets.length + (e.drop ? 1 : 0), 0);
+    h += `<button type="button" class="li" data-act="open-session" data-id="${s.id}"><span><span class="lt">${esc(s.dayName)}</span><span class="ls">${DOW[parseYmd(s.date).getDay()]} ${dm(s.date)}${s.finishedAt ? ' · ' + fmtDur(s.finishedAt - s.startedAt) : ''}</span></span><span class="lr"><span class="big">${n}</span> <span class="ls">set</span></span></button>`; }
+    h += `</div>`; }
+  return h + `</section>`;
+}
+function viewProgressList() {
+  const exs = allEx(); if (!exs.length) return '';
+  let h = `<section class="sec"><h3 class="h">Lộ trình từng bài</h3><p class="small muted" style="margin:2px 0 12px">Mức tạ đang tập → mức tuần này. Bấm vào bài để xem lộ trình các tuần tới và biểu đồ.</p><div class="list">`;
+  for (const { ex, dayName } of exs) {
+    const sg = suggest(ex), b = baseKg(ex);
+    const right = b == null ? '<span class="ls" style="color:var(--gold)">Điền mức tạ</span>'
+      : `<span class="big">${fmt(b)}</span>${sg.kind === 'up' ? ` <span class="arrow">→ ${fmt(sg.kg)}</span>` : ''} <span class="ls">kg</span>${ex.targetKg ? `<br><span class="delta flat">mục tiêu ${fmt(ex.targetKg)} kg</span>` : ''}`;
+    h += `<button type="button" class="li" data-act="prog" data-id="${ex.id}"><span style="min-width:0"><span class="lt">${esc(shortName(ex.name))}</span><span class="ls">${esc(dayName)} · </span><span class="badge ${sg.kind}" style="font-size:10.5px;padding:2px 7px">${sg.label}</span></span>
+      <span class="lr">${right}</span></button>`;
+  }
+  return h + `</div></section>`;
+}
+function progressSheet() {
+  const ex = findEx(ui.progEx); if (!ex) return;
+  const H = exHistory(ex.id), sg = suggest(ex);
+  let h = `<h3 class="sh-title">${esc(ex.name)}</h3><p class="sh-text"><span class="badge ${sg.kind}">${sg.label}</span> ${sg.text}</p>
+    <div class="eyebrow" style="margin-bottom:10px">Lộ trình tăng tạ · tốc độ ${PACE[state.settings.pace].label}</div>${roadHtml(ex, roadmap(ex, 8)) || '<p class="eta">Điền mức tạ đang tập trong Giáo án để xem lộ trình.</p>'}
+    <div class="chips" style="margin-top:18px">${[['kg', 'Mức tạ'], ['e1', '1RM ước tính'], ['vol', 'Khối lượng']].map(([k, l]) => `<button type="button" data-act="pm" data-k="${k}" aria-pressed="${ui.pm === k}">${l}</button>`).join('')}</div>
+    <div class="chart" id="prog-chart"></div>`;
+  if (H.length) { h += `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Ngày</th><th>Các set (kg×rep)</th><th>Drop</th></tr></thead><tbody>`;
+    for (const x of H.slice(0, 40)) h += `<tr><td>${dm(x.date)}${x.deload ? '<div class="small muted">deload</div>' : ''}</td><td class="tn">${setsStr(x.sets)}${x.note ? `<div class="small muted">${esc(x.note)}</div>` : ''}</td><td class="tn">${x.drop ? `${fmt(x.drop.kg)}×${x.drop.reps}` : '–'}</td></tr>`;
+    h += `</tbody></table></div>`; }
+  h += `<div class="sh-actions"><button class="btn" data-act="edit-ex" data-day="${dayOfEx(ex.id).id}" data-id="${ex.id}">Sửa mức tạ / mục tiêu</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`;
+  openSheet(h);
+  const pts = [...H].reverse().map(x => ({ t: parseYmd(x.date).getTime(), d: x.date, y: ui.pm === 'kg' ? wt(x) : ui.pm === 'e1' ? bestE1(x) : volOf(x) }));
+  const title = ui.pm === 'kg' ? 'Mức tạ cao nhất mỗi buổi (kg)' : ui.pm === 'e1' ? '1RM ước tính (kg, công thức Epley)' : 'Tổng khối lượng mỗi buổi (kg × rep)';
+  drawLine($('#prog-chart'), pts, { title, unit: 'kg', dec: ui.pm === 'vol' ? 0 : 1 });
+}
+function sessionSheet(id) {
+  const s = state.sessions.find(x => x.id === id); if (!s) return;
+  let h = `<h3 class="sh-title">${esc(s.dayName)}</h3><p class="sh-text">${DOW[parseYmd(s.date).getDay()]} ${dm(s.date)}${s.finishedAt ? ' · ' + fmtDur(s.finishedAt - s.startedAt) : ''}${s.deload ? ' · deload' : ''}</p><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Bài</th><th>Các set</th></tr></thead><tbody>`;
+  for (const en of s.entries) h += `<tr><td>${esc(shortName(en.name))}${en.note ? `<div class="small muted">${esc(en.note)}</div>` : ''}</td><td class="tn">${setsStr(en.sets)}${en.drop ? ` · D ${fmt(en.drop.kg)}×${en.drop.reps}` : ''}</td></tr>`;
+  h += `</tbody></table></div><div class="sh-actions"><button class="btn ghost" data-act="close-sheet">Đóng</button><button class="btn ghost danger" data-act="del-session" data-id="${s.id}">Xoá buổi này</button></div>`;
+  openSheet(h);
+}
+
+/* ---------- biểu đồ ---------- */
+function niceNum(x) { const e = Math.floor(Math.log10(x)), f = x / Math.pow(10, e); return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * Math.pow(10, e); }
+function drawLine(el, pts, o) {
+  if (!el) return;
+  if (pts.length < 2) { el.innerHTML = `<div class="ctitle">${esc(o.title)}</div><div class="nodata">Cần ít nhất 2 lần ghi để vẽ biểu đồ.</div>`; return; }
+  const W = Math.max(260, el.clientWidth - 12), H = 210, L = 44, R = 18, T = 26, B = 28;
+  const ys = pts.map(p => p.y); let lo = Math.min(...ys), hi = Math.max(...ys);
+  if (hi - lo < 1e-9) { lo -= Math.max(1, Math.abs(lo) * 0.05); hi += Math.max(1, Math.abs(hi) * 0.05); }
+  const step = niceNum((hi - lo) / 3); lo = Math.floor(lo / step) * step; hi = Math.ceil(hi / step) * step;
+  const ticks = []; for (let v = lo; v <= hi + step / 2; v += step) ticks.push(v);
+  const t0 = pts[0].t, t1 = pts[pts.length - 1].t;
+  const X = t => t1 === t0 ? L + (W - L - R) / 2 : L + (t - t0) / (t1 - t0) * (W - L - R);
+  const Y = v => T + (hi - v) / (hi - lo) * (H - T - B);
+  const line = pts.map((p, i) => `${i ? 'L' : 'M'}${X(p.t).toFixed(1)},${Y(p.y).toFixed(1)}`).join('');
+  const area = `${line}L${X(t1).toFixed(1)},${Y(lo).toFixed(1)}L${X(t0).toFixed(1)},${Y(lo).toFixed(1)}Z`;
+  const last = pts[pts.length - 1];
+  const gid = 'g' + Math.random().toString(36).slice(2, 7);
+  let s = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="${esc(o.title)}"><defs><linearGradient id="${gid}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#d9b45b" stop-opacity=".28"/><stop offset="1" stop-color="#d9b45b" stop-opacity="0"/></linearGradient></defs>`;
+  for (const v of ticks) s += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="rgba(255,255,255,.07)" stroke-width="1"/><text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="#827d72">${fmt(v, o.dec)}</text>`;
+  s += `<text x="${L}" y="${H - 8}" font-size="11" fill="#827d72">${dm(pts[0].d)}</text><text x="${W - R}" y="${H - 8}" text-anchor="end" font-size="11" fill="#827d72">${dm(last.d)}</text>`;
+  s += `<path d="${area}" fill="url(#${gid})"/><path d="${line}" fill="none" stroke="#d9b45b" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  if (pts.length <= 40) for (const p of pts) s += `<circle cx="${X(p.t)}" cy="${Y(p.y)}" r="3.5" fill="#d9b45b" stroke="#151517" stroke-width="2"/>`;
+  s += `<circle cx="${X(last.t)}" cy="${Y(last.y)}" r="5.5" fill="#f2d68d" stroke="#151517" stroke-width="2"/>`;
+  s += `<text x="${Math.min(X(last.t), W - R)}" y="${Math.max(12, Y(last.y) - 12)}" text-anchor="end" font-size="13" font-weight="700" fill="#f6f3ec">${fmt(last.y, o.dec)}</text>`;
+  s += `<line id="${gid}x" x1="0" x2="0" y1="${T}" y2="${H - B}" stroke="#bdb7aa" stroke-width="1" stroke-dasharray="3 3" visibility="hidden"/></svg>`;
+  el.innerHTML = `<div class="ctitle">${esc(o.title)}</div>${s}<div class="tip" hidden></div>`;
+  const svg = $('svg', el), tip = $('.tip', el), cx = $(`#${gid}x`, el);
+  const move = e => {
+    const r = svg.getBoundingClientRect(), er = el.getBoundingClientRect(); const x = (e.clientX - r.left) / r.width * W;
+    let best = pts[0], bd = Infinity; for (const p of pts) { const d = Math.abs(X(p.t) - x); if (d < bd) { bd = d; best = p; } }
+    const px = X(best.t) / W * r.width + (r.left - er.left), py = Y(best.y) / H * r.height + (r.top - er.top);
+    cx.setAttribute('x1', X(best.t)); cx.setAttribute('x2', X(best.t)); cx.setAttribute('visibility', 'visible');
+    tip.hidden = false; tip.innerHTML = `${dm(best.d)} · <b>${fmt(best.y, o.dec)}</b> ${esc(o.unit)}`;
+    tip.style.left = Math.min(Math.max(px, 60), el.clientWidth - 60) + 'px'; tip.style.top = (py - 10) + 'px';
+  };
+  svg.addEventListener('pointermove', move); svg.addEventListener('pointerdown', move);
+  svg.addEventListener('pointerleave', () => { tip.hidden = true; cx.setAttribute('visibility', 'hidden'); });
+}
+
+/* ---------- TAB: CƠ THỂ ---------- */
+function bodySorted() { return [...state.body].sort((a, b) => a.date.localeCompare(b.date)); }
+function viewBody() {
+  const B = bodySorted();
+  let h = `<section class="sec"><div class="sec-head"><h2 class="h1">Cơ thể</h2><button class="btn sm gold" data-act="body-add">+ Nhập số đo</button></div>`;
+  if (!B.length) return h + `<div class="empty">Nhập cân nặng, tỉ lệ mỡ, nhịp tim nghỉ, HRV, giấc ngủ… từ đồng hồ hoặc cân điện tử. Bỏ trống mục nào không có.<br><br>Nên đo cùng thời điểm mỗi lần, ví dụ buổi sáng sau khi thức dậy, để số liệu so sánh được.</div></section>` + viewBodyPhotos();
+  const have = ALLM.filter(m => B.some(e => mval(e, m) != null));
+  h += `<div class="tiles">`;
+  for (const m of have) {
+    const withV = B.filter(e => mval(e, m) != null); const cur = withV[withV.length - 1];
+    const ref = [...withV].reverse().find(e => daysBetween(e.date, cur.date) >= 28) || (withV[0] !== cur ? withV[0] : null);
+    let dl = `<span class="delta flat">${dm(cur.date)}</span>`;
+    if (ref) { const d = mval(cur, m) - mval(ref, m); const cls = Math.abs(d) < 1e-9 ? 'flat' : m.good && Math.sign(d) === m.good ? 'good' : 'other';
+      dl = `<span class="delta ${cls}">${d > 0 ? '▲' : d < 0 ? '▼' : '='} ${fmt(Math.abs(d), m.dec)} so với ${dm(ref.date)}</span>`; }
+    h += `<div class="tile"><div class="tl">${m.label}</div><div class="tv">${fmt(mval(cur, m), m.dec)}${m.unit ? `<small>${m.unit}</small>` : ''}</div>${dl}</div>`;
+  }
+  h += `</div>`;
+  if (!have.find(m => m.k === ui.metric)) ui.metric = have[0] ? have[0].k : 'weight';
+  h += `<div class="chips">${have.map(m => `<button type="button" data-act="metric" data-k="${m.k}" aria-pressed="${m.k === ui.metric}">${m.label}</button>`).join('')}</div><div class="chart" id="body-chart"></div>`;
+  h += `<h3 class="h" style="margin-bottom:12px">Lịch sử</h3><div class="list">`;
+  for (const e of [...B].reverse().slice(0, 60)) {
+    const bits = METRICS.filter(m => e[m.k] != null).slice(0, 4).map(m => `${fmt(e[m.k], m.dec)}${m.unit ? ' ' + m.unit : ''}`).join(' · ');
+    h += `<button type="button" class="li" data-act="body-edit" data-id="${e.id}"><span><span class="lt">${DOW[parseYmd(e.date).getDay()]} ${dm(e.date)}</span><span class="ls">${esc(bits)}</span></span><span class="ls">Sửa ›</span></button>`;
+  }
+  h += `</div></section>`;
+  return h.replace('<h3 class="h" style="margin-bottom:12px">Lịch sử</h3>', '</section>' + viewBodyPhotos() + '<section class="sec"><h3 class="h" style="margin-bottom:12px">Lịch sử số đo</h3>');
+}
+function viewBodyPhotos() {
+  const all = [...state.bodyPhotos].sort((a, b) => a.date.localeCompare(b.date) || a.t - b.t);
+  const list = all.filter(p => p.pose === ui.pose);
+  const last = all.length ? all[all.length - 1].date : null, gap = last ? daysBetween(last, ymd()) : null;
+  let h = `<section class="sec"><div class="sec-head"><h2 class="h">Ảnh body</h2><label class="btn sm gold" for="bp-in">${ICON.cam} Thêm ảnh</label></div>
+    <input type="file" id="bp-in" accept="image/*" hidden>
+    <div class="chips" role="group" aria-label="Tư thế">${POSES.map(p => `<button type="button" data-act="pose" data-k="${p}" aria-pressed="${ui.pose === p}">${p} · ${all.filter(x => x.pose === p).length}</button>`).join('')}</div>`;
+  if (gap != null && gap >= 28) h += `<div class="banner"><span class="bi">${ICON.cal}</span><div><b>Đã ${gap} ngày chưa chụp</b><p>Chụp lại tư thế ${ui.pose.toLowerCase()} để so sánh tháng này với tháng trước.</p></div></div>`;
+  if (!list.length) h += `<div class="empty">Chưa có ảnh tư thế “${ui.pose}”. Mỗi tháng chụp 1 lần, cùng chỗ đứng, cùng ánh sáng, buổi sáng trước khi ăn để so sánh chuẩn. Bấm “Thêm ảnh” để mở camera hoặc chọn từ thư viện.</div>`;
+  else {
+    h += `<div class="bp-strip">${[...list].reverse().map(p => `<button type="button" data-act="bp-view" data-id="${p.id}"><img data-photo="${p.photoId}" alt="Ảnh body ${p.pose} ngày ${dm(p.date)}"><span>${dm(p.date)}${p.date.slice(0, 4) !== ymd().slice(0, 4) ? '/' + p.date.slice(2, 4) : ''}</span></button>`).join('')}</div>`;
+    if (list.length >= 2) {
+      const A = list.find(p => p.id === ui.cmpA) || list[0], Bp = list.find(p => p.id === ui.cmpB) || list[list.length - 1];
+      const opts = sel => list.map(p => `<option value="${p.id}" ${p.id === sel ? 'selected' : ''}>${dm(p.date)}/${p.date.slice(2, 4)}</option>`).join('');
+      const wk = Math.round(daysBetween(A.date, Bp.date) / 7);
+      h += `<div class="card"><div class="eyebrow" style="margin-bottom:10px">So sánh trước / sau</div>
+        <div class="cmp-sel"><label class="f">Trước<select class="inp" data-bind="cmp" data-k="A">${opts(A.id)}</select></label><label class="f">Sau<select class="inp" data-bind="cmp" data-k="B">${opts(Bp.id)}</select></label></div>
+        <div class="cmp" id="cmp"><img data-photo="${A.photoId}" alt="Ảnh trước"><img class="after" data-photo="${Bp.photoId}" alt="Ảnh sau" style="clip-path:inset(0 0 0 50%)">
+          <span class="handle" style="left:50%"><i>${ICON.swap}</i></span><span class="tag l">${dm(A.date)}</span><span class="tag r">${dm(Bp.date)}${wk ? ` · ${wk > 0 ? '+' : ''}${wk} tuần` : ''}</span></div>
+        <input type="range" class="cmp-range" id="cmp-range" min="0" max="100" value="50" aria-label="Kéo để so sánh hai ảnh"></div>`;
+    } else h += `<p class="note-line">Có từ 2 ảnh cùng tư thế là so sánh trước/sau được.</p>`;
+  }
+  h += `<p class="note-line">Ảnh body chỉ lưu trên máy này, không bao giờ gửi kèm khi chia sẻ giáo án. File sao lưu có chứa ảnh.</p></section>`;
+  return h;
+}
+function setCompare(v) {
+  const c = $('#cmp'); if (!c) return; v = Math.max(0, Math.min(100, v));
+  $('.after', c).style.clipPath = `inset(0 0 0 ${v}%)`; $('.handle', c).style.left = v + '%';
+  const r = $('#cmp-range'); if (r && +r.value !== v) r.value = v;
+}
+function bindCompare() {
+  const c = $('#cmp'); if (!c) return; let on = false;
+  const at = e => { const r = c.getBoundingClientRect(); setCompare((e.clientX - r.left) / r.width * 100); };
+  c.addEventListener('pointerdown', e => { on = true; at(e); });
+  c.addEventListener('pointermove', e => { if (on) at(e); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(n => c.addEventListener(n, () => { on = false; }));
+}
+async function showBodyViewer(id) {
+  const bp = state.bodyPhotos.find(x => x.id === id); if (!bp) return;
+  let src = photoCache.get(bp.photoId); if (!src) { src = await DB.get('photos', bp.photoId); if (src) photoCache.set(bp.photoId, src); }
+  const v = $('#viewer'); v.hidden = false;
+  v.innerHTML = `<div class="vtop"><b>${esc(bp.pose)} · ${DOWL[parseYmd(bp.date).getDay()]} ${dm(bp.date)}/${bp.date.slice(0, 4)}</b><button type="button" data-act="viewer-close">Đóng</button></div>
+    <div class="vimg">${src ? `<img src="${src}" alt="Ảnh body">` : ''}</div><div class="vnav"><span></span><button type="button" class="vdel" data-act="bp-del" data-id="${bp.id}">Xoá ảnh</button></div>`;
+}
+function drawBodyChart() {
+  const el = $('#body-chart'); if (!el) return;
+  const m = ALLM.find(x => x.k === ui.metric);
+  const pts = bodySorted().filter(e => mval(e, m) != null).map(e => ({ t: parseYmd(e.date).getTime(), d: e.date, y: mval(e, m) }));
+  drawLine(el, pts, { title: `${m.label}${m.unit ? ' (' + m.unit + ')' : ''}`, unit: m.unit, dec: m.dec });
+}
+function bodySheet(e) {
+  e = e || state.body.find(x => x.date === ymd()) || { date: ymd() };
+  openSheet(`<h3 class="sh-title">${e.id ? 'Sửa số đo' : 'Nhập số đo'}</h3><p class="sh-text">Điền các chỉ số đồng hồ hoặc cân điện tử hiển thị. Bỏ trống mục không có.</p>
+    <div class="formgrid"><label class="f full">Ngày đo<input class="inp" type="date" id="b-date" value="${e.date}" max="${ymd()}"></label>
+    ${METRICS.map(m => `<label class="f"><span>${m.label}${m.unit ? ` <span class="unit">${m.unit}</span>` : ''}</span><input class="inp" id="b-${m.k}" inputmode="decimal" value="${fmtIn(e[m.k])}"></label>`).join('')}</div>
+    <div class="sh-actions"><button class="btn gold big" data-act="body-save" data-id="${e.id || ''}">Lưu số đo</button>
+    ${e.id ? `<button class="btn ghost danger" data-act="body-del" data-id="${e.id}">Xoá lần đo này</button>` : ''}<button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
+}
+
+/* ---------- TAB: TÔI ---------- */
+function viewMore() {
+  const st = state.settings, pc = PACE[st.pace] || PACE.std;
+  return `<section class="sec"><h2 class="h1" style="margin-bottom:14px">Tôi</h2>${syncCardHtml()}
+  <div class="card set-card"><h3>Hồ sơ</h3><div class="formgrid" style="margin-top:10px">
+    <label class="f">Tên<input class="inp" data-bind="setting" data-k="name" value="${esc(st.name)}" placeholder="Tên bạn"></label>
+    <label class="f"><span>Chiều cao <span class="unit">cm</span></span><input class="inp" data-bind="setting" data-k="height" inputmode="decimal" value="${fmtIn(st.height)}" placeholder="Để tính BMI"></label>
+  </div></div>
+  <div class="card set-card"><h3>Cách tăng tạ</h3><p>${st.progMode === 'double' ? 'Tăng kép: tăng rep trước (8→12), đủ rep tối đa 2 buổi liền mới tăng tạ. Chậm hơn nhưng chắc.' : 'Theo tuần: đạt đủ số set × rep mục tiêu ở mức tạ hiện tại thì tuần sau tăng tạ. Tối đa 1 lần tăng mỗi tuần.'}</p>
+    <div class="seg" role="group" aria-label="Cách tăng tạ">${[['linear', 'Theo tuần'], ['double', 'Tăng kép']].map(([k, l]) => `<button type="button" data-act="mode" data-k="${k}" aria-pressed="${st.progMode === k}">${l}</button>`).join('')}</div>
+    <div style="margin-top:14px" class="small muted">Tốc độ tăng</div>
+    <div class="seg" role="group" aria-label="Tốc độ tăng" style="margin-top:6px">${Object.entries(PACE).map(([k, p]) => `<button type="button" data-act="pace" data-k="${k}" aria-pressed="${st.pace === k}">${p.label}</button>`).join('')}</div>
+    <p class="small muted" style="margin:10px 0 0">${pc.desc}</p></div>
+  <div class="card set-card"><h3>Lịch tập & nhắc nhở</h3><p>Chọn ngày tập cho từng thứ trong tuần. App sẽ biết hôm nay tập gì, và bạn thêm được lịch vào ứng dụng Lịch của điện thoại để được nhắc kể cả khi không mở app.</p>
+    <div class="sched">${[1, 2, 3, 4, 5, 6, 0].map(dw => { const v = sched()[dw] && findDay(sched()[dw]) ? sched()[dw] : '';
+      return `<label>${DOW[dw]}<select data-bind="sched" data-dow="${dw}" class="${v ? 'on' : ''}" aria-label="Ngày tập ${DOWL[dw]}"><option value="">Nghỉ</option>${state.days.map(d => `<option value="${d.id}" ${d.id === v ? 'selected' : ''}>${esc(d.name)}</option>`).join('')}</select></label>`; }).join('')}</div>
+    <div class="formgrid" style="margin-top:12px"><label class="f">Giờ tập<input class="inp" type="time" data-bind="setting" data-k="remindTime" value="${esc(st.remindTime || '18:00')}"></label>
+      <label class="f">Nhắc trước<select class="inp" data-bind="setting" data-k="remindBefore">${[[0, 'Đúng giờ'], [15, '15 phút'], [30, '30 phút'], [60, '1 tiếng'], [120, '2 tiếng']].map(([v, l]) => `<option value="${v}" ${v === (st.remindBefore ?? 30) ? 'selected' : ''}>${l}</option>`).join('')}</select></label></div>
+    <div class="row" style="margin-top:12px"><button class="btn gold" data-act="ics" ${hasSchedule() ? '' : 'disabled'}>${ICON.bell} Thêm vào lịch điện thoại</button></div>
+    <p class="note-line">Mở file vừa tải, chọn “Thêm tất cả” để Lịch nhắc mỗi tuần. Khi đổi lịch, xoá các sự kiện cũ rồi thêm file mới.</p></div>
+  <div class="card set-card"><h3>Khối lượng & chu kỳ</h3><div class="formgrid" style="margin-top:10px">
+    <label class="f">Set/nhóm cơ/tuần tối thiểu<input class="inp" data-bind="setting" data-k="setMin" inputmode="numeric" value="${st.setMin}"></label>
+    <label class="f">Tối đa<input class="inp" data-bind="setting" data-k="setMax" inputmode="numeric" value="${st.setMax}"></label>
+    <label class="f full">Nhắc deload sau mỗi<select class="inp" data-bind="setting" data-k="deloadEvery">${[4, 5, 6, 7, 8].map(n => `<option value="${n}" ${n === st.deloadEvery ? 'selected' : ''}>${n} tuần tập</option>`).join('')}</select></label></div></div>
+  <div class="card set-card"><h3>Chia sẻ giáo án</h3><p>Bạn bè nhận các ngày tập, bài tập và cách chỉnh máy, rồi tự điền mức tạ của họ. Ảnh, mức tạ, ảnh body và lịch sử tập của bạn không được gửi đi.</p>
+    <div class="row"><button class="btn gold" data-act="share" ${state.days.length ? '' : 'disabled'}>Tạo link chia sẻ</button><button class="btn" data-act="import-open">Nhập giáo án</button></div></div>
+  <div class="card set-card"><h3>Sao lưu dữ liệu</h3><p>Tải toàn bộ dữ liệu (gồm ảnh máy tập và ảnh body) thành một file để cất giữ, hoặc chuyển sang máy khác.</p>
+    <div class="row"><button class="btn" data-act="backup">Tải file sao lưu</button><label class="btn" for="restore-file">Khôi phục từ file</label><input type="file" id="restore-file" accept=".json,application/json" hidden></div></div>
+  ${inArtifact ? '' : `<div class="card set-card"><h3>Cài lên màn hình điện thoại</h3><p>iPhone: mở bằng Safari → nút Chia sẻ → “Thêm vào MH chính”. Android: mở bằng Chrome → ⋮ → “Cài đặt ứng dụng”. Cài xong mở được cả khi không có mạng.</p>
+    ${deferredInstall ? '<button class="btn gold" data-act="install">Cài ứng dụng</button>' : ''}</div>`}
+  <div class="card set-card"><h3>Quy tắc tăng tạ</h3>${rulesHtml()}</div>
+  <div class="card set-card"><h3>Xoá dữ liệu</h3><p>Xoá toàn bộ giáo án, lịch sử tập, ảnh và số đo trên máy này.</p><button class="btn danger" data-act="wipe">Xoá toàn bộ dữ liệu</button></div>
+  <p class="small muted">Sổ Tạ chỉ đưa ra gợi ý dựa trên số liệu bạn ghi, không thay thế huấn luyện viên hay bác sĩ. Đau khớp hoặc đau nhói thì dừng bài đó.</p></section>`;
+}
+function rulesHtml() {
+  return `<div class="rules"><p>Dựa trên khuyến nghị tập kháng lực của ACSM (Hiệp hội Y học Thể thao Hoa Kỳ): khi làm vượt số rep mục tiêu thì tăng tạ 2–10%.</p>
+  <h4>Theo tuần (mặc định)</h4><ul><li>Đạt đủ số set × rep mục tiêu (vd 3×10) → tuần sau <span class="badge up">TĂNG TẠ</span>.</li><li>Chưa đủ → <span class="badge hold">GIỮ</span> mức tạ, cố thêm rep.</li>
+  <li>3 buổi không tiến bộ, hoặc 2 buổi liền dưới rep tối thiểu → <span class="badge down">GIẢM</span>.</li></ul>
+  <h4>Mức tăng mỗi tuần</h4><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Tốc độ</th><th>Bài lớn</th><th>Bài cô lập</th></tr></thead><tbody>
+  <tr><td>Thận trọng</td><td>~2,5%, sau 2 tuần đạt</td><td>~2%</td></tr><tr><td>Chuẩn</td><td>~5%</td><td>~2,5%</td></tr><tr><td>Nhanh</td><td>~7,5%</td><td>~5%</td></tr></tbody></table></div>
+  <p class="small" style="margin-top:6px">Luôn làm tròn theo bước tăng của máy, tối thiểu 1 bước. Ví dụ bench 40 kg, tốc độ Chuẩn, bước 2,5 kg (bánh 1,25 kg mỗi bên): 40 → 42,5 → 45 kg.</p>
+  <h4>Khác</h4><ul><li>10–20 set nặng mỗi nhóm cơ mỗi tuần, mỗi set còn dư khoảng 1–3 rep.</li><li>Nghỉ 2–3 phút với bài lớn, 1–2 phút với bài cô lập.</li><li>Khởi động trước bài lớn đầu tiên của mỗi nhóm cơ: ~50% × 10, ~70% × 5, ~85% × 2.</li><li>Deload mỗi 6–8 tuần: giảm ~10% tạ và khoảng một nửa số set.</li>
+  <li>Kỷ lục tính bằng 1RM ước tính theo công thức Epley: kg × (1 + rep/30).</li></ul></div>`;
+}
+
+/* ---------- chia sẻ ---------- */
+function b64u(bytes) { let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function unb64u(str) { str = str.replace(/-/g, '+').replace(/_/g, '/'); while (str.length % 4) str += '='; const bin = atob(str); return Uint8Array.from(bin, c => c.charCodeAt(0)); }
+async function pipeBytes(bytes, stream) { return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer()); }
+async function encodePlan(days) {
+  const data = { v: 2, d: days.map(d => ({ n: d.name, e: d.exercises.map(x => ({ n: x.name, m: x.muscle, t: x.type, s: x.sets, g: x.repTarget, a: x.repMin, b: x.repMax, d: x.dropSet ? 1 : 0, k: x.step, r: x.rest, u: x.setup || '' })) })) };
+  const bytes = new TextEncoder().encode(JSON.stringify(data));
+  if ('CompressionStream' in window) { try { return 'SOTA1z.' + b64u(await pipeBytes(bytes, new CompressionStream('deflate-raw'))); } catch (e) {} }
+  return 'SOTA1.' + b64u(bytes);
+}
+async function decodePlan(text) {
+  const m = String(text).match(/SOTA1z?\.[A-Za-z0-9_-]+/); if (!m) throw new Error('Không tìm thấy mã giáo án trong nội dung đã dán.');
+  const [p, body] = m[0].split('.'); let bytes = unb64u(body);
+  if (p === 'SOTA1z') { if (!('DecompressionStream' in window)) throw new Error('Trình duyệt này quá cũ để đọc mã. Hãy cập nhật trình duyệt.'); bytes = await pipeBytes(bytes, new DecompressionStream('deflate-raw')); }
+  const data = JSON.parse(new TextDecoder().decode(bytes));
+  const clamp = (v, a, b, def) => { v = Number(v); return isFinite(v) ? Math.min(b, Math.max(a, v)) : def; };
+  return (data.d || []).slice(0, 14).map(d => ({ name: String(d.n || 'Ngày tập').slice(0, 40), exercises: (d.e || []).slice(0, 20).map(x => {
+    const type = TYPES[x.t] ? x.t : 'upper'; const repMin = clamp(x.a, 1, 50, 8); const repMax = Math.max(repMin, clamp(x.b, 1, 50, 12));
+    return migrateEx({ name: String(x.n || 'Bài tập').slice(0, 80), muscle: MUSCLES.includes(x.m) ? x.m : 'Khác', type, sets: clamp(x.s, 1, 10, 3), repTarget: clamp(x.g, repMin, 50, Math.min(repMax, 10)), repMin, repMax,
+      dropSet: !!x.d, step: clamp(x.k, 0.25, 50, TYPES[type].step), rest: clamp(x.r, 30, 600, TYPES[type].rest), setup: String(x.u || '').slice(0, 1000) }); }) }));
+}
+async function shareSheet() {
+  const code = await encodePlan(state.days);
+  const base = location.href.split('#')[0];
+  const link = !inArtifact && /^https?:/.test(base) ? base + '#nhap=' + code : '';
+  openSheet(`<h3 class="sh-title">Chia sẻ giáo án</h3><p class="sh-text">${state.days.length} ngày tập · ${state.days.reduce((a, d) => a + d.exercises.length, 0)} bài. ${link ? 'Người nhận mở link là thấy giáo án. Nếu link không mở đúng, gửi kèm mã để họ dán vào mục Nhập giáo án.' : 'Sao chép mã bên dưới gửi qua Zalo hoặc Messenger. Người nhận vào tab Tôi → Nhập giáo án rồi dán mã.'}</p>
+    ${link ? `<label class="f full">Link<textarea class="inp code" id="sh-link" readonly rows="3">${esc(link)}</textarea></label><div class="row" style="margin:10px 0 16px"><button class="btn gold" data-act="copy" data-t="sh-link">Sao chép link</button>${navigator.share ? '<button class="btn" data-act="native-share">Gửi qua Zalo, Messenger…</button>' : ''}</div>` : ''}
+    <label class="f full">Mã giáo án<textarea class="inp code" id="sh-code" readonly rows="4">${esc(code)}</textarea></label>
+    <div class="sh-actions"><button class="btn ${link ? '' : 'gold'}" data-act="copy" data-t="sh-code">Sao chép mã</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`);
+}
+function importSheet(prefill) {
+  ui.importDays = null;
+  openSheet(`<h3 class="sh-title">Nhập giáo án</h3><p class="sh-text">Dán link hoặc mã giáo án người khác gửi cho bạn.</p>
+    <textarea class="inp code" id="imp-code" rows="4" placeholder="https://…#nhap=SOTA1z… hoặc SOTA1z…">${esc(prefill || '')}</textarea>
+    <div class="row" style="margin-top:10px"><button class="btn gold" data-act="import-preview">Xem trước</button><button class="btn ghost" data-act="close-sheet">Huỷ</button></div><div id="imp-preview" style="margin-top:14px"></div>`);
+  if (prefill) setTimeout(() => handlers['import-preview'](), 30);
+}
+
+/* ---------- file & lịch ---------- */
+async function saveFile(name, data, mime) {
+  let dl = null;
+  try { if (window.claude && typeof window.claude.use === 'function') dl = await window.claude.use('downloads'); } catch (e) { dl = null; }
+  if (dl) {
+    try { await dl.save({ filename: name, data: new Blob([data], { type: mime }) }); toast('Đã lưu file'); }
+    catch (e) { const c = e && e.code; if (c === 'declined') return; toast(c === 'rejected_extension' || c === 'extension_not_enabled' ? 'Loại file này chỉ tải được trên bản cài điện thoại' : 'Không lưu được file ở đây'); }
+    return;
+  }
+  const blob = data instanceof Blob ? data : new Blob([data], { type: mime });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+  toast('Đang tải file');
+}
+const icsEsc = v => String(v).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
+function icsFold(line) {
+  const enc = new TextEncoder(); if (enc.encode(line).length <= 75) return line;
+  const parts = []; let cur = '', n = 0;
+  for (const ch of line) { const b = enc.encode(ch).length, lim = parts.length ? 74 : 75; if (n + b > lim) { parts.push(cur); cur = ''; n = 0; } cur += ch; n += b; }
+  parts.push(cur); return parts.join('\r\n ');
+}
+function buildICS() {
+  const [hh, mm] = (state.settings.remindTime || '18:00').split(':').map(Number);
+  const before = state.settings.remindBefore ?? 30;
+  const BYDAY = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
+  const url = /^https?:/.test(location.href) ? location.href.split('#')[0] : '';
+  const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//So Ta//Lich tap//VI', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:Sổ Tạ'];
+  for (let dw = 0; dw < 7; dw++) {
+    const d = findDay(sched()[dw]); if (!d) continue;
+    let k = 0; while (parseYmd(addDays(ymd(), k)).getDay() !== dw) k++;
+    const date = addDays(ymd(), k).replace(/-/g, '');
+    const desc = `${d.exercises.length} bài: ${d.exercises.map(e => shortName(e.name)).join(', ')}\nMở Sổ Tạ để xem mức tạ tuần này.${url ? '\n' + url : ''}`;
+    L.push('BEGIN:VEVENT', `UID:so-ta-${dw}@so-ta.app`, `DTSTAMP:${stamp}`, `DTSTART:${date}T${pad(hh || 0)}${pad(mm || 0)}00`, 'DURATION:PT1H15M',
+      `RRULE:FREQ=WEEKLY;BYDAY=${BYDAY[dw]}`, `SUMMARY:${icsEsc('Tập ' + d.name + ' · Sổ Tạ')}`, `DESCRIPTION:${icsEsc(desc)}`,
+      'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${icsEsc((before ? 'Còn ' + (before >= 60 ? before / 60 + ' tiếng' : before + ' phút') + ' nữa tập ' : 'Đến giờ tập ') + d.name)}`, `TRIGGER:${before ? '-PT' + before + 'M' : 'PT0M'}`, 'END:VALARM', 'END:VEVENT');
+  }
+  L.push('END:VCALENDAR');
+  return L.map(icsFold).join('\r\n') + '\r\n';
+}
+
+/* ---------- sheet, toast, viewer ---------- */
+function openSheet(html) { $('#sheet-body').innerHTML = '<div class="grab"></div>' + html; $('#sheet').hidden = false; document.body.style.overflow = 'hidden'; $('#sheet-body').scrollTop = 0; }
+function closeSheet() { $('#sheet').hidden = true; document.body.style.overflow = ''; $('#sheet-body').innerHTML = ''; }
+function confirmSheet({ title, text, ok, danger, onOk }) {
+  pendingConfirm = onOk;
+  openSheet(`<h3 class="sh-title">${title}</h3><p class="sh-text">${text}</p><div class="sh-actions"><button class="btn big ${danger ? 'danger-fill' : 'gold'}" data-act="confirm-ok">${ok}</button><button class="btn ghost" data-act="confirm-cancel">Thôi</button></div>`);
+}
+let toastT = null;
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, 2600); }
+const viewer = { ex: null, i: 0 };
+async function showViewer() {
+  const ex = viewer.ex; if (!ex.photos.length) { handlers['viewer-close'](); return; }
+  viewer.i = Math.min(viewer.i, ex.photos.length - 1);
+  const id = ex.photos[viewer.i];
+  let src = photoCache.get(id); if (!src) { src = await DB.get('photos', id); if (src) photoCache.set(id, src); }
+  const v = $('#viewer'); v.hidden = false;
+  v.innerHTML = `<div class="vtop"><b>${esc(ex.name)}</b><button type="button" data-act="viewer-close">Đóng</button></div>
+    <div class="vimg">${src ? `<img src="${src}" alt="Ảnh máy tập ${esc(ex.name)}">` : ''}</div>${ex.setup ? `<div class="vcap">${esc(ex.setup)}</div>` : ''}
+    <div class="vnav">${ex.photos.length > 1 ? `<button type="button" data-act="viewer-nav" data-d="-1" aria-label="Ảnh trước">‹</button><span>${viewer.i + 1}/${ex.photos.length}</span><button type="button" data-act="viewer-nav" data-d="1" aria-label="Ảnh sau">›</button>` : '<span></span>'}
+    <label for="vcap-in">${ICON.cam} Chụp thêm</label><input type="file" id="vcap-in" accept="image/*" capture="environment" data-cap="${ex.id}" hidden></div>`;
+}
+async function copyText(id) {
+  const el = $('#' + id); if (!el) return;
+  try { await navigator.clipboard.writeText(el.value); toast('Đã sao chép'); }
+  catch (e) { el.focus(); el.select(); toast('Đã chọn sẵn, bấm giữ để sao chép'); }
+}
+
+/* ---------- xử lý sự kiện ---------- */
+const handlers = {
+  'tab': t => { ui.tab = t.dataset.tab; render(); },
+  'start-day': t => startSession(t.dataset.id),
+  'step': t => {
+    const { e, s, f } = t.dataset; const set = getSet(+e, s); if (!set) return;
+    const ex = exOrSnap(state.active.entries[+e]);
+    const d = +t.dataset.d * (f === 'kg' ? (ex.step > 0 ? ex.step : 1) : 1);
+    set[f] = Math.max(0, r2((set[f] ?? 0) + d));
+    const inp = $(`input[data-bind="set"][data-e="${e}"][data-s="${s}"][data-f="${f}"]`); if (inp) inp.value = fmtIn(set[f]);
+    if (s === '0' && f === 'kg') refreshWarm(+e);
+    save();
+  },
+  'warm': t => { const en = state.active.entries[+t.dataset.e]; en.warm = en.warm || []; const k = +t.dataset.w; en.warm[k] = !en.warm[k]; t.setAttribute('aria-pressed', !!en.warm[k]); save(); },
+  'set-done': t => {
+    initAudio();
+    const { e, s } = t.dataset; const set = getSet(+e, s); if (!set) return;
+    set.done = !set.done;
+    if (set.done && (!set.reps || set.reps <= 0)) { set.done = false; toast('Nhập số rep trước khi bấm ✓'); return; }
+    t.setAttribute('aria-pressed', set.done); $(`#row-${e}-${s}`).classList.toggle('done', set.done);
+    if (set.done) { const ex = exOrSnap(state.active.entries[+e]); if (s !== 'drop') startRest(ex.rest || 90); requestWake(); }
+    updateProgress(); save();
+  },
+  'add-set': t => { const en = state.active.entries[+t.dataset.e]; const l = en.sets[en.sets.length - 1] || { kg: null, reps: null }; en.sets.push({ kg: l.kg, reps: l.reps, done: false }); save(); render(true); },
+  'rm-set': t => { const en = state.active.entries[+t.dataset.e]; if (en.sets.length > 1) en.sets.pop(); save(); render(true); },
+  'drop-toggle': t => {
+    const en = state.active.entries[+t.dataset.e]; const ex = exOrSnap(en);
+    if (en.drop) en.drop = null; else { const k = Math.max(0, ...en.sets.map(s => s.kg || 0)); en.drop = { kg: k ? roundStep(k * 0.7, ex.step) : null, reps: null, done: false }; }
+    save(); render(true);
+  },
+  'finish': () => finishSummary(),
+  'save-session': () => saveSession(),
+  'cancel-session': () => confirmSheet({ title: 'Huỷ buổi tập này?', text: 'Các set đã ghi trong buổi này sẽ không được lưu.', ok: 'Huỷ buổi tập', danger: true, onOk: discardSession }),
+  'rest-add': () => { if (rest.end - Date.now() <= 0) { rest.end = Date.now(); rest.total = 0; clearTimeout(rest.hideT); rest.iv = setInterval(tickRest, 250); } rest.end += 15000; rest.total += 15000; $('#rest-l').textContent = 'Đang nghỉ'; tickRest(); },
+  'rest-skip': () => stopRest(),
+  'view-photo': t => { const ex = findEx(t.dataset.ex); if (!ex || !ex.photos.length) return; viewer.ex = ex; viewer.i = 0; showViewer(); },
+  'viewer-close': () => { $('#viewer').hidden = true; $('#viewer').innerHTML = ''; },
+  'viewer-nav': t => { const n = viewer.ex.photos.length; viewer.i = (viewer.i + +t.dataset.d + n) % n; showViewer(); },
+  'onb-new': () => { ui.tab = 'plan'; render(); dayNameSheet(null); },
+  'onb-sample': () => {
+    state.days = SAMPLE.map(([n, list]) => ({ id: uid(), name: n, sample: true, exercises: list.map(newEx) }));
+    ui.tab = 'plan'; ui.openDay = state.days[0].id; save(); render(); toast('Đã tạo giáo án mẫu. Bấm từng bài để điền mức tạ đang tập.');
+  },
+  'add-day': () => dayNameSheet(null),
+  'rename-day': t => dayNameSheet(findDay(t.dataset.id)),
+  'qpick': t => { $('#f-dayname').value = t.dataset.v; },
+  'save-day': t => {
+    const name = $('#f-dayname').value.trim(); if (!name) { toast('Nhập tên ngày tập'); return; }
+    const d = findDay(t.dataset.id);
+    if (d) { d.name = name; delete d.sample; } else { const nd = { id: uid(), name, exercises: [] }; state.days.push(nd); ui.openDay = nd.id; }
+    save(); closeSheet(); render(true);
+  },
+  'del-day': t => { const d = findDay(t.dataset.id); confirmSheet({ title: `Xoá ngày “${esc(d.name)}”?`, text: 'Các bài tập và ảnh trong ngày này sẽ bị xoá. Lịch sử các buổi đã tập vẫn được giữ.', ok: 'Xoá ngày tập', danger: true,
+    onOk: () => { d.exercises.forEach(ex => ex.photos.forEach(id => DB.del('photos', id))); state.days = state.days.filter(x => x !== d); save(); render(true); } }); },
+  'move-day': t => { const i = state.days.findIndex(d => d.id === t.dataset.id), j = i + +t.dataset.d; if (j < 0 || j >= state.days.length) return; [state.days[i], state.days[j]] = [state.days[j], state.days[i]]; save(); render(true); },
+  'toggle-day': t => { ui.openDay = ui.openDay === t.dataset.id ? null : t.dataset.id; render(true); },
+  'move-ex': t => { const d = findDay(t.dataset.day); const i = d.exercises.findIndex(e => e.id === t.dataset.id), j = i + +t.dataset.d; if (j < 0 || j >= d.exercises.length) return; [d.exercises[i], d.exercises[j]] = [d.exercises[j], d.exercises[i]]; save(); render(true); },
+  'add-ex': t => { ui.draft = { ...newEx(''), dayId: t.dataset.day, isNew: true, added: [], orig: [] }; exSheet(); },
+  'edit-ex': t => { const ex = findDay(t.dataset.day).exercises.find(e => e.id === t.dataset.id); ui.draft = { ...ex, photos: [...ex.photos], dayId: t.dataset.day, isNew: false, added: [], orig: [...ex.photos] }; exSheet(); },
+  'ph-rm': t => { readDraft(); ui.draft.photos = ui.draft.photos.filter(id => id !== t.dataset.id); const y = $('#sheet-body').scrollTop; exSheet(); $('#sheet-body').scrollTop = y; },
+  'cancel-ex': () => { const d = ui.draft; d.added.forEach(id => DB.del('photos', id)); ui.draft = null; closeSheet(); },
+  'save-ex': () => {
+    readDraft(); const d = ui.draft;
+    if (!d.name) { toast('Nhập tên bài tập'); return; }
+    if (!(d.sets >= 1 && d.sets <= 10)) { toast('Số set từ 1 đến 10'); return; }
+    if (!(d.repMin >= 1 && d.repTarget >= d.repMin && d.repTarget <= 50)) { toast('Rep mục tiêu phải ≥ rep tối thiểu'); return; }
+    if (!(d.step > 0)) { toast('Bước tăng tạ phải lớn hơn 0'); return; }
+    if (d.curIn != null && d.curIn < 0) { toast('Mức tạ không hợp lệ'); return; }
+    const day = findDay(d.dayId);
+    const prevBase = d.isNew ? null : baseKg(d);
+    const changedKg = d.curIn != null && d.curIn !== prevBase;
+    const repMax = Math.max(Math.round(d.repTarget), Math.round(d.repMax || 12));
+    const ex = { id: d.id, name: d.name, muscle: d.muscle, type: d.type, sets: Math.round(d.sets), repTarget: Math.round(d.repTarget), repMin: Math.round(d.repMin), repMax,
+      dropSet: d.dropSet, warmup: d.warmup, step: d.step, rest: d.rest, setup: d.setup, photos: d.photos, targetKg: d.targetKg,
+      currentKg: changedKg ? d.curIn : (d.isNew ? null : d.currentKg), kgSetAt: changedKg ? Date.now() : (d.kgSetAt || null) };
+    [...d.orig, ...d.added].filter(id => !d.photos.includes(id)).forEach(id => DB.del('photos', id));
+    if (d.isNew) day.exercises.push(ex); else { const i = day.exercises.findIndex(e => e.id === d.id); day.exercises[i] = ex; }
+    ui.openDay = day.id; ui.draft = null; save(); closeSheet(); render(true); toast('Đã lưu bài tập');
+  },
+  'del-ex': () => { const d = ui.draft; confirmSheet({ title: `Xoá “${esc(d.name)}”?`, text: 'Bài tập và ảnh máy sẽ bị xoá khỏi giáo án. Lịch sử đã tập vẫn được giữ.', ok: 'Xoá bài tập', danger: true,
+    onOk: () => { const day = findDay(d.dayId); day.exercises = day.exercises.filter(e => e.id !== d.id); [...d.orig, ...d.added].forEach(id => DB.del('photos', id)); ui.draft = null; save(); render(true); } }); },
+  'week': t => { ui.weekOff = Math.min(0, ui.weekOff + +t.dataset.d); render(); },
+  'open-session': t => sessionSheet(t.dataset.id),
+  'del-session': t => confirmSheet({ title: 'Xoá buổi tập này?', text: 'Buổi tập sẽ bị xoá khỏi lịch sử và không thể khôi phục.', ok: 'Xoá buổi tập', danger: true,
+    onOk: () => { state.sessions = state.sessions.filter(s => s.id !== t.dataset.id); save(); render(true); } }),
+  'prog': t => { ui.progEx = t.dataset.id; progressSheet(); },
+  'pm': t => { ui.pm = t.dataset.k; const y = $('#sheet-body').scrollTop; progressSheet(); $('#sheet-body').scrollTop = y; },
+  'metric': t => { ui.metric = t.dataset.k; $$('[data-act="metric"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === ui.metric)); drawBodyChart(); },
+  'mode': t => { state.settings.progMode = t.dataset.k; save(); render(true); },
+  'pace': t => { state.settings.pace = t.dataset.k; save(); render(true); },
+  'body-add': () => bodySheet(null),
+  'pose': t => { ui.pose = t.dataset.k; ui.cmpA = ui.cmpB = null; render(true); },
+  'bp-view': t => showBodyViewer(t.dataset.id),
+  'bp-del': t => {
+    if (!t.dataset.armed) { t.dataset.armed = '1'; t.textContent = 'Bấm lần nữa để xoá'; return; }
+    const bp = state.bodyPhotos.find(x => x.id === t.dataset.id); if (!bp) return;
+    state.bodyPhotos = state.bodyPhotos.filter(x => x !== bp); DB.del('photos', bp.photoId); photoCache.delete(bp.photoId);
+    save(); handlers['viewer-close'](); render(true); toast('Đã xoá ảnh');
+  },
+  'ics': () => saveFile('lich-tap-so-ta.ics', buildICS(), 'text/calendar'),
+  'body-edit': t => bodySheet(state.body.find(e => e.id === t.dataset.id)),
+  'body-save': t => {
+    const date = $('#b-date').value || ymd(); const vals = {};
+    for (const m of METRICS) { const v = num($('#b-' + m.k).value); if (v != null) vals[m.k] = v; }
+    if (!Object.keys(vals).length) { toast('Nhập ít nhất một chỉ số'); return; }
+    let e = t.dataset.id ? state.body.find(x => x.id === t.dataset.id) : null;
+    const clash = state.body.find(x => x.date === date && x !== e);
+    if (clash) { state.body = state.body.filter(x => x !== clash); if (!e) e = { id: clash.id }; }
+    if (!e) e = { id: uid() };
+    state.body = state.body.filter(x => x.id !== e.id);
+    state.body.push({ id: e.id, date, ...vals });
+    save(); closeSheet(); render(true); toast('Đã lưu số đo');
+  },
+  'body-del': t => { state.body = state.body.filter(e => e.id !== t.dataset.id); save(); closeSheet(); render(true); },
+  'share': () => shareSheet(),
+  'copy': t => copyText(t.dataset.t),
+  'native-share': () => { const l = $('#sh-link'); if (!l) return; navigator.share({ title: 'Giáo án Sổ Tạ', text: 'Giáo án tập gym của mình, mở link để nhập vào Sổ Tạ:', url: l.value }).catch(() => {}); },
+  'import-open': () => importSheet(''),
+  'import-preview': async () => {
+    const box = $('#imp-preview'); if (!box) return;
+    try {
+      const days = await decodePlan($('#imp-code').value); if (!days.length) throw new Error('Giáo án trống.');
+      ui.importDays = days;
+      box.innerHTML = `<div class="eyebrow" style="margin-bottom:6px">${days.length} ngày tập</div>` + days.map(d => `<div class="pr"><b>${esc(d.name)}</b><span class="small muted" style="text-align:right">${d.exercises.map(e => esc(shortName(e.name))).join(', ')}</span></div>`).join('') +
+        `<div class="sh-actions"><button class="btn gold big" data-act="import-apply" data-m="add">Thêm vào giáo án của tôi</button>${state.days.length ? '<button class="btn" data-act="import-apply" data-m="replace">Thay giáo án hiện tại</button>' : ''}</div>`;
+    } catch (e) { box.innerHTML = `<div class="banner"><span class="bi">${ICON.alert}</span><div><b>Không đọc được mã</b><p>${esc(e.message || 'Kiểm tra lại link hoặc mã đã dán, có thể bị thiếu ký tự.')}</p></div></div>`; }
+  },
+  'import-apply': t => {
+    const days = (ui.importDays || []).map(d => ({ id: uid(), name: d.name, exercises: d.exercises.map(x => ({ ...x, id: uid(), photos: [] })) }));
+    if (t.dataset.m === 'replace') { state.days.forEach(d => d.exercises.forEach(ex => ex.photos.forEach(id => DB.del('photos', id)))); state.days = days; } else state.days.push(...days);
+    ui.importDays = null; save(); closeSheet(); ui.tab = 'plan'; ui.openDay = days[0] && days[0].id; render(); toast('Đã nhập giáo án. Bấm từng bài để điền mức tạ của bạn.');
+  },
+  'backup': async () => {
+    toast('Đang chuẩn bị file sao lưu…');
+    const photos = {}; for (const k of usedPhotoIds()) { const v = await DB.get('photos', k); if (v) photos[k] = v; }
+    const data = { app: 'so-ta', v: 2, exportedAt: new Date().toISOString(), state, photos };
+    await saveFile(`so-ta-sao-luu-${ymd()}.json`, JSON.stringify(data), 'application/json');
+  },
+  'install': async () => { if (!deferredInstall) return; deferredInstall.prompt(); try { await deferredInstall.userChoice; } catch (e) {} deferredInstall = null; render(true); },
+  'wipe': () => confirmSheet({ title: 'Xoá toàn bộ dữ liệu?', text: 'Giáo án, lịch sử tập, ảnh và số đo trên máy này sẽ bị xoá vĩnh viễn. Nên tải file sao lưu trước.', ok: 'Xoá toàn bộ', danger: true,
+    onOk: async () => { await DB.clear('photos', usedPhotoIds()); photoCache.clear(); state = freshState(); state.updatedAt = Date.now(); flush(true); stopRest(); releaseWake(); ui.tab = 'today'; render(); toast('Đã xoá dữ liệu'); } }),
+  'deload-done': () => { state.settings.cycleStart = ymd(); save(); render(true); toast('Bắt đầu chu kỳ mới'); },
+  'confirm-cancel': () => { pendingConfirm = null; if (ui.draft) exSheet(); else closeSheet(); },
+  'confirm-ok': () => { const f = pendingConfirm; pendingConfirm = null; closeSheet(); f && f(); },
+  'close-sheet': () => { if (ui.draft) { handlers['cancel-ex'](); return; } closeSheet(); }
+};
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act]'); if (!t || t.disabled) return;
+  const f = handlers[t.dataset.act]; if (f) { e.preventDefault(); f(t, e); }
+});
+document.addEventListener('input', e => {
+  const t = e.target; const b = t.dataset && t.dataset.bind;
+  if (t.id === 'cmp-range') { setCompare(+t.value); return; }
+  if (ui.draft && ['f-cur', 'f-tgt', 'f-step', 'f-sets', 'f-rtgt', 'f-rmin'].includes(t.id)) draftRoad();
+  if (!b) return;
+  if (b === 'set' && state.active) { const set = getSet(+t.dataset.e, t.dataset.s); if (set) { set[t.dataset.f] = num(t.value); if (t.dataset.s === '0' && t.dataset.f === 'kg') refreshWarm(+t.dataset.e); save(); } }
+  else if (b === 'sched') { const v = t.value; state.settings.schedule = { ...sched(), [t.dataset.dow]: v || '' }; t.classList.toggle('on', !!v); save(); }
+  else if (b === 'note' && state.active) { state.active.entries[+t.dataset.e].note = t.value; save(); }
+  else if (b === 'setting') { const k = t.dataset.k; state.settings[k] = ['name', 'remindTime'].includes(k) ? t.value : num(t.value); save(); renderHeader(); }
+});
+document.addEventListener('change', async e => {
+  const t = e.target;
+  if (t.id === 'f-name' && ui.draft && ui.draft.isNew) {
+    const lib = LIB.find(l => l[0] === t.value.trim());
+    if (lib) { $('#f-muscle').value = lib[1]; $('#f-type').value = lib[2]; $('#f-warm').checked = lib[2] !== 'iso'; $('#f-step').value = fmtIn(TYPES[lib[2]].step); $('#f-rest').value = String(TYPES[lib[2]].rest); draftRoad(); }
+  }
+  if (t.id === 'f-type' && ui.draft) { const ty = TYPES[t.value]; $('#f-rest').value = String(ty.rest); if (ui.draft.isNew) { $('#f-step').value = fmtIn(ty.step); $('#f-warm').checked = t.value !== 'iso'; } draftRoad(); }
+  if (t.dataset && t.dataset.bind === 'cmp') { ui['cmp' + t.dataset.k] = t.value; render(true); }
+  if ((t.id === 'f-photo-cam' || t.id === 'f-photo-lib') && ui.draft) {
+    const files = [...t.files].slice(0, 6); if (!files.length) return; readDraft();
+    for (const f of files) { try { const id = await storePhoto(f); ui.draft.photos.push(id); ui.draft.added.push(id); } catch (err) { toast('Không đọc được ảnh, thử lại'); } }
+    const y = $('#sheet-body').scrollTop; exSheet(); $('#sheet-body').scrollTop = y;
+  }
+  if (t.id === 'bp-in' && t.files && t.files[0]) {
+    try { const photoId = await storePhoto(t.files[0]); state.bodyPhotos.push({ id: uid(), date: ymd(), t: Date.now(), pose: ui.pose, photoId }); ui.cmpB = null; save(); render(true); toast(`Đã lưu ảnh ${ui.pose.toLowerCase()} hôm nay`); }
+    catch (err) { toast('Không đọc được ảnh, thử lại'); }
+    t.value = '';
+  }
+  if (t.dataset && t.dataset.cap) {
+    const ex = findEx(t.dataset.cap); const f = t.files && t.files[0]; if (!ex || !f) return;
+    try { const id = await storePhoto(f); ex.photos.unshift(id); save(); toast('Đã lưu ảnh máy tập');
+      if (!$('#viewer').hidden) { viewer.ex = ex; viewer.i = 0; showViewer(); }
+      if (ui.tab === 'today') render(true); } catch (err) { toast('Không đọc được ảnh, thử lại'); }
+    t.value = '';
+  }
+  if (t.id === 'restore-file' && t.files[0]) {
+    try {
+      const data = JSON.parse(await t.files[0].text());
+      if (data.app !== 'so-ta' || !data.state || !Array.isArray(data.state.days)) throw new Error();
+      ui.restoreData = data;
+      confirmSheet({ title: 'Khôi phục từ file sao lưu?', text: `File ngày ${data.exportedAt ? new Date(data.exportedAt).toLocaleDateString('vi-VN') : '?'} có ${data.state.days.length} ngày tập và ${(data.state.sessions || []).length} buổi đã tập. Toàn bộ dữ liệu hiện tại trên máy này sẽ được thay bằng file này.`, ok: 'Khôi phục', danger: true,
+        onOk: async () => { const d = ui.restoreData; await DB.clear('photos', usedPhotoIds()); photoCache.clear(); for (const [k, v] of Object.entries(d.photos || {})) await DB.put('photos', k, v);
+          loadState(d.state); state.updatedAt = Date.now(); flush(true); ui.restoreData = null; ui.tab = 'today'; render(); toast('Đã khôi phục dữ liệu'); } });
+    } catch (err) { toast('File không phải bản sao lưu Sổ Tạ'); }
+    t.value = '';
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('#viewer').hidden) handlers['viewer-close'](); else if (!$('#sheet').hidden) handlers['close-sheet'](); } });
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'hidden') { if (saveT) flush(true); else Cloud.sync(true); return; }
+  if (state.active && ui.tab === 'today') requestWake();
+  if (inArtifact && !Cloud.ok && syncStatus === 'retry') { connectCloud(state); return; }
+  if (Cloud.ok && !state.active && !saveT) {
+    try { const snap = await Cloud.base.get(); if (snap.exists && (snap.data().updatedAt || 0) > (state.updatedAt || 0)) { const r = await Cloud.pull(); loadState(r); Cloud.remember(r); LDB.put('kv', 'state', JSON.parse(JSON.stringify(state))); if ($('#sheet').hidden) render(true); } } catch (e) {}
+  }
+});
+window.addEventListener('pagehide', () => { if (saveT) flush(true); });
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; if (ui.tab === 'more') render(true); });
+setInterval(() => { const el = $('#elapsed'); if (el && state.active) el.textContent = fmtDur(Date.now() - state.active.startedAt); }, 1000);
+
+/* ---------- khởi động ---------- */
+(async () => {
+  await LDB.open();
+  const saved = await LDB.get('kv', 'state');
+  if (saved && Array.isArray(saved.days)) loadState(saved);
+  render();
+  connectCloud(saved && Array.isArray(saved.days) ? saved : null);
+  const h = location.hash;
+  if (h.startsWith('#nhap=')) { const code = decodeURIComponent(h.slice(6)); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} importSheet(code); }
+  if ('serviceWorker' in navigator && location.protocol === 'https:' && document.documentElement.dataset.pwa === '1') { navigator.serviceWorker.register('sw.js').catch(() => {}); }
+})();
+window.__sota = { suggest, roadmap, exHistory, baseKg, buildICS, warmSets, get state() { return state; } };
+})();
+</script>
+</body>
+</html>
