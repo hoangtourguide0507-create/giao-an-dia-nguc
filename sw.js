@@ -1,4 +1,4 @@
-const CACHE = 'gadn-v5';
+const CACHE = 'gadn-v11';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(SHELL.map(u => c.add(u).catch(() => null)))).then(() => self.skipWaiting()));
@@ -29,4 +29,18 @@ self.addEventListener('fetch', e => {
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => cs.length ? cs[0].focus() : self.clients.openWindow('./')));
+});
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (x) { d = { body: e.data ? e.data.text() : '' }; }
+  if (d && d.notification) d = d.notification;
+  e.waitUntil(self.registration.showNotification(d.title || 'Hết giờ nghỉ', {
+    body: d.body || 'Vào set tiếp theo thôi!',
+    tag: d.tag || 'rest',
+    renotify: true,
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    vibrate: [300, 150, 300, 150, 300],
+    data: { url: './' }
+  }));
 });
