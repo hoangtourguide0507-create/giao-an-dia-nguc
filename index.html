@@ -1008,6 +1008,40 @@ li.slot>.exr{border-top:0}
 .tact .btn{flex:1}
 .skel{height:120px;border-radius:var(--r-lg);background:linear-gradient(90deg,var(--surface) 0,var(--surface-2) 50%,var(--surface) 100%);background-size:200% 100%;animation:skel 1.2s linear infinite;margin-bottom:12px}
 @keyframes skel{to{background-position:-200% 0}}
+body.storying .sheet{z-index:64}
+/* v22: kế hoạch tuần */
+.wpstep{display:flex;align-items:center;gap:8px;margin:20px 0 10px;font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+.wpstep i{font-style:normal;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--gold);color:var(--gold-ink);font-size:12px}
+.wpsum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.wpsum div{background:var(--surface-2);border-radius:12px;padding:10px}
+.wpsum b{display:block;font-family:var(--font-d);font-size:22px;font-weight:800;line-height:1.1}
+.wpsum span{font-size:11.5px;color:var(--fg-2)}
+.wpnote{margin-top:10px;font-size:13px;color:var(--fg-2);line-height:1.5}
+.wpnote b{color:var(--fg)}
+.wpmode{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.wpmode button{border:1.5px solid var(--line-2);background:var(--surface-2);color:var(--fg);border-radius:14px;padding:12px 8px;font:inherit;font-weight:700;font-size:13.5px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.wpmode button span{font-size:11px;font-weight:500;color:var(--fg-2)}
+.wpmode button[aria-pressed="true"]{border-color:var(--gold);background:var(--gold-soft);color:var(--gold)}
+.wpfocus{margin-top:10px}
+.wpday{margin-top:14px;font-size:12.5px;font-weight:800;color:var(--fg-2);text-transform:uppercase;letter-spacing:.05em}
+.wprow{padding:11px 0;border-top:1px solid var(--line)}
+.wprow:first-of-type{border-top:0}
+.wprow .top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.wprow .nm{font-weight:700;font-size:14.5px;min-width:0}
+.wprow .kg{font-family:var(--font-d);font-weight:800;font-size:18px;white-space:nowrap}
+.wprow .kg s{opacity:.5;font-weight:600;font-size:14px;margin-right:4px}
+.wprow .why{font-size:12px;color:var(--fg-2);margin-top:2px}
+.wprow .ctl{display:flex;gap:6px;margin-top:8px;align-items:center}
+.wprow .ctl button{border:1px solid var(--line-2);background:var(--surface-2);color:var(--fg-2);border-radius:var(--pill);padding:6px 12px;font:inherit;font-size:12.5px;font-weight:700}
+.wprow .ctl button[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink);border-color:var(--gold)}
+.wprow .ctl .stp{display:flex;align-items:center;gap:4px;margin-left:auto}
+.wprow .ctl .stp button{width:32px;height:32px;padding:0;border-radius:10px;font-size:16px}
+.wprow .ctl .stp b{min-width:56px;text-align:center;font-family:var(--font-d);font-size:16px}
+.wprow.up .kg{color:var(--up)} .wprow.down .kg{color:var(--down)}
+.wpkeep{margin-top:12px}
+.wpkeep summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--fg-2);padding:6px 0}
+.wpkeep .ln{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-top:1px dashed var(--line)}
+.wpchip{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;padding:4px 10px;border-radius:var(--pill);background:var(--gold-soft);color:var(--gold);margin-top:8px}
 .coachcard{border-color:rgb(var(--acc-rgb) / .45)!important}
 .coachcard h3{display:flex;align-items:center;gap:8px}
 .coachcard h3 .ico{width:20px;height:20px;color:var(--gold)}
@@ -1525,6 +1559,7 @@ function loadState(s) {
     if (!ex.mainSince) { const ds = state.sessions.filter(x => x.entries.some(en => en.exId === ex.id)).map(x => x.date).sort(); ex.mainSince = ds[0] || ymd(); } }));
   if (!Array.isArray(state.bodyPhotos)) state.bodyPhotos = [];
   if (!Array.isArray(state.pains)) state.pains = [];
+  if (!state.weekPlans || typeof state.weekPlans !== 'object') state.weekPlans = {};
   if (!state.settings.alertV17) { state.settings.alertV17 = 1; if (state.settings.alertMethod !== 'shortcut') { state.settings.alertMethod = 'shortcut'; state.settings.notify = false; } }
   if (!state.settings.schedule || typeof state.settings.schedule !== 'object') state.settings.schedule = {};
 }
@@ -1581,7 +1616,14 @@ function cycleInfo() {
   const st = state.settings.cycleStart; if (!st) return null;
   return { week: Math.floor(daysBetween(st, ymd()) / 7) + 1, every: state.settings.deloadEvery || 6 };
 }
-const isDeload = () => { const c = cycleInfo(); return !!c && c.week > c.every; };
+const weekKey = () => weekDaysOf(0)[0];
+const wpCur = () => { const p = (state.weekPlans || {})[weekKey()]; return p && p.at ? p : null; };
+const isDeloadCycle = () => { const c = cycleInfo(); return !!c && c.week > c.every; };
+const isDeload = () => { if (ui.wpDraft) return ui.wpDraft.mode === 'deload'; const p = wpCur(); if (p) return p.mode === 'deload'; return isDeloadCycle(); };
+const focusOf = () => { const p = ui.wpDraft || wpCur(); return p && p.mode === 'focus' ? p.focus : ''; };
+const FOCUS_GROUPS = { 'Ngực': ['Ngực'], 'Lưng': ['Lưng'], 'Vai': ['Vai'], 'Chân': ['Đùi trước', 'Đùi sau', 'Mông', 'Bắp chân'], 'Tay': ['Tay trước', 'Tay sau', 'Cẳng tay'] };
+const inFocus = (m, f) => !!f && (FOCUS_GROUPS[f] || [f]).includes(m);
+function setsFor(ex) { const f = focusOf(); if (!f) return ex.sets; return inFocus(ex.muscle, f) ? Math.min(6, ex.sets + 1) : Math.max(2, ex.sets - 1); }
 
 /* ---------- gợi ý mức tạ ---------- */
 function suggestBase(ex) {
@@ -1599,7 +1641,13 @@ function suggestBase(ex) {
     text: `Tuần deload: <strong>${fmt(kg)} kg</strong>, chỉ tập khoảng một nửa số set. Tuần sau quay lại ${fmt(W)} kg.` }; }
   return state.settings.progMode === 'double' ? suggestDouble(ex, H, W) : suggestLinear(ex, H, W);
 }
-function suggest(ex) { const g = suggestP(ex); return ex && ex.each ? { ...g, text: String(g.text).replace(/ kg\b(?!\/)/g, ' kg/tay') } : g; }
+function suggestRaw(ex) { const g = suggestP(ex); return ex && ex.each ? { ...g, text: String(g.text).replace(/ kg\b(?!\/)/g, ' kg/tay') } : g; }
+function suggest(ex) {
+  const g = suggestRaw(ex), p = ui.wpDraft ? null : wpCur(); if (!p || !ex || !p.kg || p.kg[ex.id] == null || g.skip) return g;
+  const k = p.kg[ex.id], dec = (p.dec || {})[ex.id];
+  const kind = g.kind === 'up' && dec === 'hold' ? 'hold' : g.kind;
+  return { ...g, kind, kg: k, planned: true, label: kind === 'up' ? 'TĂNG TẠ' : g.kind === 'deload' ? 'DELOAD' : 'ĐÃ DUYỆT', text: `Kế hoạch tuần đã duyệt: <strong>${fmt(k)}${U(ex)}</strong>${dec === 'hold' && g.kind === 'up' ? ' (bạn chọn giữ mức cũ tuần này)' : dec === 'custom' ? ' (bạn tự chỉnh)' : ''}. ` + String(g.text) };
+}
 function suggestP(ex) {
   const sg = suggestBase(ex), pi = painOf(ex); if (!pi) return sg;
   const p = pi.p, area = esc(p.area.toLowerCase()), st = ex.step > 0 ? ex.step : 1, low = sg.kg > 0 ? Math.max(0, r2(Math.floor(sg.kg * 0.8 / st + 1e-9) * st)) : sg.kg;
@@ -1940,6 +1988,13 @@ function bodyPhotoBanner() {
   if (n < 28) return '';
   return `<div class="banner"><span class="bi">${ICON.cam}</span><div><b>Đến lúc chụp ảnh body tháng này</b><p>Đã ${n} ngày kể từ lần chụp trước. Chụp lại để so sánh trước và sau.</p><button class="btn sm" data-act="tab" data-tab="body">Mở mục ảnh body</button></div></div>`;
 }
+function wpBanner() {
+  if (!state.days.length) return '';
+  const p = wpCur();
+  if (!p) return `<div class="banner"><span class="bi">${ICON.cal}</span><div><b>Kế hoạch tuần ${dm(weekKey())} chưa duyệt</b><p>Xem tổng kết tuần trước, chọn trọng tâm tuần này và duyệt mức tạ từng bài.</p><button class="btn sm gold" data-act="wp-open">Lập kế hoạch tuần</button></div></div>`;
+  const ups = Object.keys(p.kg || {}).filter(id => { const ex = findEx(id); return ex && baseKg(ex) != null && p.kg[id] > baseKg(ex); }).length;
+  return `<div class="restcard"><span class="bi">${ICON.cal}</span><div><b>${p.mode === 'focus' ? `Tuần ưu tiên ${esc(p.focus)}` : p.mode === 'deload' ? 'Tuần deload' : 'Tuần cân bằng'} · đã duyệt</b>${ups ? `${ups} bài lên tạ tuần này. ` : ''}Mức tạ trong buổi tập lấy theo kế hoạch đã duyệt.<div class="row"><button class="btn sm" data-act="wp-open">Xem / sửa kế hoạch</button></div></div></div>`;
+}
 function painBanner() {
   const A = activePains(); if (!A.length) return '';
   const serious = A.some(p => p.level >= 3 || daysBetween(p.since, ymd()) >= 14);
@@ -1948,7 +2003,7 @@ function painBanner() {
 function viewToday() {
   if (state.active) return viewSession(state.active);
   let h = (multi() && !coach() && !(profiles.coach && profiles.coach.dismiss) ? `<div class="banner"><span class="bi">${ICON.users}</span><div><b>Bạn đang kèm ${profiles.list.length} người?</b><p>Bật chế độ huấn luyện viên: bạn là HLV, những người còn lại là học viên. Có bảng theo dõi cả nhóm ngay ở đầu màn hình.</p><div class="row"><button class="btn sm gold" data-act="coach-setup">Bật chế độ HLV</button><button class="btn sm ghost" data-act="coach-dismiss">Để sau</button></div></div></div>` : '')
-    + deloadBanner() + painBanner() + recoveryHint() + bodyPhotoBanner();
+    + wpBanner() + painBanner() + recoveryHint() + bodyPhotoBanner();
   if (!state.days.length) return h + onboarding();
   const today = ymd(), si = schedNext(), tm = state.settings.remindTime || '';
   const rc = recommend();
@@ -2092,6 +2147,29 @@ function setRowS(i, j, x, label) {
   document.addEventListener('touchend', e => { if (!ok) return; ok = false; const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0;
     if (Math.abs(dx) > 60 && Math.abs(dy) < 70) storyGo(dx < 0 ? 1 : -1); else if (dy > 110 && Math.abs(dx) < 60) closeStory(); }, { passive: true });
 })();
+const untouched = en => !en.sets.some(x => x.done) && !(en.drop && en.drop.done);
+function syncActive(opt) {
+  const a = state.active; if (!a) return false; const day = findDay(a.dayId); let ch = false; const curId = a.entries[story.i] && a.entries[story.i].exId;
+  // bài chính đổi trong giáo án → thay các bài chưa tập (trừ bài đã tự đổi trong buổi)
+  a.entries = a.entries.flatMap(en => {
+    const so = slotOf(en.exId);
+    if (!so) { if (untouched(en) && findEx(en.exId) == null && day) { ch = true; return []; } return [en]; }
+    if (!so.isMain && !en.manual && untouched(en) && so.day === day && !a.entries.some(o => o !== en && o.exId === so.main.id)) { ch = true; return [{ ...makeEntry(so.main), note: en.note || '' }]; }
+    return [en];
+  });
+  // bài mới thêm vào ngày đang tập
+  if (opt && opt.add && day) { const ex = findEx(opt.add), so = ex && slotOf(ex.id);
+    if (ex && so && so.isMain && so.day === day && !a.entries.some(en => { const s2 = slotOf(en.exId); return s2 && s2.main === ex; })) { a.entries.push(makeEntry(ex)); ch = true; } }
+  // thứ tự theo giáo án
+  if (day) {
+    const pos = en => { const so = slotOf(en.exId), f = a.focus; return (f && inFocus(en.muscle, f) ? 0 : 1000) + (so && so.day === day ? so.idx : 999); };
+    const before = a.entries.map(e => e.exId).join();
+    a.entries = a.entries.map((en, k) => ({ en, k })).sort((x, y) => pos(x.en) - pos(y.en) || x.k - y.k).map(x => x.en);
+    if (a.entries.map(e => e.exId).join() !== before) ch = true;
+  }
+  if (ch) { const k = a.entries.findIndex(e => e.exId === curId); story.i = k >= 0 ? k : Math.min(story.i, a.entries.length - 1); if (!$('#story').hidden) renderStory(); }
+  return ch;
+}
 function markCurrent() {
   const a = state.active; if (!a) return;
   const idx = a.entries.findIndex(en => en.sets.some(x => !x.done));
@@ -2159,7 +2237,7 @@ function entryCard(en, i) {
 }
 function makeEntry(ex) {
   const sg = suggest(ex);
-  const n = sg.kind === 'deload' ? Math.max(1, Math.ceil(ex.sets / 2)) : ex.sets;
+  const n = sg.kind === 'deload' ? Math.max(1, Math.ceil(ex.sets / 2)) : setsFor(ex);
   return { exId: ex.id, name: ex.name, muscle: ex.muscle, note: '', each: !!ex.each,
     sets: Array.from({ length: n }, (_, j) => ({ kg: sg.kg, reps: sg.reps[j] ?? ex.repTarget, done: false })),
     drop: ex.dropSet && sg.kind !== 'deload' ? { kg: sg.kg != null ? roundStep(sg.kg * 0.7, ex.step) : null, reps: null, done: false } : null };
@@ -2171,7 +2249,14 @@ function startSession(dayId, exIds) {
   if (!exs.length) { toast(d ? 'Ngày này chưa có bài tập. Thêm bài trong Giáo án.' : 'Chọn ít nhất một bài'); return; }
   let run = exs, skipped = 0;
   if (!exIds) { const sk = exs.filter(e => suggest(e).skip); if (sk.length === exs.length) { toast('Mọi bài của ngày này đều dồn lực vào chỗ đang đau. Chọn buổi khác hoặc “Tự chọn bài”.'); return; } run = exs.filter(e => !sk.includes(e)); skipped = sk.length; }
-  state.active = { id: uid(), dayId: d ? d.id : 'custom', dayName: d ? d.name : autoName(run), date: ymd(), startedAt: Date.now(), deload: isDeload(), est: dayEst(run), entries: run.map(makeEntry) };
+  const fo = focusOf();
+  if (fo && d) {
+    const fx = run.filter(e => inFocus(e.muscle, fo));
+    if (fx.length && fx.length < 3) { const have = new Set(run.map(e => e.id)); const pool = [...fx.flatMap(e => e.alts || []), ...allExFull().map(x => x.ex).filter(e => inFocus(e.muscle, fo))].filter(e => !have.has(e.id));
+      const pick = pool.sort((a, b) => (lastDone(a) || '0000').localeCompare(lastDone(b) || '0000'))[0]; if (pick) run = [...run, pick]; }
+    run = [...run.filter(e => inFocus(e.muscle, fo)), ...run.filter(e => !inFocus(e.muscle, fo))];
+  }
+  state.active = { id: uid(), dayId: d ? d.id : 'custom', dayName: d ? d.name : autoName(run), date: ymd(), startedAt: Date.now(), deload: isDeload(), est: dayEst(run), focus: fo || '', entries: run.map(makeEntry) };
   ui.pick = null; closeSheet(); save(); ui.tab = 'today'; render();
   if (skipped) toast(`Đã bỏ ${skipped} bài liên quan chỗ đau. Muốn tập vẫn thêm lại được bằng “+ Thêm bài”.`);
 }
@@ -2179,7 +2264,7 @@ function refreshWarm(i) { const box = $('#warm-' + i); if (box && state.active) 
 function getSet(i, j) { const en = state.active.entries[i]; return j === 'drop' ? en.drop : en.sets[+j]; }
 
 /* ---------- đồng hồ nghỉ ---------- */
-const APP_VERSION = '2026.10.12 · bản 20';
+const APP_VERSION = '2026.10.12 · bản 22';
 const PUSH_SERVER = '';
 const isIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const isStandalone = () => !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
@@ -3047,7 +3132,8 @@ function coachRich(st) {
     const mon = weekDaysOf(0)[0], wk8 = Array.from({ length: 8 }, (_, i) => { const a = addDays(mon, (i - 7) * 7), b = addDays(a, 6); return S.filter(x => x.date >= a && x.date <= b).reduce((v, x) => v + sessStats(x).vol, 0); });
     const s28 = S.filter(x => x.date >= addDays(today, -27));
     const rot = state.days.reduce((a, d) => a + d.exercises.filter(rotDue).length, 0);
-    return { ...base, d14, wk8, up28: upCount(s28), vol7: base.vol7, rot };
+    const wp = (state.weekPlans || {})[weekKey()];
+    return { ...base, d14, wk8, up28: upCount(s28), vol7: base.vol7, rot, wpOk: !!(wp && wp.at), wpMode: wp && wp.at ? (wp.mode === 'focus' ? 'ưu tiên ' + wp.focus : wp.mode === 'deload' ? 'deload' : 'cân bằng') : '' };
   });
 }
 function viewCoach() {
@@ -3071,9 +3157,10 @@ function viewCoach() {
     if (c.pains.length) todo.push(['red', '⚠', `${nm} đang đau ${c.pains.map(x => esc(x.area.toLowerCase())).join(', ')}`, 'App đã tự giảm tạ / bỏ bài liên quan', r.p.id]);
     if (c.ups.length) todo.push(['up', '▲', `${nm}: ${c.ups.length} bài lên tạ`, c.ups.slice(0, 3).map(x => `${esc(shortName(x.ex.name))} ${fmt(x.sg.prev)}→${fmt(x.sg.kg)}`).join(' · '), r.p.id]);
     if (c.rot) todo.push(['gold', '⟳', `${nm}: ${c.rot} ô bài nên đổi`, 'Đã giữ bài chính hơn 6 tuần', r.p.id]);
+    if (!c.wpOk && c.nDays && c.total) todo.push(['gold', '✎', `Duyệt kế hoạch tuần cho ${nm}`, 'Chọn trọng tâm và mức tạ tuần này', r.p.id, 'plan']);
   }
   h += `<div class="sec-head" style="margin-top:6px"><h3 class="h">Việc cần làm</h3><span class="chip">${todo.length}</span></div>`;
-  h += todo.length ? todo.slice(0, 8).map(([k, ic, t, sub, id, act]) => `<button type="button" class="todo" data-act="${act === 'share' ? 'coach-share' : 'switch-profile'}" data-id="${id}"><span class="ti ${k}">${ic}</span><span style="min-width:0"><b>${t}</b><span class="s">${sub}</span></span><span class="go">›</span></button>`).join('')
+  h += todo.length ? todo.slice(0, 8).map(([k, ic, t, sub, id, act]) => `<button type="button" class="todo" data-act="${act === 'share' ? 'coach-share' : act === 'plan' ? 'coach-plan' : 'switch-profile'}" data-id="${id}"><span class="ti ${k}">${ic}</span><span style="min-width:0"><b>${t}</b><span class="s">${sub}</span></span><span class="go">›</span></button>`).join('')
     : '<div class="empty" style="padding:16px">Không có gì cần xử lý. Đội đang tập tốt.</div>';
   // bảng xếp hạng
   const lb = ui.lb || 'n7', val = c => lb === 'n7' ? c.n7 : lb === 'vol' ? c.vol7 : c.up28;
@@ -3085,10 +3172,10 @@ function viewCoach() {
   for (const { p, c } of D.rows) {
     const pc = col(p);
     if (!c) { h += `<div class="tcard" style="--pc:${pc}"><div class="tt"><div class="ring"><span class="in">${esc(initials(p.name))}</span></div><div><div class="nm">${esc(p.name)}</div><div class="tline">Chưa mở hồ sơ này trên máy.</div></div></div><div class="tact"><button class="btn" data-act="switch-profile" data-id="${p.id}">Mở hồ sơ</button></div></div>`; continue; }
-    const goal = p.goal || 3, pct = Math.min(1, c.n7 / goal), mxw = Math.max(1, ...c.wk8);
+    const goal = p.goal || 5, pct = Math.min(1, c.n7 / goal), mxw = Math.max(1, ...c.wk8);
     const pill = c.active ? '<span class="spill live">ĐANG TẬP</span>' : c.pains.length ? '<span class="spill warn">ĐANG ĐAU</span>' : c.gap == null ? '<span class="spill ok">CHƯA TẬP</span>' : c.gap >= 4 ? `<span class="spill warn">${c.gap} NGÀY NGHỈ</span>` : '<span class="spill ok">ĐỀU ĐẶN</span>';
     h += `<div class="tcard" style="--pc:${pc}"><div class="tt"><div class="ring"><svg viewBox="0 0 62 62"><circle class="bg" cx="31" cy="31" r="26"/><circle class="fg" cx="31" cy="31" r="26" style="stroke-dashoffset:${(163.4 * (1 - pct)).toFixed(1)}"/></svg><span class="in">${esc(initials(p.name))}</span></div>
-      <div style="min-width:0;flex:1"><div class="nm">${esc(p.name)}${pill}</div><button type="button" class="gl" data-act="goal" data-id="${p.id}">${c.n7}/${goal} buổi trong 7 ngày · đổi mục tiêu</button></div></div>
+      <div style="min-width:0;flex:1"><div class="nm">${esc(p.name)}${pill}</div>${c.wpOk ? `<span class="wpchip">Tuần này: ${esc(c.wpMode)}</span><br>` : ''}<button type="button" class="gl" data-act="goal" data-id="${p.id}">${c.n7}/${goal} buổi trong 7 ngày · đổi mục tiêu</button></div></div>
       <div class="wk8">${c.wk8.map((v, k) => `<i class="${k === 7 ? 'cur' : ''}" style="height:${Math.max(4, v / mxw * 100)}%;--k:${k}"></i>`).join('')}</div><div class="wk8l"><span>8 tuần trước</span><span>tấn tạ mỗi tuần</span><span>tuần này</span></div>
       <div class="tinfo"><div><b>${c.total}</b><span>tổng buổi · tháng này ${c.nMonth}</span></div><div><b>${c.w ? fmt(c.w.weight) + ' kg' : '—'}</b><span>${c.w ? 'cân nặng · ' + dm(c.w.date) : 'chưa nhập cân nặng'}</span></div>
         <div><b style="${c.ups.length ? 'color:var(--up)' : ''}">${c.ups.length}</b><span>bài cần lên tạ</span></div><div><b>${c.up28}</b><span>bài đã lên tạ · 4 tuần</span></div></div>
@@ -3131,6 +3218,54 @@ async function planFile(pid) {
 function impPreviewHtml(days) {
   return `<div class="eyebrow" style="margin-bottom:6px">${days.length} ngày tập${ui.importFrom ? ' · từ HLV ' + esc(ui.importFrom) : ''}</div>` + days.map(d => `<div class="pr"><b>${esc(d.name)}</b><span class="small muted" style="text-align:right">${d.exercises.map(e => esc(shortName(e.name))).join(', ')}</span></div>`).join('') +
     `<div class="sh-actions"><button class="btn gold big" data-act="import-apply" data-m="add">Thêm vào giáo án của tôi</button>${state.days.length ? '<button class="btn" data-act="import-apply" data-m="replace">Thay giáo án hiện tại</button>' : ''}</div>`;
+}
+function wpBuild() {
+  // tính đề xuất thô (không áp kế hoạch cũ) cho mọi bài chính
+  const D = ui.wpDraft, out = [];
+  for (const d of state.days) for (const ex of d.exercises) {
+    const g = suggestRaw(ex), b = baseKg(ex);
+    out.push({ d, ex, g, b, sets: g.kind === 'deload' ? Math.max(1, Math.ceil(ex.sets / 2)) : setsFor(ex), need: b != null && g.kg != null && g.kg !== b });
+  }
+  return out;
+}
+function wpKg(r) { const D = ui.wpDraft, dec = D.dec[r.ex.id]; return dec === 'hold' ? r.b : dec === 'custom' ? D.custom[r.ex.id] : r.g.kg; }
+function weekPlanSheet() {
+  const mon = weekKey(), days = weekDaysOf(0), prev = weekDaysOf(-1), P = periodStats(prev[0], prev[6]);
+  if (!ui.wpDraft) { const ex0 = (state.weekPlans || {})[mon]; ui.wpDraft = ex0 && ex0.at ? { mode: ex0.mode, focus: ex0.focus || 'Ngực', dec: { ...(ex0.dec || {}) }, custom: { ...(ex0.custom || {}) } } : { mode: isDeloadCycle() ? 'deload' : 'balanced', focus: 'Ngực', dec: {}, custom: {} }; }
+  const D = ui.wpDraft, rows = wpBuild(), need = rows.filter(r => r.need), keep = rows.filter(r => !r.need);
+  const lo = state.settings.setMin || 10, low = MUSCLES.filter(m => state.days.some(d => d.exercises.some(e => e.muscle === m)) && (P.per[m] || 0) < lo);
+  const stall = allEx().filter(x => suggestRaw(x.ex).kind === 'down');
+  const fgs = Object.keys(FOCUS_GROUPS).filter(f => state.days.some(d => d.exercises.some(e => inFocus(e.muscle, f))));
+  const fdays = D.mode === 'focus' ? state.days.filter(d => d.exercises.some(e => inFocus(e.muscle, D.focus))) : [];
+  let h = `<h3 class="sh-title">Kế hoạch tuần ${dm(days[0])} – ${dm(days[6])}</h3><p class="sh-text">${esc(curProf().name)} · mục tiêu ${(curProf().goal || 5)} buổi. Duyệt một lần, cả tuần vào tập là có sẵn mức tạ.</p>
+    <div class="wpstep"><i>1</i>Tuần trước</div>
+    <div class="wpsum"><div><b>${P.ss.length}</b><span>buổi tập</span></div><div><b>${P.sets}</b><span>set</span></div><div><b>${fmt(P.vol / 1000, 1)}</b><span>tấn tạ</span></div></div>
+    <div class="wpnote">${P.ups ? `▲ <b>${P.ups} bài</b> đã lên tạ. ` : ''}${stall.length ? `▼ <b>${stall.length} bài</b> đang chững: ${stall.slice(0, 3).map(x => esc(shortName(x.ex.name))).join(', ')}. ` : ''}${low.length ? `Nhóm cơ còn thiếu set: <b>${low.slice(0, 5).map(esc).join(', ')}</b>.` : P.ss.length ? 'Các nhóm cơ đều đủ set.' : 'Tuần trước chưa có buổi nào.'}</div>
+    <div class="wpstep"><i>2</i>Trọng tâm tuần này</div>
+    <div class="wpmode">${[['balanced', 'Cân bằng', 'như giáo án'], ['focus', 'Ưu tiên', 'dồn 1 nhóm cơ'], ['deload', 'Deload', 'giảm tạ, hồi phục']].map(([k, l, sub]) => `<button type="button" data-act="wp-mode" data-k="${k}" aria-pressed="${D.mode === k}">${l}<span>${sub}</span></button>`).join('')}</div>
+    ${D.mode === 'focus' ? `<div class="qpick wpfocus">${fgs.map(f => `<button type="button" data-act="wp-focus" data-k="${f}" aria-pressed="${D.focus === f}">${f}</button>`).join('')}</div>
+      <div class="wpnote">Kiểu ưu tiên dân thể hình thi đấu hay dùng cho nhóm cơ yếu, chỉ áp dụng tuần này:<br>• Bài <b>${esc(D.focus)}</b> +1 set mỗi bài và luôn tập <b>đầu buổi</b>, lúc còn khỏe.<br>• Ngày nào có dưới 3 bài ${esc(D.focus.toLowerCase())}, app thêm 1 bài lâu chưa tập từ kho để đổi góc.<br>• Nhóm cơ khác −1 set (mức duy trì) để đủ sức hồi phục.<br>${fdays.length ? `Áp dụng cho: <b>${fdays.map(d => esc(d.name)).join(', ')}</b>.` : `<span style="color:var(--down)">Giáo án chưa có bài ${esc(D.focus.toLowerCase())} nào.</span>`}</div>`
+    : D.mode === 'deload' ? `<div class="wpnote">Tuần nhẹ: tạ ~90%, số set giảm một nửa. Cơ, khớp và hệ thần kinh hồi phục để các tuần sau tăng tạ tiếp.${isDeloadCycle() ? ' <b>Đã đủ 6 tuần, nên deload tuần này.</b>' : ''}</div>`
+    : `<div class="wpnote">Tập đều theo giáo án, tạ tăng theo tiến độ từng bài.${isDeloadCycle() ? ' <b style="color:var(--gold)">Gợi ý: đã đủ 6 tuần, nên chọn Deload.</b>' : ''}</div>`}
+    <div class="wpstep"><i>3</i>Duyệt mức tạ · ${need.length} bài thay đổi</div>`;
+  if (!need.length) h += `<div class="wpnote">Tuần này không bài nào đổi mức tạ, cứ giữ và cố tập đủ rep.</div>`;
+  for (const d of state.days) {
+    const rs = need.filter(r => r.d === d); if (!rs.length) continue;
+    h += `<div class="wpday">${esc(d.name)}</div>`;
+    for (const r of rs) { const dec = D.dec[r.ex.id] || 'ok', k = wpKg(r), cls = k > r.b ? 'up' : k < r.b ? 'down' : '', u = U(r.ex);
+      h += `<div class="wprow ${cls}"><div class="top"><span class="nm">${esc(shortName(r.ex.name))}</span><span class="kg">${k !== r.b ? `<s>${fmt(r.b)}</s>` : ''}${fmt(k)}<small style="font-size:11px">${u}</small></span></div>
+        <div class="why">${r.sets}×${r.ex.repTarget || 10} · ${r.g.kind === 'up' ? 'tuần trước đạt đủ rep' : r.g.kind === 'down' ? 'chững nhiều buổi, giảm để lấy lại form' : r.g.kind === 'deload' ? 'tuần deload' : r.g.kind === 'pain' ? 'đang đau, giảm tạ' : esc(r.g.label.toLowerCase())}</div>
+        <div class="ctl"><button type="button" data-act="wp-dec" data-id="${r.ex.id}" data-v="ok" aria-pressed="${dec === 'ok'}">✓ Theo</button><button type="button" data-act="wp-dec" data-id="${r.ex.id}" data-v="hold" aria-pressed="${dec === 'hold'}">Giữ ${fmt(r.b)}</button>
+          <span class="stp"><button type="button" data-act="wp-step" data-id="${r.ex.id}" data-d="-1" aria-label="Giảm">−</button><b>${dec === 'custom' ? fmt(k) : 'Tự chỉnh'}</b><button type="button" data-act="wp-step" data-id="${r.ex.id}" data-d="1" aria-label="Tăng">+</button></span></div></div>`; }
+  }
+  if (keep.length) h += `<details class="wpkeep"><summary>${keep.length} bài giữ nguyên mức tạ</summary>${keep.map(r => `<div class="ln"><span>${esc(shortName(r.ex.name))}</span><span>${r.b != null ? fmt(r.b) + U(r.ex) : 'chưa có mức tạ'}${setsFor(r.ex) !== r.ex.sets && r.g.kind !== 'deload' ? ` · ${setsFor(r.ex)} set` : ''}</span></div>`).join('')}</details>`;
+  h += `<div class="sh-actions"><button class="btn gold big" data-act="wp-approve">${ICON.check} Duyệt kế hoạch tuần</button><button class="btn ghost" data-act="wp-later">Để sau</button></div>`;
+  const y = $('#sheet').hidden ? 0 : $('#sheet-body').scrollTop; openSheet(h); if (y) $('#sheet-body').scrollTop = y;
+}
+function maybeWeekPlan() {
+  const mon = weekKey();
+  if (state.active || !state.days.length || !state.sessions.length || wpCur() || state.wpSkip === mon || !$('#sheet').hidden) return;
+  setTimeout(() => { if ($('#sheet').hidden && !state.active) { ui.wpDraft = null; weekPlanSheet(); } }, 700);
 }
 function coachSetupSheet() {
   const co = profiles.coach || {}, self = profiles.list.find(p => /^tôi$/i.test(p.name.trim()));
@@ -3437,7 +3572,7 @@ const handlers = {
     if (m === 'half') { convEach(ex, 0.5, true); if (ex.step >= 2.5) ex.step = 2; } else if (m === 'each') { if (ex.each === false) convEach(ex, 1, true); else ex.each = true; } else { if (ex.each) convEach(ex, 2, false); else ex.each = false; }
     save(); render(true); const y = $('#sheet-body').scrollTop; dbSheet(); $('#sheet-body').scrollTop = y; toast(m === 'half' ? 'Đã chia đôi lịch sử, giờ ghi kg mỗi tay' : m === 'each' ? 'Ghi kg mỗi tay' : 'Ghi tổng 2 tay'); },
   'each-conv': t => { const ex = findEx(t.dataset.id); if (!ex) return; const f = +t.dataset.f; if (f !== 1) convEach(ex, f, !!ex.each); else convEach(ex, 1, !!ex.each); save(); closeSheet(); render(true); toast(f === 1 ? 'Giữ nguyên số cũ' : 'Đã đổi lịch sử của bài này'); },
-  'move-ex': t => { const d = findDay(t.dataset.day); const i = d.exercises.findIndex(e => e.id === t.dataset.id), j = i + +t.dataset.d; if (j < 0 || j >= d.exercises.length) return; [d.exercises[i], d.exercises[j]] = [d.exercises[j], d.exercises[i]]; save(); render(true); },
+  'move-ex': t => { const d = findDay(t.dataset.day); const i = d.exercises.findIndex(e => e.id === t.dataset.id), j = i + +t.dataset.d; if (j < 0 || j >= d.exercises.length) return; [d.exercises[i], d.exercises[j]] = [d.exercises[j], d.exercises[i]]; const sy = syncActive(); save(); render(true); if (sy) toast('Đã cập nhật thứ tự buổi đang tập'); },
   'add-ex': t => { ui.nb = {}; ui.draft = { ...newEx(''), dayId: t.dataset.day, isNew: true, added: [], orig: [] }; exSheet(); },
   'edit-ex': t => { const ex = findEx(t.dataset.id); if (!ex) return; const so = slotOf(ex.id); ui.nb = {};
     ui.draft = { ...ex, photos: [...ex.photos], dayId: so.day.id, altOf: so.isMain ? null : so.main.id, isNew: false, added: [], orig: [...ex.photos], eachOrig: !!ex.each }; exSheet(); },
@@ -3456,17 +3591,17 @@ const handlers = {
   'swap-do': t => {
     const a = state.active, i = +t.dataset.e, x = findEx(t.dataset.id); if (!a || !x || !a.entries[i]) return;
     const mk = $('#swap-main') && $('#swap-main').checked && t.dataset.same === '1';
-    const old = a.entries[i]; a.entries[i] = { ...makeEntry(x), note: old.note || '' };
-    if (mk) { const so = slotOf(x.id); if (so && !so.isMain) swapMain(so.main, x.id); }
-    save(); closeSheet(); render(true); if (!$('#story').hidden) renderStory(true);
+    const old = a.entries[i]; a.entries[i] = { ...makeEntry(x), note: old.note || '', manual: !mk };
+    if (mk) { const so = slotOf(x.id); if (so && !so.isMain) swapMain(so.main, x.id); syncActive(); }
+    save(); closeSheet(); render(true); if (!$('#story').hidden) { story.i = Math.max(0, a.entries.findIndex(e => e.exId === x.id)); story.ph = 0; renderStory(true); }
     toast(`Đã đổi sang ${shortName(x.name)}${mk ? ' · bài chính mới' : ''}`);
   },
   'add-alt': t => { const main = findEx(t.dataset.id); if (!main) return; const so = slotOf(main.id); ui.nb = {};
     ui.draft = { ...newEx(''), muscle: main.muscle, type: main.type, sets: main.sets, repTarget: main.repTarget, repMin: main.repMin, repMax: main.repMax, dayId: so.day.id, altOf: main.id, isNew: true, added: [], orig: [] }; exSheet(); },
   'alts-toggle': t => { ui.altOpen = ui.altOpen || {}; ui.altOpen[t.dataset.id] = !ui.altOpen[t.dataset.id]; render(true); },
-  'make-main': t => { const so = slotOf(t.dataset.id); if (!so || so.isMain) return; const nm = swapMain(so.main, t.dataset.id); save(); closeSheet(); render(true); toast(`Bài chính mới: ${shortName(nm.name)}`); },
+  'make-main': t => { const so = slotOf(t.dataset.id); if (!so || so.isMain) return; const nm = swapMain(so.main, t.dataset.id); const sy = syncActive(); save(); closeSheet(); render(true); toast(`Bài chính mới: ${shortName(nm.name)}${sy ? ' · đã đổi trong buổi đang tập' : ''}`); },
   'rot-hold': t => { const m = findEx(t.dataset.id); if (!m) return; m.mainSince = addDays(ymd(), -(ROT_DAYS - 14)); save(); render(true); if (!$('#sheet').hidden) rotSheet(); toast('Giữ bài chính thêm 2 tuần'); },
-  'rot-swap': t => { const m = findEx(t.dataset.id); if (!m) return; const nm = swapMain(m, t.dataset.alt); save(); render(true); if (!$('#sheet').hidden) rotSheet(); toast(`Đã đổi sang ${shortName(nm.name)}`); },
+  'rot-swap': t => { const m = findEx(t.dataset.id); if (!m) return; const nm = swapMain(m, t.dataset.alt); syncActive(); save(); render(true); if (!$('#sheet').hidden) rotSheet(); toast(`Đã đổi sang ${shortName(nm.name)}`); },
   'rot-open': () => rotSheet(),
   'lib-open': () => { ui.libQ = ''; ui.libM = ''; libSheet(); },
   'lib-m': t => { ui.libM = ui.libM === t.dataset.k ? '' : t.dataset.k; libSheet(); },
@@ -3490,6 +3625,7 @@ const handlers = {
     [...d.orig, ...d.added].filter(id => !d.photos.includes(id)).forEach(id => DB.del('photos', id));
     if (d.altOf) { const m = findEx(d.altOf); m.alts = m.alts || []; if (d.isNew) m.alts.push(ex); else { const k = m.alts.findIndex(a => a.id === d.id); m.alts[k] = ex; } ui.altOpen = { ...(ui.altOpen || {}), [m.id]: true }; }
     else if (d.isNew) day.exercises.push(ex); else { const i = day.exercises.findIndex(e => e.id === d.id); day.exercises[i] = ex; }
+    syncActive(d.isNew && !d.altOf ? { add: ex.id } : null);
     ui.openDay = day.id; ui.draft = null; save(); closeSheet(); render(true); toast('Đã lưu bài tập');
     if (!d.isNew && !!d.each !== !!d.eachOrig && exHistory(d.id).length) eachConvSheet(ex, !!d.eachOrig);
   },
@@ -3499,7 +3635,7 @@ const handlers = {
       if (d.altOf) { const m = findEx(d.altOf); m.alts = (m.alts || []).filter(a => a.id !== d.id); }
       else if (hasAlts) { const nm = swapMain(cur, cur.alts[0].id); nm.alts = nm.alts.filter(a => a.id !== d.id); }
       else day.exercises = day.exercises.filter(e => e.id !== d.id);
-      [...d.orig, ...d.added].forEach(id => DB.del('photos', id)); ui.draft = null; save(); render(true); } }); },
+      [...d.orig, ...d.added].forEach(id => DB.del('photos', id)); ui.draft = null; syncActive(); save(); render(true); } }); },
   'week': t => { ui.weekOff = Math.min(0, ui.weekOff + +t.dataset.d); render(); },
   'pmode': t => { ui.pmode = t.dataset.k; render(true); },
   'period': t => { if (ui.pmode === 'month') ui.monthOff = Math.min(0, (ui.monthOff || 0) + +t.dataset.d); else ui.weekOff = Math.min(0, ui.weekOff + +t.dataset.d); render(true); },
@@ -3515,10 +3651,26 @@ const handlers = {
   'mode': t => { state.settings.progMode = t.dataset.k; save(); render(true); },
   'tempo': t => { state.settings.tempo = +t.dataset.k; save(); render(true); },
   'coach': () => { if (coach()) { closeSheet(); ui.tab = 'more'; render(); } else coachSheet(); },
+  'wp-open': () => { ui.wpDraft = null; weekPlanSheet(); },
+  'wp-mode': t => { ui.wpDraft.mode = t.dataset.k; weekPlanSheet(); },
+  'wp-focus': t => { ui.wpDraft.focus = t.dataset.k; weekPlanSheet(); },
+  'wp-dec': t => { ui.wpDraft.dec[t.dataset.id] = t.dataset.v; weekPlanSheet(); },
+  'wp-step': t => { const D = ui.wpDraft, id = t.dataset.id, ex = findEx(id); const r = wpBuild().find(x => x.ex.id === id); if (!r) return;
+    const cur = D.dec[id] === 'custom' ? D.custom[id] : wpKg(r); D.custom[id] = Math.max(0, r2((cur ?? 0) + +t.dataset.d * (ex.step > 0 ? ex.step : 1))); D.dec[id] = 'custom'; weekPlanSheet(); },
+  'wp-approve': () => {
+    const D = ui.wpDraft, rows = wpBuild(), kg = {};
+    for (const r of rows) { const k = wpKg(r); if (k != null) kg[r.ex.id] = k; }
+    const mon = weekKey(); state.weekPlans = state.weekPlans || {};
+    state.weekPlans[mon] = { mode: D.mode, focus: D.mode === 'focus' ? D.focus : '', dec: { ...D.dec }, custom: { ...D.custom }, kg, at: Date.now() };
+    const ks = Object.keys(state.weekPlans).sort(); while (ks.length > 12) delete state.weekPlans[ks.shift()];
+    ui.wpDraft = null; save(); closeSheet(); render(true); toast(D.mode === 'focus' ? `Đã duyệt · tuần ưu tiên ${D.focus}` : D.mode === 'deload' ? 'Đã duyệt · tuần deload' : 'Đã duyệt kế hoạch tuần'); if (typeof confetti === 'function' && !reduceMotion()) confetti();
+  },
+  'wp-later': () => { state.wpSkip = weekKey(); ui.wpDraft = null; save(); closeSheet(); render(true); },
+  'coach-plan': async t => { await switchProfile(t.dataset.id); ui.tab = 'today'; render(); ui.wpDraft = null; weekPlanSheet(); },
   'coach-share': t => coachShareSheet(t.dataset.id),
   'plan-file': t => planFile(t.dataset.id),
   'lb': t => { ui.lb = t.dataset.k; render(true); },
-  'goal': t => { const p = profiles.list.find(x => x.id === t.dataset.id); if (!p) return; p.goal = (p.goal || 3) >= 6 ? 2 : (p.goal || 3) + 1; saveProfiles(); render(true); toast(`Mục tiêu ${p.name}: ${p.goal} buổi mỗi tuần`); },
+  'goal': t => { const p = profiles.list.find(x => x.id === t.dataset.id); if (!p) return; p.goal = (p.goal || 5) >= 6 ? 3 : (p.goal || 5) + 1; saveProfiles(); render(true); toast(`Mục tiêu ${p.name}: ${p.goal} buổi mỗi tuần`); },
   'coach-setup': () => { ui.coachSelf = 'train'; coachSetupSheet(); },
   'coach-self': t => { const v = $('#f-cname').value; ui.coachSelf = t.dataset.v; coachSetupSheet(); $('#f-cname').value = v; },
   'coach-dismiss': () => { profiles.coach = { ...(profiles.coach || {}), dismiss: true }; saveProfiles(); render(true); },
@@ -3648,7 +3800,7 @@ const handlers = {
   'deload-done': () => { state.settings.cycleStart = ymd(); save(); render(true); toast('Bắt đầu chu kỳ mới'); },
   'confirm-cancel': () => { pendingConfirm = null; if (ui.draft) exSheet(); else closeSheet(); },
   'confirm-ok': () => { const f = pendingConfirm; pendingConfirm = null; closeSheet(); f && f(); },
-  'close-sheet': () => { if (ui.draft) { handlers['cancel-ex'](); return; } closeSheet(); }
+  'close-sheet': () => { if (ui.draft) { handlers['cancel-ex'](); return; } if (ui.wpDraft) { ui.wpDraft = null; if (!wpCur()) state.wpSkip = weekKey(); } closeSheet(); }
 };
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if (!t || t.disabled) return;
@@ -3784,6 +3936,7 @@ setInterval(() => { const el = $('#elapsed'); if (el && state.active) { el.textC
   if (!pm) { profiles.list[0].name = (state.settings.name || '').trim() || 'Tôi'; LDB.put('kv', 'profiles', clone(profiles)); }
   render();
   connectCloud(saved && Array.isArray(saved.days) ? saved : null);
+  if (!location.hash.startsWith('#nhap=')) maybeWeekPlan();
   if (state.settings.notify && alertMethod() === 'push') currentPushSub().then(() => { if (ui.tab === 'more') render(true); }).catch(() => {});
   const h = location.hash;
   if (h.startsWith('#nhap=')) { const code = decodeURIComponent(h.slice(6)); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} importSheet(code); }
