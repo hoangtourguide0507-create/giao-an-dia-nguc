@@ -1,4 +1,4 @@
-const CACHE = 'gadn-v27';
+const CACHE = 'gadn-v28';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable.png', './apple-touch-icon.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(SHELL.map(u => c.add(u).catch(() => null)))).then(() => self.skipWaiting()));
@@ -10,6 +10,7 @@ self.addEventListener('fetch', e => {
   const r = e.request; if (r.method !== 'GET') return;
   const u = new URL(r.url);
   if (u.origin === location.origin) {
+    if (/\.bin$/.test(u.pathname)) return;
     if (r.mode === 'navigate') {
       e.respondWith(fetch(r).then(res => { const cp = res.clone(); caches.open(CACHE).then(c => c.put('./index.html', cp)); return res; })
         .catch(() => caches.match('./index.html').then(m => m || caches.match('./'))));

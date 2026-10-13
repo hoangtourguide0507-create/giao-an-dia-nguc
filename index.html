@@ -1063,6 +1063,25 @@ body.storying .sheet{z-index:64}
 .nav .bar.n5>button.fab{width:76px;max-width:none}
 :root[data-skin="light"] .nav .bar.n5>button:not(.fab){width:56px;max-width:none;padding:0}
 :root[data-skin="light"] .nav .bar.n5>button[aria-current="page"]:not(.fab) .lb{display:none}
+.zpick{display:flex;flex-direction:column;gap:6px}
+.zrow{display:grid;grid-template-columns:68px minmax(0,1fr);gap:6px;align-items:start}
+.zrow .zb,.zr .zb{font-size:12px;font-weight:700;color:var(--fg-2);padding-top:9px}
+.zrow .qpick{margin:0}
+.zlib{display:flex;flex-direction:column;gap:6px;max-height:340px;overflow-y:auto;overscroll-behavior:contain;padding:2px}
+.zlib button{display:flex;align-items:center;gap:10px;text-align:left;padding:6px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);font:inherit;font-size:14px;font-weight:600;min-height:52px}
+.zlib button[aria-pressed="true"]{border-color:var(--gold);background:var(--gold-soft)}
+.zlib img,.zlib .ni{width:52px;height:40px;border-radius:8px;object-fit:cover;background:#fff;flex:none}
+.zlib .ni{background:var(--surface-3)}
+.nbmore{margin-top:10px}.nbmore summary{cursor:pointer;font-weight:700;font-size:13.5px;color:var(--gold);padding:6px 0}
+.zcard{margin-top:12px}
+.zbody{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.zr{display:grid;grid-template-columns:68px minmax(0,1fr);gap:6px}
+.zr .zb{padding-top:5px}
+.zc{display:flex;flex-wrap:wrap;gap:5px}
+.packst{margin-top:14px;padding:14px;border-radius:12px;background:var(--surface-2);font-weight:700;font-variant-numeric:tabular-nums}
+.gvid{width:100%;max-height:52vh;border-radius:14px;background:#000;margin-top:8px}
+.gvrow{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.gvrow .btn{width:100%;justify-content:center}
 .bsex{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
 .bsex p{margin:2px 0 0}
 .bnow{margin-bottom:12px}
@@ -1089,6 +1108,8 @@ body.storying .sheet{z-index:64}
 .mline .mv{font-size:12px;font-weight:800}
 .mx{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:2px}
 .bhist{margin:4px 0 6px}
+.bnow-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+button.btile{font:inherit;cursor:pointer}
 .bhist summary,.bmore summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--fg-2);padding:8px 0}
 .bmore{margin-top:10px}
 .bcmp{margin-bottom:12px}
@@ -1347,7 +1368,7 @@ function renderNav() {
 }
 
 /* ---------- dữ liệu nền ---------- */
-const MUSCLES = ['Ngực', 'Lưng', 'Vai', 'Tay trước', 'Tay sau', 'Đùi trước', 'Đùi sau', 'Mông', 'Bắp chân', 'Bụng', 'Cẳng tay', 'Khác'];
+const MUSCLES = ['Ngực', 'Lưng', 'Vai', 'Tay trước', 'Tay sau', 'Đùi trước', 'Đùi sau', 'Đùi trong', 'Mông', 'Bắp chân', 'Bụng', 'Cẳng tay', 'Khác'];
 const TYPES = {
   lower: { label: 'Bài lớn · chân/hông', step: 2.5, rest: 0 },
   upper: { label: 'Bài lớn · thân trên', step: 2.5, rest: 0 },
@@ -1428,25 +1449,8 @@ const PACE = {
   std:  { label: 'Chuẩn', rate: { lower: 0.05, upper: 0.05, iso: 0.025 }, need: 1, desc: 'Tăng khoảng 5% mỗi tuần khi đạt đủ rep. Mức phổ biến cho người mới và trung cấp.' },
   fast: { label: 'Nhanh', rate: { lower: 0.075, upper: 0.075, iso: 0.05 }, need: 1, desc: 'Tăng khoảng 7,5% mỗi tuần. Vẫn trong khoảng 2–10% ACSM khuyến nghị, nhưng dễ chững sớm hơn.' }
 };
-const LIB = [
-  ['Kéo xô (Lat pulldown)','Lưng','upper'],['Chèo cáp ngồi (Seated cable row)','Lưng','upper'],['Chèo tạ đòn (Barbell row)','Lưng','upper'],
-  ['Chèo tạ đơn (Dumbbell row)','Lưng','upper'],['Chèo máy (Machine row)','Lưng','upper'],['Chèo T-bar (T-bar row)','Lưng','upper'],
-  ['Hít xà (Pull-up)','Lưng','upper'],['Kéo xô tay thẳng (Straight-arm pulldown)','Lưng','iso'],['Deadlift','Lưng','lower'],
-  ['Đẩy ngực tạ đòn (Bench press)','Ngực','upper'],['Đẩy ngực dốc lên (Incline press)','Ngực','upper'],['Đẩy ngực máy (Chest press)','Ngực','upper'],
-  ['Đẩy ngực tạ đơn (Dumbbell press)','Ngực','upper'],['Ép ngực máy (Pec deck)','Ngực','iso'],['Ép cáp (Cable fly)','Ngực','iso'],['Xà kép (Dips)','Ngực','upper'],
-  ['Đẩy vai tạ đơn (Dumbbell shoulder press)','Vai','upper'],['Đẩy vai máy (Machine shoulder press)','Vai','upper'],['Nâng vai ngang (Lateral raise)','Vai','iso'],
-  ['Nâng vai trước (Front raise)','Vai','iso'],['Bay vai sau (Rear delt fly)','Vai','iso'],['Kéo cáp mặt (Face pull)','Vai','iso'],
-  ['Cuốn tạ đòn (Barbell curl)','Tay trước','iso'],['Cuốn tạ đơn (Dumbbell curl)','Tay trước','iso'],['Cuốn búa (Hammer curl)','Tay trước','iso'],
-  ['Cuốn ghế dốc (Preacher curl)','Tay trước','iso'],['Cuốn cáp (Cable curl)','Tay trước','iso'],
-  ['Đẩy cáp tay sau (Triceps pushdown)','Tay sau','iso'],['Kéo cáp qua đầu (Overhead extension)','Tay sau','iso'],['Skull crusher','Tay sau','iso'],
-  ['Đẩy ngực tay hẹp (Close-grip bench)','Tay sau','upper'],
-  ['Squat','Đùi trước','lower'],['Đạp đùi (Leg press)','Đùi trước','lower'],['Hack squat','Đùi trước','lower'],['Đá đùi (Leg extension)','Đùi trước','iso'],
-  ['Bulgarian split squat','Đùi trước','lower'],['Chùng chân (Lunge)','Đùi trước','lower'],
-  ['Romanian deadlift','Đùi sau','lower'],['Móc đùi nằm (Lying leg curl)','Đùi sau','iso'],['Móc đùi ngồi (Seated leg curl)','Đùi sau','iso'],
-  ['Hip thrust','Mông','lower'],['Đá mông cáp (Cable kickback)','Mông','iso'],['Máy dạng hông (Hip abduction)','Mông','iso'],
-  ['Nhón bắp chân đứng (Standing calf raise)','Bắp chân','iso'],['Nhón bắp chân ngồi (Seated calf raise)','Bắp chân','iso'],
-  ['Gập bụng cáp (Cable crunch)','Bụng','iso'],['Nâng chân treo (Hanging leg raise)','Bụng','iso'],['Cuốn cổ tay (Wrist curl)','Cẳng tay','iso']
-];
+const LIB2 = [["Đẩy ngực dốc lên (Incline press)","Ngực trên","upper","Barbell_Incline_Bench_Press_-_Medium_Grip","Ngực"],["Đẩy ngực dốc lên tạ đơn (Incline dumbbell press)","Ngực trên","upper","Incline_Dumbbell_Press","Ngực"],["Đẩy ngực dốc lên máy Smith (Smith incline press)","Ngực trên","upper","Smith_Machine_Incline_Bench_Press","Ngực"],["Đẩy ngực dốc lên máy (Incline chest press machine)","Ngực trên","upper","Leverage_Incline_Chest_Press","Ngực"],["Đẩy cáp dốc lên (Incline cable press)","Ngực trên","upper","Incline_Cable_Chest_Press","Ngực"],["Ép ngực dốc lên tạ đơn (Incline dumbbell fly)","Ngực trên","iso","Incline_Dumbbell_Flyes","Ngực"],["Ép cáp dốc lên (Incline cable fly)","Ngực trên","iso","Incline_Cable_Flye","Ngực"],["Ép cáp từ dưới lên (Low-to-high cable fly)","Ngực trên","iso","Low_Cable_Crossover","Ngực"],["Hít đất chân cao (Feet-elevated push-up)","Ngực trên","upper","Push-Ups_With_Feet_Elevated","Ngực"],["Đẩy ngực tạ đòn (Bench press)","Ngực giữa","upper","Barbell_Bench_Press_-_Medium_Grip","Ngực"],["Đẩy ngực tạ đơn (Dumbbell press)","Ngực giữa","upper","Dumbbell_Bench_Press","Ngực"],["Đẩy ngực máy (Chest press)","Ngực giữa","upper","Leverage_Chest_Press","Ngực"],["Đẩy ngực máy Smith (Smith bench press)","Ngực giữa","upper","Smith_Machine_Bench_Press","Ngực"],["Đẩy cáp đứng (Standing cable chest press)","Ngực giữa","upper","Standing_Cable_Chest_Press","Ngực"],["Hít đất (Push-up)","Ngực giữa","upper","Pushups","Ngực"],["Ép ngực máy (Pec deck)","Ngực giữa","iso","Butterfly","Ngực"],["Ép cáp (Cable fly)","Ngực giữa","iso","Cable_Crossover","Ngực"],["Ép ngực tạ đơn (Dumbbell fly)","Ngực giữa","iso","Dumbbell_Flyes","Ngực"],["Xà kép (Dips)","Ngực dưới","upper","Dips_-_Chest_Version","Ngực"],["Xà kép máy hỗ trợ (Assisted dip machine)","Ngực dưới","upper","Dips_-_Chest_Version","Ngực"],["Đẩy ngực dốc xuống tạ đòn (Decline bench press)","Ngực dưới","upper","Decline_Barbell_Bench_Press","Ngực"],["Đẩy ngực dốc xuống tạ đơn (Decline dumbbell press)","Ngực dưới","upper","Decline_Dumbbell_Bench_Press","Ngực"],["Đẩy ngực dốc xuống máy (Decline chest press machine)","Ngực dưới","upper","Leverage_Decline_Chest_Press","Ngực"],["Ép cáp từ trên xuống (High-to-low cable fly)","Ngực dưới","iso","Cable_Crossover","Ngực"],["Ép ngực dốc xuống tạ đơn (Decline dumbbell fly)","Ngực dưới","iso","Decline_Dumbbell_Flyes","Ngực"],["Đẩy vai tạ đòn (Overhead press)","Vai trước","upper","Barbell_Shoulder_Press","Vai"],["Đẩy vai tạ đơn (Dumbbell shoulder press)","Vai trước","upper","Dumbbell_Shoulder_Press","Vai"],["Đẩy vai máy (Machine shoulder press)","Vai trước","upper","Machine_Shoulder_Military_Press","Vai"],["Đẩy vai máy Smith (Smith shoulder press)","Vai trước","upper","Smith_Machine_Overhead_Shoulder_Press","Vai"],["Đẩy vai Arnold (Arnold press)","Vai trước","upper","Arnold_Dumbbell_Press","Vai"],["Nâng vai trước (Front raise)","Vai trước","iso","Front_Dumbbell_Raise","Vai"],["Nâng vai trước cáp (Cable front raise)","Vai trước","iso","Front_Cable_Raise","Vai"],["Nâng vai trước bánh tạ (Plate front raise)","Vai trước","iso","Front_Plate_Raise","Vai"],["Nâng vai ngang (Lateral raise)","Vai giữa","iso","Side_Lateral_Raise","Vai"],["Nâng vai ngang cáp (Cable lateral raise)","Vai giữa","iso","Cable_Seated_Lateral_Raise","Vai"],["Nâng vai ngang máy (Machine lateral raise)","Vai giữa","iso","Side_Lateral_Raise","Vai"],["Nâng vai ngang nằm nghiêng (Lying lateral raise)","Vai giữa","iso","Lying_One-Arm_Lateral_Raise","Vai"],["Nâng vai ngang ghế dốc (Incline lateral raise)","Vai giữa","iso","One-Arm_Incline_Lateral_Raise","Vai"],["Kéo cáp dọc thân (Upright row)","Vai giữa","iso","Upright_Cable_Row","Vai"],["Bay vai sau (Rear delt fly)","Vai sau","iso","Reverse_Flyes","Vai"],["Bay vai sau máy (Reverse pec deck)","Vai sau","iso","Reverse_Machine_Flyes","Vai"],["Bay vai sau cáp (Cable rear delt fly)","Vai sau","iso","Cable_Rear_Delt_Fly","Vai"],["Kéo cáp mặt (Face pull)","Vai sau","iso","Face_Pull","Vai"],["Chèo vai sau tạ đòn (Rear delt row)","Vai sau","iso","Barbell_Rear_Delt_Row","Vai"],["Chèo cáp vai sau (Cable rear delt row)","Vai sau","iso","Cable_Rope_Rear-Delt_Rows","Vai"],["Kéo giãn dây kháng lực (Band pull-apart)","Vai sau","iso","Band_Pull_Apart","Vai"],["Kéo xô (Lat pulldown)","Xô","upper","Wide-Grip_Lat_Pulldown","Lưng"],["Kéo xô tay hẹp (Close-grip pulldown)","Xô","upper","Close-Grip_Front_Lat_Pulldown","Lưng"],["Kéo xô tay ngược (Underhand pulldown)","Xô","upper","Underhand_Cable_Pulldowns","Lưng"],["Kéo xô máy (Machine pulldown)","Xô","upper","Wide-Grip_Lat_Pulldown","Lưng"],["Kéo xô 1 tay cáp (Single-arm cable pulldown)","Xô","upper","","Lưng"],["Hít xà (Pull-up)","Xô","upper","Pullups","Lưng"],["Hít xà máy hỗ trợ (Assisted pull-up)","Xô","upper","Band_Assisted_Pull-Up","Lưng"],["Kéo xô tay thẳng (Straight-arm pulldown)","Xô","iso","Straight-Arm_Pulldown","Lưng"],["Pullover tạ đơn (Dumbbell pullover)","Xô","iso","Bent-Arm_Dumbbell_Pullover","Lưng"],["Chèo tạ đơn (Dumbbell row)","Xô","upper","One-Arm_Dumbbell_Row","Lưng"],["Chèo cáp 1 tay (Single-arm cable row)","Xô","upper","Seated_One-arm_Cable_Pulley_Rows","Lưng"],["Chèo cáp ngồi (Seated cable row)","Lưng giữa","upper","Seated_Cable_Rows","Lưng"],["Chèo tạ đòn (Barbell row)","Lưng giữa","upper","Bent_Over_Barbell_Row","Lưng"],["Chèo T-bar (T-bar row)","Lưng giữa","upper","T-Bar_Row_with_Handle","Lưng"],["Chèo máy (Machine row)","Lưng giữa","upper","Leverage_Iso_Row","Lưng"],["Chèo ngực tì ghế (Chest-supported row)","Lưng giữa","upper","Lying_T-Bar_Row","Lưng"],["Chèo tạ đơn ghế dốc (Incline dumbbell row)","Lưng giữa","upper","Dumbbell_Incline_Row","Lưng"],["Chèo máy Smith (Smith row)","Lưng giữa","upper","Smith_Machine_Bent_Over_Row","Lưng"],["Chèo người ngược (Inverted row)","Lưng giữa","upper","Inverted_Row","Lưng"],["Nhún vai tạ đơn (Dumbbell shrug)","Cầu vai","iso","Dumbbell_Shrug","Lưng"],["Nhún vai tạ đòn (Barbell shrug)","Cầu vai","iso","Barbell_Shrug","Lưng"],["Nhún vai máy (Machine shrug)","Cầu vai","iso","Leverage_Shrug","Lưng"],["Nhún vai cáp (Cable shrug)","Cầu vai","iso","Cable_Shrugs","Lưng"],["Nhún vai máy Smith (Smith shrug)","Cầu vai","iso","Smith_Machine_Behind_the_Back_Shrug","Lưng"],["Deadlift","Lưng dưới","lower","Barbell_Deadlift","Lưng"],["Rack pull","Lưng dưới","lower","Rack_Pulls","Lưng"],["Good morning","Lưng dưới","lower","Stiff_Leg_Barbell_Good_Morning","Lưng"],["Duỗi lưng (Back extension)","Lưng dưới","iso","Hyperextensions_Back_Extensions","Lưng"],["Superman","Lưng dưới","iso","Superman","Lưng"],["Cuốn tạ đòn (Barbell curl)","Bắp tay trước","iso","Barbell_Curl","Tay trước"],["Cuốn tạ EZ (EZ-bar curl)","Bắp tay trước","iso","EZ-Bar_Curl","Tay trước"],["Cuốn tạ đơn (Dumbbell curl)","Bắp tay trước","iso","Dumbbell_Bicep_Curl","Tay trước"],["Cuốn tạ đơn xen kẽ (Alternating curl)","Bắp tay trước","iso","Dumbbell_Alternate_Bicep_Curl","Tay trước"],["Cuốn ghế dốc (Preacher curl)","Bắp tay trước","iso","Preacher_Curl","Tay trước"],["Cuốn máy (Machine curl)","Bắp tay trước","iso","Machine_Bicep_Curl","Tay trước"],["Cuốn cáp (Cable curl)","Bắp tay trước","iso","Standing_Biceps_Cable_Curl","Tay trước"],["Cuốn ghế nghiêng (Incline dumbbell curl)","Bắp tay trước","iso","Incline_Dumbbell_Curl","Tay trước"],["Cuốn tập trung (Concentration curl)","Bắp tay trước","iso","Concentration_Curls","Tay trước"],["Cuốn cáp qua đầu (Overhead cable curl)","Bắp tay trước","iso","Overhead_Cable_Curl","Tay trước"],["Cuốn spider (Spider curl)","Bắp tay trước","iso","Spider_Curl","Tay trước"],["Cuốn búa (Hammer curl)","Cơ cánh tay","iso","Hammer_Curls","Tay trước"],["Cuốn búa dây cáp (Rope hammer curl)","Cơ cánh tay","iso","Cable_Hammer_Curls_-_Rope_Attachment","Tay trước"],["Cuốn búa chéo người (Cross-body hammer curl)","Cơ cánh tay","iso","Cross_Body_Hammer_Curl","Tay trước"],["Cuốn tay ngược (Reverse curl)","Cơ cánh tay","iso","Reverse_Barbell_Curl","Tay trước"],["Kéo cáp qua đầu (Overhead extension)","Tay sau đầu dài","iso","Cable_Rope_Overhead_Triceps_Extension","Tay sau"],["Duỗi tay sau qua đầu tạ đơn (Overhead dumbbell extension)","Tay sau đầu dài","iso","Standing_Dumbbell_Triceps_Extension","Tay sau"],["Skull crusher","Tay sau đầu dài","iso","EZ-Bar_Skullcrusher","Tay sau"],["Duỗi tay sau nằm tạ đơn (Lying dumbbell extension)","Tay sau đầu dài","iso","Lying_Dumbbell_Tricep_Extension","Tay sau"],["Duỗi tay sau máy (Machine triceps extension)","Tay sau đầu dài","iso","Machine_Triceps_Extension","Tay sau"],["Đẩy cáp tay sau (Triceps pushdown)","Tay sau đầu ngoài","iso","Triceps_Pushdown","Tay sau"],["Đẩy cáp tay sau dây (Rope pushdown)","Tay sau đầu ngoài","iso","Triceps_Pushdown_-_Rope_Attachment","Tay sau"],["Đẩy cáp tay ngược (Reverse-grip pushdown)","Tay sau đầu ngoài","iso","Reverse_Grip_Triceps_Pushdown","Tay sau"],["Đẩy cáp 1 tay (Single-arm pushdown)","Tay sau đầu ngoài","iso","Cable_One_Arm_Tricep_Extension","Tay sau"],["Đá tay sau tạ đơn (Triceps kickback)","Tay sau đầu ngoài","iso","Tricep_Dumbbell_Kickback","Tay sau"],["Đẩy ngực tay hẹp (Close-grip bench)","Tay sau đầu ngoài","upper","Close-Grip_Barbell_Bench_Press","Tay sau"],["Xà kép thẳng người (Triceps dip)","Tay sau đầu ngoài","upper","Dips_-_Triceps_Version","Tay sau"],["Máy xà kép ngồi (Seated dip machine)","Tay sau đầu ngoài","upper","Dips_-_Triceps_Version","Tay sau"],["Chống ghế (Bench dip)","Tay sau đầu ngoài","upper","Bench_Dips","Tay sau"],["Cuốn cổ tay (Wrist curl)","Cẳng tay","iso","Palms-Up_Barbell_Wrist_Curl_Over_A_Bench","Cẳng tay"],["Cuốn cổ tay ngược (Reverse wrist curl)","Cẳng tay","iso","Palms-Down_Wrist_Curl_Over_A_Bench","Cẳng tay"],["Đi bộ cầm tạ (Farmer walk)","Cẳng tay","iso","Farmers_Walk","Cẳng tay"],["Squat","Đùi trước","lower","Barbell_Full_Squat","Đùi trước"],["Front squat","Đùi trước","lower","Front_Barbell_Squat","Đùi trước"],["Squat máy Smith (Smith squat)","Đùi trước","lower","Smith_Machine_Squat","Đùi trước"],["Hack squat","Đùi trước","lower","Hack_Squat","Đùi trước"],["Goblet squat","Đùi trước","lower","Goblet_Squat","Đùi trước"],["Pendulum squat","Đùi trước","lower","","Đùi trước"],["Belt squat","Đùi trước","lower","","Đùi trước"],["Đạp đùi (Leg press)","Đùi trước","lower","Leg_Press","Đùi trước"],["Đạp đùi chân hẹp (Narrow-stance leg press)","Đùi trước","lower","Narrow_Stance_Leg_Press","Đùi trước"],["Đá đùi (Leg extension)","Đùi trước","iso","Leg_Extensions","Đùi trước"],["Đá đùi 1 chân (Single-leg extension)","Đùi trước","iso","Single-Leg_Leg_Extension","Đùi trước"],["Bulgarian split squat","Đùi trước","lower","Split_Squat_with_Dumbbells","Đùi trước"],["Chùng chân (Lunge)","Đùi trước","lower","Dumbbell_Lunges","Đùi trước"],["Chùng chân đi bộ (Walking lunge)","Đùi trước","lower","Bodyweight_Walking_Lunge","Đùi trước"],["Bước lên bục (Step-up)","Đùi trước","lower","Dumbbell_Step_Ups","Đùi trước"],["Sissy squat","Đùi trước","iso","","Đùi trước"],["Romanian deadlift","Đùi sau","lower","Romanian_Deadlift","Đùi sau"],["Romanian deadlift tạ đơn (Dumbbell RDL)","Đùi sau","lower","Stiff-Legged_Dumbbell_Deadlift","Đùi sau"],["Deadlift chân thẳng (Stiff-leg deadlift)","Đùi sau","lower","Stiff-Legged_Barbell_Deadlift","Đùi sau"],["Móc đùi nằm (Lying leg curl)","Đùi sau","iso","Lying_Leg_Curls","Đùi sau"],["Móc đùi ngồi (Seated leg curl)","Đùi sau","iso","Seated_Leg_Curl","Đùi sau"],["Móc đùi đứng 1 chân (Standing leg curl)","Đùi sau","iso","Standing_Leg_Curl","Đùi sau"],["Nordic curl","Đùi sau","iso","Natural_Glute_Ham_Raise","Đùi sau"],["Móc đùi bóng (Ball leg curl)","Đùi sau","iso","Ball_Leg_Curl","Đùi sau"],["Máy khép đùi (Inner thigh / Hip adduction)","Đùi trong","iso","Thigh_Adductor","Đùi trong"],["Khép đùi cáp (Cable hip adduction)","Đùi trong","iso","Band_Hip_Adductions","Đùi trong"],["Squat sumo (Sumo squat)","Đùi trong","lower","Plie_Dumbbell_Squat","Đùi trong"],["Deadlift sumo (Sumo deadlift)","Đùi trong","lower","Sumo_Deadlift","Đùi trong"],["Copenhagen plank","Đùi trong","iso","","Đùi trong"],["Máy dạng đùi (Outer thigh / Hip abduction)","Đùi ngoài","iso","Thigh_Abductor","Mông"],["Máy dạng hông (Hip abduction)","Đùi ngoài","iso","Thigh_Abductor","Mông"],["Dạng chân cáp (Cable hip abduction)","Đùi ngoài","iso","Cable_Hip_Adduction","Mông"],["Đi ngang dây kháng lực (Banded lateral walk)","Đùi ngoài","iso","Monster_Walk","Mông"],["Nâng chân nằm nghiêng (Side-lying leg raise)","Đùi ngoài","iso","Side_Leg_Raises","Mông"],["Hip thrust","Mông lớn","lower","Barbell_Hip_Thrust","Mông"],["Máy hip thrust (Hip thrust machine)","Mông lớn","lower","Barbell_Hip_Thrust","Mông"],["Cầu mông (Glute bridge)","Mông lớn","lower","Barbell_Glute_Bridge","Mông"],["Đá mông cáp (Cable kickback)","Mông lớn","iso","One-Legged_Cable_Kickback","Mông"],["Đá mông máy (Glute kickback machine)","Mông lớn","iso","Glute_Kickback","Mông"],["Kéo cáp qua háng (Cable pull-through)","Mông lớn","lower","Pull_Through","Mông"],["Chùng chân lùi (Reverse lunge)","Mông lớn","lower","Dumbbell_Rear_Lunge","Mông"],["Nhón bắp chân đứng (Standing calf raise)","Bắp chân","iso","Standing_Calf_Raises","Bắp chân"],["Nhón bắp chân máy đạp đùi (Leg press calf raise)","Bắp chân","iso","Calf_Press_On_The_Leg_Press_Machine","Bắp chân"],["Nhón bắp chân máy Smith (Smith calf raise)","Bắp chân","iso","Smith_Machine_Calf_Raise","Bắp chân"],["Nhón bắp chân tạ đơn (Dumbbell calf raise)","Bắp chân","iso","Standing_Dumbbell_Calf_Raise","Bắp chân"],["Nhón bắp chân kiểu lừa (Donkey calf raise)","Bắp chân","iso","Donkey_Calf_Raises","Bắp chân"],["Nhón bắp chân ngồi (Seated calf raise)","Cơ dép","iso","Seated_Calf_Raise","Bắp chân"],["Nhón ngồi tạ đơn 1 chân (Seated one-leg calf raise)","Cơ dép","iso","Dumbbell_Seated_One-Leg_Calf_Raise","Bắp chân"],["Gập bụng cáp (Cable crunch)","Bụng thẳng","iso","Cable_Crunch","Bụng"],["Gập bụng máy (Ab crunch machine)","Bụng thẳng","iso","Ab_Crunch_Machine","Bụng"],["Gập bụng (Crunch)","Bụng thẳng","iso","Crunches","Bụng"],["Gập bụng ghế dốc (Decline crunch)","Bụng thẳng","iso","Decline_Crunch","Bụng"],["Nâng chân treo (Hanging leg raise)","Bụng thẳng","iso","Hanging_Leg_Raise","Bụng"],["Nâng gối ghế chống (Captain's chair knee raise)","Bụng thẳng","iso","Knee_Hip_Raise_On_Parallel_Bars","Bụng"],["Nâng chân nằm (Lying leg raise)","Bụng thẳng","iso","Flat_Bench_Lying_Leg_Raise","Bụng"],["Lăn bánh xe bụng (Ab wheel rollout)","Bụng thẳng","iso","Ab_Roller","Bụng"],["Xoay thân cáp (Cable woodchop)","Bụng chéo","iso","Standing_Cable_Wood_Chop","Bụng"],["Russian twist","Bụng chéo","iso","Russian_Twist","Bụng"],["Gập người nghiêng tạ đơn (Dumbbell side bend)","Bụng chéo","iso","Dumbbell_Side_Bend","Bụng"],["Plank nghiêng (Side plank)","Bụng chéo","iso","Side_Bridge","Bụng"],["Gập bụng chéo (Oblique crunch)","Bụng chéo","iso","Oblique_Crunches","Bụng"],["Pallof press","Core","iso","Pallof_Press","Bụng"],["Plank","Core","iso","Plank","Bụng"],["Dead bug","Core","iso","Dead_Bug","Bụng"],["Bird dog","Core","iso","","Bụng"],["Đi bộ vali 1 tay (Suitcase carry)","Core","iso","","Bụng"]];
+const LIB = LIB2.map(x => [x[0], x[4], x[2]]);
 const SAMPLE = [
   ['Lưng', ['Kéo xô (Lat pulldown)','Chèo cáp ngồi (Seated cable row)','Chèo tạ đơn (Dumbbell row)','Chèo máy (Machine row)','Kéo xô tay thẳng (Straight-arm pulldown)']],
   ['Ngực + Tay sau', ['Đẩy ngực tạ đòn (Bench press)','Đẩy ngực dốc lên (Incline press)','Ép ngực máy (Pec deck)','Đẩy cáp tay sau (Triceps pushdown)','Kéo cáp qua đầu (Overhead extension)']],
@@ -1477,7 +1481,7 @@ const mval = (e, m) => m.calc ? m.calc(e) : (e[m.k] ?? null);
 function newEx(name) {
   const lib = LIB.find(l => l[0] === name);
   const type = lib ? lib[2] : 'upper';
-  return { id: uid(), name, muscle: lib ? lib[1] : 'Khác', type, sets: 3, repTarget: 10, repMin: 8, repMax: 12, dropSet: false,
+  return { id: uid(), name, muscle: lib ? lib[1] : 'Khác', zone: lib ? (LIBZ[name] || null) : undefined, type, sets: 3, repTarget: 10, repMin: 8, repMax: 12, dropSet: false,
     step: /tạ đơn|dumbbell/i.test(name) ? 2 : TYPES[type].step, rest: TYPES[type].rest, setup: '', photos: [], currentKg: null, targetKg: null, kgSetAt: null, warmup: type !== 'iso', restV: 2, each: /tạ đơn|dumbbell/i.test(name) };
 }
 function migrateEx(ex) {
@@ -1738,7 +1742,7 @@ const wpCur = () => { const p = (state.weekPlans || {})[weekKey()]; return p && 
 const isDeloadCycle = () => { const c = cycleInfo(); return !!c && c.week > c.every; };
 const isDeload = () => { if (ui.wpDraft) return ui.wpDraft.mode === 'deload'; const p = wpCur(); if (p) return p.mode === 'deload'; return isDeloadCycle(); };
 const focusOf = () => { const p = ui.wpDraft || wpCur(); return p && p.mode === 'focus' ? p.focus : ''; };
-const FOCUS_GROUPS = { 'Ngực': ['Ngực'], 'Lưng': ['Lưng'], 'Vai': ['Vai'], 'Chân': ['Đùi trước', 'Đùi sau', 'Mông', 'Bắp chân'], 'Tay': ['Tay trước', 'Tay sau', 'Cẳng tay'] };
+const FOCUS_GROUPS = { 'Ngực': ['Ngực'], 'Lưng': ['Lưng'], 'Vai': ['Vai'], 'Chân': ['Đùi trước', 'Đùi sau', 'Đùi trong', 'Mông', 'Bắp chân'], 'Tay': ['Tay trước', 'Tay sau', 'Cẳng tay'] };
 const inFocus = (m, f) => !!f && (FOCUS_GROUPS[f] || [f]).includes(m);
 function setsFor(ex) { const f = focusOf(); if (!f) return ex.sets; return inFocus(ex.muscle, f) ? Math.min(6, ex.sets + 1) : Math.max(2, ex.sets - 1); }
 
@@ -1909,7 +1913,7 @@ let lastTab = null;
 const reduceMotion = () => !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 function fillGids() { let ch = 0; for (const { ex } of allExFull()) if (ex.gid === undefined) { ex.gid = autoGid(ex); ch = 1; } if (ch) save(); }
 function render(keepScroll) {
-  try { fillGids(); } catch (e) {}
+  try { fillZones(); fillGids(); } catch (e) {}
   const y = window.scrollY;
   const tabChanged = ui.tab !== lastTab; lastTab = ui.tab;
   if (document.documentElement.dataset.skin !== (state.settings.skin || 'gold')) applySkin(state.settings.skin);
@@ -2130,7 +2134,7 @@ function painBanner() {
 function viewToday() {
   if (state.active) return viewSession(state.active);
   let h = (multi() && !coach() && !(profiles.coach && profiles.coach.dismiss) ? `<div class="banner"><span class="bi">${ICON.users}</span><div><b>Bạn đang kèm ${profiles.list.length} người?</b><p>Bật chế độ huấn luyện viên: bạn là HLV, những người còn lại là học viên. Có bảng theo dõi cả nhóm ngay ở đầu màn hình.</p><div class="row"><button class="btn sm gold" data-act="coach-setup">Bật chế độ HLV</button><button class="btn sm ghost" data-act="coach-dismiss">Để sau</button></div></div></div>` : '')
-    + wpBanner() + painBanner() + recoveryHint() + bodyPhotoBanner()
+    + wpBanner() + painBanner() + recoveryHint() + bodyPhotoBanner() + packBanner()
     + (allExFull().some(x => x.ex.muscle === 'Khác') ? `<div class="banner"><span class="bi">?</span><div><b>Có bài đang để nhóm cơ “Khác”</b><p>Các bài này không được tính độ hồi phục. Gán đúng nhóm cơ để gợi ý buổi tập chính xác.</p><button class="btn sm gold" data-act="other-open">Gán nhóm cơ</button></div></div>` : '');
   if (!state.days.length) return h + onboarding();
   const today = ymd(), si = schedNext(), tm = state.settings.remindTime || '';
@@ -2214,7 +2218,7 @@ const EXDB_MUS=["chest", "shoulders", "biceps", "triceps", "forearms", "abdomina
 const EXDB_URL = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
 const EXDB_EQ_VI = { barbell: 'tạ đòn', dumbbell: 'tạ đơn', other: 'khác', 'body only': 'tự trọng', cable: 'cáp', machine: 'máy', kettlebells: 'tạ ấm', bands: 'dây kháng lực', 'medicine ball': 'bóng tạ', 'exercise ball': 'bóng tập', 'foam roll': 'con lăn', 'e-z curl bar': 'đòn EZ' };
 const MUS_VI = { chest: 'Ngực', shoulders: 'Vai', biceps: 'Tay trước', triceps: 'Tay sau', forearms: 'Cẳng tay', abdominals: 'Bụng', quadriceps: 'Đùi trước', hamstrings: 'Đùi sau', glutes: 'Mông', calves: 'Bắp chân', lats: 'Lưng xô', 'middle back': 'Lưng giữa', 'lower back': 'Lưng dưới', traps: 'Cơ thang', adductors: 'Đùi trong', abductors: 'Hông ngoài', neck: 'Cổ' };
-const VI2DB = { 'Ngực': ['chest'], 'Lưng': ['lats', 'middle back'], 'Vai': ['shoulders'], 'Tay trước': ['biceps'], 'Tay sau': ['triceps'], 'Đùi trước': ['quadriceps'], 'Đùi sau': ['hamstrings'], 'Mông': ['glutes'], 'Bắp chân': ['calves'], 'Bụng': ['abdominals'], 'Cẳng tay': ['forearms'] };
+const VI2DB = { 'Ngực': ['chest'], 'Lưng': ['lats', 'middle back'], 'Vai': ['shoulders'], 'Tay trước': ['biceps'], 'Tay sau': ['triceps'], 'Đùi trước': ['quadriceps'], 'Đùi sau': ['hamstrings'], 'Đùi trong': ['adductors'], 'Mông': ['glutes'], 'Bắp chân': ['calves'], 'Bụng': ['abdominals'], 'Cẳng tay': ['forearms'] };
 const exdbGet = id => { const e = EXDB.find(x => x[0] === id); if (!e) return null; const m = s2 => [...(s2 || '')].map(c => EXDB_MUS[c.charCodeAt(0) - 97]);
   return { id: e[0], name: e[1], eq: EXDB_EQ[e[2]] || '', prim: m(e[3]), sec: m(e[4]), force: ['', 'đẩy', 'kéo', 'giữ'][e[5]] || '' }; };
 const LIB_GID = { 'Kéo xô (Lat pulldown)': 'Wide-Grip_Lat_Pulldown', 'Chèo cáp ngồi (Seated cable row)': 'Seated_Cable_Rows', 'Chèo tạ đòn (Barbell row)': 'Bent_Over_Barbell_Row', 'Chèo tạ đơn (Dumbbell row)': 'One-Arm_Dumbbell_Row',
@@ -2246,8 +2250,176 @@ async function exdbImg(gid, n) {
   const key = 'exdb:' + gid + ':' + n; let v = photoCache.get(key) || await LDB.get('photos', key); if (v) { photoCache.set(key, v); return v; }
   try { const r = await fetch(EXDB_URL + gid + '/' + n + '.jpg'); if (!r.ok) return null; const b = await r.blob(); v = await compressImage(b); await LDB.put('photos', key, v); photoCache.set(key, v); return v; } catch (e) { return null; }
 }
+for (const x of LIB2) if (x[3]) LIB_GID[x[0]] = x[3];
+VI_EN.unshift(['khép đùi', 'thigh adductor'], ['dạng đùi', 'thigh abductor'], ['dạng hông', 'thigh abductor'], ['nhún vai', 'shrug'], ['duỗi lưng', 'hyperextensions back extension'], ['hít đất', 'pushups'], ['gập bụng', 'crunch'], ['nhón bắp chân', 'calf raise']);
+/* ===== Vùng cơ: nhóm lớn → vùng cơ cụ thể ===== */
+const ZONES = [
+  ['Ngực', [['Ngực trên', 'chest'], ['Ngực giữa', 'chest'], ['Ngực dưới', 'chest']]],
+  ['Vai', [['Vai trước', 'shoulders'], ['Vai giữa', 'shoulders'], ['Vai sau', 'shoulders']]],
+  ['Lưng', [['Xô', 'lats'], ['Lưng giữa', 'middle back'], ['Cầu vai', 'traps'], ['Lưng dưới', 'lower back']]],
+  ['Tay trước', [['Bắp tay trước', 'biceps'], ['Cơ cánh tay', 'biceps,forearms']]],
+  ['Tay sau', [['Tay sau đầu dài', 'triceps'], ['Tay sau đầu ngoài', 'triceps']]],
+  ['Cẳng tay', [['Cẳng tay', 'forearms']]],
+  ['Đùi trước', [['Đùi trước', 'quadriceps']]],
+  ['Đùi sau', [['Đùi sau', 'hamstrings']]],
+  ['Đùi trong', [['Đùi trong', 'adductors']]],
+  ['Mông', [['Mông lớn', 'glutes'], ['Đùi ngoài', 'abductors,glutes']]],
+  ['Bắp chân', [['Bắp chân', 'calves'], ['Cơ dép', 'calves']]],
+  ['Bụng', [['Bụng thẳng', 'abdominals'], ['Bụng chéo', 'abdominals'], ['Core', 'abdominals']]]];
+const ZBIG = {}, ZDB = {}; for (const [b, zs] of ZONES) for (const [z, d] of zs) { ZBIG[z] = b; ZDB[z] = d.split(','); }
+const ZLABEL = z => ({ 'Đùi ngoài': 'Đùi ngoài · mông nhỡ', 'Tay sau đầu ngoài': 'Tay sau đầu ngoài, trong', 'Cơ dép': 'Cơ dép (bắp chân sâu)' })[z] || z;
+const ZSHORT = (b, z) => b === 'Ngực' || b === 'Vai' ? z.replace(b + ' ', '') : b === 'Tay sau' ? ZLABEL(z).replace('Tay sau ', '') : ZLABEL(z);
+const ZKEY = ['Ngực trên', 'Ngực giữa', 'Vai giữa', 'Vai sau', 'Xô', 'Lưng giữa', 'Bắp tay trước', 'Tay sau đầu dài', 'Đùi trước', 'Đùi sau', 'Mông lớn', 'Bắp chân', 'Bụng thẳng'];
+const LIBZ = Object.fromEntries(LIB2.map(x => [x[0], x[1]]));
+const ZRULES = [[/nhún vai|shrug/, 'Cầu vai'], [/khép đùi|inner thigh|adduct|sumo|copenhagen/, 'Đùi trong'], [/dạng đùi|dạng hông|dạng chân|outer thigh|abduct|đi ngang|lateral walk/, 'Đùi ngoài'],
+  [/bay vai sau|vai sau|rear delt|reverse fly|reverse pec|face pull|kéo cáp mặt|pull.?apart/, 'Vai sau'], [/nâng vai ngang|lateral raise|upright|dọc thân|vai giữa/, 'Vai giữa'],
+  [/nâng vai trước|front raise|đẩy vai|shoulder press|overhead press|military|arnold|vai trước/, 'Vai trước'],
+  [/móc đùi|leg curl|nordic|romanian|rdl|chân thẳng|stiff|đùi sau/, 'Đùi sau'], [/cuốn búa|hammer|cuốn tay ngược|reverse curl/, 'Cơ cánh tay'], [/cổ tay|wrist|farmer|cẳng tay/, 'Cẳng tay'],
+  [/skull|((tay sau|tricep|extension|duỗi|kéo cáp).*(qua đầu|overhead))|((qua đầu|overhead).*(tay sau|tricep|extension|duỗi))/, 'Tay sau đầu dài'],
+  [/pushdown|đẩy cáp tay|đá tay sau|tay hẹp|close.?grip|chống ghế|bench dip|tricep|thẳng người|tay sau/, 'Tay sau đầu ngoài'], [/cuốn|curl/, 'Bắp tay trước'],
+  [/kéo xô|pulldown|hít xà|pull.?up|chin.?up|tay thẳng|straight.?arm|pullover|chèo.*(1 tay|tạ đơn)|one.?arm.*row|dumbbell row|\bxô\b/, 'Xô'], [/chèo|row/, 'Lưng giữa'],
+  [/xà kép|dip|dốc xuống|decline|từ trên xuống|high.?to.?low|ngực dưới/, 'Ngực dưới'], [/dốc lên|incline|từ dưới lên|low.?to.?high|ngực trên/, 'Ngực trên'],
+  [/đẩy ngực|ép ngực|ép cáp|bench|chest|pec|fly|hít đất|push.?up|ngực/, 'Ngực giữa'], [/deadlift|rack pull|good morning|duỗi lưng|back ext|hyperext|superman|lưng dưới/, 'Lưng dưới'],
+  [/hip thrust|cầu mông|glute|mông|kickback|đá mông|pull.?through|chùng chân lùi|reverse lunge/, 'Mông lớn'],
+  [/squat|đạp đùi|leg press|đá đùi|leg ext|chùng|lunge|bước lên|step.?up|đùi/, 'Đùi trước'], [/nhón.*ngồi|seated calf|cơ dép/, 'Cơ dép'], [/nhón|calf|bắp chân/, 'Bắp chân'],
+  [/xoay thân|woodchop|russian|side bend|oblique|chéo|plank nghiêng|side plank/, 'Bụng chéo'], [/plank|dead bug|bird dog|pallof|vali|carry|core/, 'Core'],
+  [/gập bụng|crunch|nâng chân|nâng gối|leg raise|knee raise|bánh xe|ab wheel|bụng/, 'Bụng thẳng']];
+function guessZone(name) {
+  if (LIBZ[name]) return LIBZ[name];
+  const n = String(name || '').toLowerCase(); for (const [re, z] of ZRULES) if (re.test(n)) return z; return null;
+}
+const zoneOf = ex => ex ? (ex.zone || (ex.zone === undefined ? guessZone(ex.name) : null)) : null;
+function fillZones() {
+  let ch = 0;
+  for (const { ex } of allExFull()) if (ex.zone === undefined) { const z = guessZone(ex.name); ex.zone = z && (ex.muscle === 'Khác' || ZBIG[z] === ex.muscle) ? z : null; if (ex.zone && ex.muscle === 'Khác') ex.muscle = ZBIG[ex.zone]; ch = 1; }
+  if (ch) save();
+}
+const zoneSelect = (v, id) => `<select class="inp" id="${id || 'f-zone'}"><option value="">Chưa chọn</option>${ZONES.map(([b, zs]) => `<optgroup label="${b}">${zs.map(([z]) => `<option value="${z}" ${z === v ? 'selected' : ''}>${ZLABEL(z)}</option>`).join('')}</optgroup>`).join('')}</select>`;
+/* động tác theo vùng cơ (dùng để ghép tên khi bài không có trong thư viện) */
+const ZMV = {
+  'Ngực trên': [['Đẩy ngực dốc lên', 'upper'], ['Ép ngực dốc lên', 'iso'], ['Ép cáp từ dưới lên', 'iso']],
+  'Ngực giữa': [['Đẩy ngực', 'upper'], ['Ép ngực', 'iso'], ['Hít đất', 'upper']],
+  'Ngực dưới': [['Xà kép', 'upper'], ['Đẩy ngực dốc xuống', 'upper'], ['Ép cáp từ trên xuống', 'iso']],
+  'Vai trước': [['Đẩy vai', 'upper'], ['Nâng vai trước', 'iso']], 'Vai giữa': [['Nâng vai ngang', 'iso'], ['Kéo dọc thân', 'iso']],
+  'Vai sau': [['Bay vai sau', 'iso'], ['Kéo cáp mặt', 'iso'], ['Chèo vai sau', 'iso']],
+  'Xô': [['Kéo xô', 'upper'], ['Hít xà', 'upper'], ['Kéo xô tay thẳng', 'iso'], ['Chèo 1 tay', 'upper'], ['Pullover', 'iso']],
+  'Lưng giữa': [['Chèo', 'upper'], ['Chèo ngực tì ghế', 'upper']], 'Cầu vai': [['Nhún vai', 'iso']], 'Lưng dưới': [['Deadlift', 'lower'], ['Duỗi lưng', 'iso'], ['Good morning', 'lower']],
+  'Bắp tay trước': [['Cuốn tay trước', 'iso'], ['Cuốn ghế dốc', 'iso'], ['Cuốn tập trung', 'iso']], 'Cơ cánh tay': [['Cuốn búa', 'iso'], ['Cuốn tay ngược', 'iso']],
+  'Tay sau đầu dài': [['Duỗi tay sau qua đầu', 'iso'], ['Skull crusher', 'iso']], 'Tay sau đầu ngoài': [['Đẩy cáp tay sau', 'iso'], ['Đá tay sau', 'iso'], ['Xà kép thẳng người', 'upper'], ['Đẩy ngực tay hẹp', 'upper']],
+  'Cẳng tay': [['Cuốn cổ tay', 'iso'], ['Cuốn cổ tay ngược', 'iso']],
+  'Đùi trước': [['Squat', 'lower'], ['Đạp đùi', 'lower'], ['Đá đùi', 'iso'], ['Chùng chân', 'lower'], ['Bước lên bục', 'lower']],
+  'Đùi sau': [['Romanian deadlift', 'lower'], ['Móc đùi', 'iso']], 'Đùi trong': [['Khép đùi', 'iso'], ['Squat sumo', 'lower']], 'Đùi ngoài': [['Dạng đùi', 'iso'], ['Đi ngang dây kháng lực', 'iso']],
+  'Mông lớn': [['Hip thrust', 'lower'], ['Cầu mông', 'lower'], ['Đá mông', 'iso']], 'Bắp chân': [['Nhón bắp chân đứng', 'iso']], 'Cơ dép': [['Nhón bắp chân ngồi', 'iso']],
+  'Bụng thẳng': [['Gập bụng', 'iso'], ['Nâng chân', 'iso']], 'Bụng chéo': [['Xoay thân', 'iso'], ['Gập người nghiêng', 'iso']], 'Core': [['Plank', 'iso'], ['Pallof press', 'iso']] };
+const NB_VA = ['dốc lên', 'phẳng', 'dốc xuống', 'tay hẹp', 'tay rộng', 'tay ngược', 'trung lập', '1 tay', '1 chân', 'ngồi', 'đứng', 'nằm', 'cao', 'thấp'];
+const NB_EQ = [['máy Smith', 2.5], ['tạ đòn', 2.5], ['tạ đơn', 2], ['cáp', 2.5], ['máy', 2.5], ['tạ EZ', 2.5], ['tự trọng', 1], ['dây kháng lực', 1]];
+function nbName() { const n = ui.nb || {}; if (!n.mv) return ''; return n.mv + (n.va ? ' ' + n.va : '') + (n.eq ? ' ' + n.eq : ''); }
+function nbHtml() {
+  const n = ui.nb || {}, ch = (k, arr) => `<div class="qpick">${arr.map(v => `<button type="button" data-act="nb" data-k="${k}" data-v="${esc(v)}" aria-pressed="${n[k] === v}">${esc(v)}</button>`).join('')}</div>`;
+  let h = `<div class="nbl">1 · Vùng cơ</div><div class="zpick">${ZONES.map(([b, zs]) => `<div class="zrow"><span class="zb">${b}</span><div class="qpick">${zs.map(([z]) => `<button type="button" data-act="nbz" data-v="${esc(z)}" aria-pressed="${n.z === z}">${esc(ZSHORT(b, z))}</button>`).join('')}</div></div>`).join('')}</div>`;
+  if (!n.z) return h + `<p class="fhint">Chọn vùng cơ để xem các bài có sẵn.</p>`;
+  const L = LIB2.filter(x => x[1] === n.z);
+  h += `<div class="nbl">2 · Chọn bài · ${esc(ZLABEL(n.z))} (${L.length})</div><div class="zlib">${L.map(x => `<button type="button" data-act="zlib" data-v="${esc(x[0])}" aria-pressed="${$('#f-name') && $('#f-name').value === x[0]}">${x[3] ? `<img data-photo="exdb:${x[3]}:0" alt="">` : '<span class="ni"></span>'}<span>${esc(x[0])}</span></button>`).join('')}</div>`;
+  h += `<details class="nbmore"><summary>Không có trong danh sách? Ghép tên</summary><div class="nbl">Động tác</div>${ch('mv', (ZMV[n.z] || []).map(x => x[0]))}<div class="nbl">Biến thể (nếu có)</div>${ch('va', NB_VA)}<div class="nbl">Dụng cụ</div>${ch('eq', NB_EQ.map(x => x[0]))}
+    <div class="prev" id="nb-prev">${nbName() ? esc(nbName()) : '<span>Ví dụ: Đẩy ngực dốc lên + máy Smith → “Đẩy ngực dốc lên máy Smith”.</span>'}</div></details>`;
+  return h;
+}
+function applyLibPick(name) {
+  const lib = LIB.find(l => l[0] === name), z = LIBZ[name]; if (!lib) return;
+  $('#f-name').value = name; if ($('#f-zone')) $('#f-zone').value = z || '';
+  const ty = $('#f-type'); if (ty && ty.value !== lib[2]) { ty.value = lib[2]; ty.dispatchEvent(new Event('change', { bubbles: true })); }
+  if ($('#f-warm')) $('#f-warm').checked = lib[2] !== 'iso';
+  const db = /tạ đơn|dumbbell/i.test(name); if ($('#f-each')) { $('#f-each').checked = db; $$('.u-kg').forEach(x => x.textContent = db ? 'kg/tay' : 'kg'); }
+  if ($('#f-step')) $('#f-step').value = fmtIn(db ? 2 : TYPES[lib[2]].step);
+  $$('[data-act="zlib"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === name));
+}
+/* vùng cơ 4 tuần qua: tìm vùng bị bỏ quên */
+function zoneCard() {
+  const from = ymd(new Date(Date.now() - 27 * 864e5)), per = {};
+  for (const x of state.sessions) if (x.date >= from) for (const en of x.entries) { const ex = findEx(en.exId); const z = zoneOf(ex) || guessZone(en.name); if (!z) continue; per[z] = (per[z] || 0) + en.sets.filter(s => s.done !== false).length + (en.drop ? 1 : 0); }
+  if (!Object.keys(per).length) return '';
+  const inPlan = new Set(allExFull().map(x => zoneOf(x.ex)).filter(Boolean));
+  const miss = ZKEY.filter(z => !per[z]), weak = [];
+  for (const [a, b] of [['Ngực trên', 'Ngực giữa'], ['Vai sau', 'Vai trước'], ['Đùi sau', 'Đùi trước'], ['Lưng giữa', 'Xô']]) if (per[a] && per[b] && per[a] < per[b] * 0.4) weak.push(`${a} chỉ bằng ${Math.round(per[a] / per[b] * 100)}% ${b.toLowerCase()}`);
+  let h = `<details class="card zcard" ${ui.zOpen ? 'open' : ''}><summary data-act="z-toggle"><span class="t"><b>Vùng cơ · 4 tuần qua</b><span class="ls">${miss.length ? `${miss.length} vùng chưa tập` : 'Đủ các vùng chính'}${weak.length ? ' · ' + weak.length + ' vùng lệch' : ''}</span>
+    <div>${miss.slice(0, 4).map(z => `<span class="mchip low">${esc(ZLABEL(z))} 0</span>`).join('')}${miss.length > 4 ? `<span class="mchip low">+${miss.length - 4}</span>` : ''}</div></span>${ICON.chev}</summary><div class="zbody">`;
+  for (const [b, zs] of ZONES) {
+    const row = zs.filter(([z]) => per[z] || ZKEY.includes(z) || inPlan.has(z)); if (!row.length) continue;
+    h += `<div class="zr"><span class="zb">${b}</span><div class="zc">${row.map(([z]) => `<span class="mchip ${per[z] ? '' : 'low'}">${esc(ZSHORT(b, z))} ${per[z] || 0}</span>`).join('')}</div></div>`;
+  }
+  if (weak.length) h += `<p class="small" style="margin:10px 0 0">${weak.map(esc).join('. ')}. Thêm 1 bài cho vùng yếu hơn để cân đối.</p>`;
+  h += `<p class="note-line" style="margin:8px 0 0">Số set 28 ngày qua theo vùng cơ. Các phần của cùng một cơ (ngực trên/dưới, 3 đầu vai) chỉ nhấn được nhiều hơn, không tách hẳn được, nên độ hồi phục vẫn tính theo nhóm lớn.</p></div></details>`;
+  return h;
+}
+/* video hướng dẫn */
+function enName(ex) {
+  const m = /\(([^)]+)\)\s*$/.exec(ex.name || ''); if (m) return m[1];
+  const g = ex.gid ? exdbGet(ex.gid) : null; if (g) return g.name;
+  return /^[\x00-\x7f]+$/.test(ex.name || '') ? ex.name : '';
+}
+const ytUrl = ex => { const en = enName(ex); return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(en ? en + ' exercise proper form' : ex.name + ' kỹ thuật đúng'); };
+async function vidSave(ex, file) {
+  if (file.size > 120e6) { toast('Video quá lớn (trên 120 MB). Quay ngắn lại khoảng 10–20 giây.'); return; }
+  const key = 'vid:' + uid(); try { await LDB.put('photos', key, file); } catch (e) { toast('Không lưu được video'); return; }
+  if (ex.vid) LDB.del('photos', ex.vid); ex.vid = key; save(); toast('Đã lưu video của bạn'); guideSheet(ex.id);
+}
+/* thư viện hình offline: 2 gói trong repo GitHub */
+const PACK_N = 2, PACK_ABS = 'https://hoangtourguide0507-create.github.io/giao-an-dia-nguc/';
+async function fetchPack(i, onp) {
+  for (const u of [`exdb-${i}.bin`, `${PACK_ABS}exdb-${i}.bin`]) {
+    try { const r = await fetch(u, { cache: 'no-store' }); if (!r.ok) continue; const total = +r.headers.get('content-length') || 0;
+      if (!r.body || !r.body.getReader) { const b = new Uint8Array(await r.arrayBuffer()); onp(b.length, b.length); return b; }
+      const rd = r.body.getReader(), parts = []; let got = 0;
+      for (;;) { const { done, value } = await rd.read(); if (done) break; parts.push(value); got += value.length; onp(got, total); }
+      const b = new Uint8Array(got); let o = 0; for (const p of parts) { b.set(p, o); o += p.length; } return b; } catch (e) {}
+  }
+  return null;
+}
+function b64std(bytes) { let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(s); }
+async function packLoad() {
+  if (ui.packBusy) return null; ui.packBusy = true;
+  try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch (e) {}
+  const say = m => { const el = $('#pack-st'); if (el) el.textContent = m; ui.packMsg = m; };
+  let n = 0, fail = 0;
+  for (let i = 1; i <= PACK_N; i++) {
+    say(`Đang tải gói ${i}/${PACK_N}…`);
+    const b = await fetchPack(i, (g, t) => say(`Đang tải gói ${i}/${PACK_N} · ${fmt(g / 1e6, 1)}${t ? ' / ' + fmt(t / 1e6, 1) : ''} MB`));
+    if (!b || b.length < 8 || String.fromCharCode(b[0], b[1], b[2], b[3]) !== 'GAP1') { fail++; continue; }
+    const hl = new DataView(b.buffer, b.byteOffset).getUint32(4, true), idx = JSON.parse(new TextDecoder().decode(b.subarray(8, 8 + hl))), base = 8 + hl;
+    for (let k = 0; k < idx.length; k++) { const [key, off, len] = idx[k];
+      await LDB.put('photos', 'exdb:' + key, 'data:image/webp;base64,' + b64std(b.subarray(base + off, base + off + len))); photoCache.delete('exdb:' + key); n++;
+      if (k % 50 === 0) say(`Đang lưu hình ${n}…`); }
+  }
+  ui.packBusy = false;
+  if (n && !fail) { ui.pack = { n, at: Date.now() }; await LDB.put('kv', 'exdbPack', ui.pack); }
+  return { n, fail };
+}
+async function packSheet() {
+  openSheet(`<h3 class="sh-title">Thư viện hình offline</h3><p class="sh-text">Tải 1 lần khoảng 20 MB (nên dùng wifi): hình bắt đầu và kết thúc của 873 bài. Sau đó xem hướng dẫn khi không có mạng.</p>
+    <div class="packst" id="pack-st">${ui.packMsg && ui.packBusy ? esc(ui.packMsg) : 'Đang kết nối…'}</div>
+    <div class="sh-actions"><button class="btn ghost" data-act="close-sheet">Ẩn, vẫn tải tiếp</button></div>`);
+  if (ui.packBusy) return;
+  const r = await packLoad(); if (!r) return;
+  const msg = r.fail ? (r.n ? `Tải được ${r.n} hình, còn ${r.fail} gói lỗi. Thử lại khi mạng ổn định.` : 'Không tải được. Kiểm tra mạng rồi thử lại. Gói hình chỉ có trên bản GitHub của app.') : `Xong: ${r.n} hình đã nằm trong máy, dùng được khi không có mạng.`;
+  const el = $('#pack-st'); if (el) el.textContent = msg; toast(msg); render(true);
+}
+function packBanner() {
+  if (ui.pack !== false || state.active) return '';
+  if (state.settings.packSkip && daysBetween(state.settings.packSkip, ymd()) < 7) return '';
+  return `<div class="banner"><span class="bi">${GUIDE_ICO}</span><div><b>Tải thư viện hình hướng dẫn</b><p>Khoảng 20 MB, 873 bài có hình tư thế. Tải 1 lần qua wifi để xem offline ở phòng tập.</p><div class="row" style="display:flex;gap:8px;margin-top:8px"><button class="btn sm gold" data-act="pack-load">Tải ngay</button><button class="btn sm ghost" data-act="pack-skip">Để sau</button></div></div></div>`;
+}
+function packCard() {
+  const p = ui.pack;
+  return `<div class="card set-card"><h3>Thư viện hình hướng dẫn</h3><p>${p ? `Đã tải ${p.n} hình · ${dm(ymd(new Date(p.at)))}. Xem được khi không có mạng.` : p === false ? 'Chưa tải. Khoảng 20 MB, nên dùng wifi.' : 'Đang kiểm tra…'}</p>
+    <div class="row"><button class="btn ${p ? '' : 'gold'}" data-act="pack-load">${p ? 'Tải lại' : 'Tải thư viện hình'}</button></div></div>`;
+}
+
 /* lời nhắc form theo kiểu động tác */
 const CUES = [
+  [/khép đùi|adductor|adduction/, ['Ngồi thẳng lưng, hông áp sát đệm', 'Khép chậm, dừng 1 giây khi hai đệm gần chạm', 'Mở ra có kiểm soát, không để tạ đập', 'Bắt đầu nhẹ: cơ đùi trong dễ căng rách nếu mở quá rộng']],
+  [/dạng đùi|dạng hông|dạng chân|abductor|abduction|lateral walk/, ['Ngồi thẳng, hoặc hơi ngả người trước để nhấn mông nhỡ', 'Đẩy ra bằng mặt ngoài đùi, tay chỉ giữ', 'Dừng 1 giây ở biên độ ngoài, về chậm']],
+  [/nhún vai|shrug/, ['Nhún thẳng lên tai, không xoay vai', 'Tay thẳng, không co khuỷu', 'Dừng 1 giây ở trên']],
+  [/duỗi lưng|back extension|hyperext|good morning/, ['Gập ở hông, lưng trung lập', 'Lên đến khi thân thẳng hàng chân, không ưỡn quá']],
   [/đẩy ngực|bench|chest press|incline|decline|press.*chest/, ['Ép bả vai ra sau, đè vai xuống ghế', 'Gồng core, hít sâu giữ hơi khi hạ tạ', 'Hai chân bám chặt sàn', 'Cổ tay thẳng, khuỷu khép 45–70° so với thân, không bè ngang', 'Hạ chạm ngực dưới, đẩy lên có kiểm soát']],
   [/ép ngực|fly|pec deck|butterfly|crossover/, ['Khuỷu hơi cong và giữ cố định', 'Mở tay vừa đủ căng ngực, không kéo vai ra quá sau', 'Đè vai xuống, ngực ưỡn nhẹ']],
   [/kéo xô|kéo dọc|pulldown|pull-up|pullup|hít xà/, ['Ưỡn ngực, kéo bả vai xuống trước rồi mới co tay', 'Kéo thanh về ngực trên, khuỷu hướng xuống sàn', 'Không ngả người quá 20°, không giật lấy đà']],
@@ -2297,18 +2469,26 @@ const GUIDE_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 async function guideSheet(exId) {
   const ex = findEx(exId) || (state.active && state.active.entries.map(exOrSnap).find(e => e.id === exId)); if (!ex) return;
   if (ex.gid === undefined && !ex.ghost) { ex.gid = autoGid(ex); save(); }
-  const g = ex.gid ? exdbGet(ex.gid) : null, prim = g ? g.prim : (VI2DB[ex.muscle] || []), sec = g ? g.sec : [], cu = cuesOf(ex);
+  const g = ex.gid ? exdbGet(ex.gid) : null, prim = g ? g.prim : (ZDB[zoneOf(ex)] || VI2DB[ex.muscle] || []), sec = g ? g.sec : [], cu = cuesOf(ex);
   ui.guideEx = ex.id;
-  openSheet(`<h3 class="sh-title">${esc(ex.name)}</h3><p class="sh-text">${g ? `Minh hoạ: ${esc(g.name)}` : 'Chưa có hình minh hoạ cho bài này'}</p>
+  openSheet(`<h3 class="sh-title">${esc(ex.name)}</h3><p class="sh-text">${zoneOf(ex) ? `Vùng cơ: <b>${esc(ZLABEL(zoneOf(ex)))}</b> · ` : ''}${g ? `Minh hoạ: ${esc(g.name)}` : 'Chưa có hình minh hoạ cho bài này'}</p>
     <div class="gdemo" id="g-demo">${g ? `<img class="a" alt="Tư thế bắt đầu"><img class="b" alt="Tư thế kết thúc"><span class="gl a">1 · Bắt đầu</span><span class="gl b">2 · Kết thúc</span>` : `<div class="none">Bấm “Chọn hình minh hoạ” để tìm trong thư viện 870+ bài.</div>`}</div>
     ${g ? `<div class="gmeta">${g.force ? `<span>Lực: ${g.force}</span>` : ''}${g.eq ? `<span>${esc(EXDB_EQ_VI[g.eq] || g.eq)}</span>` : ''}</div>` : ''}
     <div class="gmap">${bodyMap(prim, sec)}<div class="lg"><b>Nhóm cơ</b>${prim.length ? `<div><i style="background:#ff5a36"></i>Chính: ${prim.map(m => MUS_VI[m] || m).join(', ')}</div>` : ''}${sec.length ? `<div><i style="background:#ffb347"></i>Phụ: ${sec.map(m => MUS_VI[m] || m).join(', ')}</div>` : ''}</div></div>
     <div class="eyebrow" style="margin-top:16px">Điểm form · tránh chấn thương</div>
     <ol class="gcues">${cu.mine.map(x => `<li class="mine">${esc(x)}</li>`).join('')}${cu.lib.map(x => `<li>${esc(x)}</li>`).join('')}</ol>
     <label class="f full" style="margin-top:10px">Lời nhắc riêng của bạn (mỗi dòng 1 ý, hiện đầu tiên)<textarea class="inp" id="g-cues" rows="2" placeholder="Ví dụ: Đè vai, gồng core">${esc(ex.cues || '')}</textarea></label>
+    <div class="eyebrow" style="margin-top:16px">Video hướng dẫn</div>
+    ${ex.vid ? `<video class="gvid" id="g-vid" controls playsinline preload="metadata"></video>` : ''}
+    <div class="gvrow"><a class="btn" href="${ytUrl(ex)}" target="_blank" rel="noopener">▶ Xem video form trên YouTube</a>
+      <label class="btn" for="g-vin">${ICON.cam} ${ex.vid ? 'Đổi video của tôi' : 'Quay / chọn video của tôi'}</label>${ex.vid ? '<button type="button" class="btn ghost danger" data-act="vid-del">Xoá video của tôi</button>' : ''}</div>
+    <input type="file" id="g-vin" accept="video/*" hidden>
+    <label class="f full" style="margin-top:10px">Link video riêng (YouTube, TikTok…)<input class="inp" id="g-vlink" inputmode="url" placeholder="https://" value="${esc(ex.vlink || '')}"></label>
+    ${ex.vlink && /^https?:\/\//.test(ex.vlink) ? `<a class="btn ghost" style="margin-top:8px;width:100%" href="${esc(ex.vlink)}" target="_blank" rel="noopener">Mở link video</a>` : ''}
     <div class="gsafe">Đau nhói ở khớp, tê hoặc mất lực đột ngột thì dừng bài ngay và bấm <b>Báo đau</b>. Hình minh hoạ để tham khảo, không thay được người hướng dẫn trực tiếp.</div>
-    <div class="sh-actions"><button class="btn" data-act="guide-pick">${g ? 'Đổi hình minh hoạ' : 'Chọn hình minh hoạ'}</button><button class="btn ghost" data-act="guide-all">Tải sẵn hình cho mọi bài (dùng offline)</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>
+    <div class="sh-actions"><button class="btn" data-act="guide-pick">${g ? 'Đổi hình minh hoạ' : 'Chọn hình minh hoạ'}</button>${ui.pack ? '' : '<button class="btn ghost" data-act="pack-load">Tải thư viện hình offline (~20 MB)</button>'}<button class="btn ghost" data-act="close-sheet">Đóng</button></div>
     <p class="note-line">Ảnh minh hoạ: Free Exercise DB (public domain).</p>`);
+  if (ex.vid) { LDB.get('photos', ex.vid).then(bl => { const v = $('#g-vid'); if (bl && v && ui.guideEx === ex.id) { if (ui.vidUrl) URL.revokeObjectURL(ui.vidUrl); ui.vidUrl = URL.createObjectURL(bl); v.src = ui.vidUrl; } }); }
   if (g) { const [a, b] = await Promise.all([exdbImg(g.id, 0), exdbImg(g.id, 1)]); const box = $('#g-demo'); if (box && ui.guideEx === ex.id) { const im = box.querySelectorAll('img'); if (a) im[0].src = a; else im[0].src = EXDB_URL + g.id + '/0.jpg'; if (b) im[1].src = b; else im[1].src = EXDB_URL + g.id + '/1.jpg'; } }
 }
 function guidePick(q) {
@@ -2492,7 +2672,7 @@ function refreshWarm(i) { const box = $('#warm-' + i); if (box && state.active) 
 function getSet(i, j) { const en = state.active.entries[i]; return j === 'drop' ? en.drop : en.sets[+j]; }
 
 /* ---------- đồng hồ nghỉ ---------- */
-const APP_VERSION = '2026.10.13 · bản 27';
+const APP_VERSION = '2026.10.13 · bản 28';
 const PUSH_SERVER = '';
 const isIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const isStandalone = () => !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
@@ -2769,7 +2949,7 @@ function swapSheet(i) {
 }
 function guessMuscle(name) {
   const n = String(name || '').toLowerCase(), lib = LIB.find(l => l[0].toLowerCase() === n); if (lib) return lib[1];
-  const R = [[/ngực|bench|chest|pec|fly|ép ngực|xà kép|dips/, 'Ngực'], [/xô|chèo|row|lat|pull|hít xà|lưng|deadlift|kéo dọc|kéo ngang|kéo/, 'Lưng'], [/vai|shoulder|lateral|raise|face pull|delt/, 'Vai'],
+  const R = [[/khép đùi|inner thigh|adduct|đùi trong/, 'Đùi trong'], [/dạng đùi|outer thigh|abduct/, 'Mông'], [/ngực|bench|chest|pec|fly|ép ngực|xà kép|dips/, 'Ngực'], [/xô|chèo|row|lat|pull|hít xà|lưng|deadlift|kéo dọc|kéo ngang|kéo/, 'Lưng'], [/vai|shoulder|lateral|raise|face pull|delt/, 'Vai'],
     [/tay sau|tricep|pushdown|skull|duỗi tay/, 'Tay sau'], [/cuốn|curl|tay trước|bicep/, 'Tay trước'], [/bắp chân|calf|nhón/, 'Bắp chân'], [/mông|hip|glute|dạng hông|kickback/, 'Mông'],
     [/móc đùi|leg curl|romanian|rdl|đùi sau/, 'Đùi sau'], [/squat|đạp đùi|leg press|đá đùi|extension|lunge|chùng|đùi/, 'Đùi trước'], [/bụng|crunch|plank|abs|gập bụng/, 'Bụng'], [/cổ tay|cẳng tay|wrist/, 'Cẳng tay']];
   for (const [re, m] of R) if (re.test(n)) return m; return '';
@@ -2819,34 +2999,20 @@ function dayNameSheet(day) {
     <div class="sh-actions"><button class="btn gold big" data-act="save-day" data-id="${day ? day.id : ''}">Lưu</button><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
 }
 const restOpts = (v, type) => `<option value="0" ${!(v > 0) ? 'selected' : ''}>Tự động · ${fmtDur(restMode().rest[type || 'upper'] * 1000)} (nhịp ${restMode().label})</option>` + [...new Set([30, 45, 60, 75, 90, 120, 150, 180, 240, ...(v > 0 ? [+v] : [])])].sort((a, b) => a - b).map(s => `<option value="${s}" ${s === v ? 'selected' : ''}>${s < 60 ? s + ' giây' : fmtDur(s * 1000) + ' phút'}</option>`).join('');
-/* ghép tên nhanh: động tác + biến thể + dụng cụ */
-const NB_MV = [['Đẩy ngực', 'Ngực', 'upper'], ['Ép ngực', 'Ngực', 'iso'], ['Kéo xô', 'Lưng', 'upper'], ['Chèo', 'Lưng', 'upper'], ['Kéo xô tay thẳng', 'Lưng', 'iso'], ['Deadlift', 'Lưng', 'lower'],
-  ['Đẩy vai', 'Vai', 'upper'], ['Nâng vai ngang', 'Vai', 'iso'], ['Nâng vai trước', 'Vai', 'iso'], ['Bay vai sau', 'Vai', 'iso'], ['Kéo cáp mặt', 'Vai', 'iso'],
-  ['Cuốn tay trước', 'Tay trước', 'iso'], ['Duỗi tay sau', 'Tay sau', 'iso'], ['Squat', 'Đùi trước', 'lower'], ['Đạp đùi', 'Đùi trước', 'lower'], ['Chùng chân', 'Đùi trước', 'lower'],
-  ['Đá đùi', 'Đùi trước', 'iso'], ['Romanian deadlift', 'Đùi sau', 'lower'], ['Móc đùi', 'Đùi sau', 'iso'], ['Hip thrust', 'Mông', 'lower'], ['Dạng hông', 'Mông', 'iso'],
-  ['Nhón bắp chân', 'Bắp chân', 'iso'], ['Gập bụng', 'Bụng', 'iso']];
-const NB_VA = ['dốc lên', 'phẳng', 'dốc xuống', 'tay hẹp', 'tay rộng', 'tay ngược', 'trung lập', '1 tay', '1 chân', 'ngồi', 'đứng', 'nằm', 'qua đầu', 'cao', 'thấp'];
-const NB_EQ = [['máy Smith', 2.5], ['tạ đòn', 2.5], ['tạ đơn', 2], ['cáp', 2.5], ['máy', 2.5], ['tạ EZ', 2.5], ['tự trọng', 1], ['dây kháng lực', 1]];
-function nbName() { const n = ui.nb || {}; if (!n.mv) return ''; return n.mv + (n.va ? ' ' + n.va : '') + (n.eq ? ' · ' + n.eq : ''); }
-function nbHtml() {
-  const n = ui.nb || {}, ch = (k, arr) => `<div class="qpick">${arr.map(v => `<button type="button" data-act="nb" data-k="${k}" data-v="${esc(v)}" aria-pressed="${n[k] === v}">${esc(v)}</button>`).join('')}</div>`;
-  return `<div class="nbl">1 · Động tác</div>${ch('mv', NB_MV.map(x => x[0]))}<div class="nbl">2 · Biến thể (nếu có)</div>${ch('va', NB_VA)}<div class="nbl">3 · Dụng cụ</div>${ch('eq', NB_EQ.map(x => x[0]))}
-    <div class="prev" id="nb-prev">${nbName() ? esc(nbName()) : '<span>Chọn động tác, biến thể và dụng cụ. Ví dụ: Đẩy ngực + dốc lên + máy Smith → “Đẩy ngực dốc lên · máy Smith”.</span>'}</div>`;
-}
 function exSheet() {
-  const d = ui.draft;
+  const d = ui.draft; if (d.nameOrig === undefined) d.nameOrig = d.isNew ? '' : d.name;
+  ui.nb = ui.nb || {}; if (!ui.nb.z) ui.nb.z = d.zone || (d.name ? zoneOf(d) : '') || '';
   const opt = (arr, v) => arr.map(([val, lab]) => `<option value="${esc(val)}" ${val === v ? 'selected' : ''}>${esc(lab)}</option>`).join('');
   const dbl = state.settings.progMode === 'double';
   const hasHist = !d.isNew && workHistory(d).length > 0;
   const am = d.altOf ? findEx(d.altOf) : null;
   openSheet(`<h3 class="sh-title">${d.isNew ? (am ? 'Thêm bài thay thế' : 'Thêm bài tập') : am ? 'Sửa bài thay thế' : 'Sửa bài tập'}</h3>${am ? `<p class="sh-text">Thay thế cho <b>${esc(shortName(am.name))}</b>${slotName(am) ? ` · ô ${esc(slotName(am))}` : ''}. Mỗi bài có mức tạ và lịch sử riêng.</p>` : ''}
     <div class="fsec"><div class="formgrid">
-      <label class="f full">Tên bài tập<input class="inp" id="f-name" list="lib" maxlength="80" value="${esc(d.name)}" placeholder="Gõ để chọn, hoặc dùng Ghép tên nhanh bên dưới"></label>
-      <details class="nb full" ${d.isNew ? 'open' : ''}><summary>✦ Ghép tên nhanh · khi không biết gọi bài là gì</summary>${nbHtml()}</details>
+      <label class="f full">Tên bài tập<input class="inp" id="f-name" list="lib" maxlength="80" value="${esc(d.name)}" placeholder="Gõ tên, hoặc chọn theo vùng cơ bên dưới"></label>
+      <details class="nb full" ${d.isNew ? 'open' : ''}><summary>✦ Chọn bài theo vùng cơ · ${LIB2.length} bài có sẵn</summary><div id="nb-box">${nbHtml()}</div></details>
       ${am ? '' : `<label class="f full">Ô bài · kiểu động tác<input class="inp" id="f-slot" maxlength="40" value="${esc(d.slot || '')}" placeholder="Ví dụ: Kéo dọc, Chèo ngang, Đẩy ngực trên"></label>`}
       <datalist id="lib">${LIB.map(l => `<option value="${esc(l[0])}">`).join('')}</datalist>
-      <label class="f">Nhóm cơ chính<select class="inp" id="f-muscle">${opt(MUSCLES.map(m => [m, m]), d.muscle)}</select></label>
-      <label class="f">Loại bài<select class="inp" id="f-type">${opt(Object.entries(TYPES).map(([k, t]) => [k, t.label]), d.type)}</select></label>
+      <label class="f full"><span>Vùng cơ <span class="unit">nhóm lớn tự tính</span></span>${zoneSelect(d.zone || (d.name ? zoneOf(d) : '') || '')}</label>
     </div></div>
     <div class="fsec"><span class="eyebrow">Mức tạ</span><div class="formgrid">
       <label class="toggle full"><span>Tạ đơn · ghi kg <b>mỗi tay</b><br><span class="fhint">Cầm 2 quả 12,5 kg thì ghi 12,5. Tổng khối lượng tự nhân đôi.</span></span><input type="checkbox" id="f-each" ${d.each ? 'checked' : ''}></label>
@@ -2862,6 +3028,7 @@ function exSheet() {
       <label class="f">Rep tối thiểu<input class="inp" id="f-rmin" inputmode="numeric" value="${d.repMin}"></label>
       ${dbl ? `<label class="f">Rep tối đa<input class="inp" id="f-rmax" inputmode="numeric" value="${d.repMax}"></label><label class="f full">Nghỉ giữa set<select class="inp" id="f-rest">${restOpts(d.rest, d.type)}</select></label>`
             : `<label class="f">Nghỉ giữa set<select class="inp" id="f-rest">${restOpts(d.rest, d.type)}</select></label>`}
+      <label class="f full"><span>Kiểu bài <span class="unit">tự chọn theo bài · quyết định giờ nghỉ</span></span><select class="inp" id="f-type">${opt(Object.entries(TYPES).map(([k, t]) => [k, t.label]), d.type)}</select></label>
       <label class="toggle full">Có drop set<input type="checkbox" id="f-drop" ${d.dropSet ? 'checked' : ''}></label>
       <label class="toggle full"><span>Gợi ý set khởi động<br><span class="fhint">Chỉ hiện ở bài đầu tiên của mỗi nhóm cơ trong buổi</span></span><input type="checkbox" id="f-warm" ${d.warmup ? 'checked' : ''}></label>
     </div></div>
@@ -2877,7 +3044,7 @@ function exSheet() {
 }
 function readDraft() {
   const d = ui.draft; const v = id => $(id) ? $(id).value : null;
-  d.name = (v('#f-name') || '').trim(); d.muscle = v('#f-muscle'); d.type = v('#f-type');
+  d.name = (v('#f-name') || '').trim(); d.zone = v('#f-zone') || null; d.muscle = ZBIG[d.zone] || (d.muscle && d.muscle !== 'Khác' ? d.muscle : (guessMuscle(d.name) || 'Khác')); d.type = v('#f-type');
   d.sets = num(v('#f-sets')); d.repTarget = num(v('#f-rtgt')); d.repMin = num(v('#f-rmin'));
   if ($('#f-rmax')) d.repMax = num(v('#f-rmax'));
   d.step = num(v('#f-step')); d.rest = +v('#f-rest'); d.dropSet = $('#f-drop').checked; d.warmup = $('#f-warm').checked; d.setup = (v('#f-setup') || '').trim();
@@ -3015,6 +3182,7 @@ function viewWeek() {
         <span class="vv">${fmt(v)}<small class="${st[0]}">${st[1]}</small></span></div>`; }
     h += `</div><div class="legend"><span><i></i>Vùng ${lo}–${hi} set/tuần. Drop set tính 1 set.</span></div></details>`;
   }
+  h += zoneCard();
   h += `</section>` + viewProgressList(mode, P);
   h += `<section class="sec"><h3 class="h" style="margin-bottom:12px">Buổi đã tập · ${S.ss.length}</h3>`;
   if (!S.ss.length) h += `<div class="empty">Chưa có buổi tập nào trong ${mode === 'month' ? 'tháng' : 'tuần'} này.</div>`;
@@ -3182,7 +3350,8 @@ function viewBody() {
     return h + viewBodyPhotos();
   }
   // 4 chỉ số chính
-  h += `<div class="card bnow"><div class="eyebrow" style="margin-bottom:10px">Lần đo gần nhất · ${dm(B[B.length - 1].date)}/${B[B.length - 1].date.slice(2, 4)}</div><div class="btiles">`;
+  const LB = B[B.length - 1];
+  h += `<div class="card bnow"><div class="bnow-h"><span class="eyebrow">Lần đo gần nhất · ${dm(LB.date)}/${LB.date.slice(2, 4)}</span><button type="button" class="link" data-act="body-edit" data-id="${LB.id}">Sửa</button></div><div class="btiles">`;
   for (const k of BCORE) {
     const m = mDef(k), L = B.filter(e => e[k] != null), cur = L[L.length - 1];
     if (!cur) { h += `<button type="button" class="btile empty" data-act="body-add"><span class="tl">${m.label}</span><span class="tv">–</span><span class="delta flat">Chưa nhập</span></button>`; continue; }
@@ -3190,7 +3359,7 @@ function viewBody() {
     let dl = `<span class="delta flat">${dm(cur.date)}</span>`;
     if (ref) { const d = cur[k] - ref[k]; const cls = Math.abs(d) < 1e-9 ? 'flat' : m.good ? (Math.sign(d) === m.good ? 'good' : 'bad') : 'other';
       dl = `<span class="delta ${cls}">${d > 0 ? '▲' : d < 0 ? '▼' : '='} ${fmt(Math.abs(d), m.dec)} so với ${ymKey(ref.date) < ymKey(cur.date) ? monLbl(ref.date) : dm(ref.date)}</span>`; }
-    h += `<div class="btile"><span class="tl">${m.label}${rg ? ` <span class="badge ${rg[1]}">${rg[0]}</span>` : ''}</span><span class="tv">${fmt(cur[k], m.dec)}<small>${m.unit}</small></span>${dl}</div>`;
+    h += `<button type="button" class="btile" data-act="body-edit" data-id="${cur.id}"><span class="tl">${m.label}${rg ? ` <span class="badge ${rg[1]}">${rg[0]}</span>` : ''}</span><span class="tv">${fmt(cur[k], m.dec)}<small>${m.unit}</small></span>${dl}</button>`;
   }
   h += `</div>`;
   const vis = B.filter(e => e.visceral != null).pop();
@@ -3207,12 +3376,12 @@ function viewBody() {
     h += `<div class="card bchart"><div class="chips" style="margin-bottom:8px">${opts.map(([k, l]) => `<button type="button" data-act="bm" data-k="${k}" aria-pressed="${ui.bm === k}">${l}</button>`).join('')}</div><div id="body-chart"></div></div>`;
   }
   // lịch sử
-  h += `<details class="bhist"><summary>Lịch sử số đo · ${B.length} lần</summary><div class="list" style="margin-top:10px">`;
-  for (const e of [...B].reverse().slice(0, 80)) {
+  h += `<div class="bhist"><div class="sec-head" style="margin:6px 0 10px"><h3 class="h">Các lần đo · ${B.length}</h3><span class="small muted">bấm để sửa</span></div><div class="list">`;
+  for (const e of [...B].reverse().slice(0, ui.bAll ? 200 : 5)) {
     const bits = [...BCORE, 'visceral'].filter(k => e[k] != null).map(k => { const m = mDef(k); return `${fmt(e[k], m.dec)}${m.unit === 'mức' ? ' nội tạng' : ' ' + m.unit}`; }).join(' · ');
     h += `<button type="button" class="li" data-act="body-edit" data-id="${e.id}"><span><span class="lt">${DOW[parseYmd(e.date).getDay()]} ${dm(e.date)}/${e.date.slice(2, 4)}</span><span class="ls">${esc(bits || 'Chỉ số khác')}</span></span><span class="ls">Sửa ›</span></button>`;
   }
-  h += `</div></details></section>`;
+  h += `</div>${B.length > 5 && !ui.bAll ? `<button type="button" class="btn ghost sm" style="margin-top:8px;width:100%" data-act="b-all">Xem tất cả ${B.length} lần đo</button>` : ''}</div></section>`;
   return h + viewBodyPhotos();
 }
 function nearBody(date) {
@@ -3377,6 +3546,7 @@ function viewMore() {
     : `<p>Bạn kèm người khác tập? Bật chế độ HLV: bạn là huấn luyện viên, mỗi học viên có giáo án, mức tạ, lịch sử và số đo riêng. Một bảng theo dõi cả nhóm: ai lỡ buổi, ai cần lên tạ, ai đang đau.</p>
     <div class="row"><button class="btn gold" data-act="coach-setup">Bật chế độ HLV</button><button class="btn" data-act="profiles">${ICON.users} Người tập (${profiles.list.length})</button></div>`}</div>
   ${syncCardHtml()}
+  ${packCard()}
   <div class="card set-card"><h3>Giao diện</h3><div class="skins">${SKINS.map(k => `<button type="button" class="skin" data-act="skin" data-k="${k.id}" data-sk="${k.id}" aria-pressed="${sk === k.id}" style="--sb:${k.bg};--ss:${k.surface};--sa:${k.acc};--sf:${k.fg};--sfont:${k.font};--srad:${k.rad}"><span class="sw"><em></em><i></i><b>Aa 42,5</b><span class="si">${['nTrain', 'nProg', 'nBody'].map(x => iconOf(k.id, x)).join('')}</span></span><span class="sn">${k.name}</span><span class="sd">${k.desc}</span></button>`).join('')}</div></div>
   <div class="card set-card"><h3>Thông báo hết giờ nghỉ</h3><p>Hết giờ nghỉ giữa set, điện thoại hiện thông báo có âm thanh trên màn hình khoá và trên đầu màn hình, kể cả khi bạn đang lướt app khác.</p>
     <div class="seg" role="group" aria-label="Cách gửi thông báo">${[['shortcut', 'Phím tắt iPhone'], ['ntfy', 'App ntfy'], ['push', 'Của app']].map(([k, l]) => `<button type="button" data-act="alert-method" data-k="${k}" aria-pressed="${alertMethod() === k}">${l}</button>`).join('')}</div>
@@ -4045,16 +4215,23 @@ const handlers = {
   'add-ex': t => { ui.nb = {}; ui.draft = { ...newEx(''), dayId: t.dataset.day, isNew: true, added: [], orig: [] }; exSheet(); },
   'edit-ex': t => { const ex = findEx(t.dataset.id); if (!ex) return; const so = slotOf(ex.id); ui.nb = {};
     ui.draft = { ...ex, photos: [...ex.photos], dayId: so.day.id, altOf: so.isMain ? null : so.main.id, isNew: false, added: [], orig: [...ex.photos], eachOrig: !!ex.each }; exSheet(); },
+  'nbz': t => { ui.nb = { z: ui.nb && ui.nb.z === t.dataset.v ? '' : t.dataset.v }; const box = $('#nb-box'); if (box) { box.innerHTML = nbHtml(); hydratePhotos(box); } if ($('#f-zone') && ui.nb.z) $('#f-zone').value = ui.nb.z; },
+  'zlib': t => applyLibPick(t.dataset.v),
+  'z-toggle': t => { ui.zOpen = !t.parentElement.open; t.parentElement.open = ui.zOpen; },
+  'pack-load': () => packSheet(),
+  'pack-skip': () => { state.settings.packSkip = ymd(); save(); render(true); },
+  'vid-del': () => { const ex = findEx(ui.guideEx); if (!ex || !ex.vid) return; LDB.del('photos', ex.vid); ex.vid = null; save(); guideSheet(ex.id); toast('Đã xoá video'); },
   'nb': t => {
     ui.nb = ui.nb || {}; const k = t.dataset.k, v = t.dataset.v; ui.nb[k] = ui.nb[k] === v ? '' : v;
     $$(`[data-act="nb"][data-k="${k}"]`).forEach(b => b.setAttribute('aria-pressed', b.dataset.v === ui.nb[k]));
     const name = nbName(), pv = $('#nb-prev'); if (pv) pv.textContent = name || '';
     if (!name) return;
     $('#f-name').value = name;
-    const mv = NB_MV.find(x => x[0] === ui.nb.mv), eq = NB_EQ.find(x => x[0] === ui.nb.eq);
-    if (mv) { $('#f-muscle').value = mv[1]; if ($('#f-type').value !== mv[2]) { $('#f-type').value = mv[2]; $('#f-type').dispatchEvent(new Event('change', { bubbles: true })); } }
+    const eq = NB_EQ.find(x => x[0] === ui.nb.eq), zm = (ZMV[ui.nb.z] || []).find(x => x[0] === ui.nb.mv);
+    if ($('#f-zone')) $('#f-zone').value = ui.nb.z || '';
+    if (zm && $('#f-type').value !== zm[1]) { $('#f-type').value = zm[1]; $('#f-type').dispatchEvent(new Event('change', { bubbles: true })); }
     if (eq) { $('#f-step').value = fmtIn(eq[1]); const db = eq[0] === 'tạ đơn'; if ($('#f-each')) { $('#f-each').checked = db; $$('.u-kg').forEach(x => x.textContent = db ? 'kg/tay' : 'kg'); } }
-    const fs = $('#f-slot'); if (fs && mv && (!fs.value || fs.value === ui.nb.autoSlot)) { fs.value = ui.nb.autoSlot = ui.nb.mv + (ui.nb.va && /dốc|trên|dưới|hẹp|rộng|ngược|trung lập/.test(ui.nb.va) ? ' ' + ui.nb.va : ''); }
+    const fs = $('#f-slot'); if (fs && ui.nb.mv && (!fs.value || fs.value === ui.nb.autoSlot)) { fs.value = ui.nb.autoSlot = ui.nb.mv + (ui.nb.va && /dốc|trên|dưới|hẹp|rộng|ngược|trung lập/.test(ui.nb.va) ? ' ' + ui.nb.va : ''); }
   },
   'swap-open': t => swapSheet(+t.dataset.e),
   'swap-do': t => {
@@ -4066,7 +4243,7 @@ const handlers = {
     toast(`Đã đổi sang ${shortName(x.name)}${mk ? ' · bài chính mới' : ''}`);
   },
   'add-alt': t => { const main = findEx(t.dataset.id); if (!main) return; const so = slotOf(main.id); ui.nb = {};
-    ui.draft = { ...newEx(''), muscle: main.muscle, type: main.type, sets: main.sets, repTarget: main.repTarget, repMin: main.repMin, repMax: main.repMax, dayId: so.day.id, altOf: main.id, isNew: true, added: [], orig: [] }; exSheet(); },
+    ui.nb = { z: zoneOf(main) || '' }; ui.draft = { ...newEx(''), muscle: main.muscle, zone: zoneOf(main), type: main.type, sets: main.sets, repTarget: main.repTarget, repMin: main.repMin, repMax: main.repMax, dayId: so.day.id, altOf: main.id, isNew: true, added: [], orig: [] }; exSheet(); },
   'alts-toggle': t => { ui.altOpen = ui.altOpen || {}; ui.altOpen[t.dataset.id] = !ui.altOpen[t.dataset.id]; render(true); },
   'make-main': t => { const so = slotOf(t.dataset.id); if (!so || so.isMain) return; const nm = swapMain(so.main, t.dataset.id); const sy = syncActive(); save(); closeSheet(); render(true); toast(`Bài chính mới: ${shortName(nm.name)}${sy ? ' · đã đổi trong buổi đang tập' : ''}`); },
   'rot-hold': t => { const m = findEx(t.dataset.id); if (!m) return; m.mainSince = addDays(ymd(), -(ROT_DAYS - 14)); save(); render(true); if (!$('#sheet').hidden) rotSheet(); toast('Giữ bài chính thêm 2 tuần'); },
@@ -4093,7 +4270,7 @@ const handlers = {
     const changedKg = d.curIn != null && d.curIn !== prevBase;
     const repMax = Math.max(Math.round(d.repTarget), Math.round(d.repMax || 12));
     const ex = { id: d.id, name: d.name, muscle: d.muscle, type: d.type, sets: Math.round(d.sets), repTarget: Math.round(d.repTarget), repMin: Math.round(d.repMin), repMax,
-      dropSet: d.dropSet, warmup: d.warmup, step: d.step, rest: d.rest, setup: d.setup, photos: d.photos, targetKg: d.targetKg, each: !!d.each, restV: 2,
+      dropSet: d.dropSet, warmup: d.warmup, step: d.step, rest: d.rest, setup: d.setup, photos: d.photos, zone: d.zone || null, gid: d.name === d.nameOrig ? d.gid : (LIB_GID[d.name] || undefined), cues: d.cues || '', vid: d.vid || null, vlink: d.vlink || '', targetKg: d.targetKg, each: !!d.each, restV: 2,
       ...(d.altOf ? {} : { alts: d.alts || [], slot: (d.slot || '').trim(), mainSince: d.mainSince || ymd() }),
       currentKg: changedKg ? d.curIn : (d.isNew ? null : d.currentKg), kgSetAt: changedKg ? Date.now() : (d.kgSetAt || null) };
     [...d.orig, ...d.added].filter(id => !d.photos.includes(id)).forEach(id => DB.del('photos', id));
@@ -4185,6 +4362,7 @@ const handlers = {
   'rest-mode': t => { state.settings.restMode = t.dataset.k; save(); render(true); toast('Nhịp nghỉ: ' + restMode().label); },
   'pace': t => { state.settings.pace = t.dataset.k; save(); render(true); },
   'body-add': () => bodySheet(null),
+  'b-all': () => { ui.bAll = true; render(true); },
   'sex': t => { state.settings.sex = t.dataset.k; save(); render(true); },
   'bm': t => { ui.bm = t.dataset.k; $$('[data-act="bm"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === ui.bm)); drawBodyChart(); },
   'bp-add': t => { ui.bpPreset = { m: t.dataset.m, k: t.dataset.k }; ui.pose = t.dataset.k; const inp = $('#bp-in'); if (inp) inp.click(); },
@@ -4309,6 +4487,7 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('input', e => {
   const t = e.target; const b = t.dataset && t.dataset.bind;
+  if (t.id === 'g-vlink') { const ex = findEx(ui.guideEx); if (ex) { ex.vlink = t.value.trim().slice(0, 500); save(); } return; }
   if (t.id === 'g-cues') { const ex = findEx(ui.guideEx); if (ex) { ex.cues = t.value.slice(0, 400); save(); } return; }
   if (t.id === 'g-q') { clearTimeout(guidePick.t); guidePick.t = setTimeout(() => { const pos = t.selectionStart; guidePick(t.value); const n = $('#g-q'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (er) {} } }, 300); return; }
   if (t.id === 'lib-q') { clearTimeout(libSheet.t); libSheet.t = setTimeout(() => { const pos = t.selectionStart; ui.libQ = t.value; libSheet(); const n = $('#lib-q'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (er) {} } }, 250); return; }
@@ -4327,8 +4506,8 @@ document.addEventListener('change', async e => {
   const t = e.target;
   if (t.id === 'f-name' && ui.draft && ui.draft.isNew) {
     const lib = LIB.find(l => l[0] === t.value.trim());
-    if (!lib && $('#f-muscle') && $('#f-muscle').value === 'Khác') { const g = guessMuscle(t.value); if (g) $('#f-muscle').value = g; }
-    if (lib) { $('#f-muscle').value = lib[1]; $('#f-type').value = lib[2]; $('#f-warm').checked = lib[2] !== 'iso'; $('#f-step').value = fmtIn(TYPES[lib[2]].step); $('#f-rest').innerHTML = restOpts(0, lib[2]); draftRoad(); }
+    if (!lib && $('#f-zone') && !$('#f-zone').value) { const g = guessZone(t.value); if (g) $('#f-zone').value = g; }
+    if (lib) { if ($('#f-zone')) $('#f-zone').value = LIBZ[lib[0]] || ''; $('#f-type').value = lib[2]; $('#f-warm').checked = lib[2] !== 'iso'; $('#f-step').value = fmtIn(TYPES[lib[2]].step); $('#f-rest').innerHTML = restOpts(0, lib[2]); draftRoad(); }
     if ($('#f-each')) { const db = /tạ đơn|dumbbell/i.test(t.value); $('#f-each').checked = db; $$('.u-kg').forEach(x => x.textContent = db ? 'kg/tay' : 'kg'); if (db) $('#f-step').value = fmtIn(2); }
   }
   if (t.id === 'f-each') { $$('.u-kg').forEach(x => x.textContent = t.checked ? 'kg/tay' : 'kg'); }
@@ -4353,6 +4532,7 @@ document.addEventListener('change', async e => {
     if (why) { t.checked = false; state.settings.notify = false; toast(why); } else { state.settings.notify = true; toast('Đã bật thông báo hết giờ nghỉ'); }
     save(); render(true); return;
   }
+  if (t.id === 'g-vin' && t.files && t.files[0]) { const ex = findEx(ui.guideEx), f = t.files[0]; t.value = ''; if (ex) await vidSave(ex, f); }
   if (t.id === 'bp-in' && t.files && t.files[0]) { const F = [...t.files]; t.value = ''; await bpAddSheet(F); }
   if (t.id === 'bpn-all' && t.value) { $$('[id^="bpn-d-"]').forEach(x => { x.value = t.value; }); }
   if (t.dataset && t.dataset.cap) {
@@ -4431,6 +4611,7 @@ setInterval(() => { const el = $('#elapsed'); if (el && state.active) { el.textC
   if (saved && Array.isArray(saved.days)) loadState(saved);
   if (!pm) { profiles.list[0].name = (state.settings.name || '').trim() || 'Tôi'; LDB.put('kv', 'profiles', clone(profiles)); }
   render();
+  LDB.get('kv', 'exdbPack').then(p => { ui.pack = p || false; if (ui.tab === 'today' || ui.tab === 'more') render(true); }).catch(() => { ui.pack = false; });
   connectCloud(saved && Array.isArray(saved.days) ? saved : null);
   if (!location.hash.startsWith('#nhap=')) maybeWeekPlan();
   if (state.settings.notify && alertMethod() === 'push') currentPushSub().then(() => { if (ui.tab === 'more') render(true); }).catch(() => {});
