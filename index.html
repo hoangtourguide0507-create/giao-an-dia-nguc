@@ -1058,7 +1058,58 @@ body.storying .sheet{z-index:64}
 .nav .bar.n4{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 76px minmax(0,2fr)!important;justify-items:center;align-items:center}
 .nav .bar.n4>button{width:100%;max-width:96px}
 .nav .bar.n4>button.fab{width:76px;max-width:none}
-.psub{margin-bottom:14px}
+.nav .bar.n5{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 76px minmax(0,1fr) minmax(0,1fr)!important;justify-items:center;align-items:center}
+.nav .bar.n5>button{width:100%;max-width:84px;min-width:0}
+.nav .bar.n5>button.fab{width:76px;max-width:none}
+:root[data-skin="light"] .nav .bar.n5>button:not(.fab){width:56px;max-width:none;padding:0}
+:root[data-skin="light"] .nav .bar.n5>button[aria-current="page"]:not(.fab) .lb{display:none}
+.bsex{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.bsex p{margin:2px 0 0}
+.bnow{margin-bottom:12px}
+.btiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btile{display:flex;flex-direction:column;gap:3px;padding:12px;border-radius:calc(var(--r) - 4px);background:var(--surface-2);border:1px solid var(--line);text-align:left;color:var(--fg);min-width:0}
+.btile .tl{font-size:12px;font-weight:600;color:var(--fg-2);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.btile .tl .badge{padding:2px 7px;font-size:10.5px}
+.btile .tv{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.15;font-variant-numeric:tabular-nums}
+.btile .tv small{font-size:12px;font-weight:600;color:var(--fg-2);margin-left:3px}
+.btile.empty{border-style:dashed;cursor:pointer;font:inherit}
+.btile.empty .tv{color:var(--muted)}
+.bvis{margin-top:10px;font-size:13.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.bvis .badge{padding:2px 7px;font-size:10.5px}
+.bverd{margin-top:12px;padding:12px 14px;border-radius:calc(var(--r) - 4px);border:1px solid var(--line);background:var(--surface-2)}
+.bverd .vt{font-size:13px;color:var(--fg-2)} .bverd .vt b{color:var(--fg);font-size:15px}
+.bverd .vl{font-size:14px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
+.bverd .vp{font-size:13px;color:var(--fg-2);margin-top:4px}
+.bverd.good{border-color:rgb(var(--up-rgb) / .5);background:rgb(var(--up-rgb) / .08)} .bverd.good .vt b{color:var(--up)}
+.bverd.warn{border-color:rgb(var(--acc-rgb) / .5);background:var(--gold-soft)} .bverd.warn .vt b{color:var(--gold-hi)}
+.bverd.bad{border-color:rgb(var(--down-rgb) / .5);background:rgb(var(--down-rgb) / .08)} .bverd.bad .vt b{color:var(--down)}
+.bchart{margin-bottom:12px}
+.mline{width:100%;height:auto;display:block;overflow:visible}
+.mline .ml{font-size:11px;font-weight:700;fill:var(--fg-2)} .mline .md{font-weight:600;fill:var(--muted)}
+.mline .mv{font-size:12px;font-weight:800}
+.mx{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:2px}
+.bhist{margin:4px 0 6px}
+.bhist summary,.bmore summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--fg-2);padding:8px 0}
+.bmore{margin-top:10px}
+.bcmp{margin-bottom:12px}
+.cmpnum{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:13px;color:var(--fg-2)} .cmpnum b{color:var(--fg);font-variant-numeric:tabular-nums}
+.bgrid{display:flex;flex-direction:column;gap:6px}
+.bgh,.bgr{display:grid;grid-template-columns:54px repeat(3,minmax(0,1fr));gap:6px;align-items:center}
+.bgh span{font-size:11px;font-weight:700;color:var(--muted);text-align:center}
+.bgr .bm{font-size:12.5px;font-weight:700;color:var(--fg-2)}
+.bgr .bc{position:relative;aspect-ratio:3/4;border-radius:10px;overflow:hidden;padding:0;border:1px solid var(--line);background:var(--surface-2)}
+.bgr .bc img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.bgr .bc.add{border:1.5px dashed var(--line-2);background:transparent;color:var(--muted);font-size:22px;font-weight:300;aspect-ratio:3/2}
+.bgr .bc.ca,.bgr .bc.cb{outline:2.5px solid var(--gold);outline-offset:-2.5px}
+.bgr .bc.ca::after,.bgr .bc.cb::after{position:absolute;left:4px;top:4px;font-size:10px;font-weight:800;padding:1px 5px;border-radius:5px;background:var(--gold);color:var(--gold-ink)}
+.bgr .bc.ca::after{content:'TRƯỚC'} .bgr .bc.cb::after{content:'SAU'}
+.viewer .vbp{justify-content:stretch} .viewer .vbp button{flex:1;justify-content:center}
+.bpn{display:flex;flex-direction:column;gap:10px;margin-top:12px}
+.bpr{display:flex;gap:10px;align-items:flex-start;padding:8px;border-radius:12px;background:var(--surface-2)}
+.bpr img{width:64px;height:86px;object-fit:cover;border-radius:8px;flex:none}
+.bpf{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.bpf .inp{min-height:40px}
+.seg.sm button{min-height:34px;font-size:13px;padding:4px 6px}
 .tcard2 h4{margin:14px 0 6px;font-size:13px;font-weight:800;color:var(--fg-2)}
 details.rdyc{padding:0}
 details.rdyc>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:14px;cursor:pointer}
@@ -1287,9 +1338,9 @@ function iconOf(skin, k) {
   return b == null ? '' : `<svg class="ico${k === 'chev' ? ' chev' : ''}" viewBox="0 0 24 24" aria-hidden="true">${b}</svg>`;
 }
 const ICON = new Proxy({}, { get: (_, k) => iconOf(curSkin, k) });
-const NAV = [['plan', 'nPlan', 'Giáo án'], ['week', 'nProg', 'Tiến độ'], ['today', 'nTrain', 'Tập'], ['more', 'nMe', 'Tôi']];
+const NAV = [['plan', 'nPlan', 'Giáo án'], ['week', 'nProg', 'Tiến độ'], ['today', 'nTrain', 'Tập'], ['body', 'nBody', 'Cơ thể'], ['more', 'nMe', 'Tôi']];
 function renderNav() {
-  $('#nav-bar').classList.add('n4');
+  $('#nav-bar').classList.remove('n4'); $('#nav-bar').classList.add('n5');
   $('#nav-bar').innerHTML = NAV.map(([t, k, l]) => t === 'today'
     ? `<button type="button" class="fab" data-act="tab" data-tab="today" ${ui.tab === t ? 'aria-current="page"' : ''} aria-label="${state.active ? 'Quay lại buổi đang tập' : 'Tập'}"><span class="fabc">${ICON[k]}</span><span class="lb">${state.active ? 'Đang tập' : l}</span><span class="dot" id="dot-active" ${state.active ? '' : 'hidden'}></span></button>`
     : `<button type="button" data-act="tab" data-tab="${t}" ${ui.tab === t || (t === 'more' && ui.tab === 'settings') ? 'aria-current="page"' : ''}>${t === 'more' && coach() ? ICON.users : ICON[k]}<span class="lb">${t === 'more' && coach() ? 'HLV' : l}</span></button>`).join('');
@@ -1405,7 +1456,7 @@ const SAMPLE = [
 const METRICS = [
   { k: 'weight', label: 'Cân nặng', unit: 'kg', dec: 1, good: 0 },
   { k: 'bodyFat', label: 'Tỉ lệ mỡ', unit: '%', dec: 1, good: -1 },
-  { k: 'muscle', label: 'Khối cơ', unit: 'kg', dec: 1, good: 1 },
+  { k: 'muscle', label: 'Khối cơ xương', unit: 'kg', dec: 1, good: 1 },
   { k: 'restHR', label: 'Nhịp tim nghỉ', unit: 'bpm', dec: 0, good: -1 },
   { k: 'hrv', label: 'HRV', unit: 'ms', dec: 0, good: 1 },
   { k: 'vo2', label: 'VO₂ max', unit: '', dec: 1, good: 1 },
@@ -1413,7 +1464,8 @@ const METRICS = [
   { k: 'steps', label: 'Bước chân', unit: 'bước', dec: 0, good: 1 },
   { k: 'spo2', label: 'SpO₂', unit: '%', dec: 0, good: 0 },
   { k: 'kcal', label: 'Calo vận động', unit: 'kcal', dec: 0, good: 0 },
-  { k: 'waist', label: 'Vòng eo', unit: 'cm', dec: 1, good: 0 }
+  { k: 'waist', label: 'Vòng eo', unit: 'cm', dec: 1, good: -1 },
+  { k: 'visceral', label: 'Mỡ nội tạng', unit: 'mức', dec: 0, good: -1 }
 ];
 const DERIVED = [
   { k: 'lean', label: 'Khối nạc ước tính', unit: 'kg', dec: 1, good: 1, calc: e => e.weight && e.bodyFat != null ? e.weight * (1 - e.bodyFat / 100) : null },
@@ -1858,7 +1910,6 @@ const reduceMotion = () => !!(window.matchMedia && matchMedia('(prefers-reduced-
 function fillGids() { let ch = 0; for (const { ex } of allExFull()) if (ex.gid === undefined) { ex.gid = autoGid(ex); ch = 1; } if (ch) save(); }
 function render(keepScroll) {
   try { fillGids(); } catch (e) {}
-  if (ui.tab === 'body') { ui.tab = 'week'; ui.psub = 'body'; }
   const y = window.scrollY;
   const tabChanged = ui.tab !== lastTab; lastTab = ui.tab;
   if (document.documentElement.dataset.skin !== (state.settings.skin || 'gold')) applySkin(state.settings.skin);
@@ -1868,7 +1919,7 @@ function render(keepScroll) {
   renderNav();
   renderHeader();
   hydratePhotos(v);
-  if (ui.tab === 'week' && ui.psub === 'body') { drawBodyChart(); bindCompare(); }
+  if (ui.tab === 'body') { drawBodyChart(); bindCompare(); }
   if (ui.tab === 'today' && state.active) { requestWake(); updateProgress(); markCurrent(); }
   if (ui.tab === 'more' && coach() && ((tabChanged && !ui.coachJust) || !ui.coachData) && !ui.coachLoading) loadCoach();
   ui.coachJust = false;
@@ -2062,7 +2113,7 @@ function bodyPhotoBanner() {
   const P = state.bodyPhotos; if (!P.length) return '';
   const last = P.reduce((a, b) => a.date > b.date ? a : b).date, n = daysBetween(last, ymd());
   if (n < 28) return '';
-  return `<div class="banner"><span class="bi">${ICON.cam}</span><div><b>Đến lúc chụp ảnh body tháng này</b><p>Đã ${n} ngày kể từ lần chụp trước. Chụp lại để so sánh trước và sau.</p><button class="btn sm" data-act="tab" data-tab="body">Mở mục ảnh body</button></div></div>`;
+  return `<div class="banner"><span class="bi">${ICON.cam}</span><div><b>Đến lúc chụp ảnh body tháng này</b><p>Đã ${n} ngày kể từ lần chụp trước. Chụp lại để so sánh trước và sau.</p><button class="btn sm" data-act="tab" data-tab="body">Mở mục Cơ thể</button></div></div>`;
 }
 function wpBanner() {
   if (!state.days.length) return '';
@@ -2441,7 +2492,7 @@ function refreshWarm(i) { const box = $('#warm-' + i); if (box && state.active) 
 function getSet(i, j) { const en = state.active.entries[i]; return j === 'drop' ? en.drop : en.sets[+j]; }
 
 /* ---------- đồng hồ nghỉ ---------- */
-const APP_VERSION = '2026.10.13 · bản 26';
+const APP_VERSION = '2026.10.13 · bản 27';
 const PUSH_SERVER = '';
 const isIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const isStandalone = () => !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
@@ -2927,12 +2978,10 @@ function periodStats(from, to) {
 }
 const dlt = (a, b, f) => { if (!b && !a) return ''; const d = a - b; return `<span class="dl delta ${d > 0 ? 'good' : d < 0 ? 'bad' : 'flat'}">${d > 0 ? '▲' : d < 0 ? '▼' : '='} ${f ? f(Math.abs(d)) : Math.abs(d)}</span>`; };
 function viewWeek() {
-  const subSeg = `<div class="seg psub" role="group" aria-label="Mục">${[['train', 'Tập luyện'], ['body', 'Cơ thể']].map(([k, l]) => `<button type="button" data-act="psub" data-k="${k}" aria-pressed="${(ui.psub || 'train') === k}">${l}</button>`).join('')}</div>`;
-  if (ui.psub === 'body') return `<section class="sec" style="margin-bottom:0"><div class="sec-head" style="margin-bottom:12px"><h2 class="h1">Tiến độ</h2>${multi() || coach() ? `<button class="btn sm gold" data-act="coach">${ICON.users} Bảng HLV</button>` : ''}</div>${subSeg}</section>` + viewBody().replace('<h2 class="h1">Cơ thể</h2>', '<h2 class="h">Số đo cơ thể</h2>');
   const mode = ui.pmode === 'month' ? 'month' : 'week', off = mode === 'month' ? (ui.monthOff || 0) : ui.weekOff, today = ymd();
   const P = periodOf(mode, off), S = periodStats(P.from, P.to), Q = periodStats(P.prev[0], P.prev[P.prev.length - 1]);
   const tonsN = v => fmt(v / 1000, v >= 10000 ? 1 : 2);
-  let h = `<section class="sec"><div class="sec-head" style="margin-bottom:12px"><h2 class="h1">Tiến độ</h2>${multi() || coach() ? `<button class="btn sm gold" data-act="coach">${ICON.users} Bảng HLV</button>` : ''}</div>${subSeg}
+  let h = `<section class="sec"><div class="sec-head" style="margin-bottom:12px"><h2 class="h1">Tiến độ</h2>${multi() || coach() ? `<button class="btn sm gold" data-act="coach">${ICON.users} Bảng HLV</button>` : ''}</div>
     <div class="seg pmode" role="group" aria-label="Xem theo">${[['week', 'Theo tuần'], ['month', 'Theo tháng']].map(([k, l]) => `<button type="button" data-act="pmode" data-k="${k}" aria-pressed="${mode === k}">${l}</button>`).join('')}</div>
     <div class="weeknav"><button class="btn" data-act="period" data-d="-1" aria-label="Trước">${ICON.chevL}</button>
     <div><div class="wl">${P.label}</div><div class="small muted" style="text-align:center">${P.sub}</div></div>
@@ -3085,54 +3134,130 @@ function drawLine(el, pts, o) {
 
 /* ---------- TAB: CƠ THỂ ---------- */
 function bodySorted() { return [...state.body].sort((a, b) => a.date.localeCompare(b.date)); }
+const BCORE = ['weight', 'bodyFat', 'muscle', 'waist'];
+const mDef = k => METRICS.find(m => m.k === k);
+const sexOf = () => state.settings.sex || '';
+function bRange(k, v) {
+  const s = sexOf(), f = s === 'f';
+  if (v == null) return null;
+  if (k === 'bodyFat') { if (!s) return null; const [lo, hi] = f ? [18, 28] : [10, 20]; return v < lo ? ['Thấp', 'almost'] : v <= hi ? ['Chuẩn', 'up'] : ['Cao', 'down']; }
+  if (k === 'waist') { if (!s) return null; return v < (f ? 80 : 90) ? ['Chuẩn', 'up'] : ['Cao', 'down']; }
+  if (k === 'visceral') return v < 10 ? ['Chuẩn', 'up'] : ['Cao', 'down'];
+  return null;
+}
+const fatKg = e => e && e.weight != null && e.bodyFat != null ? e.weight * e.bodyFat / 100 : null;
+const leanKg = e => e && e.weight != null && e.bodyFat != null ? e.weight - fatKg(e) : null;
+const ymKey = d => d.slice(0, 7);
+function monLbl(d, withYear) { const y = d.slice(0, 4), m = +d.slice(5, 7); return `T${m}${withYear || y !== ymd().slice(0, 4) ? '/' + y.slice(2) : ''}`; }
+/* mốc so sánh: lần đo cuối của tháng trước đó (nếu có), không thì lần đo đầu tiên */
+function refOf(list, cur) {
+  const earlier = list.filter(e => ymKey(e.date) < ymKey(cur.date));
+  if (earlier.length) return earlier[earlier.length - 1];
+  return list[0] !== cur ? list[0] : null;
+}
+function bodyVerdict(B) {
+  const ok = B.filter(e => fatKg(e) != null); if (ok.length < 2) return null;
+  const cur = ok[ok.length - 1], ref = refOf(ok, cur); if (!ref) return null;
+  const useSmm = cur.muscle != null && ref.muscle != null;
+  const dF = fatKg(cur) - fatKg(ref), dM = useSmm ? cur.muscle - ref.muscle : leanKg(cur) - leanKg(ref);
+  const T = 0.3, f = dF <= -T ? -1 : dF >= T ? 1 : 0, m = dM <= -T ? -1 : dM >= T ? 1 : 0;
+  let v;
+  if (m > 0 && f < 0) v = ['Tăng cơ, giảm mỡ', 'good', 'Kết quả tốt nhất. Giữ nguyên giáo án và chế độ ăn.'];
+  else if (m > 0 && f === 0) v = ['Tăng cơ, mỡ giữ nguyên', 'good', 'Tăng cơ sạch. Tiếp tục như hiện tại.'];
+  else if (m > 0 && f > 0) v = dF > dM * 1.5 ? ['Tăng cả cơ và mỡ, mỡ tăng nhanh hơn', 'warn', 'Bớt khoảng 200–300 kcal mỗi ngày để giảm tốc độ tăng mỡ.'] : ['Tăng cả cơ và mỡ', 'ok', 'Đang tăng cân có kiểm soát. Theo dõi để mỡ không tăng nhanh hơn cơ.'];
+  else if (m === 0 && f < 0) v = ['Giảm mỡ, giữ được cơ', 'good', 'Tốt. Giữ mức tạ nặng và ăn đủ đạm để không mất cơ.'];
+  else if (m < 0 && f < 0) v = ['Giảm mỡ nhưng mất cơ', 'warn', 'Ăn đủ đạm (1,6–2,2 g mỗi kg cân nặng), không cắt calo quá nhanh, giữ mức tạ nặng.'];
+  else if (m < 0) v = ['Đang mất cơ', 'bad', 'Kiểm tra lại: ngủ đủ, ăn đủ đạm, tập đủ buổi mỗi tuần.'];
+  else if (f > 0) v = ['Đang tăng mỡ', 'bad', 'Giảm calo nhẹ và tăng vận động hằng ngày (đi bộ).'];
+  else v = ['Ổn định', 'flat', 'Cơ và mỡ gần như không đổi.'];
+  const sg = x => (x > 0 ? '+' : x < 0 ? '−' : '±') + fmt(Math.abs(x), 1);
+  return { t: v[0], cls: v[1], tip: v[2], from: ref.date, to: cur.date, dF, dM, useSmm, line: `${useSmm ? 'Cơ xương' : 'Khối nạc'} ${sg(dM)} kg · Mỡ ${sg(dF)} kg` };
+}
 function viewBody() {
   const B = bodySorted();
   let h = `<section class="sec"><div class="sec-head"><h2 class="h1">Cơ thể</h2><button class="btn sm gold" data-act="body-add">+ Nhập số đo</button></div>`;
-  if (!B.length) return h + `<div class="empty">Nhập cân nặng, tỉ lệ mỡ, nhịp tim nghỉ, HRV, giấc ngủ… từ đồng hồ hoặc cân điện tử. Bỏ trống mục nào không có.<br><br>Nên đo cùng thời điểm mỗi lần, ví dụ buổi sáng sau khi thức dậy, để số liệu so sánh được.</div></section>` + viewBodyPhotos();
-  const have = ALLM.filter(m => B.some(e => mval(e, m) != null));
-  h += `<div class="tiles">`;
-  for (const m of have) {
-    const withV = B.filter(e => mval(e, m) != null); const cur = withV[withV.length - 1];
-    const ref = [...withV].reverse().find(e => daysBetween(e.date, cur.date) >= 28) || (withV[0] !== cur ? withV[0] : null);
+  if (!sexOf()) h += `<div class="card bsex"><div><b>Giới tính</b><p class="small muted">Để so với mức chuẩn tỉ lệ mỡ và vòng eo.</p></div><div class="seg" role="group" aria-label="Giới tính">${[['m', 'Nam'], ['f', 'Nữ']].map(([k, l]) => `<button type="button" data-act="sex" data-k="${k}" aria-pressed="false">${l}</button>`).join('')}</div></div>`;
+  if (!B.length) {
+    h += `<div class="empty">Mỗi tháng đo 1–2 lần bằng máy InBody hoặc cân điện tử, cùng điều kiện: buổi sáng, trước khi ăn, sau khi đi vệ sinh, chưa tập. Chỉ cần 4 chỉ số: cân nặng, tỉ lệ mỡ, khối cơ xương, vòng eo.</div></section>`;
+    return h + viewBodyPhotos();
+  }
+  // 4 chỉ số chính
+  h += `<div class="card bnow"><div class="eyebrow" style="margin-bottom:10px">Lần đo gần nhất · ${dm(B[B.length - 1].date)}/${B[B.length - 1].date.slice(2, 4)}</div><div class="btiles">`;
+  for (const k of BCORE) {
+    const m = mDef(k), L = B.filter(e => e[k] != null), cur = L[L.length - 1];
+    if (!cur) { h += `<button type="button" class="btile empty" data-act="body-add"><span class="tl">${m.label}</span><span class="tv">–</span><span class="delta flat">Chưa nhập</span></button>`; continue; }
+    const ref = refOf(L, cur), rg = bRange(k, cur[k]);
     let dl = `<span class="delta flat">${dm(cur.date)}</span>`;
-    if (ref) { const d = mval(cur, m) - mval(ref, m); const cls = Math.abs(d) < 1e-9 ? 'flat' : m.good && Math.sign(d) === m.good ? 'good' : 'other';
-      dl = `<span class="delta ${cls}">${d > 0 ? '▲' : d < 0 ? '▼' : '='} ${fmt(Math.abs(d), m.dec)} so với ${dm(ref.date)}</span>`; }
-    h += `<div class="tile"><div class="tl">${m.label}</div><div class="tv">${fmt(mval(cur, m), m.dec)}${m.unit ? `<small>${m.unit}</small>` : ''}</div>${dl}</div>`;
+    if (ref) { const d = cur[k] - ref[k]; const cls = Math.abs(d) < 1e-9 ? 'flat' : m.good ? (Math.sign(d) === m.good ? 'good' : 'bad') : 'other';
+      dl = `<span class="delta ${cls}">${d > 0 ? '▲' : d < 0 ? '▼' : '='} ${fmt(Math.abs(d), m.dec)} so với ${ymKey(ref.date) < ymKey(cur.date) ? monLbl(ref.date) : dm(ref.date)}</span>`; }
+    h += `<div class="btile"><span class="tl">${m.label}${rg ? ` <span class="badge ${rg[1]}">${rg[0]}</span>` : ''}</span><span class="tv">${fmt(cur[k], m.dec)}<small>${m.unit}</small></span>${dl}</div>`;
   }
   h += `</div>`;
-  if (!have.find(m => m.k === ui.metric)) ui.metric = have[0] ? have[0].k : 'weight';
-  h += `<div class="chips">${have.map(m => `<button type="button" data-act="metric" data-k="${m.k}" aria-pressed="${m.k === ui.metric}">${m.label}</button>`).join('')}</div><div class="chart" id="body-chart"></div>`;
-  h += `<h3 class="h" style="margin-bottom:12px">Lịch sử</h3><div class="list">`;
-  for (const e of [...B].reverse().slice(0, 60)) {
-    const bits = METRICS.filter(m => e[m.k] != null).slice(0, 4).map(m => `${fmt(e[m.k], m.dec)}${m.unit ? ' ' + m.unit : ''}`).join(' · ');
-    h += `<button type="button" class="li" data-act="body-edit" data-id="${e.id}"><span><span class="lt">${DOW[parseYmd(e.date).getDay()]} ${dm(e.date)}</span><span class="ls">${esc(bits)}</span></span><span class="ls">Sửa ›</span></button>`;
+  const vis = B.filter(e => e.visceral != null).pop();
+  if (vis) { const rg = bRange('visceral', vis.visceral); h += `<div class="bvis">Mỡ nội tạng <b>${fmt(vis.visceral, 0)}</b> <span class="badge ${rg[1]}">${rg[0]}</span> <span class="muted small">· nên dưới 10</span></div>`; }
+  const V = bodyVerdict(B);
+  if (V) h += `<div class="bverd ${V.cls}"><div class="vt">${monLbl(V.from)} → ${monLbl(V.to)} · <b>${V.t}</b></div><div class="vl">${V.line}</div><div class="vp">${V.tip}</div></div>`;
+  else h += `<p class="note-line">Nhập cân nặng và tỉ lệ mỡ ở 2 lần đo trở lên để app đánh giá tăng cơ hay tăng mỡ.</p>`;
+  if (sexOf()) h += `<p class="note-line">Mức chuẩn cho ${sexOf() === 'f' ? 'nữ' : 'nam'}: mỡ ${sexOf() === 'f' ? '18–28' : '10–20'}% (InBody), eo dưới ${sexOf() === 'f' ? 80 : 90} cm (chuẩn người châu Á). Chênh dưới 0,3 kg coi như không đổi vì sai số máy đo. <button type="button" class="link" data-act="sex" data-k="">Đổi giới tính</button></p>`;
+  h += `</div>`;
+  // biểu đồ
+  const opts = [['cm', 'Cơ & mỡ'], ['weight', 'Cân nặng'], ['bodyFat', '% mỡ'], ['waist', 'Vòng eo']].filter(([k]) => k === 'cm' ? B.filter(e => fatKg(e) != null).length >= 1 : B.some(e => e[k] != null));
+  if (opts.length) {
+    if (!opts.find(o => o[0] === ui.bm)) ui.bm = opts[0][0];
+    h += `<div class="card bchart"><div class="chips" style="margin-bottom:8px">${opts.map(([k, l]) => `<button type="button" data-act="bm" data-k="${k}" aria-pressed="${ui.bm === k}">${l}</button>`).join('')}</div><div id="body-chart"></div></div>`;
   }
-  h += `</div></section>`;
-  return h.replace('<h3 class="h" style="margin-bottom:12px">Lịch sử</h3>', '</section>' + viewBodyPhotos() + '<section class="sec"><h3 class="h" style="margin-bottom:12px">Lịch sử số đo</h3>');
+  // lịch sử
+  h += `<details class="bhist"><summary>Lịch sử số đo · ${B.length} lần</summary><div class="list" style="margin-top:10px">`;
+  for (const e of [...B].reverse().slice(0, 80)) {
+    const bits = [...BCORE, 'visceral'].filter(k => e[k] != null).map(k => { const m = mDef(k); return `${fmt(e[k], m.dec)}${m.unit === 'mức' ? ' nội tạng' : ' ' + m.unit}`; }).join(' · ');
+    h += `<button type="button" class="li" data-act="body-edit" data-id="${e.id}"><span><span class="lt">${DOW[parseYmd(e.date).getDay()]} ${dm(e.date)}/${e.date.slice(2, 4)}</span><span class="ls">${esc(bits || 'Chỉ số khác')}</span></span><span class="ls">Sửa ›</span></button>`;
+  }
+  h += `</div></details></section>`;
+  return h + viewBodyPhotos();
+}
+function nearBody(date) {
+  let best = null, bd = 22; for (const e of state.body) { const d = Math.abs(daysBetween(e.date, date)); if (d < bd) { bd = d; best = e; } } return best;
 }
 function viewBodyPhotos() {
   const all = [...state.bodyPhotos].sort((a, b) => a.date.localeCompare(b.date) || a.t - b.t);
   const list = all.filter(p => p.pose === ui.pose);
   const last = all.length ? all[all.length - 1].date : null, gap = last ? daysBetween(last, ymd()) : null;
-  let h = `<section class="sec"><div class="sec-head"><h2 class="h">Ảnh body</h2><label class="btn sm gold" for="bp-in">${ICON.cam} Thêm ảnh</label></div>
-    <input type="file" id="bp-in" accept="image/*" hidden>
-    <div class="chips" role="group" aria-label="Tư thế">${POSES.map(p => `<button type="button" data-act="pose" data-k="${p}" aria-pressed="${ui.pose === p}">${p} · ${all.filter(x => x.pose === p).length}</button>`).join('')}</div>`;
-  if (gap != null && gap >= 28) h += `<div class="banner"><span class="bi">${ICON.cal}</span><div><b>Đã ${gap} ngày chưa chụp</b><p>Chụp lại tư thế ${ui.pose.toLowerCase()} để so sánh tháng này với tháng trước.</p></div></div>`;
-  if (!list.length) h += `<div class="empty">Chưa có ảnh tư thế “${ui.pose}”. Mỗi tháng chụp 1 lần, cùng chỗ đứng, cùng ánh sáng, buổi sáng trước khi ăn để so sánh chuẩn. Bấm “Thêm ảnh” để mở camera hoặc chọn từ thư viện.</div>`;
-  else {
-    h += `<div class="bp-strip">${[...list].reverse().map(p => `<button type="button" data-act="bp-view" data-id="${p.id}"><img data-photo="${p.photoId}" alt="Ảnh body ${p.pose} ngày ${dm(p.date)}"><span>${dm(p.date)}${p.date.slice(0, 4) !== ymd().slice(0, 4) ? '/' + p.date.slice(2, 4) : ''}</span></button>`).join('')}</div>`;
-    if (list.length >= 2) {
-      const A = list.find(p => p.id === ui.cmpA) || list[0], Bp = list.find(p => p.id === ui.cmpB) || list[list.length - 1];
-      const opts = sel => list.map(p => `<option value="${p.id}" ${p.id === sel ? 'selected' : ''}>${dm(p.date)}/${p.date.slice(2, 4)}</option>`).join('');
-      const wk = Math.round(daysBetween(A.date, Bp.date) / 7);
-      h += `<div class="card"><div class="eyebrow" style="margin-bottom:10px">So sánh trước / sau</div>
-        <div class="cmp-sel"><label class="f">Trước<select class="inp" data-bind="cmp" data-k="A">${opts(A.id)}</select></label><label class="f">Sau<select class="inp" data-bind="cmp" data-k="B">${opts(Bp.id)}</select></label></div>
-        <div class="cmp" id="cmp"><img data-photo="${A.photoId}" alt="Ảnh trước"><img class="after" data-photo="${Bp.photoId}" alt="Ảnh sau" style="clip-path:inset(0 0 0 50%)">
-          <span class="handle" style="left:50%"><i>${ICON.swap}</i></span><span class="tag l">${dm(A.date)}</span><span class="tag r">${dm(Bp.date)}${wk ? ` · ${wk > 0 ? '+' : ''}${wk} tuần` : ''}</span></div>
-        <input type="range" class="cmp-range" id="cmp-range" min="0" max="100" value="50" aria-label="Kéo để so sánh hai ảnh"></div>`;
-    } else h += `<p class="note-line">Có từ 2 ảnh cùng tư thế là so sánh trước/sau được.</p>`;
+  let h = `<section class="sec"><div class="sec-head"><h2 class="h">Ảnh trước / sau</h2><label class="btn sm gold" for="bp-in">${ICON.cam} Thêm ảnh</label></div>
+    <input type="file" id="bp-in" accept="image/*" multiple hidden>`;
+  if (!all.length) return h + `<div class="empty">Mỗi tháng chụp 3 tư thế (trước, nghiêng, sau), cùng chỗ đứng, cùng ánh sáng, buổi sáng trước khi ăn.<br><br>Ảnh cũ từ năm trước: bấm “Thêm ảnh”, chọn nhiều ảnh một lúc, app tự đọc ngày chụp và cho bạn sửa lại tháng.</div><p class="note-line">Ảnh body chỉ lưu trên máy này, không gửi kèm khi chia sẻ giáo án.</p></section>`;
+  if (gap != null && gap >= 28) h += `<div class="banner"><span class="bi">${ICON.cal}</span><div><b>Đã ${gap} ngày chưa chụp</b><p>Chụp ảnh tháng ${+ymd().slice(5, 7)} để so với tháng trước.</p></div></div>`;
+  // so sánh
+  h += `<div class="card bcmp"><div class="chips" role="group" aria-label="Tư thế" style="margin-bottom:10px">${POSES.map(p => `<button type="button" data-act="pose" data-k="${p}" aria-pressed="${ui.pose === p}">${p} · ${all.filter(x => x.pose === p).length}</button>`).join('')}</div>`;
+  if (list.length >= 2) {
+    const A = list.find(p => p.id === ui.cmpA) || list[0], Bp = list.find(p => p.id === ui.cmpB) || list[list.length - 1];
+    const opt = sel => list.map(p => `<option value="${p.id}" ${p.id === sel ? 'selected' : ''}>${monLbl(p.date, 1)} · ${dm(p.date)}</option>`).join('');
+    const mo = Math.round(daysBetween(A.date, Bp.date) / 30.4);
+    h += `<div class="cmp-sel"><label class="f">Trước<select class="inp" data-bind="cmp" data-k="A">${opt(A.id)}</select></label><label class="f">Sau<select class="inp" data-bind="cmp" data-k="B">${opt(Bp.id)}</select></label></div>
+      <div class="cmp" id="cmp"><img data-photo="${A.photoId}" alt="Ảnh trước"><img class="after" data-photo="${Bp.photoId}" alt="Ảnh sau" style="clip-path:inset(0 0 0 50%)">
+        <span class="handle" style="left:50%"><i>${ICON.swap}</i></span><span class="tag l">${monLbl(A.date, 1)}</span><span class="tag r">${monLbl(Bp.date, 1)}${mo ? ` · ${mo} tháng` : ''}</span></div>
+      <input type="range" class="cmp-range" id="cmp-range" min="0" max="100" value="50" aria-label="Kéo để so sánh hai ảnh">`;
+    const ea = nearBody(A.date), eb = nearBody(Bp.date);
+    if (ea && eb && ea !== eb) {
+      const row = (k, u, dec) => ea[k] != null && eb[k] != null ? `<span>${mDef(k).label} <b>${fmt(ea[k], dec)} → ${fmt(eb[k], dec)}</b>${u}</span>` : '';
+      const r = row('bodyFat', '%', 1) + row('muscle', ' kg', 1) + row('waist', ' cm', 1) + row('weight', ' kg', 1);
+      if (r) h += `<div class="cmpnum">${r}</div>`;
+    }
+  } else h += `<p class="note-line" style="margin:0">Có từ 2 ảnh tư thế “${ui.pose}” ở 2 thời điểm là so sánh được.</p>`;
+  h += `</div>`;
+  // lưới theo tháng
+  const months = [...new Set([ymKey(ymd()), ...all.map(p => ymKey(p.date))])].sort().reverse();
+  const A0 = list.length >= 2 ? (list.find(p => p.id === ui.cmpA) || list[0]).id : null, B0 = list.length >= 2 ? (list.find(p => p.id === ui.cmpB) || list[list.length - 1]).id : null;
+  h += `<div class="bgrid"><div class="bgh"><span></span>${POSES.map(p => `<span>${p}</span>`).join('')}</div>`;
+  for (const mk of months) {
+    h += `<div class="bgr"><span class="bm">${monLbl(mk + '-01', 1)}</span>`;
+    for (const p of POSES) {
+      const ph = all.filter(x => x.pose === p && ymKey(x.date) === mk).pop();
+      h += ph ? `<button type="button" class="bc${ph.id === A0 ? ' ca' : ph.id === B0 ? ' cb' : ''}" data-act="bp-view" data-id="${ph.id}"><img data-photo="${ph.photoId}" alt="${p} ${monLbl(mk + '-01', 1)}"></button>`
+        : `<button type="button" class="bc add" data-act="bp-add" data-m="${mk}" data-k="${p}" aria-label="Thêm ảnh ${p} ${monLbl(mk + '-01', 1)}">+</button>`;
+    }
+    h += `</div>`;
   }
-  h += `<p class="note-line">Ảnh body chỉ lưu trên máy này, không bao giờ gửi kèm khi chia sẻ giáo án. File sao lưu có chứa ảnh.</p></section>`;
+  h += `</div><p class="note-line">Bấm ô trống để thêm ảnh cho đúng tháng. Bấm ảnh để xem, đặt làm ảnh so sánh, đổi ngày hoặc xoá. Ảnh body chỉ lưu trên máy này.</p></section>`;
   return h;
 }
 function setCompare(v) {
@@ -3152,21 +3277,92 @@ async function showBodyViewer(id) {
   let src = photoCache.get(bp.photoId); if (!src) { src = await DB.get('photos', bp.photoId); if (src) photoCache.set(bp.photoId, src); }
   const v = $('#viewer'); v.hidden = false;
   v.innerHTML = `<div class="vtop"><b>${esc(bp.pose)} · ${DOWL[parseYmd(bp.date).getDay()]} ${dm(bp.date)}/${bp.date.slice(0, 4)}</b><button type="button" data-act="viewer-close">Đóng</button></div>
-    <div class="vimg">${src ? `<img src="${src}" alt="Ảnh body">` : ''}</div><div class="vnav"><span></span><button type="button" class="vdel" data-act="bp-del" data-id="${bp.id}">Xoá ảnh</button></div>`;
+    <div class="vimg">${src ? `<img src="${src}" alt="Ảnh body">` : ''}</div>
+    <div class="vnav vbp"><button type="button" data-act="bp-ab" data-id="${bp.id}" data-k="A">Làm ảnh Trước</button><button type="button" data-act="bp-ab" data-id="${bp.id}" data-k="B">Làm ảnh Sau</button></div>
+    <div class="vnav vbp"><button type="button" data-act="bp-edit" data-id="${bp.id}">Đổi ngày / tư thế</button><button type="button" class="vdel" data-act="bp-del" data-id="${bp.id}">Xoá ảnh</button></div>`;
+}
+function miniLine(pts, color, label, unit) {
+  const W = 320, H = 96, L = 6, R = 52, T = 18, Bm = 6;
+  const ys = pts.map(p => p.y); let lo = Math.min(...ys), hi = Math.max(...ys); if (hi - lo < 0.6) { const c = (hi + lo) / 2; lo = c - 0.3; hi = c + 0.3; }
+  const t0 = pts[0].t, t1 = pts[pts.length - 1].t || t0 + 1, X = t => L + (t1 === t0 ? (W - L - R) / 2 : (t - t0) / (t1 - t0) * (W - L - R)), Y = y => T + (1 - (y - lo) / (hi - lo)) * (H - T - Bm);
+  const d = pts.map((p, i) => `${i ? 'L' : 'M'}${X(p.t).toFixed(1)} ${Y(p.y).toFixed(1)}`).join(' ');
+  const lp = pts[pts.length - 1], fp = pts[0], dd = lp.y - fp.y;
+  return `<svg viewBox="0 0 ${W} ${H}" class="mline"><text x="${L}" y="12" class="ml">${label} (${unit})${pts.length > 1 ? ` <tspan class="md">${dd > 0 ? '+' : dd < 0 ? '−' : '±'}${fmt(Math.abs(dd), 1)} từ ${monLbl(fp.d, 1)}</tspan>` : ''}</text>
+    <path d="${d}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>
+    ${pts.map(p => `<circle cx="${X(p.t).toFixed(1)}" cy="${Y(p.y).toFixed(1)}" r="3" fill="${color}"/>`).join('')}
+    <text x="${X(lp.t) + 8}" y="${Y(lp.y) + 4}" class="mv" fill="${color}">${fmt(lp.y, 1)}</text></svg>`;
 }
 function drawBodyChart() {
   const el = $('#body-chart'); if (!el) return;
-  const m = ALLM.find(x => x.k === ui.metric);
-  const pts = bodySorted().filter(e => mval(e, m) != null).map(e => ({ t: parseYmd(e.date).getTime(), d: e.date, y: mval(e, m) }));
+  if (ui.bm === 'cm') {
+    const E = bodySorted().filter(e => fatKg(e) != null), useSmm = E.length && E.every(e => e.muscle != null);
+    const P = f => E.map(e => ({ t: parseYmd(e.date).getTime(), d: e.date, y: f(e) }));
+    if (E.length < 2) { el.innerHTML = `<div class="nodata">Cần ít nhất 2 lần đo có cân nặng và tỉ lệ mỡ.</div>`; return; }
+    el.innerHTML = miniLine(P(e => useSmm ? e.muscle : leanKg(e)), '#3fbf7f', useSmm ? 'Cơ xương' : 'Khối nạc', 'kg') + miniLine(P(fatKg), '#ff8a3d', 'Mỡ', 'kg')
+      + `<div class="mx"><span>${dm(E[0].date)}/${E[0].date.slice(2, 4)}</span><span>${dm(E[E.length - 1].date)}/${E[E.length - 1].date.slice(2, 4)}</span></div><p class="note-line" style="margin:6px 0 0">Đường cơ đi lên, đường mỡ đi xuống là đang lên form.</p>`;
+    return;
+  }
+  const m = mDef(ui.bm);
+  const pts = bodySorted().filter(e => e[m.k] != null).map(e => ({ t: parseYmd(e.date).getTime(), d: e.date, y: e[m.k] }));
   drawLine(el, pts, { title: `${m.label}${m.unit ? ' (' + m.unit + ')' : ''}`, unit: m.unit, dec: m.dec });
 }
 function bodySheet(e) {
   e = e || state.body.find(x => x.date === ymd()) || { date: ymd() };
-  openSheet(`<h3 class="sh-title">${e.id ? 'Sửa số đo' : 'Nhập số đo'}</h3><p class="sh-text">Điền các chỉ số đồng hồ hoặc cân điện tử hiển thị. Bỏ trống mục không có.</p>
+  const fld = k => { const m = mDef(k); return `<label class="f"><span>${m.label}${m.unit ? ` <span class="unit">${m.unit}</span>` : ''}</span><input class="inp" id="b-${m.k}" inputmode="decimal" value="${fmtIn(e[m.k])}"></label>`; };
+  openSheet(`<h3 class="sh-title">${e.id ? 'Sửa số đo' : 'Nhập số đo'}</h3><p class="sh-text">Lấy số trên phiếu InBody hoặc cân điện tử. Đo buổi sáng, trước khi ăn, sau vệ sinh, chưa tập.</p>
     <div class="formgrid"><label class="f full">Ngày đo<input class="inp" type="date" id="b-date" value="${e.date}" max="${ymd()}"></label>
-    ${METRICS.map(m => `<label class="f"><span>${m.label}${m.unit ? ` <span class="unit">${m.unit}</span>` : ''}</span><input class="inp" id="b-${m.k}" inputmode="decimal" value="${fmtIn(e[m.k])}"></label>`).join('')}</div>
+    ${BCORE.map(fld).join('')}</div>
+    <details class="bmore" ${e.visceral != null ? 'open' : ''}><summary>Thêm: mỡ nội tạng</summary><div class="formgrid" style="margin-top:8px">${fld('visceral')}</div><p class="fhint">Phiếu InBody ghi mức 1–20, nên dưới 10.</p></details>
     <div class="sh-actions"><button class="btn gold big" data-act="body-save" data-id="${e.id || ''}">Lưu số đo</button>
     ${e.id ? `<button class="btn ghost danger" data-act="body-del" data-id="${e.id}">Xoá lần đo này</button>` : ''}<button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
+}
+/* đọc ngày chụp trong ảnh (EXIF) */
+async function exifDate(file) {
+  try {
+    const buf = new DataView(await file.slice(0, 256 * 1024).arrayBuffer());
+    if (buf.getUint16(0) !== 0xFFD8) return null;
+    let o = 2;
+    while (o < buf.byteLength - 4) {
+      const mk = buf.getUint16(o), len = buf.getUint16(o + 2);
+      if (mk === 0xFFE1 && buf.getUint32(o + 4) === 0x45786966) {
+        const t = o + 10, le = buf.getUint16(t) === 0x4949;
+        const u16 = p => buf.getUint16(t + p, le), u32 = p => buf.getUint32(t + p, le);
+        const str = p => { let s = ''; for (let i = 0; i < 19; i++) { const c = buf.getUint8(t + p + i); if (!c) break; s += String.fromCharCode(c); } return s; };
+        const scan = (ifd, tags) => { const n = u16(ifd), out = {}; for (let i = 0; i < n; i++) { const en = ifd + 2 + i * 12, tag = u16(en); if (tags.includes(tag)) out[tag] = tag === 0x8769 ? u32(en + 8) : str(u32(en + 8)); } return out; };
+        const i0 = scan(u32(4), [0x0132, 0x8769]);
+        let d = i0[0x8769] ? scan(i0[0x8769], [0x9003])[0x9003] : null; d = d || i0[0x0132];
+        const m = d && /^(\d{4}):(\d\d):(\d\d)/.exec(d); return m && +m[1] > 1990 ? `${m[1]}-${m[2]}-${m[3]}` : null;
+      }
+      if ((mk & 0xFF00) !== 0xFF00 || mk === 0xFFDA) break;
+      o += 2 + len;
+    }
+  } catch (e) {}
+  return null;
+}
+async function bpAddSheet(files) {
+  const pre = ui.bpPreset; ui.bpPreset = null;
+  const today = ymd(), N = [];
+  for (const f of files.slice(0, 24)) {
+    let d = await exifDate(f), src = d ? 'ảnh' : '';
+    if (pre) { d = pre.m === ymKey(today) ? today : (d && ymKey(d) === pre.m ? d : pre.m + '-15'); src = ''; }
+    if (!d && f.lastModified) { const lm = ymd(new Date(f.lastModified)); if (lm !== today) { d = lm; src = 'file'; } }
+    N.push({ file: f, url: URL.createObjectURL(f), date: d || today, src, pose: pre ? pre.k : ui.pose });
+  }
+  ui.bpNew = N; renderBpAdd();
+}
+function renderBpAdd() {
+  const N = ui.bpNew || []; if (!N.length) return;
+  openSheet(`<h3 class="sh-title">Thêm ${N.length} ảnh body</h3><p class="sh-text">Kiểm tra ngày và tư thế từng ảnh. Ngày dùng để xếp ảnh vào đúng tháng.</p>
+    ${N.length > 1 ? `<label class="f full">Đặt cùng một ngày cho tất cả<input class="inp" type="date" id="bpn-all" max="${ymd()}"></label>` : ''}
+    <div class="bpn">${N.map((x, i) => `<div class="bpr"><img src="${x.url}" alt=""><div class="bpf"><label class="f">Ngày chụp${x.src === 'ảnh' ? ' <span class="unit">đọc từ ảnh</span>' : ''}<input class="inp" type="date" id="bpn-d-${i}" value="${x.date}" max="${ymd()}"></label>
+      <div class="seg sm" role="group" aria-label="Tư thế">${POSES.map(p => `<button type="button" data-act="bpn-pose" data-i="${i}" data-k="${p}" aria-pressed="${x.pose === p}">${p}</button>`).join('')}</div></div></div>`).join('')}</div>
+    <div class="sh-actions"><button class="btn gold big" data-act="bpn-save">Lưu ${N.length} ảnh</button><button class="btn ghost" data-act="bpn-cancel">Huỷ</button></div>`);
+}
+function bpEditSheet(id) {
+  const bp = state.bodyPhotos.find(x => x.id === id); if (!bp) return; ui.bpEdit = { id, pose: bp.pose };
+  openSheet(`<h3 class="sh-title">Đổi ngày / tư thế</h3><label class="f full" style="margin-top:12px">Ngày chụp<input class="inp" type="date" id="bpe-d" value="${bp.date}" max="${ymd()}"></label>
+    <div class="seg" role="group" aria-label="Tư thế" style="margin-top:12px">${POSES.map(p => `<button type="button" data-act="bpe-pose" data-k="${p}" aria-pressed="${bp.pose === p}">${p}</button>`).join('')}</div>
+    <div class="sh-actions"><button class="btn gold big" data-act="bpe-save">Lưu</button><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
 }
 
 /* ---------- TAB: TÔI ---------- */
@@ -3915,7 +4111,6 @@ const handlers = {
       else day.exercises = day.exercises.filter(e => e.id !== d.id);
       [...d.orig, ...d.added].forEach(id => DB.del('photos', id)); ui.draft = null; syncActive(); save(); render(true); } }); },
   'week': t => { ui.weekOff = Math.min(0, ui.weekOff + +t.dataset.d); render(); },
-  'psub': t => { ui.psub = t.dataset.k; lastTab = null; render(); },
   'pmode': t => { ui.pmode = t.dataset.k; render(true); },
   'period': t => { if (ui.pmode === 'month') ui.monthOff = Math.min(0, (ui.monthOff || 0) + +t.dataset.d); else ui.weekOff = Math.min(0, ui.weekOff + +t.dataset.d); render(true); },
   'pf': t => { ui.pf = t.dataset.k; render(true); },
@@ -3990,6 +4185,20 @@ const handlers = {
   'rest-mode': t => { state.settings.restMode = t.dataset.k; save(); render(true); toast('Nhịp nghỉ: ' + restMode().label); },
   'pace': t => { state.settings.pace = t.dataset.k; save(); render(true); },
   'body-add': () => bodySheet(null),
+  'sex': t => { state.settings.sex = t.dataset.k; save(); render(true); },
+  'bm': t => { ui.bm = t.dataset.k; $$('[data-act="bm"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === ui.bm)); drawBodyChart(); },
+  'bp-add': t => { ui.bpPreset = { m: t.dataset.m, k: t.dataset.k }; ui.pose = t.dataset.k; const inp = $('#bp-in'); if (inp) inp.click(); },
+  'bp-ab': t => { const bp = state.bodyPhotos.find(x => x.id === t.dataset.id); if (!bp) return; ui.pose = bp.pose; ui['cmp' + t.dataset.k] = bp.id; handlers['viewer-close'](); render(true); toast(t.dataset.k === 'A' ? 'Đã đặt làm ảnh Trước' : 'Đã đặt làm ảnh Sau'); const c = $('#cmp'); if (c) c.scrollIntoView({ block: 'center', behavior: 'smooth' }); },
+  'bp-edit': t => { const id = t.dataset.id; handlers['viewer-close'](); bpEditSheet(id); },
+  'bpe-pose': t => { ui.bpEdit.pose = t.dataset.k; $$('[data-act="bpe-pose"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === t.dataset.k)); },
+  'bpe-save': () => { const E = ui.bpEdit, bp = E && state.bodyPhotos.find(x => x.id === E.id); if (!bp) return; const d = $('#bpe-d').value; if (d) bp.date = d > ymd() ? ymd() : d; bp.pose = E.pose; ui.pose = bp.pose; save(); closeSheet(); render(true); toast('Đã cập nhật ảnh'); },
+  'bpn-pose': t => { const x = ui.bpNew && ui.bpNew[+t.dataset.i]; if (!x) return; x.pose = t.dataset.k; $$(`[data-act="bpn-pose"][data-i="${t.dataset.i}"]`).forEach(b => b.setAttribute('aria-pressed', b.dataset.k === x.pose)); },
+  'bpn-cancel': () => { (ui.bpNew || []).forEach(x => URL.revokeObjectURL(x.url)); ui.bpNew = null; closeSheet(); },
+  'bpn-save': async t => { const N = ui.bpNew || []; if (!N.length) return; t.disabled = true; let ok = 0;
+    for (let i = 0; i < N.length; i++) { const x = N[i]; t.textContent = `Đang lưu ${i + 1}/${N.length}…`; const d = ($('#bpn-d-' + i) || {}).value || x.date;
+      try { const photoId = await storePhoto(x.file); state.bodyPhotos.push({ id: uid(), date: d > ymd() ? ymd() : d, t: Date.now() + i, pose: x.pose, photoId }); ok++; } catch (e) {}
+      URL.revokeObjectURL(x.url); }
+    ui.bpNew = null; ui.cmpA = ui.cmpB = null; if (N[0]) ui.pose = N[N.length - 1].pose; save(); closeSheet(); render(true); toast(ok === N.length ? `Đã lưu ${ok} ảnh` : `Đã lưu ${ok}/${N.length} ảnh, có ảnh không đọc được`); },
   'pose': t => { ui.pose = t.dataset.k; ui.cmpA = ui.cmpB = null; render(true); },
   'bp-view': t => showBodyViewer(t.dataset.id),
   'bp-del': t => {
@@ -4001,15 +4210,16 @@ const handlers = {
   'ics': () => saveFile('lich-tap-giao-an-dia-nguc.ics', buildICS(), 'text/calendar'),
   'body-edit': t => bodySheet(state.body.find(e => e.id === t.dataset.id)),
   'body-save': t => {
-    const date = $('#b-date').value || ymd(); const vals = {};
-    for (const m of METRICS) { const v = num($('#b-' + m.k).value); if (v != null) vals[m.k] = v; }
+    const date = $('#b-date').value || ymd(); const vals = {}, keys = [...BCORE, 'visceral'];
+    for (const k of keys) { const v = num($('#b-' + k).value); if (v != null) vals[k] = v; }
     if (!Object.keys(vals).length) { toast('Nhập ít nhất một chỉ số'); return; }
     let e = t.dataset.id ? state.body.find(x => x.id === t.dataset.id) : null;
     const clash = state.body.find(x => x.date === date && x !== e);
     if (clash) { state.body = state.body.filter(x => x !== clash); if (!e) e = { id: clash.id }; }
     if (!e) e = { id: uid() };
+    const keep = { ...(state.body.find(x => x.id === e.id) || {}) }; for (const k of keys) delete keep[k];
     state.body = state.body.filter(x => x.id !== e.id);
-    state.body.push({ id: e.id, date, ...vals });
+    state.body.push({ ...keep, id: e.id, date, ...vals });
     save(); closeSheet(); render(true); toast('Đã lưu số đo');
   },
   'body-del': t => { if (!t.dataset.armed) { t.dataset.armed = '1'; t.textContent = 'Bấm lần nữa để xoá'; setTimeout(() => { if (t.isConnected) { delete t.dataset.armed; t.textContent = 'Xoá lần đo này'; } }, 3000); return; } state.body = state.body.filter(e => e.id !== t.dataset.id); save(); closeSheet(); render(true); },
@@ -4143,11 +4353,8 @@ document.addEventListener('change', async e => {
     if (why) { t.checked = false; state.settings.notify = false; toast(why); } else { state.settings.notify = true; toast('Đã bật thông báo hết giờ nghỉ'); }
     save(); render(true); return;
   }
-  if (t.id === 'bp-in' && t.files && t.files[0]) {
-    try { const photoId = await storePhoto(t.files[0]); state.bodyPhotos.push({ id: uid(), date: ymd(), t: Date.now(), pose: ui.pose, photoId }); ui.cmpB = null; save(); render(true); toast(`Đã lưu ảnh ${ui.pose.toLowerCase()} hôm nay`); }
-    catch (err) { toast('Không đọc được ảnh, thử lại'); }
-    t.value = '';
-  }
+  if (t.id === 'bp-in' && t.files && t.files[0]) { const F = [...t.files]; t.value = ''; await bpAddSheet(F); }
+  if (t.id === 'bpn-all' && t.value) { $$('[id^="bpn-d-"]').forEach(x => { x.value = t.value; }); }
   if (t.dataset && t.dataset.cap) {
     const ex = findEx(t.dataset.cap); const f = t.files && t.files[0]; if (!ex || !f) return;
     try { const id = await storePhoto(f); ex.photos.unshift(id); save(); toast('Đã lưu ảnh máy tập');
