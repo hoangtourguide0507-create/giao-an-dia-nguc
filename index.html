@@ -1038,7 +1038,7 @@ li.slot>.exr{border-top:0}
 .gsafe{margin-top:10px;font-size:12.5px;color:var(--fg-2);padding:10px 12px;border-radius:var(--r-sm);background:rgb(var(--down-rgb) / .08);border:1px solid rgb(var(--down-rgb) / .25)}
 .gpick .li img{width:56px;height:42px;object-fit:cover;border-radius:8px;background:#fff;flex:none}
 .qrbox{background:#fff;border-radius:var(--r);padding:14px;margin-top:12px;display:flex;flex-direction:column;align-items:center;gap:8px}
-.qrbox canvas{width:100%;max-width:300px;height:auto;image-rendering:pixelated}
+.qrbox canvas{width:100%;max-width:420px;height:auto;image-rendering:pixelated}
 .qrbox .pg{font-size:12px;font-weight:800;color:#333}
 .qrcam{position:relative;margin-top:12px;border-radius:var(--r);overflow:hidden;background:#000;aspect-ratio:3/4}
 .qrcam video{width:100%;height:100%;object-fit:cover}
@@ -3837,11 +3837,13 @@ async function qrPayload() {
   const data = { v: 1, k: (state.coachLink || {}).pk || '', n: curProf().name, s: L.map(sessQR) };
   const bytes = new TextEncoder().encode(JSON.stringify(data));
   let body = 'p' + b64u(bytes); if ('CompressionStream' in window) { try { body = 'z' + b64u(await pipeBytes(bytes, new CompressionStream('deflate-raw'))); } catch (e) {} }
-  const n = Math.max(1, Math.ceil(body.length / 600)), id = Math.random().toString(36).slice(2, 6);
-  return { ids: L.map(x => x.id), parts: Array.from({ length: n }, (_, i) => `GAQ1.${id}.${i + 1}.${n}.${body.slice(i * 600, (i + 1) * 600)}`) };
+  return { ids: L.map(x => x.id), parts: qrChunks('GAQ1', body) };
 }
+/* chia dữ liệu thành nhiều mã QR nhỏ: ~320 ký tự/mã, mức sửa lỗi L để mã thưa, camera đọc được từ xa */
+const QR_CHUNK = 320;
+function qrChunks(prefix, body) { const n = Math.max(1, Math.ceil(body.length / QR_CHUNK)), id = Math.random().toString(36).slice(2, 6); return Array.from({ length: n }, (_, i) => `${prefix}.${id}.${i + 1}.${n}.${body.slice(i * QR_CHUNK, (i + 1) * QR_CHUNK)}`); }
 function drawQR(canvas, text) {
-  const q = qrcode(0, 'M'); q.addData(text); q.make(); const n = q.getModuleCount(), sc = 6, pad = 4, W = (n + pad * 2) * sc;
+  const q = qrcode(0, 'L'); q.addData(text); q.make(); const n = q.getModuleCount(), sc = 6, pad = 4, W = (n + pad * 2) * sc;
   canvas.width = canvas.height = W; const g = canvas.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, W, W); g.fillStyle = '#000';
   for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) g.fillRect((c + pad) * sc, (r + pad) * sc, sc, sc);
 }
@@ -3864,19 +3866,22 @@ async function qrScanSheet(mode) {
     <div class="qrcam"><video id="qr-v" playsinline muted></video><div class="frame"></div><div class="st" id="qr-st">Đang mở camera…</div></div>
     <div class="sh-actions"><button class="btn ghost" data-act="qr-close">Đóng</button></div>`);
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false }); ui.qrStream = stream;
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }); ui.qrStream = stream;
     const v = $('#qr-v'); if (!v) { stream.getTracks().forEach(t => t.stop()); return; } v.srcObject = stream; await v.play();
-    const cv = document.createElement('canvas'), g = cv.getContext('2d', { willReadFrequently: true }), got = {}; let need = 0, msg = '', kindIn = '';
+    const cv = document.createElement('canvas'), g = cv.getContext('2d', { willReadFrequently: true }), got = {}; let need = 0, msg = '', kindIn = '', pass = false;
     const tick = () => {
       if (!$('#qr-v') || !ui.qrStream) return;
-      if (v.readyState >= 2) { const w = 480, h = Math.round(v.videoHeight / v.videoWidth * w) || 640; cv.width = w; cv.height = h; g.drawImage(v, 0, 0, w, h);
+      if (v.readyState >= 2 && v.videoWidth) {
+        /* cắt vùng giữa khung ngắm, đọc luân phiên ở độ phân giải cao (mã ở xa) và thấp (mã ở gần) */
+        const vw = v.videoWidth, vh = v.videoHeight, side = Math.round(Math.min(vw, vh) * 0.85), sx = (vw - side) / 2, sy = (vh - side) / 2;
+        pass = !pass; const w = Math.min(side, pass ? 960 : 480), h = w; cv.width = w; cv.height = h; g.drawImage(v, sx, sy, side, side, 0, 0, w, h);
         const r = jsQR(g.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' });
         if (r && /^GA[QS]1\./.test(r.data)) { const [kind, id, i, n, body] = r.data.split('.'); if (id !== msg) { kindIn = kind; msg = id; for (const k in got) delete got[k]; need = +n; } got[i] = body;
           const have = Object.keys(got).length; $('#qr-st').textContent = need > 1 ? `Đã nhận ${have}/${need} trang…` : 'Đã nhận';
           if (have >= need) { const body2 = Array.from({ length: need }, (_, k) => got[k + 1]).join(''); qrStop(); if (kindIn === 'GAS1') syncQrReceive(body2); else qrReceive(body2); return; } } }
-      ui.qrRaf = setTimeout(tick, 140);
+      ui.qrRaf = setTimeout(tick, 90);
     };
-    $('#qr-st').textContent = 'Đưa mã QR vào khung'; tick();
+    $('#qr-st').textContent = 'Giữ mã QR trong khung, cách khoảng 20–30 cm'; tick();
   } catch (e) { const st = $('#qr-st'); if (st) st.textContent = 'Không mở được camera. Cho phép camera trong Cài đặt iPhone → Safari / app.'; }
 }
 function qrStop() { clearTimeout(ui.qrRaf); if (ui.qrStream) { ui.qrStream.getTracks().forEach(t => t.stop()); ui.qrStream = null; } }
@@ -4017,7 +4022,7 @@ function importSheet(prefill) {
   ui.importDays = null; ui.importPhotos = null; ui.importFrom = '';
   openSheet(`<h3 class="sh-title">Nhập giáo án</h3><p class="sh-text">Dán link hoặc mã giáo án người khác gửi cho bạn.</p>
     <textarea class="inp code" id="imp-code" rows="4" placeholder="https://…#nhap=SOTA1z… hoặc SOTA1z…">${esc(prefill || '')}</textarea>
-    <div class="row" style="margin-top:10px"><button class="btn gold" data-act="import-preview">Xem trước</button><label class="btn" for="plan-in">Mở file giáo án</label><input type="file" id="plan-in" accept=".json,application/json" hidden><button class="btn ghost" data-act="close-sheet">Huỷ</button></div><div id="imp-preview" style="margin-top:14px"></div>`);
+    <div class="row" style="margin-top:10px"><button class="btn gold" data-act="import-preview">Xem trước</button><label class="btn" for="plan-in">Mở file giáo án</label><input type="file" id="plan-in" hidden><button class="btn ghost" data-act="close-sheet">Huỷ</button></div><div id="imp-preview" style="margin-top:14px"></div>`);
   if (prefill) setTimeout(() => handlers['import-preview'](), 30);
 }
 
@@ -4210,7 +4215,7 @@ async function syncSheet(pid) {
     <div class="row"><button class="btn gold" data-act="sync-qr">Hiện mã QR</button><button class="btn gold" data-act="sync-scan">Quét mã máy kia</button></div>
     <p class="small muted" style="margin:8px 0 0">Mỗi máy lần lượt hiện mã cho máy kia quét. Mã QR không mang ảnh, ảnh mới gửi bằng file.</p>
     <div class="eyebrow" style="margin:18px 0 8px">Ở xa</div>
-    <div class="row"><button class="btn" data-act="sync-file">Gửi file qua Zalo (kèm ảnh)</button><label class="btn" for="sync-in">Mở file đồng bộ</label><input type="file" id="sync-in" accept=".json,application/json" hidden></div>
+    <div class="row"><button class="btn" data-act="sync-file">Gửi file qua Zalo (kèm ảnh)</button><label class="btn" for="sync-in">Mở file đồng bộ</label><input type="file" id="sync-in" hidden></div>
     <label class="toggle" style="margin-top:14px"><span>Gửi lại toàn bộ<br><span class="fhint">Mặc định chỉ gửi phần thay đổi từ lần trước</span></span><input type="checkbox" id="sync-full" ${ui.syncFull ? 'checked' : ''}></label>
     <p class="small muted" style="margin:10px 0 0">${syncAgo(st)}</p>
     <div class="sh-actions"><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`);
@@ -4219,8 +4224,7 @@ async function syncQrSheet() {
   const pid = ui.syncPid || profiles.active, { pkg, mark } = await syncPack(pid, { full: !!ui.syncFull });
   const bytes = new TextEncoder().encode(JSON.stringify(pkg));
   let body = 'p' + b64u(bytes); if ('CompressionStream' in window) { try { body = 'z' + b64u(await pipeBytes(bytes, new CompressionStream('deflate-raw'))); } catch (e) {} }
-  const n = Math.max(1, Math.ceil(body.length / 600)), id = Math.random().toString(36).slice(2, 6);
-  const parts = Array.from({ length: n }, (_, i) => `GAS1.${id}.${i + 1}.${n}.${body.slice(i * 600, (i + 1) * 600)}`);
+  const parts = qrChunks('GAS1', body), n = parts.length;
   ui.syncOut = { pid, mark }; clearInterval(ui.qrT);
   const nP = pkg.plan ? pkg.plan.reduce((a, d) => a + d.e.length, 0) : 0;
   openSheet(`<h3 class="sh-title">Mã đồng bộ</h3><p class="sh-text">${pkg.sessions.length} buổi tập${pkg.plan ? ` · giáo án ${nP} bài` : ' · giáo án không đổi'}. Máy kia mở <b>Đồng bộ → Quét mã máy kia</b> rồi đưa camera vào đây.${n > 1 ? ' Mã tự đổi trang, giữ yên đến khi máy kia báo xong.' : ''}</p>
@@ -4244,7 +4248,10 @@ async function syncFileSend() {
 async function syncReceive(raw) {
   let P; try { P = cleanPkg(raw); } catch (e) { toast('Gói đồng bộ không đọc được'); return; }
   const me = syncRole();
-  if (P.role === me) { openSheet(`<h3 class="sh-title">Không đồng bộ được</h3><p class="sh-text">${me === 'coach' ? 'Gói này gửi từ một máy cũng đang bật chế độ HLV.' : 'Gói này gửi từ một máy học viên. Gói đồng bộ chỉ đi giữa máy HLV và máy học viên.'}</p><div class="sh-actions"><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`); return; }
+  if (P.role === me) { openSheet(`<h3 class="sh-title">Không đồng bộ được</h3><p class="sh-text">${me === 'coach'
+      ? 'Cả hai máy đều đang bật chế độ HLV. Trên máy của học viên, tắt chế độ HLV rồi đồng bộ lại.'
+      : `Cả hai máy đều đang ở vai học viên. Đồng bộ cần <b>một máy HLV</b> (máy giữ hồ sơ của nhiều học viên) và một máy học viên.${multi() ? ' Máy này đang có nhiều hồ sơ: nếu đây là máy của HLV, bật chế độ HLV rồi gửi lại từ <b>Phòng HLV → ⇄ Đồng bộ</b> trên thẻ học viên.' : ' Trên máy của HLV, bật chế độ HLV rồi gửi lại từ <b>Phòng HLV → ⇄ Đồng bộ</b>.'}`}</p>
+      <div class="sh-actions">${me === 'student' && multi() ? '<button class="btn gold" data-act="coach-setup">Bật chế độ HLV trên máy này</button>' : ''}<button class="btn ghost" data-act="close-sheet">Đóng</button></div>`); return; }
   ui.syncIn = P; ui.syncChoices = {};
   let pid = null;
   if (me === 'coach') pid = profiles.list.some(x => x.id === P.link.pk) ? P.link.pk : null;
