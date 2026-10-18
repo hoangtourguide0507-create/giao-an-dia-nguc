@@ -27,7 +27,7 @@
   --font:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
   --r-lg:22px; --r:16px; --r-sm:13px; --r-btn:14px; --r-hero:26px; --r-nav:24px; --pill:999px; --nav-h:68px;
   --font-d:var(--font);
-  --acc-rgb:217 180 91; --acc-hi-rgb:242 214 141; --up-rgb:70 211 143; --hold-rgb:147 182 255; --down-rgb:255 116 112;
+  --acc-rgb:217 180 91; --acc-hi-rgb:242 214 141; --warn-rgb:255 170 64; --up-rgb:70 211 143; --hold-rgb:147 182 255; --down-rgb:255 116 112;
   --top-bg:rgba(10,10,11,.86); --bar-bg:rgba(24,24,27,.92); --on-up:#06170e; --on-down:#1a0505;
   --hero-border:rgb(217 180 91 / .32);
   --hero-bg:radial-gradient(130% 120% at 100% 0%,rgb(242 214 141 / .30),rgb(217 180 91 / .08) 45%,transparent 70%),linear-gradient(180deg,#1b1812,#121213);
@@ -622,6 +622,7 @@ details.guide b{color:var(--fg)}
   --bg:#eef1f6; --surface:#ffffff; --surface-2:#f3f5f9; --surface-3:#e4e8ef; --line:rgba(15,23,40,.08); --line-2:rgba(15,23,40,.15);
   --fg:#0f1728; --fg-2:#475467; --muted:#7b8698;
   --gold:#2f55ff; --gold-hi:#5d7cff; --gold-lo:#1d3ad6; --gold-ink:#ffffff; --gold-soft:rgb(47 85 255 / .10); --acc-rgb:47 85 255; --acc-hi-rgb:93 124 255;
+  --warn-rgb:196 106 0;
   --up:#0b9b5a; --up-rgb:11 155 90; --hold:#7044e8; --hold-rgb:112 68 232; --down:#e0393e; --down-rgb:224 57 62; --almost:#2f55ff;
   --top-bg:rgba(238,241,246,.86); --bar-bg:rgba(255,255,255,.94); --on-up:#ffffff; --on-down:#ffffff;
   --hero-bg:linear-gradient(140deg,#2f55ff 0%,#5b3bea 100%); --hero-border:transparent;
@@ -838,7 +839,7 @@ body.storying .rest{z-index:62;top:calc(env(safe-area-inset-top,0px) + 150px);bo
 .st-bg .ill{position:absolute;left:0;right:0;top:31%;height:30%;background:#fff}
 .st-bg .ill img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .st-bg .ill img.b{animation:gfade 3.2s ease-in-out infinite}
-.st-bg .stcap{position:absolute;right:14px;top:calc(61% - 44px);z-index:3;display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;font-weight:700}
+.st-bg .stcap{position:absolute;right:14px;top:calc(31% + 10px);z-index:3;display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;font-weight:700}
 .st-bg .stcap .ico{width:16px;height:16px}
 .exthumb.ill{background:#fff;overflow:hidden}
 .exthumb.ill img{object-fit:cover}
@@ -1022,6 +1023,20 @@ body.storying .sheet{z-index:64}
 /* v26: hướng dẫn bài tập + QR */
 .gbtn{flex:none;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--fg-2);border-radius:var(--pill);padding:5px 10px;font:inherit;font-size:12px;font-weight:700;margin-top:6px}
 .gbtn svg{width:14px;height:14px}
+.fcue{margin:12px 0 0;padding:11px 13px 10px;border-radius:var(--r-sm);background:rgb(var(--warn-rgb) / .10);border:1px solid rgb(var(--warn-rgb) / .45);border-left:4px solid rgb(var(--warn-rgb))}
+.fcue-h{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:rgb(var(--warn-rgb));display:flex;align-items:center;gap:6px}
+.fcue ul{margin:6px 0 0;padding-left:18px;font-size:14px;line-height:1.5;color:var(--fg)}
+.fcue li{margin-bottom:3px}
+.fcue li.mine{font-weight:700}
+.fcue-f{display:flex;gap:14px;margin-top:4px}
+.fcue-f button{background:none;border:0;padding:4px 0;font:inherit;font-size:12.5px;font-weight:700;color:rgb(var(--warn-rgb));cursor:pointer}
+.fcue1{display:flex;gap:6px;align-items:flex-start;width:100%;text-align:left;margin:10px 0 0;padding:7px 10px;border-radius:10px;background:rgb(var(--warn-rgb) / .08);border:1px solid rgb(var(--warn-rgb) / .3);color:var(--fg);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.fcue1 b{color:rgb(var(--warn-rgb));flex:none}
+.fcue1 span{margin-left:auto;flex:none;color:rgb(var(--warn-rgb));font-size:12px;font-weight:700}
+.st-panel .fcue{margin:0 0 10px;background:rgba(20,16,8,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.st-panel .fcue ul{color:#fff}
+.st-panel .fcue1{margin:0 0 10px;background:rgba(0,0,0,.6);color:#fff}
+.eyebrow.warn{color:rgb(var(--warn-rgb))}
 .cue1{margin:8px 0 0;font-size:12.5px;color:var(--gold);font-weight:600;display:flex;gap:6px;align-items:flex-start}
 .gdemo{position:relative;aspect-ratio:4/3;border-radius:var(--r);overflow:hidden;background:#fff;margin-top:12px}
 .gdemo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
@@ -2465,6 +2480,31 @@ function bodyMap(prim, sec) {
     + L('calves', E(B - 8.5, 170, 5, 15) + E(B + 8.5, 170, 5, 15));
   return `<svg viewBox="15 0 170 200" aria-hidden="true">${front}${back}<text x="50" y="199" text-anchor="middle" font-size="8" fill="currentColor" opacity=".6">TRƯỚC</text><text x="150" y="199" text-anchor="middle" font-size="8" fill="currentColor" opacity=".6">SAU</text></svg>`;
 }
+/* lưu ý form khi tập: mỗi hồ sơ tự chọn mức (Đầy đủ / Gọn / Tắt) */
+const FORM_LV = {
+  full: { label: 'Đầy đủ', desc: 'Thẻ điểm form hiện ở đầu mỗi bài, tự thu gọn sau set đầu tiên. Nên dùng khi mới tập hoặc mới đổi bài.' },
+  compact: { label: 'Gọn', desc: 'Chỉ 1 dòng lưu ý quan trọng nhất. Bấm vào để xem đầy đủ hướng dẫn.' },
+  off: { label: 'Tắt', desc: 'Không hiện điểm form khi tập. Dành cho người đã vững kỹ thuật. Nút Hướng dẫn và Báo đau vẫn còn.' }
+};
+const formLv = () => FORM_LV[state.settings.formCues] ? state.settings.formCues : 'full';
+const WARN_ICO = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17.5v.01"/></svg>';
+function formCueHtml(ex, en, key) {
+  if (!ex || ex.ghost) return '';
+  const lv = formLv(); if (lv === 'off') return '';
+  const cu = cuesOf(ex), all = [...cu.mine.map(t => [t, 1]), ...cu.lib.map(t => [t, 0])]; if (!all.length) return '';
+  const started = !!en && (en.sets.some(x => x.done) || !!(en.drop && en.drop.done));
+  if (lv === 'compact') return `<button type="button" class="fcue1" data-act="guide" data-id="${ex.id}"><b>${WARN_ICO}</b>${esc(all[0][0])}<span>Xem ›</span></button>`;
+  if (started && ui.cueOpen !== key) return `<button type="button" class="fcue1" data-act="cue-open" data-k="${key}"><b>${WARN_ICO}</b>${esc(all[0][0])}${all.length > 1 ? `<span>+${Math.min(all.length, 3) - 1} lưu ý</span>` : ''}</button>`;
+  return `<div class="fcue" role="note"><div class="fcue-h">${WARN_ICO} Trước khi vào bài · điểm form</div><ul>${all.slice(0, 3).map(([t, m]) => `<li${m ? ' class="mine"' : ''}>${esc(t)}</li>`).join('')}</ul>
+    <div class="fcue-f">${all.length > 3 ? `<button type="button" data-act="guide" data-id="${ex.id}">Xem thêm ${all.length - 3} điểm ›</button>` : `<button type="button" data-act="guide" data-id="${ex.id}">Hướng dẫn ›</button>`}${started ? `<button type="button" data-act="cue-open" data-k="">Thu gọn</button>` : ''}</div></div>`;
+}
+/* thu gọn / mở lại thẻ lưu ý ngay khi bấm xong set, không vẽ lại cả màn */
+function refreshCue(i) {
+  const en = state.active && state.active.entries[i]; if (!en) return; const ex = exOrSnap(en);
+  if (ui.cueOpen === 'l' + i || ui.cueOpen === 's' + i) ui.cueOpen = null;
+  const a = document.querySelector(`article.ex[data-i="${i}"]`), c = a && a.querySelector('.fcue,.fcue1'); if (c) c.outerHTML = formCueHtml(ex, en, 'l' + i);
+  const st = $('#story'); if (st && !st.hidden && story.i === i) { const c2 = st.querySelector('.st-panel > .fcue, .st-panel > .fcue1'); if (c2) c2.outerHTML = formCueHtml(ex, en, 's' + i); }
+}
 const GUIDE_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="2.5"/><path d="M12 8v7M8 11h8M10 21l2-6 2 6"/></svg>';
 async function guideSheet(exId) {
   const ex = findEx(exId) || (state.active && state.active.entries.map(exOrSnap).find(e => e.id === exId)); if (!ex) return;
@@ -2472,12 +2512,12 @@ async function guideSheet(exId) {
   const g = ex.gid ? exdbGet(ex.gid) : null, prim = g ? g.prim : (ZDB[zoneOf(ex)] || VI2DB[ex.muscle] || []), sec = g ? g.sec : [], cu = cuesOf(ex);
   ui.guideEx = ex.id;
   openSheet(`<h3 class="sh-title">${esc(ex.name)}</h3><p class="sh-text">${zoneOf(ex) ? `Vùng cơ: <b>${esc(ZLABEL(zoneOf(ex)))}</b> · ` : ''}${g ? `Minh hoạ: ${esc(g.name)}` : 'Chưa có hình minh hoạ cho bài này'}</p>
+    <div class="fcue" role="note" style="margin:4px 0 14px"><div class="fcue-h">${WARN_ICO} Điểm form · tránh chấn thương</div>
+    <ol class="gcues" style="margin-top:6px">${cu.mine.map(x => `<li class="mine">${esc(x)}</li>`).join('')}${cu.lib.map(x => `<li>${esc(x)}</li>`).join('')}</ol>
+    <label class="f full" style="margin-top:8px">Lời nhắc riêng của bạn (mỗi dòng 1 ý, hiện đầu tiên)<textarea class="inp" id="g-cues" rows="2" placeholder="Ví dụ: Đè vai, gồng core">${esc(ex.cues || '')}</textarea></label></div>
     <div class="gdemo" id="g-demo">${g ? `<img class="a" alt="Tư thế bắt đầu"><img class="b" alt="Tư thế kết thúc"><span class="gl a">1 · Bắt đầu</span><span class="gl b">2 · Kết thúc</span>` : `<div class="none">Bấm “Chọn hình minh hoạ” để tìm trong thư viện 870+ bài.</div>`}</div>
     ${g ? `<div class="gmeta">${g.force ? `<span>Lực: ${g.force}</span>` : ''}${g.eq ? `<span>${esc(EXDB_EQ_VI[g.eq] || g.eq)}</span>` : ''}</div>` : ''}
     <div class="gmap">${bodyMap(prim, sec)}<div class="lg"><b>Nhóm cơ</b>${prim.length ? `<div><i style="background:#ff5a36"></i>Chính: ${prim.map(m => MUS_VI[m] || m).join(', ')}</div>` : ''}${sec.length ? `<div><i style="background:#ffb347"></i>Phụ: ${sec.map(m => MUS_VI[m] || m).join(', ')}</div>` : ''}</div></div>
-    <div class="eyebrow" style="margin-top:16px">Điểm form · tránh chấn thương</div>
-    <ol class="gcues">${cu.mine.map(x => `<li class="mine">${esc(x)}</li>`).join('')}${cu.lib.map(x => `<li>${esc(x)}</li>`).join('')}</ol>
-    <label class="f full" style="margin-top:10px">Lời nhắc riêng của bạn (mỗi dòng 1 ý, hiện đầu tiên)<textarea class="inp" id="g-cues" rows="2" placeholder="Ví dụ: Đè vai, gồng core">${esc(ex.cues || '')}</textarea></label>
     <div class="eyebrow" style="margin-top:16px">Video hướng dẫn</div>
     ${ex.vid ? `<video class="gvid" id="g-vid" controls playsinline preload="metadata"></video>` : ''}
     <div class="gvrow"><a class="btn" href="${ytUrl(ex)}" target="_blank" rel="noopener">▶ Xem video form trên YouTube</a>
@@ -2533,10 +2573,10 @@ async function renderStory(anim) {
     <div class="st-top"><div class="st-bars">${bars}</div>
       <div class="st-head"><div class="t"><div class="st-n">BÀI ${i + 1}/${a.entries.length} · ${esc(ex.muscle)}</div><div class="st-name">${esc(ex.name)}</div><div class="st-sub">${ex.sets}×${ex.repTarget || 10} · nghỉ ${fmtDur(restOf(ex) * 1000)} · <span class="badge ${sg.kind}" style="vertical-align:1px">${sg.label}</span></div></div>
       ${ex.ghost ? '' : `<button type="button" class="st-guide" data-act="guide" data-id="${ex.id}">Hướng dẫn</button>`}${!en.sets.some(x => x.done) ? `<button type="button" class="st-swap" data-act="swap-open" data-e="${i}">⇄ Đổi bài</button>` : ''}<button type="button" class="st-x" data-act="story-close" aria-label="Đóng">✕</button></div>
-      ${ex.setup ? `<div class="st-setup">⚙ ${esc(ex.setup)}</div>` : ''}${ex.ghost ? '' : `<div class="st-setup" style="margin-left:6px">⚑ ${esc(cuesOf(ex).mine[0] || cuesOf(ex).lib[0])}</div>`}</div>
+      ${ex.setup ? `<div class="st-setup">⚙ ${esc(ex.setup)}</div>` : ''}</div>
     <div class="st-phnav">${ph.length > 1 ? `<button type="button" data-act="story-ph" data-d="-1" aria-label="Ảnh trước"></button><button type="button" data-act="story-ph" data-d="1" aria-label="Ảnh sau"></button><div class="st-dots">${ph.map((_, k) => `<i class="${k === story.ph ? 'on' : ''}"></i>`).join('')}</div>` : ''}
       ${pid && !ex.ghost ? `<label class="st-cam" for="cap-st-${ex.id}" aria-label="Chụp thêm ảnh">${ICON.cam}</label><input type="file" accept="image/*" capture="environment" id="cap-st-${ex.id}" data-cap="${ex.id}" hidden>` : ''}</div>
-    <div class="st-panel"><div class="st-target"><div><div class="small" style="opacity:.75">Mục tiêu</div><div class="big">${sg.kg === 0 ? 'Tự trọng' : sg.kg != null ? fmt(sg.kg) : '—'}<small>${sg.kg ? U(ex).trim() : ''} × ${tReps ?? '–'}</small></div></div>
+    <div class="st-panel">${formCueHtml(ex, en, 's' + i)}<div class="st-target"><div><div class="small" style="opacity:.75">Mục tiêu</div><div class="big">${sg.kg === 0 ? 'Tự trọng' : sg.kg != null ? fmt(sg.kg) : '—'}<small>${sg.kg ? U(ex).trim() : ''} × ${tReps ?? '–'}</small></div></div>
       ${last ? `<div class="prev">Lần trước ${dm(last.date)}<b>${fmt(wt(last))}${U(ex)} × ${last.sets.map(x => x.reps).join('·')}</b></div>` : ''}</div>
       <div class="st-sets">${en.sets.map((x, j) => setRowS(i, j, x, j + 1)).join('')}${en.drop ? setRowS(i, 'drop', en.drop, 'D') : ''}</div>
       <div class="st-nav"><button type="button" class="btn" data-act="story-go" data-d="-1" ${i === 0 ? 'disabled' : ''}>‹ Bài trước</button>${i === a.entries.length - 1 ? `<button type="button" class="btn gold" data-act="story-finish">Kết thúc buổi</button>` : `<button type="button" class="btn ${en.sets.every(x => x.done) ? 'gold' : ''}" data-act="story-go" data-d="1">Bài sau ›</button>`}</div></div>`;
@@ -2627,10 +2667,10 @@ function entryCard(en, i) {
     : ex.gid ? `<span class="exthumb ill"><button type="button" class="gi" data-act="guide" data-id="${ex.id}" aria-label="Xem hướng dẫn"><img data-photo="exdb:${ex.gid}:0" alt=""></button><label class="capb" for="cap-${ex.id}" aria-label="Chụp ảnh máy tập">${ICON.cam}</label></span>${camInput(ex.id)}`
     : `<label class="exthumb empty" for="cap-${ex.id}" aria-label="Chụp ảnh máy tập">${ICON.cam}</label>${camInput(ex.id)}`;
   const tReps = en.sets[0] ? en.sets[0].reps : sg.reps[0];
-  h += `<div class="ex-body"><div class="ex-head">${thumb}<div class="mid"><div class="ex-name">${esc(ex.name)}</div><div class="ex-sub">${esc(ex.muscle)} · ${ex.sets}×${ex.repTarget || 10} · nghỉ ${fmtDur(restOf(ex) * 1000)}</div>${ex.ghost ? '' : `<button type="button" class="gbtn" data-act="guide" data-id="${ex.id}">${GUIDE_ICO} Hướng dẫn & nhóm cơ</button>`}</div><span class="badge ${sg.kind}">${sg.label}</span></div>
+  h += `<div class="ex-body"><div class="ex-head">${thumb}<div class="mid"><div class="ex-name">${esc(ex.name)}</div><div class="ex-sub">${esc(ex.muscle)} · ${ex.sets}×${ex.repTarget || 10} · nghỉ ${fmtDur(restOf(ex) * 1000)}</div>${ex.ghost ? '' : `<button type="button" class="gbtn" data-act="guide" data-id="${ex.id}">${GUIDE_ICO} Hướng dẫn & nhóm cơ</button>`}</div><span class="badge ${sg.kind}">${sg.label}</span></div>${formCueHtml(ex, en, 'l' + i)}
     <div class="target"><div><div class="tl">Mục tiêu hôm nay</div><div class="tv ${sg.kind === 'up' ? 'up' : ''}">${sg.kg === 0 ? 'Tự trọng' : sg.kg != null ? fmt(sg.kg) + `<small>${U(ex)}</small>` : '—'}<small> × ${tReps ?? '–'}</small></div></div>
     ${last ? `<div class="prev">Lần trước ${dm(last.date)}<b class="tn">${fmt(wt(last))}${U(ex)} × ${last.sets.map(s => s.reps).join('·')}</b></div>` : ''}</div>
-    ${['new', 'down', 'pain', 'deload', 'start'].includes(sg.kind) ? `<p class="sug">${sg.text}</p>` : ''}${ex.ghost ? '' : (c1 => `<p class="cue1">⚑ ${esc(c1)}</p>`)(cuesOf(ex).mine[0] || cuesOf(ex).lib[0])}`;
+    ${['new', 'down', 'pain', 'deload', 'start'].includes(sg.kind) ? `<p class="sug">${sg.text}</p>` : ''}`;
   if (ex.setup) h += `<details class="setup"><summary>Cách chỉnh máy ›</summary><p>${esc(ex.setup)}</p></details>`;
   if (needsWarm(en, i)) h += `<div class="warm"><div class="warm-h">${ICON.flame} Set khởi động<span>không tính vào khối lượng</span></div><div class="warm-sets" id="warm-${i}">${warmInner(en, i)}</div></div>`;
   h += `<div class="sets"><div class="sethead"><span></span><span>${ex.each ? 'Kg mỗi tay' : 'Kg'}</span><span>Rep</span><span></span></div>`;
@@ -3579,6 +3619,9 @@ function viewMore() {
   <div class="card set-card"><h3>Chiều cao của ${esc(curProf().name)}</h3><p>Dùng để tính BMI ở tab Cơ thể. Đổi tên người tập ở danh sách ${co ? 'học viên' : 'người tập'}.</p><div class="formgrid" style="margin-top:10px">
     <label class="f"><span>Chiều cao <span class="unit">cm</span></span><input class="inp" data-bind="setting" data-k="height" inputmode="decimal" value="${fmtIn(st.height)}" placeholder="Để tính BMI"></label>
   </div></div>
+  <div class="card set-card"><h3>Lưu ý form khi tập</h3><p>Điểm form · tránh chấn thương hiện ở đầu mỗi bài khi ${esc(curProf().name)} tập.</p>
+    <div class="seg" role="group" aria-label="Mức lưu ý form" style="margin-top:6px">${Object.entries(FORM_LV).map(([k, m]) => `<button type="button" data-act="form-lv" data-k="${k}" aria-pressed="${formLv() === k}">${m.label}</button>`).join('')}</div>
+    <p class="small muted" style="margin:10px 0 0">${FORM_LV[formLv()].desc}</p></div>
   <div class="card set-card"><h3>Nhịp tập</h3>
     <div class="small muted" style="margin-top:6px;font-weight:700">Thời gian mỗi rep · set 10 rep ≈ ${setSec(10)} giây</div>
     <div class="seg" role="group" aria-label="Nhịp rep" style="margin-top:6px">${Object.entries(TEMPOS).map(([k, t]) => `<button type="button" data-act="tempo" data-k="${k}" aria-pressed="${tempo() === +k}">${t.label}</button>`).join('')}</div>
@@ -4152,7 +4195,7 @@ const handlers = {
     if (set.done) { t.classList.remove('pop'); row.classList.remove('flash'); void t.offsetWidth; t.classList.add('pop'); row.classList.add('flash'); try { navigator.vibrate && navigator.vibrate(15); } catch (er) {} }
     markCurrent();
     if (set.done) { const ex = exOrSnap(state.active.entries[+e]); if (s !== 'drop') startRest(restOf(ex), shortName(ex.name)); requestWake(); }
-    updateProgress(); save();
+    refreshCue(+e); updateProgress(); save();
   },
   'add-set': t => { const en = state.active.entries[+t.dataset.e]; const l = en.sets[en.sets.length - 1] || { kg: null, reps: null }; en.sets.push({ kg: l.kg, reps: l.reps, done: false }); save(); render(true); },
   'rm-set': t => { const en = state.active.entries[+t.dataset.e]; if (en.sets.length <= 1) return; const last = en.sets[en.sets.length - 1];
@@ -4359,6 +4402,8 @@ const handlers = {
   },
   'pain-ok': t => { const p = (state.pains || []).find(x => x.id === t.dataset.id); if (!p) return; p.resolvedAt = ymd(); save(); render(true); ui.painF = { area: '', level: 1, note: '' };
     if (activePains().length) painSheet(); else closeSheet(); toast(`Hết đau ${p.area.toLowerCase()} · buổi đầu quay lại tập khoảng 80% tạ`); },
+  'form-lv': t => { state.settings.formCues = t.dataset.k; save(); render(true); toast('Lưu ý form: ' + FORM_LV[formLv()].label); },
+  'cue-open': t => { ui.cueOpen = t.dataset.k || null; if (!$('#story').hidden) renderStory(); else render(true); },
   'rest-mode': t => { state.settings.restMode = t.dataset.k; save(); render(true); toast('Nhịp nghỉ: ' + restMode().label); },
   'pace': t => { state.settings.pace = t.dataset.k; save(); render(true); },
   'body-add': () => bodySheet(null),
