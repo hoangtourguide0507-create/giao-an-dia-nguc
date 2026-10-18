@@ -102,6 +102,7 @@ main{padding-block:18px}
 .banner .bi{width:36px;height:36px;border-radius:11px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--gold-soft);color:var(--gold);font-weight:800}
 .banner.info{border-color:rgb(var(--hold-rgb) / .28)} .banner.info .bi{background:rgb(var(--hold-rgb) / .13);color:var(--hold)}
 .banner b{display:block;font-size:14.5px}
+.banner strong{color:var(--fg)}
 .banner p{margin:2px 0 10px;color:var(--fg-2);font-size:13.5px}
 .banner p:last-child{margin-bottom:0}
 
@@ -3760,7 +3761,9 @@ async function coachShareSheet(pid) {
     <label class="toggle"><span>Kèm mức tạ hiện tại<br><span class="fhint">Học viên bắt đầu đúng mức tạ bạn đang cho tập</span></span><input type="checkbox" id="share-kg" ${withKg ? 'checked' : ''}></label>
     ${link ? `<label class="f full" style="margin-top:12px">Link<textarea class="inp code" id="sh-link" readonly rows="3">${esc(link)}</textarea></label><div class="row" style="margin:10px 0 6px"><button class="btn gold" data-act="copy" data-t="sh-link">Sao chép link</button>${navigator.share ? '<button class="btn" data-act="native-share">Gửi qua Zalo, Messenger…</button>' : ''}</div>`
       : `<label class="f full" style="margin-top:12px">Mã giáo án<textarea class="inp code" id="sh-code" readonly rows="4">${esc(code)}</textarea></label><div class="row" style="margin:10px 0 6px"><button class="btn gold" data-act="copy" data-t="sh-code">Sao chép mã</button></div>`}
-    <div class="eyebrow" style="margin-top:16px">Kèm ảnh máy tập</div><p class="small muted" style="margin:4px 0 8px">Link không chứa được ảnh. Gửi file giáo án (.json) qua Zalo hoặc AirDrop, học viên mở mục Nhập giáo án → Mở file.</p>
+    <div class="eyebrow" style="margin-top:16px">Gửi qua Zalo (nên dùng)</div><p class="small muted" style="margin:4px 0 8px">Gửi một tấm ảnh mã. ${esc(p.name)} lưu ảnh, mở app → <b>Nhập giáo án → Chọn ảnh mã</b>. Không bị cắt như link dài.</p>
+    <button class="btn gold" data-act="plan-img" data-id="${pid}" style="width:100%">Gửi ảnh mã giáo án</button>
+    <div class="eyebrow" style="margin-top:16px">Kèm ảnh máy tập</div><p class="small muted" style="margin:4px 0 8px">Ảnh mã và link không chứa được ảnh máy. Muốn kèm ảnh máy thì gửi file giáo án qua Zalo hoặc AirDrop, học viên mở mục Nhập giáo án → Mở file.</p>
     <div class="sh-actions"><button class="btn" data-act="plan-file" data-id="${pid}">Gửi file kèm ảnh máy</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`);
 }
 async function planFile(pid) {
@@ -3779,7 +3782,9 @@ async function planFile(pid) {
 }
 function impPreviewHtml(days) {
   return `<div class="eyebrow" style="margin-bottom:6px">${days.length} ngày tập${ui.importFrom ? ' · từ HLV ' + esc(ui.importFrom) : ''}</div>` + days.map(d => `<div class="pr"><b>${esc(d.name)}</b><span class="small muted" style="text-align:right">${d.exercises.map(e => esc(shortName(e.name))).join(', ')}</span></div>`).join('') +
-    `<div class="sh-actions"><button class="btn gold big" data-act="import-apply" data-m="add">Thêm vào giáo án của tôi</button>${state.days.length ? '<button class="btn" data-act="import-apply" data-m="replace">Thay giáo án hiện tại</button>' : ''}</div>`;
+    (state.days.length ? `<p class="note-line">Đã có giáo án? Chọn <b>Cập nhật</b>: bài trùng được chỉnh theo giáo án mới, lịch sử tập và mức tạ giữ nguyên.</p>
+    <div class="sh-actions"><button class="btn gold big" data-act="import-update">Cập nhật giáo án hiện tại</button><button class="btn" data-act="import-apply" data-m="add">Thêm thành các ngày mới</button></div>`
+    : `<div class="sh-actions"><button class="btn gold big" data-act="import-apply" data-m="add">Nhập giáo án</button></div>`);
 }
 function wpBuild() {
   // tính đề xuất thô (không áp kế hoạch cũ) cho mọi bài chính
@@ -3876,9 +3881,9 @@ async function qrScanSheet(mode) {
         const vw = v.videoWidth, vh = v.videoHeight, side = Math.round(Math.min(vw, vh) * 0.85), sx = (vw - side) / 2, sy = (vh - side) / 2;
         pass = !pass; const w = Math.min(side, pass ? 960 : 480), h = w; cv.width = w; cv.height = h; g.drawImage(v, sx, sy, side, side, 0, 0, w, h);
         const r = jsQR(g.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' });
-        if (r && /^GA[QS]1\./.test(r.data)) { const [kind, id, i, n, body] = r.data.split('.'); if (id !== msg) { kindIn = kind; msg = id; for (const k in got) delete got[k]; need = +n; } got[i] = body;
+        if (r && /^GA[QSP]1\./.test(r.data)) { const [kind, id, i, n, body] = r.data.split('.'); if (id !== msg) { kindIn = kind; msg = id; for (const k in got) delete got[k]; need = +n; } got[i] = body;
           const have = Object.keys(got).length; $('#qr-st').textContent = need > 1 ? `Đã nhận ${have}/${need} trang…` : 'Đã nhận';
-          if (have >= need) { const body2 = Array.from({ length: need }, (_, k) => got[k + 1]).join(''); qrStop(); if (kindIn === 'GAS1') syncQrReceive(body2); else qrReceive(body2); return; } } }
+          if (have >= need) { const body2 = Array.from({ length: need }, (_, k) => got[k + 1]).join(''); qrStop(); if (kindIn === 'GAS1') syncQrReceive(body2); else if (kindIn === 'GAP1') importSheet(body2); else qrReceive(body2); return; } } }
       ui.qrRaf = setTimeout(tick, 90);
     };
     $('#qr-st').textContent = 'Giữ mã QR trong khung, cách khoảng 20–30 cm'; tick();
@@ -4013,16 +4018,24 @@ async function shareSheet() {
   const code = await encodePlan(state.days);
   const base = location.href.split('#')[0];
   const link = !inArtifact && /^https?:/.test(base) ? base + '#nhap=' + code : '';
-  openSheet(`<h3 class="sh-title">Chia sẻ giáo án</h3><p class="sh-text">${state.days.length} ngày tập · ${state.days.reduce((a, d) => a + d.exercises.length, 0)} bài. ${link ? 'Người nhận mở link là thấy giáo án. Nếu link không mở đúng, gửi kèm mã để họ dán vào mục Nhập giáo án.' : 'Sao chép mã bên dưới gửi qua Zalo hoặc Messenger. Người nhận vào tab Tôi → Nhập giáo án rồi dán mã.'}</p>
+  openSheet(`<h3 class="sh-title">Chia sẻ giáo án</h3><p class="sh-text">${state.days.length} ngày tập · ${state.days.reduce((a, d) => a + d.exercises.length, 0)} bài.</p>
+    <div class="eyebrow" style="margin:4px 0 8px">Gửi qua Zalo, Messenger (nên dùng)</div>
+    <button class="btn gold big" data-act="plan-img" style="width:100%">Gửi ảnh mã giáo án</button>
+    <p class="small muted" style="margin:8px 0 16px">Gửi một tấm ảnh như ảnh bình thường. Người nhận lưu ảnh, mở app → <b>Nhập giáo án → Chọn ảnh mã</b>. Không lo bị cắt link.</p>
+    <div class="eyebrow" style="margin:4px 0 8px">Hoặc gửi link / mã</div>${code.length > 1200 ? '<p class="note-line">Giáo án dài nên link rất dài, Zalo có thể cắt mất một phần. Nếu người nhận báo lỗi, gửi bằng ảnh mã.</p>' : ''}
     ${link ? `<label class="f full">Link<textarea class="inp code" id="sh-link" readonly rows="3">${esc(link)}</textarea></label><div class="row" style="margin:10px 0 16px"><button class="btn gold" data-act="copy" data-t="sh-link">Sao chép link</button>${navigator.share ? '<button class="btn" data-act="native-share">Gửi qua Zalo, Messenger…</button>' : ''}</div>` : ''}
     <label class="f full">Mã giáo án<textarea class="inp code" id="sh-code" readonly rows="4">${esc(code)}</textarea></label>
-    <div class="sh-actions"><button class="btn ${link ? '' : 'gold'}" data-act="copy" data-t="sh-code">Sao chép mã</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`);
+    <div class="sh-actions"><button class="btn" data-act="copy" data-t="sh-code">Sao chép mã</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`);
 }
 function importSheet(prefill) {
   ui.importDays = null; ui.importPhotos = null; ui.importFrom = '';
-  openSheet(`<h3 class="sh-title">Nhập giáo án</h3><p class="sh-text">Dán link hoặc mã giáo án người khác gửi cho bạn.</p>
+  openSheet(`<h3 class="sh-title">Nhập giáo án</h3>${prefill && !isStandalone() && (inAppBrowser() || isIOS()) ? `<div class="banner" style="margin-bottom:12px"><span class="bi">${ICON.alert}</span><div><b>Đã cài app trên màn hình chính?</b><p>Link mở trong ${inAppBrowser() ? 'trình duyệt của Zalo' : 'Safari'}, không vào thẳng app được (giới hạn của iPhone). Làm 2 bước:</p>
+      <p><strong>1.</strong> Bấm <strong>Sao chép mã</strong> dưới đây.<br><strong>2.</strong> Mở app Giáo Án Địa Ngục → tab Tôi → <strong>Nhập giáo án → Dán mã</strong>.</p>
+      <button class="btn gold" data-act="copy" data-t="imp-code" style="margin-top:8px;width:100%">Sao chép mã</button><p class="small muted" style="margin-top:8px">Chưa cài app thì nhập luôn ở đây cũng được.</p></div></div>` : ''}
+    <p class="sh-text">Chọn ảnh mã người khác gửi qua Zalo, hoặc dán link / mã.</p>
+    <label class="btn gold big" for="img-in" style="width:100%;margin-bottom:12px">Chọn ảnh mã</label><input type="file" id="img-in" accept="image/*" hidden>
     <textarea class="inp code" id="imp-code" rows="4" placeholder="https://…#nhap=SOTA1z… hoặc SOTA1z…">${esc(prefill || '')}</textarea>
-    <div class="row" style="margin-top:10px"><button class="btn gold" data-act="import-preview">Xem trước</button><label class="btn" for="plan-in">Mở file giáo án</label><input type="file" id="plan-in" hidden><button class="btn ghost" data-act="close-sheet">Huỷ</button></div><div id="imp-preview" style="margin-top:14px"></div>`);
+    <div class="row" style="margin-top:10px"><button class="btn" data-act="paste-code">Dán mã</button><button class="btn" data-act="import-preview">Xem trước</button><label class="btn" for="plan-in">Mở file giáo án</label><input type="file" id="plan-in" hidden><button class="btn ghost" data-act="close-sheet">Huỷ</button></div><div id="imp-preview" style="margin-top:14px"></div>`);
   if (prefill) setTimeout(() => handlers['import-preview'](), 30);
 }
 
@@ -4215,7 +4228,9 @@ async function syncSheet(pid) {
     <div class="row"><button class="btn gold" data-act="sync-qr">Hiện mã QR</button><button class="btn gold" data-act="sync-scan">Quét mã máy kia</button></div>
     <p class="small muted" style="margin:8px 0 0">Mỗi máy lần lượt hiện mã cho máy kia quét. Mã QR không mang ảnh, ảnh mới gửi bằng file.</p>
     <div class="eyebrow" style="margin:18px 0 8px">Ở xa</div>
-    <div class="row"><button class="btn" data-act="sync-file">Gửi file qua Zalo (kèm ảnh)</button><label class="btn" for="sync-in">Mở file đồng bộ</label><input type="file" id="sync-in" hidden></div>
+    <div class="row"><button class="btn gold" data-act="sync-img">Gửi ảnh mã qua Zalo</button><label class="btn gold" for="img-in">Chọn ảnh mã</label><input type="file" id="img-in" accept="image/*" hidden></div>
+    <p class="small muted" style="margin:8px 0 10px">Ảnh mã gửi được mọi thứ trừ ảnh máy tập. Có ảnh máy mới thì gửi thêm file.</p>
+    <div class="row"><button class="btn" data-act="sync-file">Gửi file (kèm ảnh máy)</button><label class="btn" for="sync-in">Mở file đồng bộ</label><input type="file" id="sync-in" hidden></div>
     <label class="toggle" style="margin-top:14px"><span>Gửi lại toàn bộ<br><span class="fhint">Mặc định chỉ gửi phần thay đổi từ lần trước</span></span><input type="checkbox" id="sync-full" ${ui.syncFull ? 'checked' : ''}></label>
     <p class="small muted" style="margin:10px 0 0">${syncAgo(st)}</p>
     <div class="sh-actions"><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`);
@@ -4299,6 +4314,126 @@ async function syncUndo() {
   for (const id of U.photos || []) { DB.del('photos', id); photoCache.delete(id); }
   await LDB.del('kv', 'syncUndo'); ui.coachData = null; render(true); toast('Đã hoàn tác lần đồng bộ');
 }
+
+/* ===== Ảnh mã: gửi giáo án / gói đồng bộ qua Zalo bằng một tấm ảnh chứa các mã QR =====
+   Zalo gửi ảnh ổn định hơn link dài (bị cắt, mở nhầm trình duyệt trong Zalo) và file .json (bị đổi đuôi). */
+const IMG_CHUNK = 900;
+function imgChunks(prefix, body) { const n = Math.max(1, Math.ceil(body.length / IMG_CHUNK)), id = Math.random().toString(36).slice(2, 6); return Array.from({ length: n }, (_, i) => `${prefix}.${id}.${i + 1}.${n}.${body.slice(i * IMG_CHUNK, (i + 1) * IMG_CHUNK)}`); }
+function wrapText(g, text, maxW) { const out = []; let line = ''; for (const w of String(text).split(/\s+/)) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t; } if (line) out.push(line); return out; }
+/* một cột mã lớn, cách nhau xa: mỗi mã đọc riêng được, không lẫn với mã bên cạnh */
+const IMG_W = 1200, IMG_PAD = 60, IMG_GAP = 360;
+async function qrImage({ title, sub, how, parts }) {
+  const W = IMG_W, pad = IMG_PAD, n = parts.length, q0 = W - pad * 2;
+  const font = (w, s) => `${w} ${s}px 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif`;
+  const meas = document.createElement('canvas').getContext('2d'); meas.font = font(500, 34);
+  const howLines = wrapText(meas, how, W - pad * 2), headH = 56 + 64 + 50 + howLines.length * 46 + 40;
+  const H = pad + headH + n * q0 + (n - 1) * IMG_GAP + 70 + pad;
+  const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
+  let y = pad;
+  g.fillStyle = '#b8862f'; g.font = font(800, 30); g.fillText('GIÁO ÁN ĐỊA NGỤC', pad, y + 30); y += 56;
+  g.fillStyle = '#111'; g.font = font(800, 52); g.fillText(String(title).slice(0, 36), pad, y + 50); y += 64;
+  g.fillStyle = '#444'; g.font = font(600, 32); g.fillText(String(sub).slice(0, 64), pad, y + 34); y += 50;
+  g.fillStyle = '#333'; g.font = font(500, 34); for (const l of howLines) { g.fillText(l, pad, y + 36); y += 46; }
+  y += 40;
+  parts.forEach((t, i) => {
+    const q = qrcode(0, 'L'); q.addData(t); q.make(); const nm = q.getModuleCount(), ms = Math.floor(q0 / (nm + 8)), size = ms * (nm + 8);
+    const cx = pad + Math.floor((q0 - size) / 2), cy = y + i * (q0 + IMG_GAP);
+    g.fillStyle = '#000';
+    for (let r = 0; r < nm; r++) for (let k = 0; k < nm; k++) if (q.isDark(r, k)) g.fillRect(cx + (k + 4) * ms, cy + (r + 4) * ms, ms, ms);
+    if (n > 1) { g.fillStyle = '#888'; g.font = font(700, 30); g.textAlign = 'center'; g.fillText(`Mã ${i + 1}/${n}`, W / 2, cy + q0 + 56); g.textAlign = 'left';
+      if (i < n - 1) { g.strokeStyle = '#ddd'; g.lineWidth = 3; g.setLineDash([14, 12]); g.beginPath(); g.moveTo(pad, cy + q0 + IMG_GAP / 2 + 30); g.lineTo(W - pad, cy + q0 + IMG_GAP / 2 + 30); g.stroke(); g.setLineDash([]); } }
+  });
+  return await new Promise(res => c.toBlob(b => res(b), 'image/png'));
+}
+/* đọc ảnh mã: thử cả ảnh trước, rồi trượt một khung vuông bằng chiều ngang ảnh từ trên xuống để đọc từng mã */
+async function decodeQrImage(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const W = img.naturalWidth, H = img.naturalHeight, found = new Set(), t = document.createElement('canvas'), g = t.getContext('2d', { willReadFrequently: true });
+    const read = (x, y, w, h) => { const sc = Math.min(1, 800 / Math.max(w, h)), dw = Math.round(w * sc), dh = Math.round(h * sc); t.width = dw; t.height = dh; g.fillStyle = '#fff'; g.fillRect(0, 0, dw, dh); g.drawImage(img, x, y, w, h, 0, 0, dw, dh);
+      const r = jsQR(g.getImageData(0, 0, dw, dh).data, dw, dh, { inversionAttempts: 'attemptBoth' }); if (r && r.data) found.add(r.data); return !!r; };
+    const done = () => found.size && joinQrParts([...found]).ok;
+    if (H <= W * 1.6) { read(0, 0, W, H); if (done()) return [...found]; }
+    for (const f of [1, 0.92]) {
+      const s = Math.round(W * f), step = Math.max(8, Math.round(W * 0.06)), x = Math.round((W - s) / 2);
+      for (let y = 0; ; y += step) { const yy = Math.min(y, Math.max(0, H - s)); if (read(x, yy, s, Math.min(s, H))) y += Math.round(s * 0.7); if (done() || yy >= H - s) break; }
+      if (done()) break;
+    }
+    return [...found];
+  } finally { URL.revokeObjectURL(url); }
+}
+/* ghép các trang mã: PREFIX.id.i.n.phần */
+function joinQrParts(texts) {
+  const groups = {};
+  for (const t of texts) { const m = /^(GA[QSP]1)\.([a-z0-9]+)\.(\d+)\.(\d+)\.(.*)$/.exec(t); if (!m) continue; const k = m[1] + '.' + m[2]; (groups[k] = groups[k] || { kind: m[1], n: +m[4], got: {} }).got[m[3]] = m[5]; }
+  const G = Object.values(groups).sort((a, b) => Object.keys(b.got).length - Object.keys(a.got).length)[0]; if (!G) return { ok: false, kind: null, missing: [] };
+  const missing = []; for (let i = 1; i <= G.n; i++) if (G.got[i] == null) missing.push(i);
+  return { ok: !missing.length, kind: G.kind, n: G.n, missing, body: missing.length ? '' : Array.from({ length: G.n }, (_, i) => G.got[i + 1]).join('') };
+}
+/* chia sẻ ảnh: ưu tiên bảng chia sẻ của máy (chọn Zalo); không được thì hiện ảnh để bấm giữ → Lưu ảnh */
+async function shareImage(blob, name, back) {
+  const file = new File([blob], name, { type: 'image/png' });
+  if (!inArtifact && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file] }); toast('Đã mở chia sẻ ảnh mã'); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  if (ui.imgUrl) URL.revokeObjectURL(ui.imgUrl); ui.imgUrl = URL.createObjectURL(blob); ui.imgBlob = blob; ui.imgName = name;
+  openSheet(`<h3 class="sh-title">Ảnh mã giáo án</h3><p class="sh-text">Bấm giữ vào ảnh → <b>Lưu vào Ảnh</b> hoặc <b>Chia sẻ</b>, rồi gửi qua Zalo như ảnh bình thường.</p>
+    <img src="${ui.imgUrl}" alt="Ảnh mã giáo án" style="width:100%;border-radius:12px;margin-top:8px;background:#fff">
+    <div class="sh-actions"><button class="btn" data-act="img-save">Tải ảnh về máy</button>${back ? `<button class="btn ghost" data-act="${back}">Quay lại</button>` : '<button class="btn ghost" data-act="close-sheet">Đóng</button>'}</div>`);
+}
+async function planImageSend(pid) {
+  const co = coach() && pid, p = pid ? profiles.list.find(x => x.id === pid) : curProf();
+  const raw = pid ? await profState(pid) : state, st = raw ? (!pid || pid === profiles.active ? state : normState(raw)) : null;
+  if (!st || !(st.days || []).length) { toast('Chưa có giáo án để gửi'); return; }
+  toast('Đang tạo ảnh mã…');
+  let code;
+  if (co) { const kgMap = withState(st, () => Object.fromEntries(allExFull().map(x => [x.ex.id, baseKg(x.ex)]))); code = await encodePlan(st.days, ui.shareKg !== false ? kgMap : null, { pk: pid, cn: coach().name }); }
+  else code = await encodePlan(st.days);
+  const nEx = st.days.reduce((a, d) => a + d.exercises.length, 0), parts = imgChunks('GAP1', code);
+  const blob = await qrImage({ title: co ? `Giáo án cho ${p.name}` : `Giáo án của ${p.name}`, sub: `${st.days.length} ngày tập · ${nEx} bài${co ? ' · HLV ' + coach().name : ''}`,
+    how: 'Lưu ảnh này vào máy. Mở app Giáo Án Địa Ngục → tab Tôi → Nhập giáo án → Chọn ảnh mã, rồi chọn ảnh này.', parts });
+  await shareImage(blob, `giao-an-${slugName(p.name)}.png`, co ? null : null);
+}
+async function syncImageSend() {
+  const pid = ui.syncPid || profiles.active, p = profiles.list.find(x => x.id === pid) || curProf();
+  toast('Đang tạo ảnh mã…');
+  const { pkg, mark } = await syncPack(pid, { full: !!ui.syncFull }), bytes = new TextEncoder().encode(JSON.stringify(pkg));
+  let body = 'p' + b64u(bytes); if ('CompressionStream' in window) { try { body = 'z' + b64u(await pipeBytes(bytes, new CompressionStream('deflate-raw'))); } catch (e) {} }
+  const blob = await qrImage({ title: `Đồng bộ · ${p.name}`, sub: `${pkg.sessions.length} buổi tập${pkg.plan ? ' · kèm giáo án' : ''} · không kèm ảnh máy`,
+    how: 'Lưu ảnh này vào máy. Mở app → Đồng bộ → Chọn ảnh mã, rồi chọn ảnh này.', parts: imgChunks('GAS1', body) });
+  await syncMarkSent(pid, mark);
+  await shareImage(blob, `dong-bo-${slugName(p.name)}-${ymd()}.png`);
+}
+const slugName = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^A-Za-z0-9]+/g, '-').toLowerCase() || 'hoc-vien';
+/* nhận ảnh mã ở mục Nhập giáo án hoặc Đồng bộ */
+async function receiveQrImage(file) {
+  toast('Đang đọc ảnh mã…');
+  let texts = []; try { texts = await decodeQrImage(file); } catch (e) {}
+  const J = joinQrParts(texts);
+  if (!J.kind) { toast('Không tìm thấy mã trong ảnh. Chọn đúng ảnh mã gốc, không chụp màn hình bị cắt.'); return; }
+  if (!J.ok) { toast(`Ảnh thiếu mã ${J.missing.slice(0, 6).join(', ')}${J.missing.length > 6 ? '…' : ''}/${J.n}. Nhờ người gửi gửi lại ảnh gốc (không cắt).`); return; }
+  if (J.kind === 'GAP1') { importSheet(J.body); return; }
+  if (J.kind === 'GAS1') { await syncQrReceive(J.body); return; }
+  await qrReceive(J.body);
+}
+/* nhập giáo án dạng "cập nhật": khớp bài theo mã gốc hoặc tên, giữ mã bài cũ nên lịch sử tập và mức tạ không mất */
+function planAsPkg(days, meta) {
+  const ex = (x, extra) => ({ i: [x.srcId].filter(Boolean), name: x.name, muscle: x.muscle, zone: x.zone, type: x.type, sets: x.sets, repTarget: x.repTarget, repMin: x.repMin, repMax: x.repMax, dropSet: !!x.dropSet,
+    step: x.step, rest: x.rest, restV: 2, setup: x.setup || '', each: !!x.each, warmup: x.warmup, targetKg: x.targetKg ?? null, currentKg: x.currentKg ?? null, kgSetAt: x.currentKg != null ? Date.now() : 0, fs: false, ph: [], ...extra });
+  return { role: 'coach', link: { pk: (meta && meta.pk) || '', cn: (meta && meta.cn) || '' }, name: '', at: Date.now(), sessions: [], del: { s: {}, e: {} }, photos: {},
+    plan: days.map(d => ({ n: d.name, e: d.exercises.map(x => ex(x, { o: x.slot || '', ms: '', l: (x.alts || []).map(a => ex(a, { l: [] })) })) })) };
+}
+async function planUpdateApply(days, meta) {
+  if (state.active) { toast('Đang tập dở, kết thúc buổi rồi cập nhật giáo án'); return null; }
+  const keep = clone(state), P = planAsPkg(days, meta), { st, R: rep } = await syncMerge(state, P, {});
+  if (!meta || !meta.pk) { st.coachLink = keep.coachLink; }
+  await LDB.put('kv', 'syncUndo', { pid: profiles.active, prev: keep, photos: [], at: Date.now() });
+  const g = globalsOf(state); loadState(st); Object.assign(state.settings, g); save();
+  return rep;
+}
+const inAppBrowser = () => /Zalo|FBAN|FBAV|FB_IAB|Instagram|Line\//i.test(navigator.userAgent || '');
 
 /* ---------- file & lịch ---------- */
 async function saveFile(name, data, mime) {
@@ -4611,6 +4746,9 @@ const handlers = {
   'sync-qr': () => syncQrSheet(),
   'sync-scan': () => qrScanSheet('sync'),
   'sync-file': () => syncFileSend(),
+  'sync-img': () => syncImageSend(),
+  'plan-img': t => planImageSend(t.dataset.id || ''),
+  'img-save': () => { if (ui.imgBlob) saveFile(ui.imgName || 'giao-an.png', ui.imgBlob, 'image/png'); },
   'sync-qr-done': async () => { clearInterval(ui.qrT); const O = ui.syncOut; if (O) await syncMarkSent(O.pid, O.mark); ui.syncOut = null; closeSheet(); toast('Đã đánh dấu đã gửi'); },
   'sync-to': t => syncPreview(t.dataset.id),
   'sync-pick': t => { ui.syncChoices = { ...(ui.syncChoices || {}), [t.dataset.id]: t.dataset.v }; syncPreview(ui.syncTo); },
@@ -4701,7 +4839,7 @@ const handlers = {
   'body-del': t => { if (!t.dataset.armed) { t.dataset.armed = '1'; t.textContent = 'Bấm lần nữa để xoá'; setTimeout(() => { if (t.isConnected) { delete t.dataset.armed; t.textContent = 'Xoá lần đo này'; } }, 3000); return; } state.body = state.body.filter(e => e.id !== t.dataset.id); save(); closeSheet(); render(true); },
   'share': () => shareSheet(),
   'copy': t => copyText(t.dataset.t),
-  'native-share': () => { const l = $('#sh-link'); if (!l) return; navigator.share({ title: 'Giáo Án Địa Ngục', text: 'Giáo án tập gym của mình, mở link để nhập vào app Giáo Án Địa Ngục:', url: l.value }).catch(() => {}); },
+  'native-share': () => { const l = $('#sh-link'); if (!l) return; navigator.share({ title: 'Giáo Án Địa Ngục', text: 'Giáo án tập gym (Giáo Án Địa Ngục). Đã cài app: bấm giữ link → Sao chép, mở app → Nhập giáo án → Dán mã. Chưa cài: bấm link.', url: l.value }).catch(() => {}); },
   'import-open': () => importSheet(''),
   'import-preview': async () => {
     const box = $('#imp-preview'); if (!box) return;
@@ -4711,6 +4849,15 @@ const handlers = {
       box.innerHTML = impPreviewHtml(days);
     } catch (e) { box.innerHTML = `<div class="banner"><span class="bi">${ICON.alert}</span><div><b>Không đọc được mã</b><p>${esc(e.message || 'Kiểm tra lại link hoặc mã đã dán, có thể bị thiếu ký tự.')}</p></div></div>`; }
   },
+  'import-update': async () => {
+    const days = ui.importDays; if (!days) return; const meta = ui.importMeta; ui.importMeta = null;
+    const rep = await planUpdateApply(days, meta); if (!rep) return;
+    ui.importDays = null; closeSheet(); ui.tab = 'plan'; render();
+    toast(`Đã cập nhật giáo án${rep.newEx ? ` · ${rep.newEx} bài mới` : ''}${rep.updEx ? ` · ${rep.updEx} bài chỉnh` : ''}${rep.dropEx ? ` · bỏ ${rep.dropEx} bài` : ''}. Lịch sử tập giữ nguyên.`, { act: 'sync-undo', label: 'Hoàn tác' });
+  },
+  'paste-code': async () => { const el = $('#imp-code'); if (!el) return;
+    try { const t = await navigator.clipboard.readText(); if (!t || !/SOTA1z?\./.test(t)) { toast('Bộ nhớ tạm chưa có mã giáo án. Sao chép link trong Zalo trước.'); return; } el.value = t; handlers['import-preview'](); }
+    catch (e) { el.focus(); toast('Bấm giữ vào ô trống → Dán'); } },
   'import-apply': t => {
     const PH = ui.importPhotos || {}, mp = ids => (ids || []).map(o => { const v = PH[o]; if (!v) return null; const nid = uid(); DB.put('photos', nid, v); photoCache.set(nid, v); return nid; }).filter(Boolean);
     const fix = x => { const y = migrateEx({ ...x, id: uid(), photos: mp(x.photos) }); if (y.currentKg != null) y.kgSetAt = Date.now(); return y; };
@@ -4836,6 +4983,7 @@ document.addEventListener('change', async e => {
     t.value = '';
   }
   if (t.id === 'sync-full') { ui.syncFull = t.checked; return; }
+  if (t.id === 'img-in' && t.files && t.files[0]) { const f = t.files[0]; t.value = ''; await receiveQrImage(f); return; }
   if (t.id === 'sync-in' && t.files && t.files[0]) {
     let data = null; try { data = JSON.parse(await t.files[0].text()); } catch (err) {}
     t.value = '';
