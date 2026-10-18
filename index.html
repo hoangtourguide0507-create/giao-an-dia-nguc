@@ -168,6 +168,38 @@ main{padding-block:18px}
 .cam-empty .ci{width:42px;height:42px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;background:var(--gold-soft);color:var(--gold)}
 .cam-empty b{display:block;color:var(--fg);font-size:14px}
 .ex-body{padding:14px}
+.ex.focus{border-color:rgb(var(--acc-rgb) / .55);box-shadow:0 0 0 1px rgb(var(--acc-rgb) / .25),0 18px 40px -24px rgb(var(--acc-rgb) / .6);scroll-margin-top:calc(env(safe-area-inset-top,0px) + 76px)}
+.ex-hero{position:relative;height:min(46vw,260px);background:#000;overflow:hidden}
+.ex-hero img{position:absolute;inset:0;width:100%;height:100%}
+.ex-hero .blur{object-fit:cover;filter:blur(24px) brightness(.45);transform:scale(1.2)}
+.ex-hero .main{object-fit:contain}
+.ex-hero.ill{background:#fff}
+.ex-hero.ill img{object-fit:contain}
+.ex-hero.ill img.b{animation:gfade 3.2s ease-in-out infinite}
+.ex-hero .hn{position:absolute;left:12px;top:10px;font-size:11.5px;font-weight:800;letter-spacing:.04em;padding:4px 9px;border-radius:999px;background:rgba(0,0,0,.62);color:#fff}
+.ex-hero .hcam{position:absolute;right:10px;bottom:10px;display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;background:rgba(0,0,0,.62);color:#fff;font-size:12px;font-weight:700;cursor:pointer}
+.ex-hero .hcam .ico{width:16px;height:16px}
+.ex-hero .hnav{position:absolute;inset:0;display:flex}
+.ex-hero .hnav button{flex:1;border:0;background:transparent;cursor:pointer}
+.ex-hero .hdots{position:absolute;left:0;right:0;bottom:8px;display:flex;justify-content:center;gap:5px;pointer-events:none}
+.ex-hero .hdots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.45)}
+.ex-hero .hdots i.on{background:#fff}
+.ex-hero.none{height:auto;display:flex;align-items:center;justify-content:center;padding:18px;background:radial-gradient(circle at 50% 30%,rgb(var(--acc-rgb) / .18),var(--surface-2) 70%)}
+.ex-hero.none label{display:flex;align-items:center;gap:8px;color:var(--gold);font-weight:700;font-size:14px;cursor:pointer}
+.ex-hero.none .ico{width:22px;height:22px}
+.ex-mini{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+.ex-mini .mt{flex:1;min-width:0;display:block}
+.ex-mini .mn,.ex-mini .ms{display:block}
+.ex-mini .mn{font-weight:700;font-size:15px;line-height:1.3;overflow-wrap:anywhere}
+.ex-mini .ms{font-size:12.5px;color:var(--fg-2);margin-top:1px}
+.ex-mini .mi{flex:none;width:44px;height:44px;border-radius:11px;overflow:hidden;position:relative;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.ex-mini .mi.ill{background:#fff}
+.ex-mini .mi img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ex-mini .mk{flex:none;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgb(var(--up-rgb) / .16);color:var(--up)}
+.ex-mini .mk .ico{width:16px;height:16px}
+.ex-mini .mg{flex:none;font-size:12px;font-weight:700;color:var(--gold)}
+.ex.done{opacity:.78}
+.ex.next .mn{color:var(--fg)}
 .ex-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .ex-name{font-weight:700;font-size:17px;line-height:1.3;min-width:0;overflow-wrap:anywhere}
 .ex-sub{font-size:12.5px;color:var(--muted);margin-top:2px}
@@ -819,7 +851,7 @@ input[type=checkbox],input[type=radio]{font-size:inherit}
 .coach .cl.warn i{color:var(--gold)}
 .sc-steps{margin:10px 0 0;padding-left:20px;font-size:13.5px;line-height:1.55;color:var(--fg-2)}
 .sc-steps b{color:var(--fg)}
-/* v18: ảnh gọn + Story */
+/* v18: ảnh gọn */
 .ex-head{align-items:center}
 .exthumb{flex:none;position:relative;width:54px;height:72px;border-radius:12px;overflow:hidden;padding:0;border:1px solid var(--line-2);background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--gold);cursor:pointer}
 .exthumb .ico{width:20px;height:20px}
@@ -830,64 +862,11 @@ input[type=checkbox],input[type=radio]{font-size:inherit}
 .exthumb .fs svg{width:11px;height:11px;stroke:#fff;fill:none;stroke-width:2.4}
 .ex-head .mid{flex:1;min-width:0}
 img.nosrc,img[data-photo]:not([src]){visibility:hidden}
-.storybtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:12px}
-body.storying{overflow:hidden}
-body.storying .rest{z-index:62;top:calc(env(safe-area-inset-top,0px) + 150px);bottom:auto}
-.story{position:fixed;inset:0;z-index:55;background:#000;color:#fff;touch-action:none;overscroll-behavior:none;display:flex;flex-direction:column}
-.story[hidden]{display:none}
-.st-bg{position:absolute;inset:0;overflow:hidden}
-.st-bg .ill{position:absolute;left:0;right:0;top:31%;height:30%;background:#fff}
-.st-bg .ill img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-.st-bg .ill img.b{animation:gfade 3.2s ease-in-out infinite}
-.st-bg .stcap{position:absolute;right:14px;top:calc(31% + 10px);z-index:3;display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font-size:12px;font-weight:700}
-.st-bg .stcap .ico{width:16px;height:16px}
 .exthumb.ill{background:#fff;overflow:hidden}
 .exthumb.ill img{object-fit:cover}
 .exthumb.ill .gi{position:absolute;inset:0;padding:0;border:0;background:none}
 .exthumb.ill .capb{position:absolute;right:2px;bottom:2px;width:22px;height:22px;border-radius:7px;background:rgba(0,0,0,.62);color:#fff;display:flex;align-items:center;justify-content:center;z-index:2}
 .exthumb.ill .capb .ico{width:13px;height:13px}
-.st-bg img{position:absolute;inset:0;width:100%;height:100%}
-.st-bg .blur{object-fit:cover;filter:blur(28px) brightness(.45);transform:scale(1.2)}
-.st-bg .main{object-fit:contain}
-.st-bg .none{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:radial-gradient(circle at 50% 35%,rgb(var(--acc-rgb) / .22),#000 70%)}
-.st-bg .none label{display:flex;flex-direction:column;align-items:center;gap:10px;color:var(--gold);font-weight:700}
-.st-bg .none .ico{width:44px;height:44px}
-.st-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.7) 0,rgba(0,0,0,0) 26%,rgba(0,0,0,0) 40%,rgba(0,0,0,.88) 64%,#000 100%);pointer-events:none}
-.st-top{position:relative;z-index:2;padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 0}
-.st-bars{display:flex;gap:4px}
-.st-bars i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.28);overflow:hidden}
-.st-bars i b{display:block;height:100%;background:#fff;border-radius:inherit;transition:width .35s}
-.st-head{display:flex;align-items:flex-start;gap:10px;margin-top:12px}
-.st-head .t{flex:1;min-width:0}
-.st-n{font-size:12px;font-weight:700;opacity:.75;letter-spacing:.04em}
-.st-name{font-family:var(--font-d);font-size:24px;font-weight:800;line-height:1.15;text-shadow:0 2px 12px rgba(0,0,0,.6)}
-.st-sub{font-size:13px;opacity:.8;margin-top:2px}
-.st-x{flex:none;width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center}
-.st-setup{display:inline-block;margin-top:10px;padding:6px 11px;border-radius:10px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.18);font-size:13px;font-weight:600;max-width:100%}
-.st-phnav{position:relative;z-index:1;flex:1;display:flex}
-.st-phnav button{flex:1;border:0;background:transparent}
-.st-dots{position:absolute;left:0;right:0;bottom:8px;display:flex;justify-content:center;gap:5px;pointer-events:none}
-.st-dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.4)}
-.st-dots i.on{background:#fff}
-.st-cam{position:absolute;right:14px;bottom:10px;width:40px;height:40px;border-radius:50%;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;color:#fff;z-index:2}
-.st-cam .ico{width:19px;height:19px}
-.st-panel{position:relative;z-index:2;padding:0 14px calc(env(safe-area-inset-bottom,0px) + 14px)}
-.st-target{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:10px}
-.st-target .big{font-family:var(--font-d);font-size:34px;font-weight:800;line-height:1;color:var(--gold)}
-.st-target .big small{font-size:15px;color:#fff;opacity:.8;margin-left:3px}
-.st-target .prev{font-size:12px;opacity:.75;text-align:right}
-.st-target .prev b{display:block;font-size:14px;opacity:1}
-.st-sets{display:flex;flex-direction:column;gap:7px}
-.story .setrow{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:5px 6px;margin:0;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-.story .setrow.done{background:rgb(var(--up-rgb) / .2);border-color:rgb(var(--up-rgb) / .5)}
-.story .stepper{background:rgba(0,0,0,.35)}
-.story .stepper input,.story .stepper button,.story .setno{color:#fff}
-.st-nav{display:flex;gap:8px;margin-top:10px}
-.st-nav .btn{flex:1}
-.story .btn{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.2)}
-.story .btn.gold{background:var(--gold);color:var(--gold-ink);border-color:var(--gold)}
-@keyframes st-in{from{opacity:0;transform:translateX(var(--sx,24px))}to{opacity:1;transform:none}}
-.story.anim .st-top,.story.anim .st-panel,.story.anim .st-bg .main{animation:st-in .32s cubic-bezier(.2,.8,.2,1)}
 /* tiến độ gọn */
 details.mus{padding:0}
 details.mus>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:14px;cursor:pointer}
@@ -1019,7 +998,6 @@ li.slot>.exr{border-top:0}
 .tact .btn{flex:1}
 .skel{height:120px;border-radius:var(--r-lg);background:linear-gradient(90deg,var(--surface) 0,var(--surface-2) 50%,var(--surface) 100%);background-size:200% 100%;animation:skel 1.2s linear infinite;margin-bottom:12px}
 @keyframes skel{to{background-position:-200% 0}}
-body.storying .sheet{z-index:64}
 /* v26: hướng dẫn bài tập + QR */
 .gbtn{flex:none;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--fg-2);border-radius:var(--pill);padding:5px 10px;font:inherit;font-size:12px;font-weight:700;margin-top:6px}
 .gbtn svg{width:14px;height:14px}
@@ -1033,9 +1011,6 @@ body.storying .sheet{z-index:64}
 .fcue1{display:flex;gap:6px;align-items:flex-start;width:100%;text-align:left;margin:10px 0 0;padding:7px 10px;border-radius:10px;background:rgb(var(--warn-rgb) / .08);border:1px solid rgb(var(--warn-rgb) / .3);color:var(--fg);font:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .fcue1 b{color:rgb(var(--warn-rgb));flex:none}
 .fcue1 span{margin-left:auto;flex:none;color:rgb(var(--warn-rgb));font-size:12px;font-weight:700}
-.st-panel .fcue{margin:0 0 10px;background:rgba(20,16,8,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
-.st-panel .fcue ul{color:#fff}
-.st-panel .fcue1{margin:0 0 10px;background:rgba(0,0,0,.6);color:#fff}
 .eyebrow.warn{color:rgb(var(--warn-rgb))}
 .cue1{margin:8px 0 0;font-size:12.5px;color:var(--gold);font-weight:600;display:flex;gap:6px;align-items:flex-start}
 .gdemo{position:relative;aspect-ratio:4/3;border-radius:var(--r);overflow:hidden;background:#fff;margin-top:12px}
@@ -1225,7 +1200,6 @@ details.rdyc .rrows{padding:0 14px 14px}
   <div class="sheet-panel" id="sheet-body" role="dialog" aria-modal="true"></div>
 </div>
 <div class="viewer" id="viewer" hidden></div>
-<div class="story" id="story" hidden></div>
 <canvas id="fx-back" aria-hidden="true"></canvas><canvas id="fx-front" aria-hidden="true"></canvas>
 <div class="alarm" id="alarm" hidden role="alertdialog" aria-labelledby="alarm-t">
   <div class="alarm-in"><div class="alarm-ico" id="alarm-ico"></div><b id="alarm-t">Hết giờ nghỉ</b><span id="alarm-sub">Vào set tiếp theo thôi!</span>
@@ -2501,9 +2475,8 @@ function formCueHtml(ex, en, key) {
 /* thu gọn / mở lại thẻ lưu ý ngay khi bấm xong set, không vẽ lại cả màn */
 function refreshCue(i) {
   const en = state.active && state.active.entries[i]; if (!en) return; const ex = exOrSnap(en);
-  if (ui.cueOpen === 'l' + i || ui.cueOpen === 's' + i) ui.cueOpen = null;
+  if (ui.cueOpen === 'l' + i) ui.cueOpen = null;
   const a = document.querySelector(`article.ex[data-i="${i}"]`), c = a && a.querySelector('.fcue,.fcue1'); if (c) c.outerHTML = formCueHtml(ex, en, 'l' + i);
-  const st = $('#story'); if (st && !st.hidden && story.i === i) { const c2 = st.querySelector('.st-panel > .fcue, .st-panel > .fcue1'); if (c2) c2.outerHTML = formCueHtml(ex, en, 's' + i); }
 }
 const GUIDE_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="5" r="2.5"/><path d="M12 8v7M8 11h8M10 21l2-6 2 6"/></svg>';
 async function guideSheet(exId) {
@@ -2545,58 +2518,26 @@ function thumbHtml(ex) {
 }
 function viewSession(a) {
   let h = `<section class="sbar"><div class="sbar-top"><div><div class="eyebrow">Đang tập · ${DOW[parseYmd(a.date).getDay()]} ${dm(a.date)}${a.deload ? ' · deload' : ''}</div><div class="h1">${esc(a.dayName)}</div></div>
-    <div class="elapsed" id="elapsed">${fmtDur(durOf(a))}</div></div><div class="prog"><i id="prog-bar"></i></div><div class="prog-l" id="prog-l"></div>
-    <button class="btn storybtn" data-act="story" data-i="-1"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg> Tập dạng Story · toàn màn hình</button></section>`;
+    <div class="elapsed" id="elapsed">${fmtDur(durOf(a))}</div></div><div class="prog"><i id="prog-bar"></i></div><div class="prog-l" id="prog-l"></div></section>`;
   a.entries.forEach((en, i) => { h += entryCard(en, i); });
   h += `<div class="sess-actions"><button class="btn" data-act="add-ex-session">${ICON.plus} Thêm bài</button><button class="btn gold big" data-act="finish">Kết thúc buổi tập</button><button class="btn ghost" data-act="pain">Báo đau / chấn thương</button><button class="btn ghost" data-act="cancel-session">Huỷ buổi này</button></div>`;
   return h;
 }
-const story = { i: 0, ph: 0, dir: 0 };
 function curIdx() { const a = state.active; if (!a) return 0; const k = a.entries.findIndex(en => en.sets.some(x => !x.done)); return k < 0 ? Math.max(0, a.entries.length - 1) : k; }
-function openStory(i) {
-  if (!state.active || !state.active.entries.length) return;
-  story.i = i < 0 ? curIdx() : Math.min(i, state.active.entries.length - 1); story.ph = 0; story.dir = 0;
-  $('#story').hidden = false; document.body.classList.add('storying'); renderStory(true);
+/* bài đang tập: bài người dùng chọn, nếu không thì bài đầu tiên chưa xong */
+function focusIdx() { const a = state.active; if (!a) return 0; const k = ui.focusEx ? a.entries.findIndex(en => en.exId === ui.focusEx) : -1; return k >= 0 ? k : curIdx(); }
+/* xong bài đang tập: chờ một nhịp rồi thu gọn và mở bài kế tiếp chưa xong */
+function autoNext(i) {
+  clearTimeout(ui.nextT);
+  ui.nextT = setTimeout(() => { const a = state.active; if (!a || ui.tab !== 'today' || !$('#sheet').hidden) return; const cur = a.entries[i]; if (!cur || !entryDone(cur) || focusIdx() !== i) return;
+    const order = [...a.entries.keys()].filter(k => k > i).concat([...a.entries.keys()].filter(k => k < i)), k = order.find(k2 => !entryDone(a.entries[k2]));
+    ui.focusEx = k == null ? null : a.entries[k].exId; ui.heroPh = 0; render(true); if (k != null) scrollFocus(); else toast('Xong hết các bài · bấm “Kết thúc buổi tập”'); }, 900);
 }
-function closeStory() { $('#story').hidden = true; document.body.classList.remove('storying'); if (ui.tab === 'today') render(true); }
-function storyGo(d) {
-  const n = state.active ? state.active.entries.length : 0; const k = story.i + d; if (k < 0 || k >= n) { if (k >= n) toast('Đây là bài cuối · bấm “Kết thúc” khi xong'); return; }
-  story.i = k; story.ph = 0; story.dir = d; renderStory(true);
-}
-async function renderStory(anim) {
-  const a = state.active, el = $('#story'); if (!a || el.hidden) return;
-  const i = Math.min(story.i, a.entries.length - 1), en = a.entries[i], ex = exOrSnap(en), sg = suggest(ex), last = workHistory(ex)[0];
-  const ph = ex.photos || [], pid = ph[Math.min(story.ph, ph.length - 1)];
-  const bars = a.entries.map((e2, k) => { const t = e2.sets.length || 1, d = e2.sets.filter(x => x.done).length; return `<i><b style="width:${Math.round(d / t * 100)}%"></b></i>`; }).join('');
-  const tReps = en.sets[0] ? en.sets[0].reps : sg.reps[0];
-  let h = `<div class="st-bg">${pid ? `<img class="blur" data-photo="${pid}" alt=""><img class="main" data-photo="${pid}" alt="">` : ex.gid && !ex.ghost ? `<div class="ill"><img class="a" data-photo="exdb:${ex.gid}:0" alt=""><img class="b" data-photo="exdb:${ex.gid}:1" alt=""></div><label class="stcap" for="cap-st-${ex.id}">${ICON.cam} Chụp ảnh máy</label><input type="file" accept="image/*" capture="environment" id="cap-st-${ex.id}" data-cap="${ex.id}" hidden>` : `<div class="none">${ex.ghost ? '' : `<label for="cap-st-${ex.id}">${ICON.cam}<span>Chụp ảnh máy tập</span></label><input type="file" accept="image/*" capture="environment" id="cap-st-${ex.id}" data-cap="${ex.id}" hidden>`}</div>`}</div><div class="st-shade"></div>
-    <div class="st-top"><div class="st-bars">${bars}</div>
-      <div class="st-head"><div class="t"><div class="st-n">BÀI ${i + 1}/${a.entries.length} · ${esc(ex.muscle)}</div><div class="st-name">${esc(ex.name)}</div><div class="st-sub">${ex.sets}×${ex.repTarget || 10} · nghỉ ${fmtDur(restOf(ex) * 1000)} · <span class="badge ${sg.kind}" style="vertical-align:1px">${sg.label}</span></div></div>
-      ${ex.ghost ? '' : `<button type="button" class="st-guide" data-act="guide" data-id="${ex.id}">Hướng dẫn</button>`}${!en.sets.some(x => x.done) ? `<button type="button" class="st-swap" data-act="swap-open" data-e="${i}">⇄ Đổi bài</button>` : ''}<button type="button" class="st-x" data-act="story-close" aria-label="Đóng">✕</button></div>
-      ${ex.setup ? `<div class="st-setup">⚙ ${esc(ex.setup)}</div>` : ''}</div>
-    <div class="st-phnav">${ph.length > 1 ? `<button type="button" data-act="story-ph" data-d="-1" aria-label="Ảnh trước"></button><button type="button" data-act="story-ph" data-d="1" aria-label="Ảnh sau"></button><div class="st-dots">${ph.map((_, k) => `<i class="${k === story.ph ? 'on' : ''}"></i>`).join('')}</div>` : ''}
-      ${pid && !ex.ghost ? `<label class="st-cam" for="cap-st-${ex.id}" aria-label="Chụp thêm ảnh">${ICON.cam}</label><input type="file" accept="image/*" capture="environment" id="cap-st-${ex.id}" data-cap="${ex.id}" hidden>` : ''}</div>
-    <div class="st-panel">${formCueHtml(ex, en, 's' + i)}<div class="st-target"><div><div class="small" style="opacity:.75">Mục tiêu</div><div class="big">${sg.kg === 0 ? 'Tự trọng' : sg.kg != null ? fmt(sg.kg) : '—'}<small>${sg.kg ? U(ex).trim() : ''} × ${tReps ?? '–'}</small></div></div>
-      ${last ? `<div class="prev">Lần trước ${dm(last.date)}<b>${fmt(wt(last))}${U(ex)} × ${last.sets.map(x => x.reps).join('·')}</b></div>` : ''}</div>
-      <div class="st-sets">${en.sets.map((x, j) => setRowS(i, j, x, j + 1)).join('')}${en.drop ? setRowS(i, 'drop', en.drop, 'D') : ''}</div>
-      <div class="st-nav"><button type="button" class="btn" data-act="story-go" data-d="-1" ${i === 0 ? 'disabled' : ''}>‹ Bài trước</button>${i === a.entries.length - 1 ? `<button type="button" class="btn gold" data-act="story-finish">Kết thúc buổi</button>` : `<button type="button" class="btn ${en.sets.every(x => x.done) ? 'gold' : ''}" data-act="story-go" data-d="1">Bài sau ›</button>`}</div></div>`;
-  el.innerHTML = h; el.style.setProperty('--sx', story.dir < 0 ? '-24px' : '24px');
-  if (anim && !reduceMotion()) { el.classList.remove('anim'); void el.offsetWidth; el.classList.add('anim'); }
-  hydratePhotos(el);
-}
-function setRowS(i, j, x, label) {
-  return `<div class="setrow ${x.done ? 'done' : ''} ${j === 'drop' ? 'drop' : ''}"><span class="setno">${label}</span>${stepper(i, j, 'kg', x.kg, 'kg')}${stepper(i, j, 'reps', x.reps, 'rep')}
-    <button type="button" class="check" data-act="set-done" data-e="${i}" data-s="${j}" aria-pressed="${!!x.done}" aria-label="Xong set ${label}">${ICON.check}</button></div>`;
-}
-(function bindStorySwipe() {
-  let x0 = 0, y0 = 0, ok = false;
-  document.addEventListener('touchstart', e => { const st = $('#story'); if (!st || st.hidden || !st.contains(e.target) || e.target.closest('.st-panel,input,.st-x')) { ok = false; return; } ok = true; x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
-  document.addEventListener('touchend', e => { if (!ok) return; ok = false; const t = e.changedTouches[0], dx = t.clientX - x0, dy = t.clientY - y0;
-    if (Math.abs(dx) > 60 && Math.abs(dy) < 70) storyGo(dx < 0 ? 1 : -1); else if (dy > 110 && Math.abs(dx) < 60) closeStory(); }, { passive: true });
-})();
+function scrollFocus() { requestAnimationFrame(() => { const el = document.querySelector('article.ex.focus'); if (el) el.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' }); }); }
+const entryDone = en => en.sets.length > 0 && en.sets.every(x => x.done) && (!en.drop || en.drop.done);
 const untouched = en => !en.sets.some(x => x.done) && !(en.drop && en.drop.done);
 function syncActive(opt) {
-  const a = state.active; if (!a) return false; const day = findDay(a.dayId); let ch = false; const curId = a.entries[story.i] && a.entries[story.i].exId;
+  const a = state.active; if (!a) return false; const day = findDay(a.dayId); let ch = false;
   // bài chính đổi trong giáo án → thay các bài chưa tập (trừ bài đã tự đổi trong buổi)
   a.entries = a.entries.flatMap(en => {
     const so = slotOf(en.exId);
@@ -2614,7 +2555,6 @@ function syncActive(opt) {
     a.entries = a.entries.map((en, k) => ({ en, k })).sort((x, y) => pos(x.en) - pos(y.en) || x.k - y.k).map(x => x.en);
     if (a.entries.map(e => e.exId).join() !== before) ch = true;
   }
-  if (ch) { const k = a.entries.findIndex(e => e.exId === curId); story.i = k >= 0 ? k : Math.min(story.i, a.entries.length - 1); if (!$('#story').hidden) renderStory(); }
   return ch;
 }
 function markCurrent() {
@@ -2658,14 +2598,34 @@ function needsWarm(en, i) {
   return !state.active.entries.slice(0, i).some(o => { const e2 = exOrSnap(o); return o.muscle === en.muscle && e2.warmup; });
 }
 function camInput(exId) { return `<input type="file" accept="image/*" capture="environment" id="cap-${exId}" data-cap="${exId}" hidden>`; }
+/* ảnh lớn của bài đang tập: ảnh máy đã chụp, hoặc hình minh hoạ, hoặc nút chụp */
+function exHero(ex, i, n) {
+  const tag = `<span class="hn">BÀI ${i + 1}/${n}</span>`;
+  if (ex.ghost) return '';
+  const ph = ex.photos || [];
+  if (ph.length) { const k = Math.min(ui.heroPh || 0, ph.length - 1), pid = ph[k];
+    return `<div class="ex-hero"><img class="blur" data-photo="${pid}" alt=""><img class="main" data-photo="${pid}" alt="Ảnh máy tập">
+      ${ph.length > 1 ? `<div class="hnav"><button type="button" data-act="hero-ph" data-d="-1" aria-label="Ảnh trước"></button><button type="button" data-act="hero-ph" data-d="1" aria-label="Ảnh sau"></button></div><div class="hdots">${ph.map((_, j) => `<i class="${j === k ? 'on' : ''}"></i>`).join('')}</div>` : ''}
+      ${tag}<label class="hcam" for="cap-${ex.id}">${ICON.cam} Thêm ảnh</label>${camInput(ex.id)}</div>`; }
+  if (ex.gid) return `<div class="ex-hero ill"><img class="a" data-photo="exdb:${ex.gid}:0" alt="Tư thế bắt đầu"><img class="b" data-photo="exdb:${ex.gid}:1" alt="Tư thế kết thúc">${tag}<label class="hcam" for="cap-${ex.id}">${ICON.cam} Chụp ảnh máy</label>${camInput(ex.id)}</div>`;
+  return `<div class="ex-hero none"><label for="cap-${ex.id}">${ICON.cam} Chụp ảnh máy tập để lần sau dễ tìm máy</label>${camInput(ex.id)}</div>`;
+}
+/* thẻ thu nhỏ: bài đã xong (tóm tắt) hoặc bài chưa tới */
+function entryMini(en, i, ex, done) {
+  const sg = suggest(ex), ph = (ex.photos || [])[0];
+  const img = ph ? `<span class="mi"><img data-photo="${ph}" alt=""></span>` : ex.gid && !ex.ghost ? `<span class="mi ill"><img data-photo="exdb:${ex.gid}:0" alt=""></span>` : `<span class="mi">${i + 1}</span>`;
+  const okSets = en.sets.filter(x => x.done);
+  const sum = done ? `${okSets.length} set · ${okSets.length ? `${fmt(Math.max(...okSets.map(x => x.kg || 0)))}${U(ex)} × ${okSets.map(x => x.reps).join('·')}` : ''}${en.drop && en.drop.done ? ' + drop' : ''}`
+    : `${ex.sets}×${ex.repTarget || 10} · ${sg.kg === 0 ? 'tự trọng' : sg.kg != null ? fmt(sg.kg) + U(ex) : 'chưa có mức tạ'}${okSets.length ? ` · đã xong ${okSets.length}/${en.sets.length} set` : ''}`;
+  return `<article class="ex ${done ? 'done' : 'next'}" data-i="${i}"><button type="button" class="ex-mini" data-act="ex-focus" data-i="${i}">${done ? `<span class="mk">${ICON.check}</span>` : img}
+    <span class="mt"><span class="mn">${esc(ex.name)}</span><span class="ms">${sum}</span></span><span class="mg">${done ? 'Sửa' : 'Mở'} ›</span></button></article>`;
+}
 function entryCard(en, i) {
-  const ex = exOrSnap(en), sg = suggest(ex), last = workHistory(ex)[0];
-  let h = `<article class="ex" data-i="${i}">`;
-  const FS = '<span class="fs"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></span>';
-  const thumb = ex.ghost ? '' : ex.photos.length
-    ? `<button type="button" class="exthumb" data-act="story" data-i="${i}" aria-label="Xem toàn màn hình">${ICON.cam}<img data-photo="${ex.photos[0]}" alt="">${FS}${ex.photos.length > 1 ? `<span class="n">${ex.photos.length}</span>` : ''}</button>`
-    : ex.gid ? `<span class="exthumb ill"><button type="button" class="gi" data-act="guide" data-id="${ex.id}" aria-label="Xem hướng dẫn"><img data-photo="exdb:${ex.gid}:0" alt=""></button><label class="capb" for="cap-${ex.id}" aria-label="Chụp ảnh máy tập">${ICON.cam}</label></span>${camInput(ex.id)}`
-    : `<label class="exthumb empty" for="cap-${ex.id}" aria-label="Chụp ảnh máy tập">${ICON.cam}</label>${camInput(ex.id)}`;
+  const a = state.active, fi = focusIdx(), ex = exOrSnap(en);
+  if (i !== fi) return entryMini(en, i, ex, entryDone(en));
+  const sg = suggest(ex), last = workHistory(ex)[0];
+  let h = `<article class="ex focus" data-i="${i}">${exHero(ex, i, a ? a.entries.length : 1)}`;
+  const thumb = '';
   const tReps = en.sets[0] ? en.sets[0].reps : sg.reps[0];
   h += `<div class="ex-body"><div class="ex-head">${thumb}<div class="mid"><div class="ex-name">${esc(ex.name)}</div><div class="ex-sub">${esc(ex.muscle)} · ${ex.sets}×${ex.repTarget || 10} · nghỉ ${fmtDur(restOf(ex) * 1000)}</div>${ex.ghost ? '' : `<button type="button" class="gbtn" data-act="guide" data-id="${ex.id}">${GUIDE_ICO} Hướng dẫn & nhóm cơ</button>`}</div><span class="badge ${sg.kind}">${sg.label}</span></div>${formCueHtml(ex, en, 'l' + i)}
     <div class="target"><div><div class="tl">Mục tiêu hôm nay</div><div class="tv ${sg.kind === 'up' ? 'up' : ''}">${sg.kg === 0 ? 'Tự trọng' : sg.kg != null ? fmt(sg.kg) + `<small>${U(ex)}</small>` : '—'}<small> × ${tReps ?? '–'}</small></div></div>
@@ -2692,6 +2652,7 @@ function makeEntry(ex) {
 }
 function startSession(dayId, exIds) {
   if (state.active) { ui.tab = 'today'; render(); return; }
+  ui.focusEx = null; ui.heroPh = 0;
   const d = exIds ? null : findDay(dayId);
   const exs = exIds ? exIds.map(findEx).filter(Boolean) : d ? d.exercises : [];
   if (!exs.length) { toast(d ? 'Ngày này chưa có bài tập. Thêm bài trong Giáo án.' : 'Chọn ít nhất một bài'); return; }
@@ -2855,7 +2816,7 @@ function saveSession() {
     drop: en.drop && en.drop.done && en.drop.reps > 0 ? { kg: en.drop.kg ?? 0, reps: en.drop.reps } : null, warm: undefined })).filter(en => en.sets.length || en.drop);
   state.sessions.push(a);
   if (!a.deload) for (const en of a.entries) { const ex = findEx(en.exId); if (ex && en.sets.length) { ex.currentKg = Math.max(...en.sets.map(s => s.kg || 0)); ex.kgSetAt = null; } }
-  state.active = null; $('#story').hidden = true; document.body.classList.remove('storying');
+  state.active = null; ui.focusEx = null;
   if (!state.settings.cycleStart) state.settings.cycleStart = a.date;
   save(); stopRest(); releaseWake(); closeSheet(); render(); toast('Đã lưu buổi tập', { act: 'reopen-session', id: a.id, label: 'Hoàn tác' });
 }
@@ -2879,7 +2840,7 @@ function reopenSession(id) {
   delete state.active.finishedAt;
   ui.tab = 'today'; closeSheet(); save(); render(); toast('Đã mở lại buổi tập · tập tiếp hoặc “+ Thêm bài”');
 }
-function discardSession() { if (!$('#story').hidden) { $('#story').hidden = true; document.body.classList.remove('storying'); } state.active = null; save(); stopRest(); releaseWake(); render(); toast('Đã huỷ buổi tập'); }
+function discardSession() { ui.focusEx = null; state.active = null; save(); stopRest(); releaseWake(); render(); toast('Đã huỷ buổi tập'); }
 
 /* ---------- TAB: GIÁO ÁN ---------- */
 const DAYC = ['#F5C451', '#4F8CFF', '#FF5D73', '#3DDC97', '#B07CFF', '#FF9F43', '#2ED3E6', '#F472B6'];
@@ -4466,6 +4427,7 @@ const handlers = {
   'set-done': t => {
     initAudio();
     const { e, s } = t.dataset; const set = getSet(+e, s); if (!set) return;
+    if (state.active && !ui.focusEx && state.active.entries[+e]) ui.focusEx = state.active.entries[+e].exId; /* giữ bài đang mở, không nhảy ngay */
     set.done = !set.done;
     if (set.done && (!set.reps || set.reps <= 0)) { set.done = false; toast('Nhập số rep trước khi bấm ✓'); return; }
     t.setAttribute('aria-pressed', set.done); const row = $(`#row-${e}-${s}`); row.classList.toggle('done', set.done);
@@ -4473,6 +4435,7 @@ const handlers = {
     markCurrent();
     if (set.done) { const ex = exOrSnap(state.active.entries[+e]); if (s !== 'drop') startRest(restOf(ex), shortName(ex.name)); requestWake(); }
     refreshCue(+e); updateProgress(); save();
+    if (set.done && +e === focusIdx() && entryDone(state.active.entries[+e])) autoNext(+e);
   },
   'add-set': t => { const en = state.active.entries[+t.dataset.e]; const l = en.sets[en.sets.length - 1] || { kg: null, reps: null }; en.sets.push({ kg: l.kg, reps: l.reps, done: false }); save(); render(true); },
   'rm-set': t => { const en = state.active.entries[+t.dataset.e]; if (en.sets.length <= 1) return; const last = en.sets[en.sets.length - 1];
@@ -4500,11 +4463,8 @@ const handlers = {
   'guide-all': async t => { t.disabled = true; let n = 0, ok = 0; const L = allExFull().map(x => x.ex);
     for (const ex of L) { if (ex.gid === undefined) ex.gid = autoGid(ex); if (!ex.gid) continue; n++; t.textContent = `Đang tải ${n}…`; if (await exdbImg(ex.gid, 0) && await exdbImg(ex.gid, 1)) ok++; }
     save(); t.textContent = `Đã tải ${ok}/${n} bài`; toast(ok ? `Đã lưu hình ${ok} bài, dùng được khi không có mạng` : 'Không tải được hình. Kiểm tra mạng.'); render(true); },
-  'story': t => openStory(+t.dataset.i),
-  'story-close': () => closeStory(),
-  'story-go': t => storyGo(+t.dataset.d),
-  'story-ph': t => { const a = state.active; if (!a) return; const ex = exOrSnap(a.entries[story.i]); const n = (ex.photos || []).length; if (n < 2) return; story.ph = (story.ph + +t.dataset.d + n) % n; renderStory(); },
-  'story-finish': () => { closeStory(); handlers.finish(); },
+  'ex-focus': t => { const a = state.active; if (!a) return; const en = a.entries[+t.dataset.i]; if (!en) return; ui.focusEx = en.exId; ui.heroPh = 0; render(true); scrollFocus(); },
+  'hero-ph': t => { const a = state.active; if (!a) return; const ex = exOrSnap(a.entries[focusIdx()]); const n = (ex.photos || []).length; if (n < 2) return; ui.heroPh = ((ui.heroPh || 0) + +t.dataset.d + n) % n; render(true); },
   'view-photo': t => { const ex = findEx(t.dataset.ex); if (!ex || !ex.photos.length) return; viewer.ex = ex; viewer.i = 0; showViewer(); },
   'viewer-close': () => { $('#viewer').hidden = true; $('#viewer').innerHTML = ''; },
   'viewer-nav': t => { const n = viewer.ex.photos.length; viewer.i = (viewer.i + +t.dataset.d + n) % n; showViewer(); },
@@ -4559,7 +4519,7 @@ const handlers = {
     const mk = $('#swap-main') && $('#swap-main').checked && t.dataset.same === '1';
     const old = a.entries[i]; a.entries[i] = { ...makeEntry(x), note: old.note || '', manual: !mk };
     if (mk) { const so = slotOf(x.id); if (so && !so.isMain) swapMain(so.main, x.id); syncActive(); }
-    save(); closeSheet(); render(true); if (!$('#story').hidden) { story.i = Math.max(0, a.entries.findIndex(e => e.exId === x.id)); story.ph = 0; renderStory(true); }
+    ui.focusEx = x.id; save(); closeSheet(); render(true);
     toast(`Đã đổi sang ${shortName(x.name)}${mk ? ' · bài chính mới' : ''}`);
   },
   'add-alt': t => { const main = findEx(t.dataset.id); if (!main) return; const so = slotOf(main.id); ui.nb = {};
@@ -4689,7 +4649,7 @@ const handlers = {
   'pain-ok': t => { const p = (state.pains || []).find(x => x.id === t.dataset.id); if (!p) return; p.resolvedAt = ymd(); save(); render(true); ui.painF = { area: '', level: 1, note: '' };
     if (activePains().length) painSheet(); else closeSheet(); toast(`Hết đau ${p.area.toLowerCase()} · buổi đầu quay lại tập khoảng 80% tạ`); },
   'form-lv': t => { state.settings.formCues = t.dataset.k; save(); render(true); toast('Lưu ý form: ' + FORM_LV[formLv()].label); },
-  'cue-open': t => { ui.cueOpen = t.dataset.k || null; if (!$('#story').hidden) renderStory(); else render(true); },
+  'cue-open': t => { ui.cueOpen = t.dataset.k || null; render(true); },
   'rest-mode': t => { state.settings.restMode = t.dataset.k; save(); render(true); toast('Nhịp nghỉ: ' + restMode().label); },
   'pace': t => { state.settings.pace = t.dataset.k; save(); render(true); },
   'body-add': () => bodySheet(null),
@@ -4810,11 +4770,6 @@ const handlers = {
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if (!t || t.disabled) return;
   const f = handlers[t.dataset.act]; if (f) { e.preventDefault(); f(t, e); }
-  if (!$('#story').hidden && ['set-done', 'step', 'drop-toggle', 'add-set', 'rest-skip'].includes(t.dataset.act)) {
-    renderStory();
-    if (t.dataset.act === 'set-done' && state.active) { const en = state.active.entries[story.i];
-      if (en && en.sets.every(x => x.done) && (!en.drop || en.drop.done || t.dataset.s === 'drop') && story.i < state.active.entries.length - 1) setTimeout(() => { if (!$('#story').hidden) storyGo(1); }, 700); }
-  }
 });
 document.addEventListener('input', e => {
   const t = e.target; const b = t.dataset && t.dataset.bind;
@@ -4870,7 +4825,7 @@ document.addEventListener('change', async e => {
     const ex = findEx(t.dataset.cap); const f = t.files && t.files[0]; if (!ex || !f) return;
     try { const id = await storePhoto(f); ex.photos.unshift(id); save(); toast('Đã lưu ảnh máy tập');
       if (!$('#viewer').hidden) { viewer.ex = ex; viewer.i = 0; showViewer(); }
-      if (ui.tab === 'today') render(true); if (!$('#story').hidden) renderStory(); } catch (err) { toast('Không đọc được ảnh, thử lại'); }
+      if (ui.tab === 'today') render(true); } catch (err) { toast('Không đọc được ảnh, thử lại'); }
     t.value = '';
   }
   if (t.id === 'sync-full') { ui.syncFull = t.checked; return; }
