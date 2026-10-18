@@ -3813,7 +3813,7 @@ async function qrPayload() {
 }
 /* chia dữ liệu thành nhiều mã QR nhỏ: ~320 ký tự/mã, mức sửa lỗi L để mã thưa, camera đọc được từ xa */
 const QR_CHUNK = 320;
-function qrChunks(prefix, body) { const n = Math.max(1, Math.ceil(body.length / QR_CHUNK)), id = Math.random().toString(36).slice(2, 6); return Array.from({ length: n }, (_, i) => `${prefix}.${id}.${i + 1}.${n}.${body.slice(i * QR_CHUNK, (i + 1) * QR_CHUNK)}`); }
+function qrChunks(prefix, body, size) { const C = size || QR_CHUNK, n = Math.max(1, Math.ceil(body.length / C)), id = Math.random().toString(36).slice(2, 6); return Array.from({ length: n }, (_, i) => `${prefix}.${id}.${i + 1}.${n}.${body.slice(i * C, (i + 1) * C)}`); }
 function drawQR(canvas, text) {
   const q = qrcode(0, 'L'); q.addData(text); q.make(); const n = q.getModuleCount(), sc = 6, pad = 4, W = (n + pad * 2) * sc;
   canvas.width = canvas.height = W; const g = canvas.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, W, W); g.fillStyle = '#000';
@@ -3832,6 +3832,9 @@ async function syncQrReceive(body) {
   try { let bytes = unb64u(body.slice(1)); if (body[0] === 'z') bytes = await pipeBytes(bytes, new DecompressionStream('deflate-raw')); await syncReceive(JSON.parse(new TextDecoder().decode(bytes))); }
   catch (e) { toast('Mã QR không đọc được, thử quét lại'); }
 }
+async function syncQrReceive2(body) {
+  try { await syncReceive(syncExpand(await inflateB64(body))); } catch (e) { toast('Mã QR không đọc được, thử quét lại'); }
+}
 async function qrScanSheet(mode) {
   openSheet((mode === 'sync' ? `<h3 class="sh-title">Quét mã máy kia</h3><p class="sh-text">Máy kia mở <b>Đồng bộ → Hiện mã QR</b>. Đưa camera vào mã đó.</p>`
     : `<h3 class="sh-title">Quét mã</h3><p class="sh-text">Đưa camera vào mã QR trên máy kia: mã giáo án hoặc mã đồng bộ đều được.</p>`) + `
@@ -3848,9 +3851,9 @@ async function qrScanSheet(mode) {
         const vw = v.videoWidth, vh = v.videoHeight, side = Math.round(Math.min(vw, vh) * 0.85), sx = (vw - side) / 2, sy = (vh - side) / 2;
         pass = !pass; const w = Math.min(side, pass ? 960 : 480), h = w; cv.width = w; cv.height = h; g.drawImage(v, sx, sy, side, side, 0, 0, w, h);
         const r = jsQR(g.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' });
-        if (r && /^GA[QSP]1\./.test(r.data)) { const [kind, id, i, n, body] = r.data.split('.'); if (id !== msg) { kindIn = kind; msg = id; for (const k in got) delete got[k]; need = +n; } got[i] = body;
+        if (r && /^GA[QSP][12]\./.test(r.data)) { const [kind, id, i, n, body] = r.data.split('.'); if (id !== msg) { kindIn = kind; msg = id; for (const k in got) delete got[k]; need = +n; } got[i] = body;
           const have = Object.keys(got).length; $('#qr-st').textContent = need > 1 ? `Đã nhận ${have}/${need} trang…` : 'Đã nhận';
-          if (have >= need) { const body2 = Array.from({ length: need }, (_, k) => got[k + 1]).join(''); qrStop(); if (kindIn === 'GAS1') syncQrReceive(body2); else if (kindIn === 'GAP1') planPreviewSheet(body2); else qrReceive(body2); return; } } }
+          if (have >= need) { const body2 = Array.from({ length: need }, (_, k) => got[k + 1]).join(''); qrStop(); if (kindIn === 'GAS2') syncQrReceive2(body2); else if (kindIn === 'GAS1') syncQrReceive(body2); else if (/^GAP/.test(kindIn)) planPreviewSheet(body2); else qrReceive(body2); return; } } }
       ui.qrRaf = setTimeout(tick, 90);
     };
     $('#qr-st').textContent = 'Giữ mã QR trong khung, cách khoảng 20–30 cm'; tick();
@@ -3969,10 +3972,10 @@ async function encodePlan(days, kgMap, meta) {
   return 'SOTA1.' + b64u(bytes);
 }
 async function decodePlan(text) {
-  const m = String(text).match(/SOTA1z?\.[A-Za-z0-9_-]+/); if (!m) throw new Error('Không tìm thấy mã giáo án trong nội dung đã dán.');
+  const m = String(text).match(/SOTA[12]z?\.[A-Za-z0-9_-]+/); if (!m) throw new Error('Không tìm thấy mã giáo án.');
   const [p, body] = m[0].split('.'); let bytes = unb64u(body);
-  if (p === 'SOTA1z') { if (!('DecompressionStream' in window)) throw new Error('Trình duyệt này quá cũ để đọc mã. Hãy cập nhật trình duyệt.'); bytes = await pipeBytes(bytes, new DecompressionStream('deflate-raw')); }
-  const data = JSON.parse(new TextDecoder().decode(bytes));
+  if (p === 'SOTA1z' || p === 'SOTA2z') { if (!('DecompressionStream' in window)) throw new Error('Trình duyệt này quá cũ để đọc mã. Hãy cập nhật trình duyệt.'); bytes = await pipeBytes(bytes, new DecompressionStream('deflate-raw')); }
+  let data = JSON.parse(new TextDecoder().decode(bytes)); if (p.startsWith('SOTA2')) data = plan2ToV2(data);
   const clamp = (v, a, b, def) => { v = Number(v); return isFinite(v) ? Math.min(b, Math.max(a, v)) : def; };
   const dec = x => {
     const type = TYPES[x.t] ? x.t : 'upper'; const repMin = clamp(x.a, 1, 50, 8); const repMax = Math.max(repMin, clamp(x.b, 1, 50, 12));
@@ -3984,14 +3987,13 @@ async function decodePlan(text) {
 /* gửi giáo án bằng mã QR: máy kia quét trực tiếp, hoặc lưu ảnh mã vào Ảnh để gửi đi bằng bất cứ cách nào */
 async function planQrSheet() {
   if (!state.days.length) { toast('Chưa có giáo án để gửi'); return; }
-  const code = await encodePlan(state.days), parts = qrChunks('GAP1', code), n = parts.length;
+  const code = await encodePlan2(state.days), one = 'GAP2.' + Math.random().toString(36).slice(2, 6) + '.1.1.' + code, parts = one.length <= QR_MAX ? [one] : qrChunks('GAP2', code, QR_MAX - 40), n = parts.length;
   ui.planCode = code; clearInterval(ui.qrT);
-  openSheet(`<h3 class="sh-title">Gửi giáo án</h3><p class="sh-text">${state.days.length} ngày tập · ${state.days.reduce((a, d) => a + d.exercises.length, 0)} bài. Người nhận mở app → <b>Quét mã</b> rồi đưa camera vào đây.${n > 1 ? ' Mã tự đổi trang, giữ yên đến khi máy kia báo xong.' : ''} Mức tạ, lịch sử và ảnh của bạn không được gửi đi.</p>
+  openSheet(`<h3 class="sh-title">Gửi giáo án</h3><p class="sh-text">${state.days.length} ngày tập · ${state.days.reduce((a, d) => a + d.exercises.length, 0)} bài. Người nhận mở app → <b>Quét mã</b>, đưa camera lại gần để mã chiếm gần hết khung.${n > 1 ? ` Giáo án dài nên chia ${n} mã, quét xong mã này thì bấm nút để hiện mã tiếp theo.` : ''} Mức tạ, lịch sử và ảnh của bạn không được gửi đi.</p>
     <div class="qrbox"><canvas id="qr-c"></canvas><span class="pg" id="qr-pg"></span></div>
     <p class="small muted" style="margin:10px 0 0">Ở xa: bấm <b>Lưu ảnh mã vào Ảnh</b>, gửi tấm ảnh đó cho người nhận. Họ mở app → Quét mã → <b>Chọn từ Ảnh</b>.</p>
-    <div class="sh-actions"><button class="btn gold" data-act="plan-img">Lưu ảnh mã vào Ảnh</button><button class="btn ghost" data-act="qr-close">Đóng</button></div>`);
-  let i = 0; const show = () => { const c = $('#qr-c'); if (!c) { clearInterval(ui.qrT); return; } drawQR(c, parts[i]); $('#qr-pg').textContent = n > 1 ? `Trang ${i + 1}/${n}` : ''; i = (i + 1) % n; };
-  show(); if (n > 1) ui.qrT = setInterval(show, 900);
+    <div class="sh-actions">${n > 1 ? '<button class="btn gold" id="qr-next">…</button>' : ''}<button class="btn ${n > 1 ? '' : 'gold'}" data-act="plan-img">Lưu ảnh mã vào Ảnh</button><button class="btn ghost" data-act="qr-close">Đóng</button></div>`);
+  qrStatic(parts, 'qr-close', 'Xong');
 }
 /* giáo án nhận được (từ camera, ảnh, hoặc link cũ): xem trước rồi chọn Cập nhật / Thêm */
 async function planPreviewSheet(code) {
@@ -4006,23 +4008,23 @@ async function planPreviewSheet(code) {
    Chỉ đụng tới đúng một hồ sơ. Buổi tập cộng dồn theo mã, mức tạ theo buổi mới nhất,
    cấu trúc giáo án theo HLV, ảnh cộng dồn, xoá có ghi dấu để máy kia xoá theo. */
 const SYNC_STRUCT = ['name', 'muscle', 'zone', 'type', 'sets', 'repTarget', 'repMin', 'repMax', 'dropSet', 'step', 'rest', 'restV', 'setup', 'each', 'warmup', 'targetKg'];
-const exIdsOf = ex => [ex.id, ex.srcId, ...(ex.alias || [])].filter(Boolean);
 const sRev = s => s.finishedAt || s.startedAt || 0;
 function strHash(s) { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(36) + '.' + s.length.toString(36); }
 const photoHashCache = new Map();
 async function photoHash(id) { if (photoHashCache.has(id)) return photoHashCache.get(id); const v = await DB.get('photos', id); const h = v ? strHash(v) : null; if (h) photoHashCache.set(id, h); return h; }
 const okPhoto = v => typeof v === 'string' && v.length < 1500000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v);
 const syncRole = () => coach() ? 'coach' : 'student';
-function syncDelOf(st) { if (!st.syncDel || typeof st.syncDel !== 'object') st.syncDel = { s: {}, e: {} }; st.syncDel.s = st.syncDel.s || {}; st.syncDel.e = st.syncDel.e || {}; return st.syncDel; }
+function syncDelOf(st) { if (!st.syncDel || typeof st.syncDel !== 'object') st.syncDel = { s: {}, e: {} }; st.syncDel.s = st.syncDel.s || {};
+  const e = {}; for (const [k, t] of Object.entries(st.syncDel.e || {})) e[shKey(k)] = Math.max(e[shKey(k)] || 0, t); st.syncDel.e = e; return st.syncDel; }
 function pruneDel(D) { const lim = Date.now() - 180 * 864e5; for (const k of ['s', 'e']) for (const id in D[k]) if (D[k][id] < lim) delete D[k][id]; return D; }
 /* ghi dấu xoá: gọi ở nút xoá buổi / xoá bài / xoá ngày */
 function markDelSession(id) { syncDelOf(state).s[id] = Date.now(); }
-function markDelEx(ex) { if (!ex) return; const D = syncDelOf(state); for (const k of exIdsOf(ex)) D.e[k] = Date.now(); }
+function markDelEx(ex) { if (!ex) return; const D = syncDelOf(state); for (const k of exKeys(ex)) D.e[k] = Date.now(); }
 
 /* ---- đóng gói ---- */
 async function syncStateOf(pid) { const raw = await profState(pid); return pid === profiles.active ? state : (normState(raw) || null); }
 async function serEx(ex, withPhotos, photos) {
-  const o = { i: exIdsOf(ex) };
+  const o = { i: [canonKey(ex)] };
   for (const k of SYNC_STRUCT) if (ex[k] !== undefined) o[k] = ex[k];
   if (ex.currentKg != null) o.currentKg = ex.currentKg; if (ex.kgSetAt) o.kgSetAt = ex.kgSetAt;
   if (ex.fromStudent || (syncRole() === 'student' && !ex.srcId)) o.fs = 1; /* bài học viên tự thêm */
@@ -4042,7 +4044,7 @@ async function serPlan(st, withPhotos, photos) {
 function serSession(st, s) {
   const find = id => { for (const d of st.days || []) for (const e of d.exercises) { if (e.id === id) return e; for (const a of e.alts || []) if (a.id === id) return a; } return null; };
   const { dayId, ...rest } = clone(s);
-  rest.entries = (s.entries || []).map(en => { const ex = find(en.exId); const { exId, ...r } = clone(en); r.k = ex ? exIdsOf(ex) : [en.exId]; return r; });
+  rest.entries = (s.entries || []).map(en => { const ex = find(en.exId); const { exId, ...r } = clone(en); r.k = ex ? [canonKey(ex)] : [shKey(en.exId)]; return r; });
   return rest;
 }
 /* full: gửi lại toàn bộ; withPhotos: gói file kèm ảnh */
@@ -4083,7 +4085,7 @@ function cleanPkg(raw) {
     paused: cNum(s.paused, 0, 9e9, 0), dayName: cStr(s.dayName || 'Buổi tập', 40), deload: !!s.deload, focus: cStr(s.focus, 60), reopened: cNum(s.reopened, 0, 99, 0), ...(s.est != null ? { est: cNum(s.est, 0, 600, 0) } : {}),
     entries: (Array.isArray(s.entries) ? s.entries : []).slice(0, 60).map(en => ({ k: (Array.isArray(en.k) ? en.k : []).map(v => cStr(v, 40)).filter(Boolean).slice(0, 12), name: cStr(en.name || 'Bài tập', 80), muscle: MUSCLES.includes(en.muscle) ? en.muscle : 'Khác',
       note: cStr(en.note, 300), each: !!en.each, sets: sets(en.sets), drop: en.drop ? { kg: cNum(en.drop.kg, 0, 1000, 0), reps: cNum(en.drop.reps, 0, 500, 0) } : null })) })).filter(s => s.id);
-  const del = { s: {}, e: {} }; for (const k of ['s', 'e']) for (const [id, t] of Object.entries((raw.del || {})[k] || {}).slice(0, 5000)) del[k][cStr(id, 40)] = cNum(t, 0, 9e15, 0);
+  const del = { s: {}, e: {} }; for (const k of ['s', 'e']) for (const [id, t] of Object.entries((raw.del || {})[k] || {}).slice(0, 5000)) { const key = k === 'e' ? shKey(cStr(id, 40)) : cStr(id, 40); del[k][key] = cNum(t, 0, 9e15, 0); }
   const photos = {}; for (const [h, v] of Object.entries(raw.photos || {}).slice(0, 300)) if (okPhoto(v)) photos[cStr(h, 30)] = v;
   return { role: raw.role, link: { pk: cStr((raw.link || {}).pk, 40), cn: cStr((raw.link || {}).cn, 40) }, name: cStr(raw.name || 'Người tập', 30), at: cNum(raw.at, 0, 9e15, 0),
     plan: Array.isArray(raw.plan) ? raw.plan.slice(0, 20).map(d => ({ n: cStr(d.n || 'Ngày tập', 40), e: (Array.isArray(d.e) ? d.e : []).slice(0, 40).map(cleanEx) })) : null, sessions: sess, del, photos };
@@ -4100,13 +4102,13 @@ async function syncMerge(L0, P, choices) {
     for (const h of ph) { if (have.has(h)) continue; const v = P.photos[h]; if (!v) { R.photosMissing++; continue; } const nid = uid(); newPhotos.push([nid, v, h]); localHashes.set(nid, h); ex.photos = [...(ex.photos || []), nid]; have.add(h); n++; }
     R.photos += n; return n; };
   const allLocal = () => L.days.flatMap(d => d.exercises.flatMap(e => [{ ex: e, d }, ...(e.alts || []).map(a => ({ ex: a, d, alt: true }))]));
-  const matchIn = (list, pe, used) => { const ids = new Set(pe.i); let m = list.find(x => !used.has(x.ex) && exIdsOf(x.ex).some(k => ids.has(k)));
-    if (!m) { const nm = pe.name.toLowerCase(); m = list.find(x => !used.has(x.ex) && x.ex.name.toLowerCase() === nm); if (m && pe.i[0]) m.ex.alias = [...new Set([...(m.ex.alias || []), pe.i[0]])].slice(-8); }
+  const matchIn = (list, pe, used) => { const ids = new Set(pe.i.map(shKey)); let m = list.find(x => !used.has(x.ex) && [...exKeys(x.ex)].some(k => ids.has(k)));
+    if (!m) { const nm = pe.name.toLowerCase(); m = list.find(x => !used.has(x.ex) && x.ex.name.toLowerCase() === nm); if (m && pe.i[0]) m.ex.alias = [...new Set([...(m.ex.alias || []), shKey(pe.i[0])])].slice(-8); }
     return m || null; };
   const kgFrom = (ex, pe) => { if (pe.kgSetAt && (!ex.kgSetAt || pe.kgSetAt > ex.kgSetAt)) { if (ex.currentKg !== pe.currentKg) R.kg++; ex.currentKg = pe.currentKg; ex.kgSetAt = pe.kgSetAt; } };
   const struct = (ex, pe) => { let ch = false; for (const k of SYNC_STRUCT) if (pe[k] !== undefined && JSON.stringify(ex[k]) !== JSON.stringify(pe[k])) { ex[k] = pe[k]; ch = true; } return ch; };
-  const fresh = (pe, extra) => { const ex = migrateEx({ id: uid(), srcId: pe.i[0], photos: [], currentKg: null, kgSetAt: null }); struct(ex, pe); kgFrom(ex, pe); addPhotos(ex, pe.ph); if (extra) ex.fromStudent = true; R.newEx++; return ex; };
-  const delHit = pe => pe.i.some(k => D.e[k]);
+  const fresh = (pe, extra) => { const ex = migrateEx({ id: uid(), srcId: pe.i[0] ? shKey(pe.i[0]) : undefined, photos: [], currentKg: null, kgSetAt: null }); struct(ex, pe); kgFrom(ex, pe); addPhotos(ex, pe.ph); if (extra) ex.fromStudent = true; R.newEx++; return ex; };
+  const delHit = pe => pe.i.some(k => D.e[shKey(k)]);
 
   if (P.plan) {
     const pool = allLocal(), used = new Set();
@@ -4120,7 +4122,7 @@ async function syncMerge(L0, P, choices) {
         const ex = fresh(x, true); ex.alts = []; ex.slot = pe.o; ex.mainSince = pe.ms || ymd(); day.exercises.push(ex); pool.push({ ex, d: day }); used.add(ex);
       }
       /* học viên đã xoá bài do chính họ thêm */
-      for (const d of L.days) { const before = d.exercises.length; d.exercises = d.exercises.filter(e => !(e.fromStudent && exIdsOf(e).some(k => P.del.e[k]))); R.dropEx += before - d.exercises.length; }
+      for (const d of L.days) { const before = d.exercises.length; d.exercises = d.exercises.filter(e => !(e.fromStudent && [...exKeys(e)].some(k => P.del.e[k]))); R.dropEx += before - d.exercises.length; }
     } else {
       /* máy học viên: dựng lại giáo án theo HLV, giữ mã bài cũ để lịch sử không mất */
       const linked = !L.coachLink || !L.coachLink.pk || !P.link.pk || L.coachLink.pk === P.link.pk;
@@ -4129,7 +4131,7 @@ async function syncMerge(L0, P, choices) {
         const ld = L.days.find(d => d.name === pd.n && !days.some(x => x.id === d.id)), day = { ...(ld || {}), id: ld ? ld.id : uid(), name: pd.n, exercises: [] };
         for (const pe of pd.e) {
           if (pe.fs && delHit(pe)) continue; /* học viên đã xoá bài do chính họ thêm */
-          const take = x => { const m = matchIn(pool, x, used); if (m) { used.add(m.ex); const ex = { ...m.ex }; delete ex.alts; delete ex.slot; delete ex.mainSince; if (!ex.srcId && x.i[0]) ex.srcId = x.i[0]; if (struct(ex, x)) R.updEx++; kgFrom(ex, x); addPhotos(ex, x.ph); if (x.fs) ex.fromStudent = true; return ex; } return fresh(x, x.fs); };
+          const take = x => { const m = matchIn(pool, x, used); if (m) { used.add(m.ex); const ex = { ...m.ex }; delete ex.alts; delete ex.slot; delete ex.mainSince; if (!ex.srcId && x.i[0]) ex.srcId = shKey(x.i[0]); if (struct(ex, x)) R.updEx++; kgFrom(ex, x); addPhotos(ex, x.ph); if (x.fs) ex.fromStudent = true; return ex; } return fresh(x, x.fs); };
           const main = take(pe); main.alts = pe.l.map(a => { const z = take(a); delete z.alts; return z; }); main.slot = pe.o; main.mainSince = pe.ms || main.mainSince || ymd();
           day.exercises.push(main);
         }
@@ -4139,7 +4141,7 @@ async function syncMerge(L0, P, choices) {
       for (const { ex, d, alt } of pool) {
         if (used.has(ex)) continue;
         const fromCoach = !!ex.srcId && !ex.fromStudent && linked;
-        if (fromCoach || exIdsOf(ex).some(k => P.del.e[k])) { R.dropEx++; continue; }
+        if (fromCoach || [...exKeys(ex)].some(k => P.del.e[k])) { R.dropEx++; continue; }
         if (alt) continue;
         let day = days.find(x => x.name === d.name); if (!day) { day = { ...d, exercises: [] }; days.push(day); }
         day.exercises.push(ex);
@@ -4150,7 +4152,7 @@ async function syncMerge(L0, P, choices) {
 
   /* buổi tập */
   const all = allLocal(), dayByName = n => (L.days.find(d => d.name === n) || {}).id || 'sync';
-  const mapEx = en => { const ids = new Set(en.k); let m = all.find(x => exIdsOf(x.ex).some(k => ids.has(k))); if (!m) { const nm = en.name.toLowerCase(); m = all.find(x => x.ex.name.toLowerCase() === nm); } return m ? m.ex.id : (en.k[0] || 'sync:' + en.name); };
+  const mapEx = en => { const ids = new Set(en.k.map(shKey)); let m = all.find(x => [...exKeys(x.ex)].some(k => ids.has(k))); if (!m) { const nm = en.name.toLowerCase(); m = all.find(x => x.ex.name.toLowerCase() === nm); } return m ? m.ex.id : (en.k[0] || 'sync:' + en.name); };
   const toLocal = ps => ({ ...ps, dayId: dayByName(ps.dayName), entries: ps.entries.map(en => { const { k, ...r } = en; return { ...r, exId: mapEx(en) }; }) });
   const inIds = new Set(P.sessions.map(s => s.id));
   for (const ps of P.sessions) {
@@ -4170,7 +4172,8 @@ async function syncMerge(L0, P, choices) {
   L.sessions.sort((a, b) => a.startedAt - b.startedAt);
 
   /* mức tạ theo buổi mới nhất (bỏ buổi deload), trừ khi có mức tạ tự nhập mới hơn */
-  if (R.newS || R.updS) for (const { ex } of allLocal()) {
+  const touched = new Set(L.sessions.filter(s => inIds.has(s.id)).flatMap(s => s.entries.map(en => en.exId)));
+  if (R.newS || R.updS) for (const { ex } of allLocal()) { if (!touched.has(ex.id)) continue;
     let last = null; for (const s of L.sessions) { if (s.deload) continue; const en = s.entries.find(e => e.exId === ex.id); if (en && en.sets.some(z => z.reps > 0) && (!last || s.startedAt > last.t)) last = { t: s.startedAt, kg: Math.max(0, ...en.sets.map(z => z.kg || 0)) }; }
     if (last && (!ex.kgSetAt || ex.kgSetAt < last.t) && ex.currentKg !== last.kg) { ex.currentKg = last.kg; ex.kgSetAt = null; R.kg++; }
   }
@@ -4197,18 +4200,23 @@ async function syncSheet(pid) {
     <p class="small muted" style="margin:10px 0 0">${syncAgo(st)}</p>
     <div class="sh-actions"><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`);
 }
+/* hiện mã đứng yên; nếu có nhiều mã thì bấm Mã tiếp theo (không tự lật) */
+function qrStatic(parts, doneAct, doneLabel) {
+  ui.qrParts = parts; ui.qrPage = 0; ui.qrDone = [doneAct, doneLabel]; qrStaticShow();
+}
+function qrStaticShow() {
+  const P = ui.qrParts || [], i = ui.qrPage || 0, n = P.length, c = $('#qr-c'); if (!c || !n) return;
+  drawQR(c, P[i]); $('#qr-pg').textContent = n > 1 ? `Mã ${i + 1}/${n}` : '';
+  const btn = $('#qr-next'); if (btn) { const last = i >= n - 1; btn.dataset.act = last ? ui.qrDone[0] : 'qr-next'; btn.textContent = last ? ui.qrDone[1] : `Máy kia đã quét · mã tiếp theo (${i + 2}/${n})`; }
+}
 async function syncQrSheet() {
-  const pid = ui.syncPid || profiles.active, { pkg, mark } = await syncPack(pid, { full: !!ui.syncFull });
-  const bytes = new TextEncoder().encode(JSON.stringify(pkg));
-  let body = 'p' + b64u(bytes); if ('CompressionStream' in window) { try { body = 'z' + b64u(await pipeBytes(bytes, new CompressionStream('deflate-raw'))); } catch (e) {} }
-  const parts = qrChunks('GAS1', body), n = parts.length;
-  ui.syncOut = { pid, mark }; clearInterval(ui.qrT);
-  const nP = pkg.plan ? pkg.plan.reduce((a, d) => a + d.e.length, 0) : 0;
-  openSheet(`<h3 class="sh-title">Mã đồng bộ</h3><p class="sh-text">${pkg.sessions.length} buổi tập${pkg.plan ? ` · giáo án ${nP} bài` : ' · giáo án không đổi'}. Máy kia mở <b>Đồng bộ → Quét mã máy kia</b> rồi đưa camera vào đây.${n > 1 ? ' Mã tự đổi trang, giữ yên đến khi máy kia báo xong.' : ''}</p>
+  const pid = ui.syncPid || profiles.active, Q = await syncPackQR(pid, { full: !!ui.syncFull }), n = Q.parts.length;
+  ui.syncOut = { pid, mark: Q.mark, left: Q.left }; clearInterval(ui.qrT);
+  openSheet(`<h3 class="sh-title">Mã đồng bộ</h3><p class="sh-text">${n > 1 ? 'Lượt này gửi <b>giáo án</b>' : `${Q.sent ? Q.sent + ' buổi tập' : 'Không có buổi tập mới'}${Q.pkg.plan ? ' · kèm giáo án' : ''}`}${Q.left ? ` · <b>còn ${Q.left} buổi gửi ở mã sau</b>` : ''}. Máy kia mở <b>Đồng bộ → Quét mã máy kia</b>, đưa camera lại gần để mã chiếm gần hết khung.</p>
+    ${n > 1 ? `<p class="note-line">Giáo án dài nên chia ${n} mã. Máy kia quét xong mã này thì bấm nút bên dưới để hiện mã tiếp theo.</p>` : ''}
     <div class="qrbox"><canvas id="qr-c"></canvas><span class="pg" id="qr-pg"></span></div>
-    <div class="sh-actions"><button class="btn gold big" data-act="sync-qr-done">Máy kia đã nhận xong</button><button class="btn ghost" data-act="qr-close">Để sau</button></div>`);
-  let i = 0; const show = () => { const c = $('#qr-c'); if (!c) { clearInterval(ui.qrT); return; } drawQR(c, parts[i]); $('#qr-pg').textContent = n > 1 ? `Trang ${i + 1}/${n}` : ''; i = (i + 1) % n; };
-  show(); if (n > 1) ui.qrT = setInterval(show, 900);
+    <div class="sh-actions"><button class="btn gold big" id="qr-next">…</button><button class="btn ghost" data-act="qr-close">Để sau</button></div>`);
+  qrStatic(Q.parts, 'sync-qr-done', `Máy kia đã nhận xong${Q.left ? ' · gửi tiếp' : ''}`);
 }
 /* nhận gói: từ QR hoặc file */
 async function syncReceive(raw) {
@@ -4318,7 +4326,7 @@ async function decodeQrImage(file) {
 /* ghép các trang mã: PREFIX.id.i.n.phần */
 function joinQrParts(texts) {
   const groups = {};
-  for (const t of texts) { const m = /^(GA[QSP]1)\.([a-z0-9]+)\.(\d+)\.(\d+)\.(.*)$/.exec(t); if (!m) continue; const k = m[1] + '.' + m[2]; (groups[k] = groups[k] || { kind: m[1], n: +m[4], got: {} }).got[m[3]] = m[5]; }
+  for (const t of texts) { const m = /^(GA[QSP][12])\.([a-z0-9]+)\.(\d+)\.(\d+)\.(.*)$/.exec(t); if (!m) continue; const k = m[1] + '.' + m[2]; (groups[k] = groups[k] || { kind: m[1], n: +m[4], got: {} }).got[m[3]] = m[5]; }
   const G = Object.values(groups).sort((a, b) => Object.keys(b.got).length - Object.keys(a.got).length)[0]; if (!G) return { ok: false, kind: null, missing: [] };
   const missing = []; for (let i = 1; i <= G.n; i++) if (G.got[i] == null) missing.push(i);
   return { ok: !missing.length, kind: G.kind, n: G.n, missing, body: missing.length ? '' : Array.from({ length: G.n }, (_, i) => G.got[i + 1]).join('') };
@@ -4341,8 +4349,8 @@ async function planImageSend(pid) {
   toast('Đang tạo ảnh mã…');
   let code;
   if (co) { const kgMap = withState(st, () => Object.fromEntries(allExFull().map(x => [x.ex.id, baseKg(x.ex)]))); code = await encodePlan(st.days, ui.shareKg !== false ? kgMap : null, { pk: pid, cn: coach().name }); }
-  else code = await encodePlan(st.days);
-  const nEx = st.days.reduce((a, d) => a + d.exercises.length, 0), parts = imgChunks('GAP1', code);
+  else code = await encodePlan2(st.days);
+  const nEx = st.days.reduce((a, d) => a + d.exercises.length, 0), one = 'GAP2.' + Math.random().toString(36).slice(2, 6) + '.1.1.' + code, parts = one.length <= QR_MAX ? [one] : qrChunks('GAP2', code, QR_MAX - 40);
   const blob = await qrImage({ title: co ? `Giáo án cho ${p.name}` : `Giáo án của ${p.name}`, sub: `${st.days.length} ngày tập · ${nEx} bài${co ? ' · HLV ' + coach().name : ''}`,
     how: 'Mở app Giáo Án Địa Ngục → Quét mã → Chọn từ Ảnh, rồi chọn ảnh này.', parts });
   await shareImage(blob, `giao-an-${slugName(p.name)}.png`, co ? null : null);
@@ -4350,12 +4358,12 @@ async function planImageSend(pid) {
 async function syncImageSend() {
   const pid = ui.syncPid || profiles.active, p = profiles.list.find(x => x.id === pid) || curProf();
   toast('Đang tạo ảnh mã…');
-  const { pkg, mark } = await syncPack(pid, { full: !!ui.syncFull }), bytes = new TextEncoder().encode(JSON.stringify(pkg));
-  let body = 'p' + b64u(bytes); if ('CompressionStream' in window) { try { body = 'z' + b64u(await pipeBytes(bytes, new CompressionStream('deflate-raw'))); } catch (e) {} }
-  const blob = await qrImage({ title: `Đồng bộ · ${p.name}`, sub: `${pkg.sessions.length} buổi tập${pkg.plan ? ' · kèm giáo án' : ''} · không kèm ảnh máy`,
-    how: 'Mở app Giáo Án Địa Ngục → Đồng bộ → Chọn từ Ảnh, rồi chọn ảnh này.', parts: imgChunks('GAS1', body) });
-  await syncMarkSent(pid, mark);
+  const Q = await syncPackQR(pid, { full: !!ui.syncFull }), parts = Q.parts;
+  const blob = await qrImage({ title: `Đồng bộ · ${p.name}`, sub: `${parts.length > 1 ? 'Giáo án' : Q.sent + ' buổi tập' + (Q.pkg.plan ? ' · kèm giáo án' : '')}${Q.left ? ` · còn ${Q.left} buổi ở ảnh sau` : ''}`,
+    how: 'Mở app Giáo Án Địa Ngục → Đồng bộ → Chọn từ Ảnh, rồi chọn ảnh này.', parts });
+  await syncMarkSent(pid, Q.mark);
   await shareImage(blob, `dong-bo-${slugName(p.name)}-${ymd()}.png`);
+  if (Q.left) toast(`Còn ${Q.left} buổi cũ: bấm Lưu ảnh mã thêm lần nữa để gửi tiếp`);
 }
 const slugName = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^A-Za-z0-9]+/g, '-').toLowerCase() || 'hoc-vien';
 /* nhận ảnh mã ở mục Nhập giáo án hoặc Đồng bộ */
@@ -4365,7 +4373,8 @@ async function receiveQrImage(files) {
   const J = joinQrParts(texts);
   if (!J.kind) { toast('Không tìm thấy mã QR trong ảnh đã chọn'); return; }
   if (!J.ok) { toast(`Còn thiếu trang ${J.missing.slice(0, 8).join(', ')}${J.missing.length > 8 ? '…' : ''} trên tổng ${J.n}. Chụp thêm các trang đó rồi chọn lại tất cả ảnh.`); return; }
-  if (J.kind === 'GAP1') { await planPreviewSheet(J.body); return; }
+  if (/^GAP/.test(J.kind)) { await planPreviewSheet(J.body); return; }
+  if (J.kind === 'GAS2') { await syncQrReceive2(J.body); return; }
   if (J.kind === 'GAS1') { await syncQrReceive(J.body); return; }
   await qrReceive(J.body);
 }
@@ -4407,6 +4416,86 @@ async function restoreOneApply(pid, isNew) {
   ui.restoreOne = null; ui.coachData = null; closeSheet(); render(true);
   const p = profiles.list.find(x => x.id === pid); toast(isNew ? `Đã thêm hồ sơ ${p ? p.name : ''}` : `Đã thay dữ liệu của ${p ? p.name : 'hồ sơ'}`, isNew ? null : { act: 'sync-undo', label: 'Hoàn tác' });
 }
+/* ===== Đóng gói gọn: mỗi lần gửi chỉ 1 mã QR đứng yên =====
+   Tên bài trong thư viện thay bằng mã ngắn, chỉ ghi thông số khác mặc định, khoá nhận diện bài rút còn 6 ký tự. */
+const QR_MAX = 900;
+function fnv(s) { let h = 0x811c9dc5; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(36); }
+/* khoá nhận diện bài dùng chung giữa các máy: '~' + 5 ký tự băm của mã bài */
+const shKey = id => { id = String(id || ''); return !id ? '' : id[0] === '~' ? id : '~' + fnv(id).padStart(5, '0').slice(-5); };
+const exKeys = ex => new Set([ex.id, ex.srcId, ...(ex.alias || [])].filter(Boolean).map(shKey));
+const canonKey = ex => shKey(ex.srcId || ex.id);
+const LIBH = (() => { const m = new Map(), dup = new Set(); for (const [n] of LIB) { const h = fnv(n).slice(-4); if (m.has(h)) dup.add(h); m.set(h, n); } dup.forEach(h => m.delete(h)); return m; })();
+const libRef = name => { const h = fnv(name).slice(-4); return LIBH.get(h) === name ? h : null; };
+const libName = ref => typeof ref === 'string' && ref[0] === '#' ? LIBH.get(ref.slice(1)) || null : null;
+const CEX = [['s', 'sets'], ['g', 'repTarget'], ['a', 'repMin'], ['b', 'repMax'], ['k', 'step'], ['r', 'rest'], ['t', 'type'], ['m', 'muscle'], ['z', 'zone']];
+function cExEnc(x, sync) {
+  const d = newEx(x.name), lr = libRef(x.name), o = { n: lr ? '#' + lr : x.name };
+  for (const [k, f] of CEX) if (x[f] != null && x[f] !== d[f]) o[k] = x[f];
+  if (x.dropSet) o.d = 1; if (!!x.each !== !!d.each) o.h = x.each ? 1 : 0; if (x.warmup != null && !!x.warmup !== !!d.warmup) o.w = x.warmup ? 1 : 0;
+  if (x.setup) o.u = x.setup; if (x.targetKg != null) o.x = x.targetKg;
+  if (sync) { o.i = canonKey(x); if (x.kgSetAt && x.currentKg != null) { o.c = x.currentKg; o.e = Math.round(x.kgSetAt / 1000); } if (x.fromStudent || (syncRole() === 'student' && !x.srcId)) o.f = 1; }
+  return o;
+}
+function cExDec(o) {
+  const name = libName(o.n) || (typeof o.n === 'string' && o.n[0] !== '#' ? o.n : 'Bài tập'), d = newEx(name), x = {};
+  for (const f of ['sets', 'repTarget', 'repMin', 'repMax', 'step', 'rest', 'type', 'muscle', 'zone', 'each', 'warmup']) x[f] = d[f];
+  for (const [k, f] of CEX) if (o[k] !== undefined) x[f] = o[k];
+  if (o.h !== undefined) x.each = !!o.h; if (o.w !== undefined) x.warmup = !!o.w;
+  return { ...x, name, dropSet: !!o.d, setup: o.u || '', targetKg: o.x ?? null, i: o.i ? [o.i] : [], currentKg: o.c ?? null, kgSetAt: o.e ? o.e * 1000 : 0, fs: !!o.f, ph: [] };
+}
+const deflateB64 = async obj => { const by = new TextEncoder().encode(JSON.stringify(obj)); if ('CompressionStream' in window) { try { return 'z' + b64u(await pipeBytes(by, new CompressionStream('deflate-raw'))); } catch (e) {} } return 'p' + b64u(by); };
+const inflateB64 = async body => { let by = unb64u(body.slice(1)); if (body[0] === 'z') by = await pipeBytes(by, new DecompressionStream('deflate-raw')); return JSON.parse(new TextDecoder().decode(by)); };
+/* giáo án gọn (chia sẻ cá nhân): SOTA2z.<…> */
+async function encodePlan2(days) {
+  const data = { v: 3, d: days.map(d => [d.name, d.exercises.map(x => { const o = cExEnc(x, false); if (x.slot) o.o = x.slot; if ((x.alts || []).length) o.l = x.alts.map(a => cExEnc(a, false)); return o; })]) };
+  const b = await deflateB64(data); return (b[0] === 'z' ? 'SOTA2z.' : 'SOTA2.') + b.slice(1);
+}
+/* đổi giáo án gọn về dạng cũ để dùng chung bước làm sạch của decodePlan */
+function plan2ToV2(data) {
+  const enc = x => ({ n: x.name, m: x.muscle, t: x.type, s: x.sets, g: x.repTarget, a: x.repMin, b: x.repMax, d: x.dropSet ? 1 : 0, k: x.step, r: x.rest, u: x.setup, h: x.each ? 1 : 0 });
+  return { v: 2, d: (data.d || []).map(([n, e]) => ({ n, e: (e || []).map(o => ({ ...enc(cExDec(o)), o: o.o || '', l: (o.l || []).map(a => enc(cExDec(a))) })) })) };
+}
+/* gói đồng bộ gọn GAS2 */
+function syncCompact(pkg, sessions) {
+  const ref = en => { const lr = libRef(en.name); return lr ? '#' + lr : en.name; };
+  return { r: pkg.role === 'coach' ? 'c' : 's', k: pkg.link.pk || '', q: pkg.link.cn || '', n: pkg.name, t: Math.round(pkg.at / 1000),
+    ...(pkg.plan ? { p: pkg.plan } : {}),
+    s: sessions.map(s => { const st = Math.round(s.startedAt / 1000);
+      return [s.id, s.date, st, s.finishedAt ? Math.round(s.finishedAt / 1000) - st : 0, s.dayName, s.deload ? 1 : 0, Math.round((s.paused || 0) / 1000),
+        s.entries.map(en => { const a = [en.k[0] || '', ref(en), en.sets.flatMap(z => [z.kg ?? 0, z.reps])]; if (en.drop || en.note || en.each) a.push(en.drop ? [en.drop.kg ?? 0, en.drop.reps] : 0); if (en.note || en.each) a.push(en.note || ''); if (en.each) a.push(1); return a; })]; }),
+    x: Object.keys(pkg.del.s), y: Object.keys(pkg.del.e) };
+}
+function syncExpand(c) {
+  const now = Date.now(), nm = r => libName(r) || (typeof r === 'string' && r[0] !== '#' ? r : 'Bài tập');
+  return { app: 'gadn-sync', v: 2, role: c.r === 'c' ? 'coach' : 'student', link: { pk: c.k || '', cn: c.q || '' }, name: c.n || '', at: (c.t || 0) * 1000,
+    plan: Array.isArray(c.p) ? c.p.map(([n, e]) => ({ n, e: (e || []).map(o => ({ ...cExDec(o), o: o.o || '', ms: '', l: (o.l || []).map(cExDec) })) })) : null,
+    sessions: (c.s || []).map(([id, date, st, dur, dayName, dl, ps, E]) => ({ id, date, startedAt: st * 1000, finishedAt: dur ? (st + dur) * 1000 : null, dayName, deload: !!dl, paused: (ps || 0) * 1000,
+      entries: (E || []).map(([k, r, flat, drop, note, each]) => { const name = nm(r), lib = LIB.find(l => l[0] === name), sets = []; for (let i = 0; i + 1 < (flat || []).length; i += 2) sets.push({ kg: flat[i], reps: flat[i + 1] });
+        return { k: k ? [k] : [], name, muscle: lib ? lib[1] : 'Khác', note: note || '', each: !!each, sets, drop: Array.isArray(drop) ? { kg: drop[0], reps: drop[1] } : null }; }) })),
+    del: { s: Object.fromEntries((c.x || []).map(id => [id, now])), e: Object.fromEntries((c.y || []).map(id => [id, now])) }, photos: {} };
+}
+/* đóng gói đồng bộ vừa 1 mã: giáo án (nếu đổi) + các buổi mới nhất vừa đủ chỗ */
+async function syncPackQR(pid, { full = false } = {}) {
+  const { pkg, mark } = await syncPack(pid, { full }), st = await syncStateOf(pid);
+  if (pkg.plan) pkg.plan = pkg.plan.map(d => ({ n: d.n, e: d.e.map(o => o) }));
+  const exById = new Map(); for (const d of st.days) for (const e of d.exercises) { exById.set(e.id, e); for (const a of e.alts || []) exById.set(a.id, a); }
+  const coachSide = pkg.role === 'coach', mini = x => { const lr = libRef(x.name), o = { n: lr ? '#' + lr : x.name, i: canonKey(x) }; if (x.kgSetAt && x.currentKg != null) { o.c = x.currentKg; o.e = Math.round(x.kgSetAt / 1000); } return o; };
+  const own = x => !!(x.fromStudent || !x.srcId), need = x => own(x) || !!x.kgSetAt;
+  const planAll = coachSide
+    ? st.days.map(d => [d.name, d.exercises.map(x => { const o = cExEnc(x, true); if (x.slot) o.o = x.slot; if ((x.alts || []).length) o.l = x.alts.map(a => cExEnc(a, true)); return o; })])
+    : st.days.map(d => [d.name, d.exercises.filter(x => need(x) || (x.alts || []).some(need)).map(x => { const o = own(x) ? cExEnc(x, true) : mini(x); const L = (x.alts || []).filter(need).map(a => own(a) ? cExEnc(a, true) : mini(a)); if (L.length) o.l = L; return o; })]).filter(([, e]) => e.length);
+  const planH = 'c' + fnv(JSON.stringify(planAll)), M = st.syncMark || {}, plan = full || M.planH !== planH ? (coachSide || planAll.length ? planAll : null) : null;
+  pkg.plan = plan; mark.planH = planH;
+  const all = [...pkg.sessions].sort((a, b) => b.startedAt - a.startedAt);
+  const build = async n => { const P = { ...pkg, plan }; return 'GAS2.' + Math.random().toString(36).slice(2, 6) + '.1.1.' + await deflateB64(syncCompact(P, all.slice(0, n))); };
+  let lo = 0, hi = all.length, best = await build(0);
+  /* giáo án quá dài cho 1 mã: lượt này chỉ gửi giáo án, chia vài mã đứng yên bấm Tiếp; các buổi tập gửi ở lượt sau */
+  if (best.length > QR_MAX) return { parts: qrChunks('GAS2', best.split('.').slice(4).join('.'), QR_MAX - 40), mark: { sent: {}, planH: mark.planH }, sent: 0, left: all.length, total: all.length, pkg };
+  while (lo < hi) { const mid = Math.ceil((lo + hi) / 2), t = await build(mid); if (t.length <= QR_MAX) { lo = mid; best = t; } else hi = mid - 1; }
+  const inc = new Set(all.slice(0, lo).map(s => s.id));
+  return { parts: [best], mark: { sent: Object.fromEntries(Object.entries(mark.sent).filter(([id]) => inc.has(id))), planH: mark.planH }, sent: lo, left: all.length - lo, total: all.length, pkg };
+}
+
 /* ---------- file & lịch ---------- */
 async function saveFile(name, data, mime) {
   let dl = null;
@@ -4720,7 +4809,9 @@ const handlers = {
   'sync-img': () => syncImageSend(),
   'plan-img': t => planImageSend(t.dataset.id || ''),
   'img-save': () => { if (ui.imgBlob) saveFile(ui.imgName || 'giao-an.png', ui.imgBlob, 'image/png'); },
-  'sync-qr-done': async () => { clearInterval(ui.qrT); const O = ui.syncOut; if (O) await syncMarkSent(O.pid, O.mark); ui.syncOut = null; closeSheet(); toast('Đã đánh dấu đã gửi'); },
+  'qr-next': () => { ui.qrPage = Math.min((ui.qrPage || 0) + 1, (ui.qrParts || []).length - 1); qrStaticShow(); },
+  'sync-qr-done': async () => { clearInterval(ui.qrT); const O = ui.syncOut; if (O) await syncMarkSent(O.pid, O.mark); ui.syncOut = null;
+    if (O && O.left) { toast(`Còn ${O.left} buổi, đây là mã tiếp theo`); await syncQrSheet(); return; } closeSheet(); toast('Đã đánh dấu đã gửi'); },
   'sync-to': t => syncPreview(t.dataset.id),
   'sync-pick': t => { ui.syncChoices = { ...(ui.syncChoices || {}), [t.dataset.id]: t.dataset.v }; syncPreview(ui.syncTo); },
   'sync-apply': () => syncApply(),
