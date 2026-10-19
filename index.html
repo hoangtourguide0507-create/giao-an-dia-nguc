@@ -1503,11 +1503,12 @@ const TEMPOS = {
 };
 const tempo = () => TEMPOS[state.settings.tempo] ? +state.settings.tempo : 3;
 const setSec = reps => Math.round((+reps || 10) * tempo() + 5);
-const SWITCH_SEC = 60, WARM_SEC = 170;
+const SWITCH_SEC = 60, WARM_SEC = 170, FEEL_SEC = 60;
 const hasWarm = ex => !!ex.warmup && ex.type !== 'iso';
+const warmSec = ex => !ex.warmup ? 0 : ex.type === 'iso' ? FEEL_SEC : WARM_SEC;
 function exEst(ex) {
   const n = ex.sets || 3, r = ex.repTarget || 10;
-  return n * setSec(r) + (n - 1) * restOf(ex) + (ex.dropSet ? 3 * (setSec(DROP_REPS) + 10) : 0) + (hasWarm(ex) ? WARM_SEC : 0) + SWITCH_SEC;
+  return n * setSec(r) + (n - 1) * restOf(ex) + (ex.dropSet ? 3 * (setSec(DROP_REPS) + 10) : 0) + warmSec(ex) + SWITCH_SEC;
 }
 const dayEst = exs => exs.reduce((a, e) => a + exEst(e), 0);
 const minTxt = sec => '~' + Math.max(1, Math.round(sec / 60)) + ' phút';
@@ -1519,7 +1520,7 @@ function remainEst(a) {
     if (!left.length && !dropLeft) continue;
     t += left.reduce((x, st) => x + setSec(st.reps || ex.repTarget), 0) + (began ? left.length : Math.max(0, left.length - 1)) * restOf(ex);
     if (dropLeft) t += 10 + setSec(ex.repTarget);
-    if (!began) t += SWITCH_SEC + (hasWarm(ex) ? WARM_SEC : 0);
+    if (!began) t += SWITCH_SEC + warmSec(ex);
   }
   return t;
 }
@@ -1593,7 +1594,7 @@ function newEx(name) {
   const lib = LIB.find(l => l[0] === name);
   const type = lib ? lib[2] : 'upper';
   return { id: uid(), name, muscle: lib ? lib[1] : 'Khác', zone: lib ? (LIBZ[name] || null) : undefined, type, sets: 3, repTarget: 10, repMin: 8, repMax: 12, dropSet: false,
-    step: /tạ đơn|dumbbell/i.test(name) ? 2 : TYPES[type].step, rest: TYPES[type].rest, setup: '', photos: [], currentKg: null, targetKg: null, kgSetAt: null, warmup: type !== 'iso', restV: 2, each: /tạ đơn|dumbbell/i.test(name) };
+    step: /tạ đơn|dumbbell/i.test(name) ? 2 : TYPES[type].step, rest: TYPES[type].rest, setup: '', photos: [], currentKg: null, targetKg: null, kgSetAt: null, warmup: true, restV: 2, each: /tạ đơn|dumbbell/i.test(name) };
 }
 function migrateEx(ex) {
   if (ex.repMin == null) ex.repMin = 8;
@@ -1602,7 +1603,7 @@ function migrateEx(ex) {
   if (!('currentKg' in ex)) ex.currentKg = null;
   if (!('targetKg' in ex)) ex.targetKg = null;
   if (!ex.photos) ex.photos = [];
-  if (ex.warmup == null) ex.warmup = ex.type !== 'iso';
+  if (ex.warmup == null) ex.warmup = true;
   if (!ex.restV) { if (ex.rest === OLD_REST[ex.type]) ex.rest = 0; ex.restV = 2; }
   return ex;
 }
@@ -1794,7 +1795,7 @@ function loadState(s) {
   if (!state.weekPlans || typeof state.weekPlans !== 'object') state.weekPlans = {};
   if (!state.settings.alertV17) { state.settings.alertV17 = 1; if (state.settings.alertMethod !== 'shortcut') { state.settings.alertMethod = 'shortcut'; state.settings.notify = false; } }
   if (!state.settings.schedule || typeof state.settings.schedule !== 'object') state.settings.schedule = {};
-  sets3(state);
+  sets3(state); warmAll(state);
   if (state.settings.alertMethod && state.settings.alertMethod !== 'shortcut') { state.settings.alertMethod = 'shortcut'; state.settings.notify = false; }
   if (!state.settings.skin || OLD_SKINS.has(state.settings.skin) || !SKINS.some(k => k.id === state.settings.skin)) state.settings.skin = 'gold';
 }
@@ -2566,7 +2567,7 @@ function applyLibPick(name) {
   const lib = LIB.find(l => l[0] === name), z = LIBZ[name]; if (!lib) return;
   $('#f-name').value = name; if ($('#f-zone')) $('#f-zone').value = z || '';
   const ty = $('#f-type'); if (ty && ty.value !== lib[2]) { ty.value = lib[2]; ty.dispatchEvent(new Event('change', { bubbles: true })); }
-  if ($('#f-warm')) $('#f-warm').checked = lib[2] !== 'iso';
+  if ($('#f-warm')) $('#f-warm').checked = true;
   const db = /tạ đơn|dumbbell/i.test(name); if ($('#f-each')) { $('#f-each').checked = db; $$('.u-kg').forEach(x => x.textContent = db ? 'kg/tay' : 'kg'); }
   if ($('#f-step')) $('#f-step').value = fmtIn(db ? 2 : TYPES[lib[2]].step);
   $$('[data-act="zlib"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.v === name));
@@ -2863,9 +2864,10 @@ function setRow(i, j, s, label) {
   return `<div class="setrow ${s.done ? 'done' : ''} ${j === 'drop' || isDrop(s) ? 'drop' : ''}" id="row-${i}-${j}"><span class="setno">${label}</span>${stepper(i, j, 'kg', s.kg, 'kg')}${stepper(i, j, 'reps', s.reps, 'rep')}
     <button type="button" class="check" data-act="set-done" data-e="${i}" data-s="${j}" aria-pressed="${!!s.done}" aria-label="Xong set ${label}">${ICON.check}</button></div>`;
 }
-function warmSets(ex, W) {
+function warmSets(ex, W, kind) {
   if (!(W > 0)) return [];
-  const st = ex.step > 0 ? ex.step : 1, scheme = W >= 40 ? [[0.5, 10], [0.7, 5], [0.85, 2]] : [[0.5, 10], [0.75, 5]];
+  const st = ex.step > 0 ? ex.step : 1;
+  const scheme = kind === 'feel' ? [[0.6, 8]] : ex.type === 'iso' ? [[0.5, 12], [0.7, 6]] : W >= 40 ? [[0.5, 10], [0.7, 5], [0.85, 2]] : [[0.5, 10], [0.75, 5]];
   const out = [];
   for (const [p, r] of scheme) { const kg = roundStep(W * p, st); if (kg > 0 && kg < W && !out.some(o => o.kg === kg)) out.push({ kg, reps: r }); }
   /* tạ quá nhẹ so với bước tăng: vẫn có 1 set khởi động ở nấc thấp hơn, hoặc nấc nhẹ nhất */
@@ -2879,16 +2881,18 @@ function warmBase(en, ex) {
   const h = workHistory(ex)[0]; return h ? wt(h) : (ex.currentKg ?? null);
 }
 function warmInner(en, i) {
-  const ex = exOrSnap(en), W = warmBase(en, ex), ws = warmSets(ex, W);
+  const ex = exOrSnap(en), W = warmBase(en, ex), ws = warmSets(ex, W, warmKind(en, i));
   if (W === 0) return '<span class="note-line" style="margin:0">Bài tự trọng: làm 1 set chậm ×10–12 để làm nóng khớp trước khi vào set chính.</span>';
   if (!ws.length) return '<span class="note-line" style="margin:0">Nhập số kg ở một set bên dưới để app tính set khởi động.</span>';
   en.warm = en.warm || [];
   return ws.map((w, k) => `<button type="button" data-act="warm" data-e="${i}" data-w="${k}" aria-pressed="${!!en.warm[k]}">${w.light ? 'Nhẹ nhất' : fmt(w.kg)}<small>×${w.reps}</small></button>`).join('');
 }
-function needsWarm(en, i) {
-  const ex = exOrSnap(en); if (ex.ghost || !ex.warmup) return false;
-  return !state.active.entries.slice(0, i).some(o => { const e2 = exOrSnap(o); return o.muscle === en.muscle && e2.warmup; });
+/* 'full': bài đầu tiên của nhóm cơ trong buổi, khởi động đủ bậc · 'feel': nhóm cơ đã nóng, chỉ 1 set nhẹ để làm quen máy */
+function warmKind(en, i) {
+  const ex = exOrSnap(en); if (ex.ghost || !ex.warmup) return null;
+  return state.active.entries.slice(0, i).some(o => o.muscle === en.muscle) ? 'feel' : 'full';
 }
+const needsWarm = (en, i) => !!warmKind(en, i);
 function camInput(exId) { return `<input type="file" accept="image/*" capture="environment" id="cap-${exId}" data-cap="${exId}" hidden>`; }
 /* ảnh lớn của bài đang tập: ảnh máy đã chụp, hoặc hình minh hoạ, hoặc nút chụp */
 function exHero(ex, i, n) {
@@ -2922,7 +2926,7 @@ function entryCard(en, i) {
   h += `<div class="ex-body"><div class="ex-head">${thumb}<div class="mid"><div class="ex-name">${esc(ex.name)}</div><div class="ex-sub">${esc(ex.muscle)} · ${ex.sets}×${ex.repTarget || 10} · nghỉ ${fmtDur(restOf(ex) * 1000)}</div>${ex.ghost ? '' : `<button type="button" class="gbtn" data-act="guide" data-id="${ex.id}">${GUIDE_ICO} Hướng dẫn & nhóm cơ</button>`}</div></div>${formCueHtml(ex, en, 'l' + i)}
     <div class="target"><div><div class="tl">${last ? 'Lần trước · ' + dm(last.date) : 'Lần trước'}</div><div class="tv">${last ? `${fmt(wt(last))}<small>${U(ex)} × ${last.sets.filter(x => !x.dr).map(s => s.reps).join('·')}</small>` : '<small>Chưa tập · tự chọn mức tạ</small>'}</div>${sugChip(ex, sg)}</div></div>`;
   if (ex.setup) h += `<details class="setup"><summary>Cách chỉnh máy ›</summary><p>${esc(ex.setup)}</p></details>`;
-  if (needsWarm(en, i)) h += `<div class="warm"><div class="warm-h">${ICON.flame} Set khởi động<span>không tính vào khối lượng</span></div><div class="warm-sets" id="warm-${i}">${warmInner(en, i)}</div></div>`;
+  if (needsWarm(en, i)) h += `<div class="warm"><div class="warm-h">${ICON.flame} ${warmKind(en, i) === 'feel' ? 'Set làm quen máy' : 'Set khởi động'}<span>không tính vào khối lượng</span></div><div class="warm-sets" id="warm-${i}">${warmInner(en, i)}</div></div>`;
   h += `<div class="sets"><div class="sethead"><span></span><span>${ex.each ? 'Kg mỗi tay' : 'Kg'}</span><span>Rep</span><span></span></div>`;
   let wn = 0; const fin = entryDone(en);
   if (fin) { const W = workSets(en).filter(x => x.done); h += `<div class="donebar"><span class="stamp${ui.stampEx === en.exId ? ' in' : ''}">XONG</span><span class="ds"><b>${W.length}/${workSets(en).length} set</b> · ${W.map(x => fmt(x.kg || 0) + '×' + x.reps).join(' · ')}</span></div>`; }
@@ -3381,7 +3385,7 @@ function exSheet() {
             : `<label class="f">Nghỉ giữa set<select class="inp" id="f-rest">${restOpts(d.rest, d.type)}</select></label>`}
       <label class="f full"><span>Kiểu bài <span class="unit">tự chọn theo bài · quyết định giờ nghỉ</span></span><select class="inp" id="f-type">${opt(Object.entries(TYPES).map(([k, t]) => [k, t.label]), d.type)}</select></label>
       <label class="toggle full">Có drop set (thêm 3 set giảm tạ dần × 10 rep)<input type="checkbox" id="f-drop" ${d.dropSet ? 'checked' : ''}></label>
-      <label class="toggle full"><span>Gợi ý set khởi động<br><span class="fhint">Chỉ hiện ở bài đầu tiên của mỗi nhóm cơ trong buổi</span></span><input type="checkbox" id="f-warm" ${d.warmup ? 'checked' : ''}></label>
+      <label class="toggle full"><span>Gợi ý set khởi động<br><span class="fhint">Bài đầu của nhóm cơ: khởi động đủ bậc. Các bài sau cùng nhóm: 1 set nhẹ làm quen máy</span></span><input type="checkbox" id="f-warm" ${d.warmup ? 'checked' : ''}></label>
     </div></div>
     ${d.isNew ? '' : `<div class="fsec"><button type="button" class="btn" data-act="guide" data-id="${d.id}" style="width:100%">${GUIDE_ICO} Hình minh hoạ, nhóm cơ & điểm form</button></div>`}
     <div class="fsec"><span class="eyebrow">Ảnh máy tập & cách chỉnh máy</span>
@@ -3982,7 +3986,8 @@ function profStats(st) {
 function withState(st, fn) { const keep = state; state = st; try { return fn(); } finally { state = keep; } }
 /* PA-10: đổi mọi bài về 3 set (1 lần cho mỗi hồ sơ) */
 function sets3(st) { if (!st || !st.settings || st.settings.sets3) return st; for (const d of st.days || []) for (const e of d.exercises || []) { e.sets = 3; for (const a2 of e.alts || []) a2.sets = 3; } st.settings.sets3 = 1; return st; }
-function normState(raw) { return raw ? sets3({ ...freshState(), ...raw, pains: raw.pains || [], settings: { ...freshState().settings, ...(raw.settings || {}) } }) : null; }
+function warmAll(st) { if (!st || !st.settings || st.settings.warmAll) return st; for (const d of st.days || []) for (const e of d.exercises || []) { e.warmup = true; for (const a2 of e.alts || []) a2.warmup = true; } st.settings.warmAll = 1; return st; }
+function normState(raw) { return raw ? warmAll(sets3({ ...freshState(), ...raw, pains: raw.pains || [], settings: { ...freshState().settings, ...(raw.settings || {}) } })) : null; }
 function coachData(st) {
   return withState(st, () => {
     const today = ymd(), S = state.sessions, from7 = addDays(today, -6), mon = today.slice(0, 7);
@@ -4417,7 +4422,7 @@ function cleanEx(x) {
   const type = TYPES[x.type] ? x.type : 'upper', repMin = cNum(x.repMin, 1, 50, 8), repMax = Math.max(repMin, cNum(x.repMax, 1, 50, 12));
   return { i: (Array.isArray(x.i) ? x.i : []).map(v => cStr(v, 40)).filter(Boolean).slice(0, 12), name: cStr(x.name || 'Bài tập', 80), muscle: MUSCLES.includes(x.muscle) ? x.muscle : 'Khác', zone: x.zone == null ? x.zone : cStr(x.zone, 40), type,
     sets: cNum(x.sets, 1, 10, 3), repTarget: cNum(x.repTarget, repMin, 50, Math.min(repMax, 10)), repMin, repMax, dropSet: !!x.dropSet, step: cNum(x.step, 0.25, 50, TYPES[type].step),
-    rest: cNum(x.rest, 0, 600, 0), restV: 2, setup: cStr(x.setup, 1000), each: !!x.each, warmup: x.warmup == null ? type !== 'iso' : !!x.warmup, targetKg: x.targetKg == null ? null : cNum(x.targetKg, 0, 1000, null),
+    rest: cNum(x.rest, 0, 600, 0), restV: 2, setup: cStr(x.setup, 1000), each: !!x.each, warmup: x.warmup == null ? true : !!x.warmup, targetKg: x.targetKg == null ? null : cNum(x.targetKg, 0, 1000, null),
     currentKg: x.currentKg == null ? null : cNum(x.currentKg, 0, 1000, null), kgSetAt: x.kgSetAt ? cNum(x.kgSetAt, 0, 9e15, 0) : 0, fs: !!x.fs,
     ph: (Array.isArray(x.ph) ? x.ph : []).map(v => cStr(v, 30)).slice(0, 12), o: cStr(x.o, 40), ms: /^\d{4}-\d\d-\d\d$/.test(x.ms || '') ? x.ms : '', l: Array.isArray(x.l) ? x.l.slice(0, 20).map(cleanEx) : [] };
 }
@@ -4810,7 +4815,7 @@ const CEX = [['s', 'sets'], ['g', 'repTarget'], ['a', 'repMin'], ['b', 'repMax']
 function cExEnc(x, sync) {
   const d = newEx(x.name), lr = libRef(x.name), o = { n: lr ? '#' + lr : x.name };
   for (const [k, f] of CEX) if (x[f] != null && x[f] !== d[f]) o[k] = x[f];
-  if (x.dropSet) o.d = 1; if (!!x.each !== !!d.each) o.h = x.each ? 1 : 0; if (x.warmup != null && !!x.warmup !== !!d.warmup) o.w = x.warmup ? 1 : 0;
+  if (x.dropSet) o.d = 1; if (!!x.each !== !!d.each) o.h = x.each ? 1 : 0; if (x.warmup != null && (!!x.warmup !== !!d.warmup || !!x.warmup !== (d.type !== 'iso'))) o.w = x.warmup ? 1 : 0;
   if (x.setup) o.u = x.setup; if (x.targetKg != null) o.x = x.targetKg;
   if (sync) { o.i = canonKey(x); if (x.kgSetAt && x.currentKg != null) { o.c = x.currentKg; o.e = Math.round(x.kgSetAt / 1000); } if (x.fromStudent || (syncRole() === 'student' && !x.srcId)) o.f = 1; }
   return o;
@@ -5417,11 +5422,11 @@ document.addEventListener('change', async e => {
   if (t.id === 'f-name' && ui.draft && ui.draft.isNew) {
     const lib = LIB.find(l => l[0] === t.value.trim());
     if (!lib && $('#f-zone') && !$('#f-zone').value) { const g = guessZone(t.value); if (g) $('#f-zone').value = g; }
-    if (lib) { if ($('#f-zone')) $('#f-zone').value = LIBZ[lib[0]] || ''; $('#f-type').value = lib[2]; $('#f-warm').checked = lib[2] !== 'iso'; $('#f-step').value = fmtIn(TYPES[lib[2]].step); $('#f-rest').innerHTML = restOpts(0, lib[2]); draftRoad(); }
+    if (lib) { if ($('#f-zone')) $('#f-zone').value = LIBZ[lib[0]] || ''; $('#f-type').value = lib[2]; $('#f-warm').checked = true; $('#f-step').value = fmtIn(TYPES[lib[2]].step); $('#f-rest').innerHTML = restOpts(0, lib[2]); draftRoad(); }
     if ($('#f-each')) { const db = /tạ đơn|dumbbell/i.test(t.value); $('#f-each').checked = db; $$('.u-kg').forEach(x => x.textContent = db ? 'kg/tay' : 'kg'); if (db) $('#f-step').value = fmtIn(2); }
   }
   if (t.id === 'f-each') { $$('.u-kg').forEach(x => x.textContent = t.checked ? 'kg/tay' : 'kg'); }
-  if (t.id === 'f-type' && ui.draft) { const ty = TYPES[t.value]; { const cur = +$('#f-rest').value; $('#f-rest').innerHTML = restOpts(cur, t.value); } if (ui.draft.isNew) { $('#f-step').value = fmtIn(ty.step); $('#f-warm').checked = t.value !== 'iso'; } draftRoad(); }
+  if (t.id === 'f-type' && ui.draft) { const ty = TYPES[t.value]; { const cur = +$('#f-rest').value; $('#f-rest').innerHTML = restOpts(cur, t.value); } if (ui.draft.isNew) { $('#f-step').value = fmtIn(ty.step); } draftRoad(); }
   if (t.dataset && t.dataset.bind === 'cmp') { ui['cmp' + t.dataset.k] = t.value; render(true); }
   if ((t.id === 'f-photo-cam' || t.id === 'f-photo-lib') && ui.draft) {
     const files = [...t.files].slice(0, 6); if (!files.length) return; readDraft();
