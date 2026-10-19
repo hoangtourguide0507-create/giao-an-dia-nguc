@@ -1283,6 +1283,31 @@ body.restflash::after{content:"";position:fixed;inset:0;pointer-events:none;z-in
 .stepchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .stepchips button{min-width:44px;height:32px;border-radius:16px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--fg);font:inherit;font-size:13px;font-weight:700}
 .stepchips button[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink);border-color:var(--gold)}
+
+/* ===== PA-12: đấu với lần trước · giọng HLV · nhật ký đau ===== */
+.setrow .duel{grid-column:1/-1;display:flex;justify-content:flex-end;align-items:center;gap:8px;font-size:12px;color:var(--muted);font-weight:600;margin-top:-3px;font-variant-numeric:tabular-nums}
+.duel b{font-family:var(--font-d);font-weight:900;letter-spacing:.08em;padding:2px 9px;border-radius:6px;font-size:11.5px;line-height:1.3}
+.duel b.w{background:var(--gold);color:var(--gold-ink)}
+.duel b.d{background:var(--surface-2);color:var(--fg-2);border:1px solid var(--line-2)}
+.duel b.l{background:rgb(var(--down-rgb) / .14);color:var(--down)}
+:root[data-anim="on"] .duel b.in{animation:duelin .34s cubic-bezier(.2,1.6,.4,1)}
+@keyframes duelin{0%{transform:scale(2.4);opacity:0}60%{transform:scale(.9);opacity:1}100%{transform:none}}
+.prog-l .dsc{display:block;margin-bottom:2px;color:var(--fg-2);font-weight:700}
+.prog-l .dsc b{color:var(--gold)}
+.duelbd{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.duelbd>div{text-align:center;padding:10px 6px;border-radius:var(--r-sm);background:var(--surface-2);border:1px solid var(--line-2)}
+.duelbd .k{font-family:var(--font-d);font-size:30px;font-weight:900;line-height:1.1}
+.duelbd .w .k{color:var(--gold)} .duelbd .l .k{color:var(--down)}
+.duelbd small{display:block;font-size:12px;color:var(--muted);font-weight:700}
+.btn.counting{background:var(--gold)!important;color:var(--gold-ink)!important;border-color:var(--gold)!important;font-variant-numeric:tabular-nums}
+.painstrip{margin-top:10px;padding:9px 12px;border-radius:var(--r-sm);border:1px solid rgb(var(--down-rgb) / .45);background:rgb(var(--down-rgb) / .08);font-size:13px;line-height:1.45}
+.painstrip b{color:var(--down)}
+.painstrip .row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.painchk{margin:12px 0 4px;padding:12px;border-radius:var(--r-sm);border:1px solid rgb(var(--down-rgb) / .45);background:var(--surface)}
+.painchk .row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ptrend{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.ptrend i{font-style:normal;font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:6px;background:var(--surface-2);color:var(--fg-2)}
+.ptrend i.l0{color:var(--up)} .ptrend i.l2{color:#f0a020} .ptrend i.l3{color:var(--down)}
 </style>
 </head>
 <body>
@@ -1544,7 +1569,7 @@ const PAIN_LV = {
   3: { t: 'Nặng', s: '7–10/10', d: 'Ngừng tập vùng này và đi khám bác sĩ hoặc chuyên viên vật lý trị liệu trước khi tập lại.' }
 };
 const activePains = () => (state.pains || []).filter(p => !p.resolvedAt);
-function painHits(ex, p) { const a = PAIN_AREAS[p.area]; if (!a || !ex) return false; const n = String(ex.name || '').toLowerCase(); return a.m.includes(ex.muscle) || a.kw.some(k => n.includes(k)); }
+function painHits(ex, p) { const a = PAIN_AREAS[p.area]; if (!a || !ex) return false; const n = String(ex.name || '').toLowerCase(); return a.m.includes(ex.muscle) || a.kw.some(k => n.includes(k)) || (p.exs || []).includes(ex.id); }
 function painOf(ex) {
   if (!ex || ex.ghost) return null;
   let best = null;
@@ -1770,11 +1795,11 @@ function syncCardHtml() {
   return `<div class="card set-card sync ${k}" id="sync"><div class="sync-h"><span class="sync-dot"></span><h3>${t}</h3></div><p>${d}</p></div>`;
 }
 const freshState = () => ({ v: 3, days: [], sessions: [], body: [], bodyPhotos: [], active: null,
-  settings: { name: '', height: null, setMin: 10, setMax: 20, deloadEvery: 6, cycleStart: null, progMode: 'linear', pace: 'std', restMode: 'std', tempo: 3, schedule: {}, remindTime: '18:00', remindBefore: 30, skin: 'gold', restAlert: 'app', shortcutName: 'Nghỉ giữa set', notify: false, sfx: true, haptics: true, fxOff: false, animOff: false, lastBackupAt: 0, lastBackupSess: 0, backupSkipAt: 0 } });
+  settings: { name: '', height: null, setMin: 10, setMax: 20, deloadEvery: 6, cycleStart: null, progMode: 'linear', pace: 'std', restMode: 'std', tempo: 3, schedule: {}, remindTime: '18:00', remindBefore: 30, skin: 'gold', restAlert: 'app', shortcutName: 'Nghỉ giữa set', notify: false, sfx: true, haptics: true, voice: 'full', duel: true, fxOff: false, animOff: false, lastBackupAt: 0, lastBackupSess: 0, backupSkipAt: 0 } });
 let state = freshState();
 let profiles = { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] };
 const PCOLORS = ['#d9b45b', '#6ea8ff', '#ff86b4', '#5fdc9b', '#c79bff', '#ffa45c'];
-const GLOBAL_KEYS = ['skin', 'notify', 'alertMethod', 'ntfyTopic', 'pushServer', 'pushKey', 'restAlert', 'shortcutName', 'alertV17', 'sfx', 'haptics', 'fxOff', 'animOff', 'lastBackupAt', 'lastBackupSess', 'backupSkipAt'];
+const GLOBAL_KEYS = ['skin', 'notify', 'alertMethod', 'ntfyTopic', 'pushServer', 'pushKey', 'restAlert', 'shortcutName', 'alertV17', 'sfx', 'haptics', 'voice', 'duel', 'fxOff', 'animOff', 'lastBackupAt', 'lastBackupSess', 'backupSkipAt'];
 const stateKey = pid => pid === 'p1' ? 'state' : 'state:' + pid;
 const curProf = () => profiles.list.find(p => p.id === profiles.active) || profiles.list[0];
 const multi = () => profiles.list.length > 1;
@@ -2166,6 +2191,12 @@ function burstAt(el) { return; /* PA-10: bỏ hạt bung */
   b.innerHTML = h; document.body.appendChild(b); setTimeout(() => b.remove(), 900);
 }
 /* phá kỷ lục: dải chữ đập ngang màn hình + rung màn hình */
+function bigSlam(title, sub) {
+  if (!animOn()) return;
+  const m = document.createElement('div'); m.className = 'slam'; m.innerHTML = `<b>${esc(title)}</b><span>${esc(sub)}</span>`;
+  document.body.appendChild(m); document.body.classList.remove('quake'); void document.body.offsetWidth; document.body.classList.add('quake'); vibe([60, 40, 120]);
+  setTimeout(() => { m.remove(); document.body.classList.remove('quake'); }, 2300);
+}
 function prSlam(prs) {
   if (!animOn() || !prs || !prs.length) return;
   const m = document.createElement('div'); m.className = 'slam';
@@ -2768,7 +2799,7 @@ function thumbHtml(ex) {
 }
 function viewSession(a) {
   let h = `<section class="sbar"><div class="sbar-top"><div><div class="eyebrow">Đang tập · ${DOW[parseYmd(a.date).getDay()]} ${dm(a.date)}${a.deload ? ' · deload' : ''}</div><div class="h1">${esc(a.dayName)}</div></div>
-    <div class="elapsed" id="elapsed">${fmtDur(durOf(a))}</div></div><div class="prog"><i id="prog-bar"></i></div><div class="prog-l" id="prog-l"></div><div class="exnav" id="exnav">${exNavHtml()}</div></section>`;
+    <div class="elapsed" id="elapsed">${fmtDur(durOf(a))}</div></div><div class="prog"><i id="prog-bar"></i></div><div class="prog-l" id="prog-l"></div><div class="exnav" id="exnav">${exNavHtml()}</div></section>${painChkHtml()}`;
   a.entries.forEach((en, i) => { h += entryCard(en, i); });
   h += `<div class="sess-actions"><button class="btn" data-act="add-ex-session">${ICON.plus} Thêm bài</button><button class="btn gold big" data-act="finish">Kết thúc buổi tập</button><button class="btn ghost" data-act="pain">Báo đau / chấn thương</button><button class="btn ghost" data-act="cancel-session">Huỷ buổi này</button></div>`;
   return h;
@@ -2847,7 +2878,7 @@ function exNavHtml() {
 }
 function refreshExNav() { const n = $('#exnav'); if (n) { n.innerHTML = exNavHtml(); const c = n.querySelector('.cur'); if (c) c.scrollIntoView({ block: 'nearest', inline: 'center' }); } }
 function updateProgress() {
-  const a = state.active; if (!a) return; refreshExNav();
+  const a = state.active; if (!a) return; refreshExNav(); queueMicrotask(duelBadge);
   let done = 0, total = 0; for (const en of a.entries) { total += en.sets.length + (en.drop ? 1 : 0); done += en.sets.filter(s => s.done).length + (en.drop && en.drop.done ? 1 : 0); }
   const b = $('#prog-bar'), l = $('#prog-l'); if (b) b.style.width = (total ? done / total * 100 : 0) + '%'; if (l) { const rem = remainEst(a); l.innerHTML = done === 0 ? `0/${total} set · dự kiến <b class="etm">${minTxt(rem)}</b>${state.sessions.length < 3 ? ' · bấm ✓ sau mỗi set để lưu và đếm giờ nghỉ' : ''}`
     : done >= total ? `${done}/${total} set · xong hết, bấm “Kết thúc buổi tập”` : `${done}/${total} set · còn <b class="etm">${minTxt(rem)}</b> · xong khoảng <b class="etm">${hhmm(Date.now() + rem * 1000 + Math.max(0, rest.end - Date.now()))}</b>`; }
@@ -2860,9 +2891,42 @@ function stepper(i, j, f, v, label) {
     <input data-bind="set" data-e="${i}" data-s="${j}" data-f="${f}" inputmode="decimal" autocomplete="off" value="${fmtIn(v)}" aria-label="${label}">
     <button type="button" data-act="step" data-e="${i}" data-s="${j}" data-f="${f}" data-d="1" aria-label="Tăng ${label}">+</button></div>`;
 }
-function setRow(i, j, s, label) {
+function setRow(i, j, s, label, g) {
   return `<div class="setrow ${s.done ? 'done' : ''} ${j === 'drop' || isDrop(s) ? 'drop' : ''}" id="row-${i}-${j}"><span class="setno">${label}</span>${stepper(i, j, 'kg', s.kg, 'kg')}${stepper(i, j, 'reps', s.reps, 'rep')}
-    <button type="button" class="check" data-act="set-done" data-e="${i}" data-s="${j}" aria-pressed="${!!s.done}" aria-label="Xong set ${label}">${ICON.check}</button></div>`;
+    <button type="button" class="check" data-act="set-done" data-e="${i}" data-s="${j}" aria-pressed="${!!s.done}" aria-label="Xong set ${label}">${ICON.check}</button>${g ? duelHtml(s, g) : ''}</div>`;
+}
+/* ===== PA-12: đấu với chính mình lần trước ===== */
+const duelOn = () => state.settings.duel !== false;
+const DUEL_T = { w: 'THẮNG', d: 'HÒA', l: 'THUA' };
+function ghostOf(en) { if (!duelOn()) return null; const H = exHistory(en.exId); return H.length ? H[0].sets.filter(x => !x.dr) : null; }
+function duelRes(s, g) {
+  if (!s || !s.done || !g || !(s.reps > 0)) return null;
+  const k = +s.kg || 0, gk = +g.kg || 0;
+  if (Math.abs(k - gk) < 0.01 && s.reps === g.reps) return 'd';
+  const a = k > 0 || gk > 0 ? e1rm(k, s.reps) : s.reps, b = k > 0 || gk > 0 ? e1rm(gk, g.reps) : g.reps;
+  return Math.abs(a - b) < 0.01 ? 'd' : a > b ? 'w' : 'l';
+}
+function duelHtml(s, g, anim) {
+  if (!duelOn() || !g) return ''; const r = duelRes(s, g);
+  return `<div class="duel"><span>Lần trước ${fmt(g.kg || 0)}×${g.reps}</span>${r ? `<b class="${r}${anim ? ' in' : ''}">${DUEL_T[r]}</b>` : ''}</div>`;
+}
+function duelScore(a) {
+  const c = { w: 0, d: 0, l: 0 }; if (!a || !duelOn()) return c;
+  for (const en of a.entries) { const G = ghostOf(en); if (!G) continue; workSets(en).forEach((x, k) => { const r = duelRes(x, G[k]); if (r) c[r]++; }); }
+  return c;
+}
+function duelBadge() {
+  const l = $('#prog-l'); if (!l || !state.active) return; const o = $('.dsc', l); if (o) o.remove();
+  const c = duelScore(state.active); if (!(c.w + c.d + c.l)) return;
+  l.insertAdjacentHTML('afterbegin', `<span class="dsc">⚔ Đấu lần trước: <b>${c.w}</b> thắng · ${c.d} hòa · ${c.l} thua</span>`);
+}
+/* sau khi bấm ✓: cập nhật nhãn thắng/thua của dòng đó, trả về kết quả */
+function duelRow(i, j) {
+  const en = state.active && state.active.entries[i]; if (!en || j === 'drop') return null;
+  const s = en.sets[+j]; if (!s || isDrop(s)) return null;
+  const G = ghostOf(en), k = workSets(en).indexOf(s), g = G && G[k]; const row = $(`#row-${i}-${j}`); if (!row || !g) return null;
+  const old = $('.duel', row); if (old) old.remove(); row.insertAdjacentHTML('beforeend', duelHtml(s, g, true));
+  return duelRes(s, g);
 }
 function warmSets(ex, W, kind) {
   if (!(W > 0)) return [];
@@ -2925,20 +2989,22 @@ function entryCard(en, i) {
   const tReps = en.sets[0] ? en.sets[0].reps : sg.reps[0];
   h += `<div class="ex-body"><div class="ex-head">${thumb}<div class="mid"><div class="ex-name">${esc(ex.name)}</div><div class="ex-sub">${esc(ex.muscle)} · ${ex.sets}×${ex.repTarget || 10} · nghỉ ${fmtDur(restOf(ex) * 1000)}</div>${ex.ghost ? '' : `<button type="button" class="gbtn" data-act="guide" data-id="${ex.id}">${GUIDE_ICO} Hướng dẫn & nhóm cơ</button>`}</div></div>${formCueHtml(ex, en, 'l' + i)}
     <div class="target"><div><div class="tl">${last ? 'Lần trước · ' + dm(last.date) : 'Lần trước'}</div><div class="tv">${last ? `${fmt(wt(last))}<small>${U(ex)} × ${last.sets.filter(x => !x.dr).map(s => s.reps).join('·')}</small>` : '<small>Chưa tập · tự chọn mức tạ</small>'}</div>${sugChip(ex, sg)}</div></div>`;
+  h += painStrip(ex, en, i);
   if (ex.setup) h += `<details class="setup"><summary>Cách chỉnh máy ›</summary><p>${esc(ex.setup)}</p></details>`;
   if (needsWarm(en, i)) h += `<div class="warm"><div class="warm-h">${ICON.flame} ${warmKind(en, i) === 'feel' ? 'Set làm quen máy' : 'Set khởi động'}<span>không tính vào khối lượng</span></div><div class="warm-sets" id="warm-${i}">${warmInner(en, i)}</div></div>`;
   h += `<div class="sets"><div class="sethead"><span></span><span>${ex.each ? 'Kg mỗi tay' : 'Kg'}</span><span>Rep</span><span></span></div>`;
   let wn = 0; const fin = entryDone(en);
   if (fin) { const W = workSets(en).filter(x => x.done); h += `<div class="donebar"><span class="stamp${ui.stampEx === en.exId ? ' in' : ''}">XONG</span><span class="ds"><b>${W.length}/${workSets(en).length} set</b> · ${W.map(x => fmt(x.kg || 0) + '×' + x.reps).join(' · ')}</span></div>`; }
-  en.sets.forEach((s, j) => { if (s.dr && s.dr === 1) h += `<div class="drophead">Drop set · giảm tạ dần, làm liền không nghỉ</div>`; h += setRow(i, j, s, s.dr ? 'D' + s.dr : ++wn); });
+  const G = ghostOf(en);
+  en.sets.forEach((s, j) => { if (s.dr && s.dr === 1) h += `<div class="drophead">Drop set · giảm tạ dần, làm liền không nghỉ</div>`; h += s.dr ? setRow(i, j, s, 'D' + s.dr) : (wn++, setRow(i, j, s, wn, G && G[wn - 1])); });
   if (en.drop) h += setRow(i, 'drop', en.drop, 'D');
   if (fin) { const A = state.active.entries, order = [...A.keys()].filter(k => k > i).concat([...A.keys()].filter(k => k < i)), k = order.find(k2 => !entryDone(A[k2]));
     h += k == null ? `</div><button class="btn gold big nextex" data-act="finish">${ICON.check} Xong hết · Kết thúc buổi tập</button><div>`
       : `</div><button class="btn gold big nextex" data-act="ex-focus" data-i="${k}">Sang bài ${k + 1}: ${esc(shortName(A[k].name))} ›</button><div>`; }
-  h += `</div><div class="tools"><button class="btn sm" data-act="add-set" data-e="${i}">+ Set</button>
+  h += `</div><div class="tools">${voiceLv() === 'full' && !fin ? `<button class="btn sm${counter.e === i ? ' counting' : ''}" data-act="count" data-e="${i}">${counter.e === i ? '■ Dừng đếm' : '🔊 Đếm nhịp'}</button>` : ''}<button class="btn sm" data-act="add-set" data-e="${i}">+ Set</button>
     ${workSets(en).length > 1 ? `<button class="btn sm ghost" data-act="rm-set" data-e="${i}">− Set</button>` : ''}
     ${(hasD => `<button class="btn sm ${hasD ? 'ghost' : ''}" data-act="drop-toggle" data-e="${i}">${hasD ? 'Bỏ drop set' : '+ Drop set (3 set)'}</button>`)(en.sets.some(isDrop) || !!en.drop)}
-    ${!en.sets.some(x => x.done) && !(en.drop && en.drop.done) ? `<button class="btn sm" data-act="swap-open" data-e="${i}">⇄ Đổi bài</button><button class="btn sm ghost danger" data-act="rm-entry" data-e="${i}">Bỏ bài</button>` : ''}</div>
+    ${!en.sets.some(x => x.done) && !(en.drop && en.drop.done) ? `<button class="btn sm" data-act="swap-open" data-e="${i}">⇄ Đổi bài</button><button class="btn sm ghost danger" data-act="rm-entry" data-e="${i}">Bỏ bài</button>` : ''}<button class="btn sm ghost" data-act="pain-ex" data-e="${i}">⚠ Đau</button></div>
     <textarea class="note" data-bind="note" data-e="${i}" rows="1" placeholder="Ghi chú: đau, form, cảm giác…">${esc(en.note || '')}</textarea></div></article>`;
   return h;
 }
@@ -3090,10 +3156,11 @@ function tickRest() {
   const left = rest.end - Date.now();
   if (left <= 0) { clearInterval(rest.iv); if (!rest.fired && animOn()) { document.body.classList.remove('restflash'); void document.body.offsetWidth; document.body.classList.add('restflash'); setTimeout(() => document.body.classList.remove('restflash'), 2200); } $('#rest-t').textContent = '0:00'; $('#rest-l').textContent = 'Hết giờ nghỉ · vào set tiếp'; $('#rest-bar').style.transform = 'scaleX(0)';
     if (rest.fired) return; rest.fired = true;
-    vibe([300, 150, 300, 150, 300]); beep(); notifyRestEnd();
+    vibe([300, 150, 300, 150, 300]); beep(); notifyRestEnd(); if (voiceLv() !== 'off') setTimeout(() => say('Hết giờ nghỉ. ' + (rest.nextTxt || '')), 900);
     if (document.visibilityState === 'visible') showAlarm(); else rest.pending = true;
     rest.hideT = setTimeout(() => { $('#rest').hidden = true; document.body.classList.remove('resting'); }, 6000); return; }
   const secLeft = Math.ceil(left / 1000);
+  if (secLeft === 10 && rest.total >= 25000 && rest.said10 !== rest.end && voiceLv() !== 'off') { rest.said10 = rest.end; say('Còn 10 giây'); }
   if (secLeft >= 1 && secLeft <= 3 && rest.lastTick !== secLeft) { rest.lastTick = secLeft; sfx('tick'); vibe(12); const rt = $('#rest-t'); if (rt && animOn()) { rt.classList.remove('beat'); void rt.offsetWidth; rt.classList.add('beat'); } }
   $('.rest-in').classList.toggle('final', secLeft <= 3);
   $('#rest-t').textContent = fmtDur(left + 999); $('#rest-bar').style.transform = `scaleX(${Math.min(1, left / rest.total)})`;
@@ -3125,6 +3192,7 @@ function sfx(kind) {
     else if (kind === 'step') { tone(0, 260, 0.032, 'triangle', 0.1, 180); }
     else if (kind === 'tick') { tone(0, 660, 0.08, 'sine', 0.18); }
     else if (kind === 'alarm') { [[0, 880], [0.28, 880], [0.56, 1320]].forEach(([t, f]) => tone(t, f, 0.22, 'square', 0.32)); }
+    else if (kind === 'win') { [[0, 392, 0.1], [0.08, 587.33, 0.1], [0.16, 783.99, 0.22]].forEach(([t, f, d]) => tone(t, f, d, 'sawtooth', 0.16)); }
     else if (kind === 'fanfare') { [[0, 523.25, 0.14], [0.1, 659.25, 0.14], [0.2, 783.99, 0.16], [0.32, 1046.5, 0.36]].forEach(([t, f, d]) => tone(t, f, d, 'triangle', 0.26)); }
   } catch (e) {}
 }
@@ -3132,6 +3200,74 @@ function beep() { sfx('alarm'); }
 async function requestWake() { try { if (!wake && 'wakeLock' in navigator && document.visibilityState === 'visible') { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } } catch (e) { wake = null; } }
 function releaseWake() { try { wake && wake.release(); } catch (e) {} wake = null; }
 
+/* ===== PA-12: giọng HLV đọc tiếng Việt ===== */
+const VOICE_LV = { off: { label: 'Tắt' }, rest: { label: 'Báo nghỉ' }, full: { label: 'Đầy đủ' } };
+const voiceLv = () => VOICE_LV[state.settings.voice] ? state.settings.voice : 'full';
+const hasTTS = () => 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+let viVoice = null, voiceReady = false;
+function pickVoice() { try { const vs = speechSynthesis.getVoices(); viVoice = vs.find(v => /^vi/i.test(v.lang)) || null; } catch (e) {} }
+if (hasTTS()) { pickVoice(); try { speechSynthesis.addEventListener('voiceschanged', pickVoice); } catch (e) {} }
+function say(text, cut = true) {
+  if (!text || voiceLv() === 'off' || !hasTTS()) return;
+  try { if (cut) speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'vi-VN'; if (viVoice) u.voice = viVoice; u.rate = 1.05; speechSynthesis.speak(u); } catch (e) {}
+}
+/* iPhone chỉ cho đọc sau một lần chạm: mở khoá ở lần bấm đầu tiên */
+function voiceUnlock() { if (voiceReady || voiceLv() === 'off' || !hasTTS()) return; voiceReady = true; try { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; u.lang = 'vi-VN'; speechSynthesis.speak(u); } catch (e) {} }
+const kgWord = kg => String(fmt(kg)).replace(/[.,]/, ' phẩy ');
+const durWord = sec => sec >= 60 ? Math.floor(sec / 60) + ' phút' + (sec % 60 ? ' ' + (sec % 60) + ' giây' : '') : sec + ' giây';
+/* câu đọc khi hết giờ nghỉ: set tiếp của bài này, hoặc bài tiếp theo */
+function nextTxt(i) {
+  const A = state.active && state.active.entries; if (!A) return '';
+  const en = A[i], j = en ? en.sets.findIndex(x => !x.done) : -1;
+  if (j >= 0) { const x = en.sets[j], n = isDrop(x) ? 'drop set ' + x.dr : 'set ' + (workSets(en).indexOf(x) + 1); return `Vào ${n}. ${x.kg > 0 ? kgWord(x.kg) + ' ký, ' : ''}${x.reps || 10} rep.`; }
+  const k = [...A.keys()].filter(k2 => k2 > i).concat([...A.keys()].filter(k2 => k2 < i)).find(k2 => !entryDone(A[k2]));
+  return k == null ? 'Xong hết các bài. Kết thúc buổi tập thôi.' : `Sang bài ${shortName(A[k].name)}.`;
+}
+/* đếm nhịp từng rep theo nhịp đã chọn: lên 1 giây, phần còn lại là hạ tạ */
+const counter = { t: [], e: -1 };
+function countStop() {
+  counter.t.forEach(clearTimeout); counter.t = []; const i = counter.e; counter.e = -1;
+  const b = i >= 0 && $(`#view [data-act="count"][data-e="${i}"]`); if (b) { b.classList.remove('counting'); b.textContent = '🔊 Đếm nhịp'; }
+}
+function countStart(i) {
+  const en = state.active && state.active.entries[i]; if (!en) return;
+  const j = en.sets.findIndex(x => !x.done); if (j < 0) { toast('Bài này đã xong hết set'); return; }
+  if (rest.end > Date.now()) stopRest();
+  const R = Math.max(1, Math.min(50, en.sets[j].reps || 10)), T = tempo() * 1000; counter.e = i; requestWake();
+  const show = k => { const b = $(`#view [data-act="count"][data-e="${i}"]`); if (b) { b.classList.add('counting'); b.textContent = k ? `■ ${k}/${R}` : '■ Dừng đếm'; } };
+  say('Chuẩn bị. Bắt đầu!'); show(0);
+  let t = 1900;
+  for (let k = 1; k <= R; k++) {
+    counter.t.push(setTimeout(() => { show(k); say(k === R ? `${k}. Xong!` : R - k === 2 && R >= 5 ? `${k}, còn hai` : String(k)); vibe(15); }, t));
+    counter.t.push(setTimeout(() => sfx('step'), t + 1000));
+    t += T;
+  }
+  counter.t.push(setTimeout(() => { countStop(); const c = $(`#row-${i}-${j} .check`); if (c) { c.classList.remove('pop'); void c.offsetWidth; c.classList.add('pop'); } toast(`Xong ${R} rep · bấm ✓ để lưu set`); }, t - T + 1200));
+}
+
+/* ===== PA-12: nhật ký đau thông minh ===== */
+function painStrip(ex, en, i) {
+  const pi = painOf(ex); if (!pi) return '';
+  const p = pi.p, area = esc(p.area.toLowerCase()), sg = suggest(ex), kg = sg && sg.kg > 0 ? ` ≈ <b>${fmt(sg.kg)}${U(ex).trim()}</b>` : '', mine = (p.exs || []).includes(ex.id) ? ' Bài này từng gây đau cho bạn.' : '';
+  if (pi.kind === 'return') return `<div class="painstrip">⚠ Mới hết đau <b>${area}</b>: tập khoảng 80%${kg}, đau lại thì dừng.${mine}</div>`;
+  if (p.level < 2) return `<div class="painstrip">⚠ Đang đau <b>${area}</b> (nhẹ): gợi ý giảm còn${kg || ' khoảng 80%'}, chỉ tập trong biên độ không đau. Đau quá 3/10 thì dừng.${mine}</div>`;
+  const began = en.sets.some(x => x.done);
+  return `<div class="painstrip">⚠ Đang đau <b>${area}</b> (${PAIN_LV[p.level].t.toLowerCase()}): <b>nên bỏ bài này</b>, tập bài không gây đau.${mine}<div class="row">${began
+    ? `<button class="btn sm" data-act="pain-stop" data-e="${i}">Dừng bài, giữ các set đã tập</button>`
+    : `<button class="btn sm" data-act="swap-open" data-e="${i}">⇄ Đổi bài khác</button><button class="btn sm ghost danger" data-act="rm-entry" data-e="${i}">Bỏ bài</button>`}</div></div>`;
+}
+/* đầu buổi tập: hỏi nhanh chỗ đau hôm nay ra sao (mỗi ngày 1 lần) */
+function painChkHtml() {
+  const today = ymd(), P = activePains().filter(p => p.since !== today && p.chk !== today); if (!P.length) return '';
+  const p = P[0];
+  return `<div class="painchk"><b>⚠ Hôm nay ${esc(p.area.toLowerCase())} thế nào?</b> <span class="small muted">đang ${PAIN_LV[p.level].t.toLowerCase()} từ ${dm(p.since)}</span>
+    <div class="row">${[['ok', 'Hết đau'], ['down', 'Đỡ hơn'], ['same', 'Như cũ'], ['up', 'Nặng hơn']].map(([k, l]) => `<button class="btn sm${k === 'ok' ? ' gold' : ''}" data-act="pain-chk" data-id="${p.id}" data-k="${k}">${l}</button>`).join('')}</div></div>`;
+}
+const painLog = (p, lv) => { const d = ymd(); p.log = (p.log || []).filter(x => x.d !== d).concat({ d, lv }).slice(-20); };
+function painTrend(p) {
+  const L = p.log || []; if (L.length < 2) return '';
+  return `<span class="ptrend">${L.slice(-8).map(x => `<i class="l${x.lv}">${dm(x.d)} ${x.lv ? PAIN_LV[x.lv].t : 'Hết'}</i>`).join('')}</span>`;
+}
 function finishSummary() {
   const a = state.active; let sets = 0, vol = 0; const prs = [];
   for (const en of a.entries) {
@@ -3152,6 +3288,9 @@ function finishSummary() {
     <div class="kpi"><div class="k">${sets}</div><div class="l">set</div></div><div class="kpi"><div class="k">${fmt(vol / 1000, 2)}</div><div class="l">tấn tạ</div></div></div>
     <div class="cmpline">${a.est ? `Dự kiến ${minTxt(a.est)}, thực tế <b>${Math.round(durOf(a) / 60000)} phút</b> · trung bình <b>${fmtDur(durOf(a) / sets)}</b> mỗi set (gồm nghỉ). ` : ''}${tot ? `<b>${met}/${tot}</b> bài đạt đủ set × rep mục tiêu. ` : ''}${pv ? `Tổng tạ so với lần trước (${dm(pv.date)}): <b>${tons(pvol)}</b> → <b>${tons(vol)}</b> ${deltaHtml(vol, pvol)}` : 'Lần đầu tập buổi này.'}</div>`;
   if (prs.length) { h += `<div class="eyebrow" style="margin-top:18px">Kỷ lục mới · 1RM ước tính</div>`; for (const p of prs) h += `<div class="pr"><span>${esc(shortName(p.name))}</span><span class="tn"><b style="color:var(--up)">${fmt(p.best)} kg</b> <span class="muted">(trước ${fmt(p.prev)})</span></span></div>`; }
+  const dsc = duelScore(a), dn = dsc.w + dsc.d + dsc.l;
+  if (dn) h += `<div class="eyebrow" style="margin-top:18px">⚔ Đấu với lần trước</div><div class="duelbd"><div class="w"><div class="k">${dsc.w}</div><small>thắng</small></div><div class="d"><div class="k">${dsc.d}</div><small>hòa</small></div><div class="l"><div class="k">${dsc.l}</div><small>thua</small></div></div>
+    <p class="cmpline">${dsc.w > dsc.l ? '<b>Mạnh hơn lần trước.</b> Giữ phong độ này cho buổi sau.' : dsc.w === dsc.l ? '<b>Ngang lần trước.</b> Buổi sau thử thêm 1 rep ở set cuối.' : '<b>Hôm nay yếu hơn lần trước.</b> Ngủ đủ, ăn đủ rồi phục thù buổi sau.'}</p>`;
   h += undone ? `<div class="sh-actions"><button class="btn gold big" data-act="close-sheet">${ICON.play} Tập tiếp</button><button class="btn" data-act="save-session">Vẫn lưu buổi tập</button></div>`
     : `<div class="sh-actions"><button class="btn gold big" data-act="save-session">Lưu buổi tập</button><button class="btn ghost" data-act="close-sheet">Tập tiếp</button></div>`;
   h += `<p class="note-line" style="text-align:center">Lưu rồi vẫn mở lại được trong ngày, ở tab Tập.</p>`;
@@ -3159,10 +3298,13 @@ function finishSummary() {
   sfx('fanfare'); vibe([40, 60, 80]);
   if (animOn()) countUp($('#sheet-body'));
   if (prs.length) setTimeout(() => prSlam(prs), 250);
+  else if (dn && dsc.w > dsc.l) setTimeout(() => bigSlam('THẮNG TRẬN', `${dsc.w} thắng · ${dsc.d} hòa · ${dsc.l} thua trước chính bạn lần trước`), 250);
+  if (dn && voiceLv() !== 'off') say(dsc.w > dsc.l ? `Thắng trận, ${dsc.w} thắng, ${dsc.l} thua.` : dsc.w === dsc.l ? 'Hòa lần trước.' : `Thua lần trước, ${dsc.w} thắng, ${dsc.l} thua. Phục thù buổi sau.`);
 }
 function saveSession() {
   const a = state.active;
-  a.finishedAt = Date.now();
+  a.finishedAt = Date.now(); countStop();
+  { const c = duelScore(a); if (c.w + c.d + c.l) a.duel = [c.w, c.d, c.l]; }
   a.entries = a.entries.map(en => ({ ...en, sets: en.sets.filter(s => s.done && s.reps > 0).map(s => ({ kg: s.kg ?? 0, reps: s.reps, ...(s.dr ? { dr: s.dr } : {}) })),
     drop: en.drop && en.drop.done && en.drop.reps > 0 ? { kg: en.drop.kg ?? 0, reps: en.drop.reps } : null, warm: undefined })).filter(en => en.sets.length || en.drop);
   state.sessions.push(a);
@@ -3909,6 +4051,12 @@ function viewMore() {
     <label class="toggle"><span>Âm thanh hiệu ứng khi tập (set xong, đếm ngược 3-2-1, PR)</span><input type="checkbox" id="sfx-t" ${st.sfx !== false ? 'checked' : ''}></label>
     <label class="toggle"><span>Rung phản hồi khi bấm</span><input type="checkbox" id="haptics-t" ${st.haptics !== false ? 'checked' : ''}></label>
   </div>
+  <div class="card set-card"><h3>Giọng HLV & Đấu với lần trước</h3><p>App đọc tiếng Việt khi tập: kết quả mỗi set, còn 10 giây, hết giờ nghỉ kèm set tiếp theo (số kg, số rep). Chế độ <b>Đầy đủ</b> có thêm nút <b>Đếm nhịp</b> ở mỗi bài, app đếm từng rep theo nhịp ${esc(TEMPOS[tempo()].d.toLowerCase())}.</p>
+    <div class="seg" role="group" aria-label="Giọng HLV">${Object.entries(VOICE_LV).map(([k, m]) => `<button type="button" data-act="voice-lv" data-k="${k}" aria-pressed="${voiceLv() === k}">${m.label}</button>`).join('')}</div>
+    <div class="row" style="margin-top:10px"><button class="btn sm" data-act="voice-test">🔊 Nghe thử</button></div>
+    <p class="small muted" style="margin:8px 0 6px">${!hasTTS() ? 'Trình duyệt này không hỗ trợ giọng đọc.' : viVoice ? 'Giọng đọc: ' + esc(viVoice.name) + '. Bật tiếng iPhone (gạt nút im lặng) để nghe.' : 'Nếu nghe giọng nước ngoài: vào Cài đặt iPhone › Trợ năng › Nội dung được đọc › Giọng nói › Tiếng Việt để tải giọng Việt. Bật tiếng iPhone để nghe.'}</p>
+    <label class="toggle"><span>Đấu với lần trước<br><span class="fhint">Mỗi set hiện mức lần trước, bấm ✓ là biết thắng, hòa hay thua</span></span><input type="checkbox" id="duel-t" ${st.duel !== false ? 'checked' : ''}></label>
+  </div>
   <div class="card set-card"><h3>Thông báo hết giờ nghỉ</h3><p>Mỗi lần bấm ✓, app gọi <b>Phím tắt</b> của iPhone để hẹn giờ trong app Đồng hồ. Hết giờ nghỉ, iPhone báo chuông kể cả khi khoá màn hình hay đang dùng app khác.</p>
     ${alertMethod() === 'shortcut' ? `<details class="guide" ${st.notify ? '' : 'open'}><summary>Tạo phím tắt 1 lần (khoảng 1 phút)</summary><ol class="sc-steps">
       <li>Mở app <b>Phím tắt</b> (Shortcuts) có sẵn trên iPhone, bấm <b>+</b> ở góc trên.</li>
@@ -4247,7 +4395,8 @@ function coachSetupSheet() {
 function painSheet() {
   const A = activePains(), f = ui.painF || (ui.painF = { area: '', level: 1 });
   let h = `<h3 class="sh-title">Đau & chấn thương</h3><p class="sh-text">Đánh dấu chỗ đang đau của ${esc(curProf().name)}. App sẽ giảm tạ hoặc bỏ các bài dồn lực vào vùng đó, và cho quay lại từ từ khi hết đau.</p>`;
-  if (A.length) h += `<div class="list">${A.map(p => `<div class="li painrow"><span style="min-width:0;flex:1"><span class="lt">${esc(p.area)} · ${PAIN_LV[p.level].t} <span class="muted">(${PAIN_LV[p.level].s})</span></span><span class="ls">Từ ${dm(p.since)} · ${ago(p.since)} · ${painCount(p)} bài liên quan${p.note ? ' · ' + esc(p.note) : ''}</span></span><button type="button" class="btn sm" data-act="pain-ok" data-id="${p.id}">Đã hết đau</button></div>`).join('')}</div>`;
+  if (A.length) h += `<div class="list">${A.map(p => `<div class="li painrow"><span style="min-width:0;flex:1"><span class="lt">${esc(p.area)} · ${PAIN_LV[p.level].t} <span class="muted">(${PAIN_LV[p.level].s})</span></span><span class="ls">Từ ${dm(p.since)} · ${ago(p.since)} · ${painCount(p)} bài liên quan${p.note ? ' · ' + esc(p.note) : ''}${(p.exs || []).length ? ' · gây đau: ' + p.exs.map(id => { const x = findEx(id); return x ? esc(shortName(x.name)) : ''; }).filter(Boolean).join(', ') : ''}</span>${painTrend(p)}</span><button type="button" class="btn sm" data-act="pain-ok" data-id="${p.id}">Đã hết đau</button></div>`).join('')}</div>`;
+  if (f.ex) h += `<div class="warnbox" style="margin-top:12px">Đau khi tập <b>${esc(shortName(f.exName || ''))}</b>. App sẽ nhớ bài này gây đau cho ${esc(curProf().name)} và tự giảm tạ hoặc gợi ý bỏ ở các buổi sau.</div>`;
   h += `<div class="eyebrow" style="margin:18px 0 0">${A.length ? 'Thêm hoặc cập nhật chỗ đau' : 'Đau ở đâu?'}</div>
     <div class="qpick">${Object.keys(PAIN_AREAS).map(a => `<button type="button" data-act="pain-area" data-v="${a}" aria-pressed="${f.area === a}">${a}</button>`).join('')}</div>
     <div class="eyebrow" style="margin:16px 0 8px">Mức đau khi tập (0 không đau – 10 đau nhất)</div>
@@ -4406,6 +4555,7 @@ async function syncPack(pid, { full = false, withPhotos = false } = {}) {
   const S = (st.sessions || []).filter(s => full || sent[s.id] !== sRev(s));
   const pkg = { app: 'gadn-sync', v: 1, role, link, name: p.name, at: Date.now(),
     plan: full || withPhotos || M.planH !== planH ? plan : null, sessions: S.map(s => serSession(st, s)), del: pruneDel(clone(syncDelOf(st))) };
+  if (role === 'student') pkg.pains = (st.pains || []).filter(x => !x.resolvedAt || daysBetween(x.resolvedAt, ymd()) <= 21).slice(-10).map(x => ({ a: x.area, l: x.level, s: x.since, r: x.resolvedAt || '', n: x.note || '' }));
   if (withPhotos) pkg.photos = photos;
   return { pkg, mark: { sent: Object.fromEntries(S.map(s => [s.id, sRev(s)])), planH } };
 }
@@ -4437,6 +4587,7 @@ function cleanPkg(raw) {
   const del = { s: {}, e: {} }; for (const k of ['s', 'e']) for (const [id, t] of Object.entries((raw.del || {})[k] || {}).slice(0, 5000)) { const key = k === 'e' ? shKey(cStr(id, 40)) : cStr(id, 40); del[k][key] = cNum(t, 0, 9e15, 0); }
   const photos = {}; for (const [h, v] of Object.entries(raw.photos || {}).slice(0, 300)) if (okPhoto(v)) photos[cStr(h, 30)] = v;
   return { role: raw.role, link: { pk: cStr((raw.link || {}).pk, 40), cn: cStr((raw.link || {}).cn, 40) }, name: cStr(raw.name || 'Người tập', 30), at: cNum(raw.at, 0, 9e15, 0),
+    pains: Array.isArray(raw.pains) ? raw.pains.slice(0, 10).filter(x => x && PAIN_AREAS[x.a]).map(x => ({ a: x.a, l: cNum(x.l, 1, 3, 1), s: /^\d{4}-\d\d-\d\d$/.test(x.s || '') ? x.s : ymd(), r: /^\d{4}-\d\d-\d\d$/.test(x.r || '') ? x.r : '', n: cStr(x.n, 80) })) : null,
     plan: Array.isArray(raw.plan) ? raw.plan.slice(0, 20).map(d => ({ n: cStr(d.n || 'Ngày tập', 40), e: (Array.isArray(d.e) ? d.e : []).slice(0, 40).map(cleanEx) })) : null, sessions: sess, del, photos };
 }
 
@@ -4528,6 +4679,10 @@ async function syncMerge(L0, P, choices) {
   }
   pruneDel(D);
   const M = L.syncMark || {}, sent = { ...(M.sent || {}) }; for (const ps of P.sessions) { const x = L.sessions.find(s => s.id === ps.id); if (x && sRev(x) === sRev(ps)) sent[ps.id] = sRev(ps); } L.syncMark = { ...M, sent };
+  /* chỗ đau do học viên tự báo: máy HLV nhận nguyên trạng */
+  if (coachLocal && Array.isArray(P.pains)) { const old = L.pains || [], key = x => x.area + '|' + x.since; const was = JSON.stringify(old.map(x => [x.area, x.level, x.resolvedAt || ''])); 
+    L.pains = P.pains.map(x => { const o = old.find(y => key(y) === x.a + '|' + x.s); return { ...(o || {}), id: o ? o.id : uid(), area: x.a, level: x.l, since: x.s, note: x.n, resolvedAt: x.r || null }; });
+    if (JSON.stringify(L.pains.map(x => [x.area, x.level, x.resolvedAt || ''])) !== was) R.pain = L.pains.filter(x => !x.resolvedAt).length || -1; }
   if (P.role === 'coach' && P.link.pk) L.coachLink = { pk: P.link.pk, name: P.link.cn || (L.coachLink || {}).name || '' };
   return { st: L, R, newPhotos };
 }
@@ -4592,7 +4747,7 @@ async function syncPreview(pid) {
   const { R } = await syncMerge(st, P, ui.syncChoices);
   const L = [];
   if (R.newS) L.push(`<b>${R.newS}</b> buổi tập mới`); if (R.updS) L.push(`<b>${R.updS}</b> buổi được cập nhật`); if (R.delS) L.push(`<b>${R.delS}</b> buổi bị xoá theo máy kia`);
-  if (R.kg) L.push(`<b>${R.kg}</b> bài có mức tạ mới`); if (R.newEx) L.push(`<b>${R.newEx}</b> bài mới trong giáo án`); if (R.updEx) L.push(`<b>${R.updEx}</b> bài được chỉnh`); if (R.dropEx) L.push(`<b>${R.dropEx}</b> bài bỏ khỏi giáo án`); if (R.photos) L.push(`<b>${R.photos}</b> ảnh máy tập`);
+  if (R.kg) L.push(`<b>${R.kg}</b> bài có mức tạ mới`); if (R.newEx) L.push(`<b>${R.newEx}</b> bài mới trong giáo án`); if (R.updEx) L.push(`<b>${R.updEx}</b> bài được chỉnh`); if (R.dropEx) L.push(`<b>${R.dropEx}</b> bài bỏ khỏi giáo án`); if (R.photos) L.push(`<b>${R.photos}</b> ảnh máy tập`); if (R.pain) L.push(R.pain > 0 ? `<b>${R.pain}</b> chỗ đau học viên báo` : 'Học viên đã hết đau');
   const nothing = !L.length && !R.conflicts.length;
   const conf = R.conflicts.map(c => `<div class="li" style="display:block"><div class="lt">${esc(c.dayName)} · ${dm(c.date)}: cả hai máy cùng ghi</div><div class="seg" role="group" style="margin-top:8px">
       ${[['mine', `Giữ máy này (${c.mine} set)`], ['theirs', `Giữ máy kia (${c.theirs} set)`], ['both', 'Giữ cả hai']].map(([k, t]) => `<button type="button" data-act="sync-pick" data-id="${esc(c.id)}" data-v="${k}" aria-pressed="${c.choice === k}">${t}</button>`).join('')}</div></div>`).join('');
@@ -4613,7 +4768,7 @@ async function syncApply() {
   if (pid === profiles.active) { const g = globalsOf(state); loadState(st); Object.assign(state.settings, g); save(); }
   else { st.updatedAt = Date.now(); await LDB.put('kv', stateKey(pid), clone(st)); }
   ui.syncIn = null; ui.coachData = null; closeSheet(); render(true);
-  const p = profiles.list.find(x => x.id === pid), bits = [R.newS && `${R.newS} buổi mới`, R.kg && `${R.kg} mức tạ`, (R.newEx || R.updEx || R.dropEx) && 'giáo án', R.photos && `${R.photos} ảnh`].filter(Boolean);
+  const p = profiles.list.find(x => x.id === pid), bits = [R.newS && `${R.newS} buổi mới`, R.kg && `${R.kg} mức tạ`, (R.newEx || R.updEx || R.dropEx) && 'giáo án', R.photos && `${R.photos} ảnh`, R.pain && 'chỗ đau'].filter(Boolean);
   toast(`Đã gộp vào ${p ? p.name : 'hồ sơ'}${bits.length ? ': ' + bits.join(', ') : ''}`, { act: 'sync-undo', label: 'Hoàn tác' });
 }
 async function syncUndo() {
@@ -4843,7 +4998,7 @@ function plan2ToV2(data) {
 function syncCompact(pkg, sessions) {
   const ref = en => { const lr = libRef(en.name); return lr ? '#' + lr : en.name; };
   return { r: pkg.role === 'coach' ? 'c' : 's', k: pkg.link.pk || '', q: pkg.link.cn || '', n: pkg.name, t: Math.round(pkg.at / 1000),
-    ...(pkg.plan ? { p: pkg.plan } : {}),
+    ...(pkg.plan ? { p: pkg.plan } : {}), ...(pkg.pains ? { a: pkg.pains.map(x => [x.a, x.l, x.s, x.r, x.n]) } : {}),
     s: sessions.map(s => { const st = Math.round(s.startedAt / 1000);
       return [s.id, s.date, st, s.finishedAt ? Math.round(s.finishedAt / 1000) - st : 0, s.dayName, s.deload ? 1 : 0, Math.round((s.paused || 0) / 1000),
         s.entries.map(en => { const a = [en.k[0] || '', ref(en), en.sets.flatMap(z => [z.kg ?? 0, z.reps])], dr = en.sets.map((z, k) => z.dr ? k : -1).filter(k => k >= 0);
@@ -4853,6 +5008,7 @@ function syncCompact(pkg, sessions) {
 function syncExpand(c) {
   const now = Date.now(), nm = r => libName(r) || (typeof r === 'string' && r[0] !== '#' ? r : 'Bài tập');
   return { app: 'gadn-sync', v: 2, role: c.r === 'c' ? 'coach' : 'student', link: { pk: c.k || '', cn: c.q || '' }, name: c.n || '', at: (c.t || 0) * 1000,
+    pains: Array.isArray(c.a) ? c.a.map(([a, l, s2, r, n]) => ({ a, l, s: s2, r, n })) : null,
     plan: Array.isArray(c.p) ? c.p.map(([n, e]) => ({ n, e: (e || []).map(o => ({ ...cExDec(o), o: o.o || '', ms: '', l: (o.l || []).map(cExDec) })) })) : null,
     sessions: (c.s || []).map(([id, date, st, dur, dayName, dl, ps, E]) => ({ id, date, startedAt: st * 1000, finishedAt: dur ? (st + dur) * 1000 : null, dayName, deload: !!dl, paused: (ps || 0) * 1000,
       entries: (E || []).map(([k, r, flat, drop, note, each, dr]) => { const name = nm(r), lib = LIB.find(l => l[0] === name), sets = [], D = new Set(Array.isArray(dr) ? dr : []); for (let i = 0; i + 1 < (flat || []).length; i += 2) sets.push({ kg: flat[i], reps: flat[i + 1], ...(D.has(i / 2) ? { dr: Math.min(3, [...D].filter(x => x <= i / 2).length) } : {}) });
@@ -5023,7 +5179,10 @@ const handlers = {
     if (set.done) { t.classList.remove('pop'); row.classList.remove('flash'); void t.offsetWidth; t.classList.add('pop'); row.classList.add('flash'); sfx('check'); vibe([35, 40, 60]); }
     else { sfx('uncheck'); vibe(10); }
     markCurrent();
-    if (set.done) { const en0 = state.active.entries[+e], ex = exOrSnap(en0), nx = en0.sets[+s + 1]; if (s !== 'drop' && !isDrop(set) && !isDrop(nx)) startRest(restOf(ex), shortName(ex.name)); else { if (rest.end > Date.now()) stopRest(); if (isDrop(nx)) toast('Vào drop set ngay, không nghỉ'); } requestWake(); }
+    if (counter.e === +e) countStop();
+    let dres = null; if (set.done) { dres = duelRow(+e, s); if (dres === 'w') { sfx('win'); vibe([30, 30, 30, 30, 90]); } } else { const r0 = $(`#row-${e}-${s} .duel b`); if (r0) r0.remove(); }
+    if (set.done) { voiceUnlock(); const en0 = state.active.entries[+e], ex = exOrSnap(en0), nx = en0.sets[+s + 1]; let rs = 0; if (s !== 'drop' && !isDrop(set) && !isDrop(nx)) { rs = restOf(ex); startRest(rs, shortName(ex.name)); rest.nextTxt = nextTxt(+e); } else { if (rest.end > Date.now()) stopRest(); if (isDrop(nx)) toast('Vào drop set ngay, không nghỉ'); } requestWake();
+      if (voiceLv() === 'full') say([dres === 'w' ? 'Thắng!' : dres === 'l' ? 'Thua lần trước.' : dres === 'd' ? 'Hòa.' : '', entryDone(en0) ? 'Xong bài.' : '', isDrop(nx) ? 'Vào drop set ngay.' : rs ? 'Nghỉ ' + durWord(rs) + '.' : ''].filter(Boolean).join(' ')); }
     refreshCue(+e); updateProgress(); save();
     if (set.done && +e === focusIdx() && entryDone(state.active.entries[+e])) { ui.stampEx = state.active.entries[+e].exId; refreshExCard(+e); ui.stampEx = null; vibe([60, 50, 90]);
       const card = $(`#view article.ex[data-i="${e}"]`); if (card && animOn()) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); }
@@ -5251,11 +5410,24 @@ const handlers = {
     const f = ui.painF; if (!f || !f.area) return; const note = ($('#f-pnote') && $('#f-pnote').value || '').trim().slice(0, 80);
     const today = ymd(); state.pains = (state.pains || []).filter(p => !p.resolvedAt || daysBetween(p.resolvedAt, today) <= 60);
     const cur = state.pains.find(p => !p.resolvedAt && p.area === f.area);
-    if (cur) { cur.level = f.level; if (note) cur.note = note; } else state.pains.push({ id: uid(), area: f.area, level: f.level, since: today, note, resolvedAt: null });
+    let pp = cur; if (cur) { cur.level = f.level; if (note) cur.note = note; } else { pp = { id: uid(), area: f.area, level: f.level, since: today, note, resolvedAt: null }; state.pains.push(pp); }
+    if (f.ex) pp.exs = [...new Set([...(pp.exs || []), f.ex])].slice(-12); painLog(pp, f.level); pp.chk = today;
     save(); closeSheet(); render(true);
     toast(`Đã ghi đau ${f.area.toLowerCase()} · ${painCount({ area: f.area })} bài được điều chỉnh`);
   },
-  'pain-ok': t => { const p = (state.pains || []).find(x => x.id === t.dataset.id); if (!p) return; p.resolvedAt = ymd(); save(); render(true); ui.painF = { area: '', level: 1, note: '' };
+  'pain-ex': t => { const i = +t.dataset.e, en = state.active && state.active.entries[i]; if (!en) return; const ex = exOrSnap(en);
+    const guess = Object.keys(PAIN_AREAS).find(k => (state.pains || []).some(p => !p.resolvedAt && p.area === k && painHits(ex, p))) || Object.keys(PAIN_AREAS).find(k => painHits(ex, { area: k })) || '';
+    const cur = activePains().find(p => p.area === guess); ui.painF = { area: guess, level: cur ? cur.level : 1, note: '', ex: en.exId, exName: en.name }; painSheet(); },
+  'pain-stop': t => { const i = +t.dataset.e, en = state.active && state.active.entries[i]; if (!en) return; en.sets = en.sets.filter(x => x.done); if (en.drop && !en.drop.done) en.drop = null;
+    if (!en.sets.length && !en.drop) { state.active.entries.splice(i, 1); ui.focusEx = null; } save(); render(true); toast('Đã dừng bài vì đau · các set đã tập vẫn được lưu'); },
+  'pain-chk': t => { const p = (state.pains || []).find(x => x.id === t.dataset.id); if (!p) return; const k = t.dataset.k, today = ymd(); p.chk = today;
+    if (k === 'ok') { p.resolvedAt = today; painLog(p, 0); } else { if (k === 'down') p.level = Math.max(1, p.level - 1); if (k === 'up') p.level = Math.min(3, p.level + 1); painLog(p, p.level); }
+    save(); render(true);
+    toast(k === 'ok' ? `Hết đau ${p.area.toLowerCase()} · buổi đầu quay lại tập khoảng 80% tạ` : k === 'up' ? `Đau ${p.area.toLowerCase()} nặng hơn: ${p.level >= 2 ? 'nên bỏ các bài liên quan' : 'giảm tạ các bài liên quan'}${p.level >= 3 ? ', nên đi khám' : ''}` : `Đã ghi: ${p.area.toLowerCase()} ${PAIN_LV[p.level].t.toLowerCase()}`); },
+  'count': t => { initAudio(); voiceUnlock(); const i = +t.dataset.e; if (counter.e === i) { countStop(); try { speechSynthesis.cancel(); } catch (e) {} return; } countStop(); countStart(i); },
+  'voice-lv': t => { state.settings.voice = t.dataset.k; save(); render(true); if (t.dataset.k !== 'off') { voiceReady = false; voiceUnlock(); say('Giọng huấn luyện viên đã bật'); } },
+  'voice-test': () => { voiceReady = false; voiceUnlock(); say('Hết giờ nghỉ. Vào set 2. 55 ký, 10 rep.'); },
+  'pain-ok': t => { const p = (state.pains || []).find(x => x.id === t.dataset.id); if (!p) return; p.resolvedAt = ymd(); painLog(p, 0); save(); render(true); ui.painF = { area: '', level: 1, note: '' };
     if (activePains().length) painSheet(); else closeSheet(); toast(`Hết đau ${p.area.toLowerCase()} · buổi đầu quay lại tập khoảng 80% tạ`); },
   'form-lv': t => { state.settings.formCues = t.dataset.k; save(); render(true); toast('Lưu ý form: ' + FORM_LV[formLv()].label); },
   'cue-open': t => { ui.cueOpen = t.dataset.k || null; if (state.active && ui.tab === 'today') refreshExCard(focusIdx()); else render(true); },
@@ -5418,6 +5590,7 @@ document.addEventListener('input', e => {
 document.addEventListener('change', async e => {
   const t = e.target;
   if (t.id === 'sfx-t') { state.settings.sfx = t.checked; if (t.checked) sfx('check'); save(); return; }
+  if (t.id === 'duel-t') { state.settings.duel = t.checked; save(); return; }
   if (t.id === 'haptics-t') { state.settings.haptics = t.checked; if (t.checked) vibe(20); save(); return; }
   if (t.id === 'f-name' && ui.draft && ui.draft.isNew) {
     const lib = LIB.find(l => l[0] === t.value.trim());
