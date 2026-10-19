@@ -1284,7 +1284,7 @@ body.restflash::after{content:"";position:fixed;inset:0;pointer-events:none;z-in
 .stepchips button{min-width:44px;height:32px;border-radius:16px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--fg);font:inherit;font-size:13px;font-weight:700}
 .stepchips button[aria-pressed="true"]{background:var(--gold);color:var(--gold-ink);border-color:var(--gold)}
 
-/* ===== PA-13: chấm độ khó set · báo cáo tháng ===== */
+/* ===== PA-13: chấm độ khó set ===== */
 .setrow .eff{grid-column:1/-1;display:flex;align-items:center;gap:6px;margin:-2px 0 2px}
 .eff span{font-size:11.5px;color:var(--muted);font-weight:700;margin-right:auto;padding-left:30px}
 .eff button{height:28px;padding:0 11px;border-radius:14px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--fg-2);font:inherit;font-size:12.5px;font-weight:700}
@@ -1293,12 +1293,6 @@ body.restflash::after{content:"";position:fixed;inset:0;pointer-events:none;z-in
 .eff button[aria-pressed="true"].h{background:#f0a020;border-color:#f0a020;color:#1b1406}
 .eff button[aria-pressed="true"].f{background:var(--down);border-color:var(--down);color:#fff}
 .effl{color:var(--fg-2);font-weight:600}
-.repnav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 12px}
-.repnav b{font-size:15px}
-.repbar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--surface-2);margin-top:8px}
-.repbar i{display:block;height:100%}
-.repimg{width:100%;border-radius:14px;margin-top:12px;border:1px solid var(--line-2);display:block;-webkit-touch-callout:default}
-#rep-note{min-height:72px}
 </style>
 </head>
 <body>
@@ -3528,112 +3522,6 @@ function periodStats(from, to) {
   return { ss, sets, vol, per, ups: upCount(ss) };
 }
 const dlt = (a, b, f) => { if (!b && !a) return ''; const d = a - b; return `<span class="dl delta ${d > 0 ? 'good' : d < 0 ? 'bad' : 'flat'}">${d > 0 ? '▲' : d < 0 ? '▼' : '='} ${f ? f(Math.abs(d)) : Math.abs(d)}</span>`; };
-/* ===== PA-13: báo cáo tháng cho học viên ===== */
-function reportData(off) {
-  const P = periodOf('month', off), S = periodStats(P.from, P.to), Q = periodStats(P.prev[0], P.prev[P.prev.length - 1]);
-  const ups = [], prs = [], seen = new Set();
-  for (const { ex } of allExFull()) {
-    if (seen.has(ex.id)) continue; seen.add(ex.id);
-    const H = exHistory(ex.id).filter(h => !h.deload), inM = H.filter(h => h.date >= P.from && h.date <= P.to); if (!inM.length) continue;
-    const pre = H.filter(h => h.date < P.from), k0 = pre.length ? wt(pre[0]) : wt(inM[inM.length - 1]), k1 = wt(inM[0]);
-    if (k1 > k0 + 0.01) ups.push({ name: shortName(ex.name), k0, k1, u: U(ex).trim() });
-    const bIn = Math.max(0, ...inM.map(bestE1)), bPre = Math.max(0, ...pre.map(bestE1));
-    if (bPre > 0 && bIn > bPre + 0.01) prs.push({ name: shortName(ex.name), best: bIn, prev: bPre });
-  }
-  ups.sort((a, b) => (b.k1 - b.k0) / (b.k0 || 1) - (a.k1 - a.k0) / (a.k0 || 1)); prs.sort((a, b) => b.best / b.prev - a.best / a.prev);
-  const B = bodySorted(), body = [];
-  for (const m of METRICS.filter(x => ['weight', 'bodyFat', 'muscle'].includes(x.k))) {
-    const has = B.filter(e => e[m.k] != null), inM = has.filter(e => e.date >= P.from && e.date <= P.to); if (!inM.length) continue;
-    const pre = has.filter(e => e.date < P.from), a = pre.length ? pre[pre.length - 1] : inM[0], b = inM[inM.length - 1];
-    body.push({ label: m.label, unit: m.unit, dec: m.dec, good: m.good, a: a[m.k], b: b[m.k], one: a === b });
-  }
-  const eff = { e: 0, m: 0, h: 0, f: 0, n: 0 };
-  for (const x of S.ss) for (const en of x.entries) for (const z of en.sets) if (!z.dr && EFF[z.ef]) { eff[z.ef]++; eff.n++; }
-  const wks = new Set(S.ss.map(x => addDays(x.date, -((parseYmd(x.date).getDay() + 6) % 7))));
-  const span = Math.max(1, Math.ceil((Math.min(daysBetween(P.from, ymd()) + 1, P.days.length)) / 7));
-  return { P, S, Q, ups, prs, body, eff, wks: wks.size, span: Math.min(span, Math.ceil(P.days.length / 7)) };
-}
-const repMonth = P => { const d = parseYmd(P.from); return `${d.getMonth() + 1}/${d.getFullYear()}`; };
-const signed = (v, dec = 1) => (v > 0 ? '+' : v < 0 ? '−' : '±') + fmt(Math.abs(v), dec);
-async function reportSheet() {
-  const r = ui.rep; if (!r) return; const st = await syncStateOf(r.pid); if (!st) return;
-  const p = profiles.list.find(x => x.id === r.pid) || curProf(), D = withState(st, () => reportData(r.off)); ui.repD = { D, name: p.name };
-  const { S, Q, ups, prs, body, eff } = D, tn = v => fmt(v / 1000, v >= 10000 ? 1 : 2);
-  let h = `<h3 class="sh-title">Báo cáo tháng ${repMonth(D.P)}</h3><p class="sh-text">${esc(p.name)} · ${D.P.sub}</p>
-    <div class="repnav"><button class="btn sm" data-act="rep-m" data-d="-1">${ICON.chevL} Tháng trước</button><b>${D.P.label}</b><button class="btn sm" data-act="rep-m" data-d="1" ${r.off >= 0 ? 'disabled' : ''}>Tháng sau ${ICON.chevR}</button></div>
-    <div class="kpis k4"><div class="kpi"><div class="k">${S.ss.length}</div><div class="l">buổi</div>${dlt(S.ss.length, Q.ss.length)}</div><div class="kpi"><div class="k">${S.sets}</div><div class="l">set</div>${dlt(S.sets, Q.sets)}</div>
-    <div class="kpi"><div class="k">${tn(S.vol)}</div><div class="l">tấn tạ</div>${dlt(S.vol, Q.vol, v => tn(v))}</div><div class="kpi"><div class="k">${ups.length}</div><div class="l">bài lên tạ</div></div></div>
-    <p class="small muted" style="margin:8px 0 0">Tập ${D.wks}/${D.span} tuần · mũi tên so với tháng trước.</p>`;
-  h += `<div class="eyebrow" style="margin-top:18px">Lên tạ</div>${ups.length ? ups.slice(0, 10).map(x => `<div class="pr"><span>${esc(x.name)}</span><span class="tn">${fmt(x.k0)} → <b>${fmt(x.k1)}</b> ${x.u} <b style="color:var(--up)">${signed(x.k1 - x.k0)}</b></span></div>`).join('') : '<p class="small muted">Chưa có bài lên tạ trong tháng.</p>'}`;
-  if (prs.length) h += `<div class="eyebrow" style="margin-top:18px">Kỷ lục mới · 1RM ước tính</div>${prs.slice(0, 6).map(x => `<div class="pr"><span>${esc(x.name)}</span><span class="tn"><b style="color:var(--up)">${fmt(x.best)} kg</b> <span class="muted">(trước ${fmt(x.prev)})</span></span></div>`).join('')}`;
-  if (body.length) h += `<div class="eyebrow" style="margin-top:18px">Cơ thể</div>${body.map(x => { const d = x.b - x.a, c = !d || !x.good ? 'var(--fg-2)' : d * x.good > 0 ? 'var(--up)' : 'var(--down)';
-    return `<div class="pr"><span>${x.label}</span><span class="tn">${x.one ? `<b>${fmt(x.b, x.dec)}</b> ${x.unit}` : `${fmt(x.a, x.dec)} → <b>${fmt(x.b, x.dec)}</b> ${x.unit} <b style="color:${c}">${signed(d, x.dec)}</b>`}</span></div>`; }).join('')}`;
-  if (eff.n) h += `<div class="eyebrow" style="margin-top:18px">Cảm giác các set · ${eff.n} set có chấm</div><div class="repbar">${['e', 'm', 'h', 'f'].map(k => `<i style="width:${eff[k] / eff.n * 100}%;background:${EFFC[k]}"></i>`).join('')}</div>
-    <p class="small" style="margin:6px 0 0">${['e', 'm', 'h', 'f'].filter(k => eff[k]).map(k => `${EFF[k].t} <b>${Math.round(eff[k] / eff.n * 100)}%</b>`).join(' · ')}</p><p class="small muted" style="margin:4px 0 0">${effAdvice(eff)}</p>`;
-  h += `<label class="f full" style="margin-top:16px">Lời nhắn của HLV <span class="unit">in lên ảnh</span><textarea class="inp" id="rep-note" maxlength="300" placeholder="Ví dụ: Tháng này lên tạ đều, tháng sau tập trung chân và ngủ đủ 7 tiếng.">${esc(r.note || '')}</textarea></label>
-    <div class="sh-actions"><button class="btn gold big" data-act="rep-img">🖼 Tạo ảnh báo cáo</button><button class="btn" data-act="rep-csv">⬇ Xuất Excel (.csv)</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div><div id="rep-out"></div>`;
-  openSheet(h);
-}
-const EFFC = { e: '#3ddc97', m: '#d9b45b', h: '#f0a020', f: '#ff5d73' };
-function effAdvice(e) {
-  if (!e.n) return '';
-  if (e.f / e.n >= 0.2) return 'Nhiều set hỏng rep: mức tạ đang quá nặng, nên giữ hoặc giảm 1 nấc.';
-  if (e.e / e.n >= 0.5) return 'Hơn nửa số set còn dễ: có thể lên tạ nhanh hơn.';
-  if ((e.h + e.m) / e.n >= 0.6) return 'Phần lớn set ở mức vừa đến sát giới hạn: đúng vùng để cơ phát triển.';
-  return '';
-}
-function reportCsv(off) {
-  const P = periodOf('month', off), rows = [['Ngày', 'Buổi', 'Bài tập', 'Nhóm cơ', 'Set', 'Kg', 'Rep', 'Loại', 'Cảm giác', 'Ghi chú']];
-  for (const x of state.sessions.filter(z => z.date >= P.from && z.date <= P.to).sort((a, b) => a.startedAt - b.startedAt)) for (const en of x.entries) {
-    let n = 0, first = true;
-    const add = (no, kg, reps, kind, ef) => { rows.push([x.date, x.dayName, en.name, en.muscle, no, kg ?? 0, reps, kind, ef ? EFF[ef].t : '', first ? en.note || '' : '']); first = false; };
-    for (const z of en.sets) add(z.dr ? 'D' + z.dr : ++n, z.kg, z.reps, z.dr ? 'Drop set' : x.deload ? 'Giảm tải' : 'Set chính', z.ef);
-    if (en.drop) add('D', en.drop.kg, en.drop.reps, 'Drop set', '');
-  }
-  return rows.map(r => r.map(c => { c = String(c ?? ''); return /[",\r\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(',')).join('\r\n');
-}
-/* vẽ báo cáo thành ảnh PNG (vẽ tay trên canvas, không phụ thuộc thư viện) */
-async function reportImage(R, note) {
-  try { await document.fonts.ready; } catch (e) {}
-  const cs = getComputedStyle(document.documentElement), v = (k, d) => cs.getPropertyValue(k).trim() || d;
-  const C = { bg: v('--bg', '#0a0a0b'), card: v('--surface', '#17171a'), fg: v('--fg', '#ffffff'), mut: v('--muted', '#9a9aa0'), gold: v('--gold', '#d9b45b'), ink: v('--gold-ink', '#1b1406'), up: v('--up', '#3ddc97'), down: v('--down', '#ff5d73'), line: v('--line-2', 'rgba(255,255,255,.12)') };
-  const FD = v('--font-d', 'system-ui, sans-serif'), FB = getComputedStyle(document.body).fontFamily || 'system-ui, sans-serif';
-  const { D, name } = R, { S, Q, ups, prs, body, eff } = D, co = coach(), W = 1080, pad = 64, CW = W - pad * 2;
-  const cv = document.createElement('canvas'), x = cv.getContext('2d');
-  const run = draw => {
-    let y = pad;
-    const font = (sz, w = 600, f = FB) => { x.font = `${w} ${sz}px ${f}`; };
-    const T = (t, X, Y, sz, col, w, f, al = 'left') => { font(sz, w, f); if (draw) { x.fillStyle = col; x.textAlign = al; x.textBaseline = 'alphabetic'; x.fillText(t, X, Y); } return x.measureText(t).width; };
-    const fit = (t, max, sz, w, f) => { font(sz, w, f); if (x.measureText(t).width <= max) return t; while (t.length > 1 && x.measureText(t + '…').width > max) t = t.slice(0, -1); return t + '…'; };
-    const wrap = (t, X, Y, max, sz, col, w, lh) => { font(sz, w); const words = String(t).split(/\s+/); let line = '', yy = Y;
-      for (const wd of words) { const tt = line ? line + ' ' + wd : wd; if (x.measureText(tt).width > max && line) { T(line, X, yy, sz, col, w); line = wd; yy += lh; } else line = tt; }
-      if (line) { T(line, X, yy, sz, col, w); yy += lh; } return yy; };
-    const box = (X, Y, w, hh, col, r = 22) => { if (!draw) return; x.fillStyle = col; x.beginPath(); x.roundRect ? x.roundRect(X, Y, w, hh, r) : x.rect(X, Y, w, hh); x.fill(); };
-    const sec = t => { y += 30; T(t.toUpperCase(), pad, y + 30, 26, C.gold, 800); y += 52; };
-    const row = (l, rt, rcol, sub) => { box(pad, y, CW, 78, C.card, 16); T(fit(l, CW * 0.52, 32, 600), pad + 26, y + 50, 32, C.fg, 600);
-      const wR = sub ? T(sub, pad + CW - 26, y + 50, 30, rcol || C.up, 800, FB, 'right') : 0; T(rt, pad + CW - 26 - (wR ? wR + 14 : 0), y + 50, 30, C.fg, 700, FB, 'right'); y += 90; };
-    if (draw) { x.fillStyle = C.bg; x.fillRect(0, 0, W, cv.height); x.fillStyle = C.gold; x.fillRect(0, 0, W, 14); }
-    y += 20; T('BÁO CÁO THÁNG ' + repMonth(D.P), pad, y + 26, 28, C.gold, 800);
-    y += 40; T(fit(name, CW, 76, 800, FD), pad, y + 72, 76, C.fg, 800, FD); y += 96;
-    T(`${D.P.sub}${co ? ' · HLV ' + co.name : ''}`, pad, y + 30, 28, C.mut, 600); y += 60;
-    const kp = [[S.ss.length, 'buổi tập', S.ss.length - Q.ss.length], [S.sets, 'set', S.sets - Q.sets], [fmt(S.vol / 1000, 1), 'tấn tạ', (S.vol - Q.vol) / 1000], [ups.length, 'bài lên tạ', null]];
-    const bw = (CW - 24) / 2;
-    kp.forEach(([k, l, d], i) => { const X = pad + (i % 2) * (bw + 24), Y = y + Math.floor(i / 2) * 170; box(X, Y, bw, 150, C.card);
-      T(String(k), X + 28, Y + 82, 66, C.gold, 800, FD); T(l, X + 28, Y + 124, 28, C.mut, 600);
-      if (d != null && (d || Q.ss.length)) T((d > 0 ? '▲ ' : d < 0 ? '▼ ' : '= ') + fmt(Math.abs(d), Number.isInteger(d) ? 0 : 1), X + bw - 24, Y + 82, 28, d > 0 ? C.up : d < 0 ? C.down : C.mut, 800, FB, 'right'); });
-    y += 340; T(`Tập ${D.wks}/${D.span} tuần · so với tháng trước`, pad, y + 6, 24, C.mut, 600); y += 10;
-    if (ups.length) { sec('Lên tạ'); ups.slice(0, 8).forEach(u => row(u.name, `${fmt(u.k0)} → ${fmt(u.k1)} ${u.u}`, C.up, signed(u.k1 - u.k0))); if (ups.length > 8) { T(`+${ups.length - 8} bài khác`, pad, y + 20, 26, C.mut, 600); y += 36; } }
-    if (prs.length) { sec('Kỷ lục mới · 1RM ước tính'); prs.slice(0, 5).forEach(p => row(p.name, `${fmt(p.best)} kg`, C.mut, `trước ${fmt(p.prev)}`)); }
-    if (body.length) { sec('Cơ thể'); body.forEach(b => { const d = b.b - b.a; row(b.label, b.one ? `${fmt(b.b, b.dec)} ${b.unit}` : `${fmt(b.a, b.dec)} → ${fmt(b.b, b.dec)} ${b.unit}`, !d || !b.good ? C.mut : d * b.good > 0 ? C.up : C.down, b.one ? '' : signed(d, b.dec)); }); }
-    if (eff.n) { sec('Cảm giác các set'); let X = pad; if (draw) { x.save(); x.beginPath(); x.roundRect ? x.roundRect(pad, y, CW, 26, 13) : x.rect(pad, y, CW, 26); x.clip(); ['e', 'm', 'h', 'f'].forEach(k => { const w = CW * eff[k] / eff.n; x.fillStyle = EFFC[k]; x.fillRect(X, y, w, 26); X += w; }); x.restore(); }
-      y += 64; y = wrap(['e', 'm', 'h', 'f'].filter(k => eff[k]).map(k => `${EFF[k].t} ${Math.round(eff[k] / eff.n * 100)}%`).join('  ·  '), pad, y, CW, 28, C.fg, 700, 40); const ad = effAdvice(eff); if (ad) y = wrap(ad, pad, y, CW, 26, C.mut, 600, 36); }
-    if (note && note.trim()) { sec('Lời nhắn của HLV'); const y0 = y; const hh = wrap(note.trim(), pad + 34, y + 50, CW - 60, 30, C.fg, 600, 44) - y; if (draw) { box(pad, y0, CW, hh + 20, C.card, 16); x.fillStyle = C.gold; x.fillRect(pad, y0, 8, hh + 20); wrap(note.trim(), pad + 34, y0 + 50, CW - 60, 30, C.fg, 600, 44); } y += hh + 20; }
-    y += 46; T('Giáo Án Địa Ngục', pad, y, 26, C.gold, 800, FD); T('Lập ngày ' + dm(ymd()), pad + CW, y, 24, C.mut, 600, FB, 'right');
-    return y + pad;
-  };
-  cv.width = W; cv.height = 10; const H = run(false); cv.width = W; cv.height = Math.ceil(H); run(true);
-  return cv.toDataURL('image/png');
-}
 function viewWeek() {
   const mode = ui.pmode === 'month' ? 'month' : 'week', off = mode === 'month' ? (ui.monthOff || 0) : ui.weekOff, today = ymd();
   const P = periodOf(mode, off), S = periodStats(P.from, P.to), Q = periodStats(P.prev[0], P.prev[P.prev.length - 1]);
@@ -3654,7 +3542,7 @@ function viewWeek() {
   const cmpL = mode === 'month' ? 'so với tháng trước' : 'so với tuần trước';
   h += `<div class="kpis k4"><div class="kpi"><div class="k">${S.ss.length}</div><div class="l">buổi</div>${dlt(S.ss.length, Q.ss.length)}</div><div class="kpi"><div class="k">${S.sets}</div><div class="l">set</div>${dlt(S.sets, Q.sets)}</div>
     <div class="kpi"><div class="k">${tonsN(S.vol)}</div><div class="l">tấn tạ</div>${dlt(S.vol, Q.vol, v => tonsN(v))}</div><div class="kpi"><div class="k">${S.ups}</div><div class="l">bài lên tạ</div></div></div>
-    <p class="small muted" style="margin:10px 0 0">Mũi tên: ${cmpL}. Tấn tạ = tổng kg × rep mọi set${allEx().some(x => x.ex.each) ? ' (tạ đơn tính cả 2 tay)' : ''}.</p><button class="btn gold" data-act="report" style="width:100%;margin-top:12px">📄 Báo cáo tháng${mode === 'month' ? '' : ' này'}</button></div></section>`;
+    <p class="small muted" style="margin:10px 0 0">Mũi tên: ${cmpL}. Tấn tạ = tổng kg × rep mọi set${allEx().some(x => x.ex.each) ? ' (tạ đơn tính cả 2 tay)' : ''}.</p></div></section>`;
   // set mỗi nhóm cơ
   const mset = new Set([...state.days.flatMap(d => d.exercises.map(e => e.muscle)), ...Object.keys(S.per)]);
   const muscles = MUSCLES.filter(m => mset.has(m));
@@ -4227,7 +4115,7 @@ function viewCoach() {
       <div class="tinfo"><div><b>${c.total}</b><span>tổng buổi · tháng này ${c.nMonth}</span></div><div><b>${c.w ? fmt(c.w.weight) + ' kg' : '—'}</b><span>${c.w ? 'cân nặng · ' + dm(c.w.date) : 'chưa nhập cân nặng'}</span></div>
         <div><b style="${c.ups.length ? 'color:var(--up)' : ''}">${c.ups.length}</b><span>bài cần lên tạ</span></div><div><b>${c.up28}</b><span>bài đã lên tạ · 4 tuần</span></div></div>
       ${c.last ? `<div class="tline">Lần cuối: <b>${esc(c.last.dayName)}</b> · ${ago(c.last.date)} · ${c.lastSt.sets} set · ${tons(c.lastSt.vol)}</div>` : ''}
-      <div class="tact"><button class="btn gold" data-act="switch-profile" data-id="${p.id}">Mở hồ sơ</button><button class="btn" data-act="sync-open" data-id="${p.id}">⇄ Đồng bộ</button><button class="btn" data-act="report" data-id="${p.id}">📄 Báo cáo</button></div></div>`;
+      <div class="tact"><button class="btn gold" data-act="switch-profile" data-id="${p.id}">Mở hồ sơ</button><button class="btn" data-act="sync-open" data-id="${p.id}">⇄ Đồng bộ</button></div></div>`;
   }
   return h + `</section>`;
 }
@@ -5170,16 +5058,6 @@ const handlers = {
   'eff': t => { const set = getSet(+t.dataset.e, t.dataset.s); if (!set) return; const v = t.dataset.v; if (set.ef === v) delete set.ef; else set.ef = v;
     $$('button', t.parentNode).forEach(b => b.setAttribute('aria-pressed', b.dataset.v === set.ef)); sfx('step'); vibe(8); save();
     if (set.ef === 'f') toast('Đã ghi hỏng rep · buổi sau app gợi ý giữ mức tạ'); },
-  'report': t => { ui.rep = { pid: t.dataset.id || profiles.active, off: !t.dataset.id && ui.pmode === 'month' ? (ui.monthOff || 0) : 0, note: '' }; reportSheet(); },
-  'rep-m': t => { const n = $('#rep-note'); if (n) ui.rep.note = n.value; ui.rep.off = Math.min(0, ui.rep.off + +t.dataset.d); reportSheet(); },
-  'rep-img': async t => { const n = $('#rep-note'); ui.rep.note = n ? n.value : ''; t.disabled = true; const old = t.innerHTML; t.innerHTML = 'Đang tạo ảnh…';
-    try { const url = await reportImage(ui.repD, ui.rep.note); ui.repImg = url; const out = $('#rep-out');
-      if (out) { out.innerHTML = `<img class="repimg" src="${url}" alt="Ảnh báo cáo tháng"><p class="small muted" style="text-align:center;margin:8px 0 0">Nhấn giữ ảnh → <b>Lưu vào Ảnh</b> hoặc <b>Chia sẻ</b> qua Zalo.</p>${navigator.canShare ? '<div class="sh-actions"><button class="btn gold" data-act="rep-share">Chia sẻ ảnh</button></div>' : ''}`; const im = $('img', out); if (im) im.scrollIntoView({ behavior: 'smooth', block: 'start' }); } }
-    catch (e) { toast('Không tạo được ảnh trên máy này'); } t.disabled = false; t.innerHTML = old; },
-  'rep-share': async () => { try { const b = await (await fetch(ui.repImg)).blob(), f = new File([b], `bao-cao-${(ui.repD.name || 'hoc-vien').replace(/\s+/g, '-')}-${repMonth(ui.repD.D.P).replace('/', '-')}.png`, { type: 'image/png' });
-      if (navigator.canShare && navigator.canShare({ files: [f] })) await navigator.share({ files: [f], title: 'Báo cáo tháng' }); else toast('Nhấn giữ ảnh để lưu hoặc chia sẻ'); } catch (e) { if (e && e.name !== 'AbortError') toast('Nhấn giữ ảnh để lưu hoặc chia sẻ'); } },
-  'rep-csv': async () => { const r = ui.rep, st = await syncStateOf(r.pid); if (!st) return; const csv = withState(st, () => reportCsv(r.off));
-    await saveFile(`bao-cao-${(ui.repD.name || 'hoc-vien').replace(/\s+/g, '-')}-${repMonth(ui.repD.D.P).replace('/', '-')}.csv`, '\ufeff' + csv, 'text/csv'); },
   'add-set': t => { const i = +t.dataset.e, en = state.active.entries[i], W = workSets(en); const l = W[W.length - 1] || { kg: null, reps: null }; const at = en.sets.findIndex(isDrop); en.sets.splice(at < 0 ? en.sets.length : at, 0, { kg: l.kg, reps: l.reps, done: false }); sfx('step'); vibe(8); save(); refreshExCard(i); },
   'rm-set': t => { const i = +t.dataset.e, en = state.active.entries[i], W = workSets(en); if (W.length <= 1) return; const last = W[W.length - 1], li = en.sets.lastIndexOf(last);
     const go = () => { en.sets.splice(li, 1); save(); closeSheet(); refreshExCard(i); };
