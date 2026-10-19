@@ -1167,6 +1167,61 @@ details.rdyc .rrows{padding:0 14px 14px}
 .coachcard h3{display:flex;align-items:center;gap:8px}
 .coachcard h3 .ico{width:20px;height:20px;color:var(--gold)}
 [data-act="ph-rm"].armed{background:#e5484d!important;color:#fff!important;transform:scale(1.15)}
+/* ===== v29: Băng Ngục (ice), Huyết Nguyệt (oled), Thẻ khoe buổi tập & Đồng bộ nhanh ===== */
+:root[data-skin="ice"]{
+  --glow1:#e0f7ff; --glow2:#38bdf8;
+  --bg:#050c16; --surface:#0c1829; --surface-2:#12233b; --surface-3:#1b3150; --line:rgba(125,211,252,.11); --line-2:rgba(125,211,252,.24);
+  --fg:#eef8ff; --fg-2:#9cc2e3; --muted:#5e82a6;
+  --gold:#38bdf8; --gold-hi:#bae6fd; --gold-lo:#0284c7; --gold-ink:#03111f; --gold-soft:rgb(56 189 248 / .15); --acc-rgb:56 189 248; --acc-hi-rgb:186 230 253;
+  --up:#34d399; --up-rgb:52 211 153; --hold:#a5b4fc; --hold-rgb:165 180 252; --down:#fb7185; --down-rgb:251 113 133; --almost:#7dd3fc;
+  --top-bg:rgba(5,12,22,.85); --bar-bg:rgba(12,24,41,.92); --on-up:#021c12; --on-down:#24040a;
+  --hero-bg:radial-gradient(125% 110% at 85% 0%,rgba(125,211,252,.32),rgba(14,165,233,.12) 48%,transparent 72%),linear-gradient(180deg,#0f2238,#081322); --hero-border:rgba(125,211,252,.42);
+  --font:'Plus Jakarta Sans','Be Vietnam Pro',system-ui,sans-serif; --font-d:'Plus Jakarta Sans',system-ui,sans-serif;
+  --r-lg:20px; --r:16px; --r-sm:12px; --r-btn:14px; --r-hero:24px; --r-nav:22px; --pill:999px;
+  color-scheme:dark;
+}
+:root[data-skin="ice"] .ico{stroke-width:1.9}
+:root[data-skin="ice"] .ico .t{fill:currentColor;fill-opacity:.2}
+.skin[data-sk="ice"] .sw .ico{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.skin[data-sk="ice"] .sw .ico .t{fill:currentColor;fill-opacity:.22}
+:root[data-skin="ice"] :is(.card,.ex,.pday,.li,.tile,.dcard){background:rgba(12,24,41,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:inset 0 1px 0 rgba(186,230,253,.12)}
+:root[data-skin="ice"] .hero .h1,:root[data-skin="ice"] .chero .big{background:linear-gradient(180deg,#ffffff 0%,#bae6fd 55%,#38bdf8 100%);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px rgba(56,189,248,.35))}
+:root[data-skin="ice"] .nav .fabc{background:linear-gradient(140deg,#e0f2fe,#38bdf8 55%,#0284c7);box-shadow:0 0 0 4px var(--bg),0 8px 24px -4px rgba(56,189,248,.7)}
+
+/* Giao diện: Huyết Nguyệt (OLED Đỏ Đen) */
+:root[data-skin="oled"]{
+  --glow1:#ffb3c1; --glow2:#ff2a54;
+  --bg:#000000; --surface:#09070a; --surface-2:#130e15; --surface-3:#1f1623; --line:rgba(255,42,84,.15); --line-2:rgba(255,42,84,.32);
+  --fg:#fff0f3; --fg-2:#c9a9b0; --muted:#7d5e66;
+  --gold:#ff2a54; --gold-hi:#ff758f; --gold-lo:#a8072b; --gold-ink:#ffffff; --gold-soft:rgb(255 42 84 / .16); --acc-rgb:255 42 84; --acc-hi-rgb:255 117 143;
+  --up:#2ee59d; --up-rgb:46 229 157; --hold:#b392f0; --hold-rgb:179 146 240; --down:#ff9e3b; --down-rgb:255 158 59; --almost:#ff758f;
+  --top-bg:rgba(0,0,0,.92); --bar-bg:rgba(8,5,10,.96); --on-up:#021a10; --on-down:#1f0d00;
+  --hero-bg:radial-gradient(120% 100% at 90% 0%,rgba(255,42,84,.32),rgba(168,7,43,.10) 50%,transparent 75%),linear-gradient(180deg,#11070a,#040203); --hero-border:rgba(255,42,84,.45);
+  --font:'Be Vietnam Pro',system-ui,sans-serif; --font-d:'Oswald','Be Vietnam Pro',sans-serif;
+  --r-lg:16px; --r:12px; --r-sm:10px; --r-btn:10px; --r-hero:20px; --r-nav:18px; --pill:999px;
+  color-scheme:dark;
+}
+:root[data-skin="oled"] .ico{stroke-width:1.9}
+.skin[data-sk="oled"] .sw .ico{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+:root[data-skin="oled"] .btn.gold,:root[data-skin="oled"] .nav .fabc{background:linear-gradient(135deg,#ff5c7c,#ff2a54 52%,#9e0526);color:#fff;box-shadow:0 8px 24px -8px rgba(255,42,84,.75)}
+:root[data-skin="oled"] .nav .fabc{box-shadow:0 0 0 5px #000,0 8px 24px -4px rgba(255,42,84,.75)}
+:root[data-skin="oled"] :is(.card,.ex,.pday,.li,.tile,.dcard){border-color:rgba(255,42,84,.16)}
+
+/* FX canvas cho hell, ice, oled */
+:root[data-skin="ice"] #fx-back,:root[data-skin="ice"] #fx-front,
+:root[data-skin="oled"] #fx-back,:root[data-skin="oled"] #fx-front{display:block}
+:root[data-skin="ice"] #view,:root[data-skin="oled"] #view{position:relative;z-index:1}
+:root[data-fx="off"] #fx-back,:root[data-fx="off"] #fx-front{display:none!important}
+
+/* Thẻ khoe buổi tập */
+.sc-wrap{margin-top:12px;border-radius:var(--r);overflow:hidden;border:1px solid var(--line-2);background:#000;display:flex;justify-content:center;align-items:center;max-height:58vh}
+.sc-wrap canvas{max-width:100%;max-height:58vh;width:auto;height:auto;display:block}
+.sc-bar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap}
+.sc-skins{display:flex;gap:6px;align-items:center}
+.sc-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--line-2);padding:0;position:relative}
+.sc-dot[aria-pressed="true"]{border-color:#fff;box-shadow:0 0 0 2px var(--gold);transform:scale(1.1)}
+.paste-box{margin-top:10px;display:flex;gap:8px}
+.paste-box .inp{flex:1;min-width:0;font-size:14px}
 </style>
 </head>
 <body>
@@ -1342,6 +1397,10 @@ const ICONSETS = {
     nMe: '<path d="M12 2.5a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9zM3.5 21.5c.4-4.6 4-7.5 8.5-7.5s8.1 2.9 8.5 7.5z"/>'
   }
 };
+ICONSETS.gold.share = '<path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7M16 6l-4-4-4 4M12 2v13"/>';
+ICONSETS.gold.paste = '<rect x="8" y="2" width="8" height="4" rx="1.2"/><path d="M16 4h2a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>';
+ICONSETS.ice = ICONSETS.light;
+ICONSETS.oled = ICONSETS.gold;
 let curSkin = 'gold';
 try { const sk0 = localStorage.getItem('gadn-skin'); if (sk0 && ICONSETS[sk0]) curSkin = sk0; } catch (e) {}
 function iconOf(skin, k) {
@@ -1648,11 +1707,11 @@ function syncCardHtml() {
   return `<div class="card set-card sync ${k}" id="sync"><div class="sync-h"><span class="sync-dot"></span><h3>${t}</h3></div><p>${d}</p></div>`;
 }
 const freshState = () => ({ v: 3, days: [], sessions: [], body: [], bodyPhotos: [], active: null,
-  settings: { name: '', height: null, setMin: 10, setMax: 20, deloadEvery: 6, cycleStart: null, progMode: 'linear', pace: 'std', restMode: 'std', tempo: 3, schedule: {}, remindTime: '18:00', remindBefore: 30, skin: 'gold', restAlert: 'app', shortcutName: 'Nghỉ giữa set', notify: false } });
+  settings: { name: '', height: null, setMin: 10, setMax: 20, deloadEvery: 6, cycleStart: null, progMode: 'linear', pace: 'std', restMode: 'std', tempo: 3, schedule: {}, remindTime: '18:00', remindBefore: 30, skin: 'gold', restAlert: 'app', shortcutName: 'Nghỉ giữa set', notify: false, sfx: true, haptics: true, fxOff: false, lastBackupAt: 0, lastBackupSess: 0, backupSkipAt: 0 } });
 let state = freshState();
 let profiles = { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] };
 const PCOLORS = ['#d9b45b', '#6ea8ff', '#ff86b4', '#5fdc9b', '#c79bff', '#ffa45c'];
-const GLOBAL_KEYS = ['skin', 'notify', 'alertMethod', 'ntfyTopic', 'pushServer', 'pushKey', 'restAlert', 'shortcutName', 'alertV17'];
+const GLOBAL_KEYS = ['skin', 'notify', 'alertMethod', 'ntfyTopic', 'pushServer', 'pushKey', 'restAlert', 'shortcutName', 'alertV17', 'sfx', 'haptics', 'fxOff', 'lastBackupAt', 'lastBackupSess', 'backupSkipAt'];
 const stateKey = pid => pid === 'p1' ? 'state' : 'state:' + pid;
 const curProf = () => profiles.list.find(p => p.id === profiles.active) || profiles.list[0];
 const multi = () => profiles.list.length > 1;
@@ -1843,15 +1902,24 @@ const SKINS = [
   { id: 'gold', name: 'Đen Vàng', desc: 'Nét mảnh, thẻ bo tròn, tab nổi', bg: '#0a0a0b', surface: '#1d1d21', acc: '#d9b45b', fg: '#f6f3ec', font: "'Be Vietnam Pro',sans-serif", rad: '6px', meta: '#0a0a0b' },
   { id: 'light', name: 'Trắng Tinh', desc: 'Icon hai tông, tab viên thuốc', bg: '#eef1f6', surface: '#ffffff', acc: '#2f55ff', fg: '#0f1728', font: "'Plus Jakarta Sans',sans-serif", rad: '13px', meta: '#eef1f6' },
   { id: 'neon', name: 'Neon Đêm', desc: 'Góc cắt vát, icon hình học', bg: '#07060f', surface: '#231e3d', acc: '#00eaff', fg: '#ff2bd6', font: "'Chakra Petch',sans-serif", rad: '2px', meta: '#07060f' },
-  { id: 'hell', name: 'Lửa Địa Ngục', desc: 'Icon đặc, nút vát, tab chỉ icon', bg: '#120605', surface: '#321711', acc: '#ff4a1c', fg: '#ffb22e', font: "'Oswald',sans-serif", rad: '5px', meta: '#0b0504' }
+  { id: 'hell', name: 'Lửa Địa Ngục', desc: 'Icon đặc, nút vát, lửa rực cháy', bg: '#120605', surface: '#321711', acc: '#ff4a1c', fg: '#ffb22e', font: "'Oswald',sans-serif", rad: '5px', meta: '#0b0504' },
+  { id: 'ice', name: 'Băng Ngục', desc: 'Kính mờ, sương băng & tuyết rơi', bg: '#050c16', surface: '#12233b', acc: '#38bdf8', fg: '#eef8ff', font: "'Plus Jakarta Sans',sans-serif", rad: '8px', meta: '#050c16' },
+  { id: 'oled', name: 'Huyết Nguyệt', desc: 'Đen tuyệt đối OLED, đỏ huyết nguyệt', bg: '#000000', surface: '#130e15', acc: '#ff2a54', fg: '#fff0f3', font: "'Oswald',sans-serif", rad: '6px', meta: '#000000' }
 ];
-/* lửa thật cho giao diện Lửa địa ngục: ngọn lửa sát thanh điều hướng + tàn lửa bay nhẹ phía sau nội dung */
-const FX = { on: false, raf: 0, last: 0, P: [], E: [], spr: null, w: 0, h: 0, fh: 0, dpr: 1 };
+const FX_SKINS = new Set(['hell', 'ice', 'oled']);
+/* hiệu ứng nền canvas cho Lửa Địa Ngục (hell), Băng Ngục (ice), Huyết Nguyệt (oled) */
+const FX = { on: false, mode: '', raf: 0, last: 0, P: [], E: [], spr: null, w: 0, h: 0, fh: 0, dpr: 1 };
 function fxSprites() {
   const mk = (stops) => { const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32); stops.forEach(([o, col]) => gr.addColorStop(o, col)); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return c; };
-  return [mk([[0, 'rgba(255,250,220,1)'], [.25, 'rgba(255,214,110,.9)'], [.6, 'rgba(255,140,40,.35)'], [1, 'rgba(255,90,20,0)']]),
-          mk([[0, 'rgba(255,190,80,.95)'], [.35, 'rgba(255,110,30,.7)'], [.7, 'rgba(230,50,15,.2)'], [1, 'rgba(200,20,10,0)']]),
-          mk([[0, 'rgba(255,90,30,.7)'], [.5, 'rgba(190,25,10,.3)'], [1, 'rgba(120,10,5,0)']])];
+  return {
+    hell: [mk([[0, 'rgba(255,250,220,1)'], [.25, 'rgba(255,214,110,.9)'], [.6, 'rgba(255,140,40,.35)'], [1, 'rgba(255,90,20,0)']]),
+           mk([[0, 'rgba(255,190,80,.95)'], [.35, 'rgba(255,110,30,.7)'], [.7, 'rgba(230,50,15,.2)'], [1, 'rgba(200,20,10,0)']]),
+           mk([[0, 'rgba(255,90,30,.7)'], [.5, 'rgba(190,25,10,.3)'], [1, 'rgba(120,10,5,0)']])],
+    ice:  [mk([[0, 'rgba(255,255,255,1)'], [.3, 'rgba(186,230,253,.85)'], [.65, 'rgba(56,189,248,.3)'], [1, 'rgba(14,165,233,0)']]),
+           mk([[0, 'rgba(224,242,254,.9)'], [.45, 'rgba(125,211,252,.45)'], [1, 'rgba(56,189,248,0)']])],
+    oled: [mk([[0, 'rgba(255,230,235,1)'], [.3, 'rgba(255,42,84,.85)'], [.68, 'rgba(184,11,48,.3)'], [1, 'rgba(120,0,25,0)']]),
+           mk([[0, 'rgba(255,117,143,.9)'], [.45, 'rgba(255,42,84,.45)'], [1, 'rgba(150,0,30,0)']])],
+  };
 }
 function fxSize() {
   const b = $('#fx-back'), f = $('#fx-front'); if (!b || !f) return;
@@ -1860,41 +1928,70 @@ function fxSize() {
   b.width = FX.w * FX.dpr; b.height = FX.h * FX.dpr; f.width = FX.w * FX.dpr; f.height = FX.fh * FX.dpr; f.style.height = FX.fh + 'px';
 }
 function fxStart() {
-  if (FX.on || reduceMotion()) return; FX.on = true; if (!FX.spr) FX.spr = fxSprites(); fxSize(); FX.P = []; FX.E = [];
+  const sk = document.documentElement.dataset.skin || 'gold';
+  if (reduceMotion() || (state && state.settings && state.settings.fxOff) || !FX_SKINS.has(sk)) { fxStop(); return; }
+  if (FX.on && FX.mode === sk) return;
+  FX.on = true; FX.mode = sk; if (!FX.spr) FX.spr = fxSprites(); fxSize(); FX.P = []; FX.E = [];
+  cancelAnimationFrame(FX.raf);
   const loop = t => { if (!FX.on) return; FX.raf = requestAnimationFrame(loop); if (document.hidden || t - FX.last < 33) return; FX.last = t; fxFrame(); };
   FX.raf = requestAnimationFrame(loop);
 }
-function fxStop() { if (!FX.on) return; FX.on = false; cancelAnimationFrame(FX.raf); for (const id of ['#fx-back', '#fx-front']) { const c = $(id), x = c && c.getContext && c.getContext('2d'); if (x) x.clearRect(0, 0, c.width, c.height); } }
+function fxStop() { if (!FX.on) return; FX.on = false; FX.mode = ''; cancelAnimationFrame(FX.raf); for (const id of ['#fx-back', '#fx-front']) { const c = $(id), x = c && c.getContext && c.getContext('2d'); if (x) x.clearRect(0, 0, c.width, c.height); } }
 function fxFrame() {
-  const f = $('#fx-front'), b = $('#fx-back'); if (!f || !b || !f.getContext('2d') || !b.getContext('2d')) { fxStop(); return; } const d = FX.dpr, W = FX.w, H = FX.fh, base = H - FX.nh + 6;
+  const f = $('#fx-front'), b = $('#fx-back'); if (!f || !b || !f.getContext('2d') || !b.getContext('2d')) { fxStop(); return; }
+  const d = FX.dpr, W = FX.w, H = FX.fh, base = H - FX.nh + 6, tt = performance.now() / 1000, mode = FX.mode;
+  const g = f.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0); g.clearRect(0, 0, W, H);
+  const e = b.getContext('2d'); e.setTransform(d, 0, 0, d, 0, 0); e.clearRect(0, 0, FX.w, FX.h);
+  if (mode === 'ice') {
+    const fl = .8 + .2 * Math.sin(tt * 2.1), gl = g.createLinearGradient(0, base - 52, 0, H);
+    gl.addColorStop(0, 'rgba(56,189,248,0)'); gl.addColorStop(.55, `rgba(56,189,248,${.14 * fl})`); gl.addColorStop(1, `rgba(186,230,253,${.28 * fl})`);
+    g.fillStyle = gl; g.fillRect(0, base - 52, W, H - base + 52);
+    if (FX.E.length < 28 && Math.random() < .35) FX.E.push({ x: Math.random() * FX.w, y: -8, vx: (Math.random() - .5) * .3, vy: .45 + Math.random() * .85, r: 1.2 + Math.random() * 2.2, ph: Math.random() * 6.28, l: 0 });
+    e.globalCompositeOperation = 'lighter';
+    for (let i = FX.E.length - 1; i >= 0; i--) { const p = FX.E[i]; p.l++; p.x += p.vx + Math.sin(p.l * .03 + p.ph) * .4; p.y += p.vy; if (p.y > FX.h + 12) { FX.E.splice(i, 1); continue; }
+      const tw = .6 + .4 * Math.sin(p.l * .12 + p.ph), R = p.r * 4.5; e.globalAlpha = .55 * tw; e.drawImage(FX.spr.ice[i % 2], p.x - R, p.y - R, R * 2, R * 2); }
+    e.globalAlpha = 1; e.globalCompositeOperation = 'source-over';
+    return;
+  }
+  if (mode === 'oled') {
+    const fl = .75 + .25 * Math.sin(tt * 3.2), gl = g.createLinearGradient(0, base - 44, 0, H);
+    gl.addColorStop(0, 'rgba(255,42,84,0)'); gl.addColorStop(.65, `rgba(255,42,84,${.14 * fl})`); gl.addColorStop(1, `rgba(184,11,48,${.32 * fl})`);
+    g.fillStyle = gl; g.fillRect(0, base - 44, W, H - base + 44);
+    if (FX.E.length < 22 && Math.random() < .3) FX.E.push({ x: Math.random() * FX.w, y: FX.h + 6, vx: (Math.random() - .5) * .3, vy: -(.3 + Math.random() * .65), r: 1.1 + Math.random() * 1.9, ph: Math.random() * 6.28, l: 0 });
+    e.globalCompositeOperation = 'lighter';
+    for (let i = FX.E.length - 1; i >= 0; i--) { const p = FX.E[i]; p.l++; p.x += p.vx + Math.sin(p.l * .035 + p.ph) * .35; p.y += p.vy; if (p.y < -12) { FX.E.splice(i, 1); continue; }
+      const tw = .5 + .5 * Math.sin(p.l * .16 + p.ph), R = p.r * 5; e.globalAlpha = .6 * tw * Math.min(1, (FX.h - p.y) / 100); e.drawImage(FX.spr.oled[i % 2], p.x - R, p.y - R, R * 2, R * 2); }
+    e.globalAlpha = 1; e.globalCompositeOperation = 'source-over';
+    return;
+  }
   // ngọn lửa: nhiều hạt chồng lên nhau, kéo dài theo chiều dọc, lưỡi lửa cao thấp theo nhịp
-  const want = Math.round(W / 2.8), tt = performance.now() / 1000;
+  const want = Math.round(W / 2.8);
   while (FX.P.length < want) { const x = Math.random() * W, tongue = .55 + .45 * Math.max(0, Math.sin(x * .021 + tt * 1.3) * Math.sin(x * .0067 - tt * .7 + 1.7));
     FX.P.push({ x, y: base + 4 + Math.random() * 6, vx: (Math.random() - .5) * .35, vy: -(1.0 + Math.random() * 1.1) * (0.55 + tongue), r: 12 + Math.random() * 14, l: 0, L: 18 + Math.random() * 18, ph: Math.random() * 6.28 }); }
-  const g = f.getContext('2d'); g.setTransform(d, 0, 0, d, 0, 0); g.clearRect(0, 0, W, H);
   const fl = .75 + .25 * Math.sin(tt * 7.3) * Math.sin(tt * 3.1 + 1), gl = g.createLinearGradient(0, base - 46, 0, base + 6);
   gl.addColorStop(0, 'rgba(255,90,20,0)'); gl.addColorStop(.6, `rgba(255,90,20,${.22 * fl})`); gl.addColorStop(1, `rgba(255,170,60,${.5 * fl})`);
   g.fillStyle = gl; g.fillRect(0, base - 46, W, 52);
   g.globalCompositeOperation = 'lighter';
   for (let i = FX.P.length - 1; i >= 0; i--) { const p = FX.P[i]; p.l++; p.x += p.vx + Math.sin(p.l * .22 + p.ph) * .6; p.y += p.vy; p.r *= .965;
     const k = p.l / p.L; if (k >= 1) { FX.P.splice(i, 1); continue; }
-    const spr = FX.spr[k < .3 ? 0 : k < .65 ? 1 : 2], a = (k < .12 ? k / .12 : 1 - (k - .12) / .88) * .36, R = p.r;
+    const spr = FX.spr.hell[k < .3 ? 0 : k < .65 ? 1 : 2], a = (k < .12 ? k / .12 : 1 - (k - .12) / .88) * .36, R = p.r;
     g.globalAlpha = a; g.drawImage(spr, p.x - R * .8, p.y - R * 1.9, R * 1.6, R * 3.2); }
   g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
   // tàn lửa
   if (FX.E.length < 16 && Math.random() < .25) FX.E.push({ x: Math.random() * FX.w, y: FX.h + 4, vx: (Math.random() - .5) * .35, vy: -(.35 + Math.random() * .7), r: 1 + Math.random() * 1.6, ph: Math.random() * 6.28, l: 0 });
-  const e = b.getContext('2d'); e.setTransform(d, 0, 0, d, 0, 0); e.clearRect(0, 0, FX.w, FX.h); e.globalCompositeOperation = 'lighter';
+  e.globalCompositeOperation = 'lighter';
   for (let i = FX.E.length - 1; i >= 0; i--) { const p = FX.E[i]; p.l++; p.x += p.vx + Math.sin(p.l * .04 + p.ph) * .35; p.y += p.vy; if (p.y < -10) { FX.E.splice(i, 1); continue; }
-    const tw = .55 + .45 * Math.sin(p.l * .2 + p.ph), R = p.r * 5; e.globalAlpha = .55 * tw * Math.min(1, (FX.h - p.y) / 120); e.drawImage(FX.spr[0], p.x - R, p.y - R, R * 2, R * 2); }
+    const tw = .55 + .45 * Math.sin(p.l * .2 + p.ph), R = p.r * 5; e.globalAlpha = .55 * tw * Math.min(1, (FX.h - p.y) / 120); e.drawImage(FX.spr.hell[0], p.x - R, p.y - R, R * 2, R * 2); }
   e.globalAlpha = 1; e.globalCompositeOperation = 'source-over';
 }
 window.addEventListener('resize', () => { if (FX.on) fxSize(); });
 function applySkin(id) {
   const sk = SKINS.find(k => k.id === id) || SKINS[0];
   document.documentElement.dataset.skin = sk.id; curSkin = sk.id;
+  document.documentElement.dataset.fx = state && state.settings && state.settings.fxOff ? 'off' : 'on';
   const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', sk.meta);
   try { localStorage.setItem('gadn-skin', sk.id); } catch (e) {}
-  if (id === 'hell') setTimeout(fxStart, 60); else fxStop();
+  if (FX_SKINS.has(sk.id) && !(state && state.settings && state.settings.fxOff)) setTimeout(fxStart, 60); else fxStop();
 }
 try { const sk0 = localStorage.getItem('gadn-skin'); if (sk0) document.documentElement.dataset.skin = sk0; } catch (e) {}
 let pendingConfirm = null, deferredInstall = null, wake = null, audio = null;
@@ -1906,8 +2003,9 @@ function render(keepScroll) {
   try { fillZones(); fillGids(); } catch (e) {}
   const y = window.scrollY;
   const tabChanged = ui.tab !== lastTab; lastTab = ui.tab;
+  document.documentElement.dataset.fx = state.settings.fxOff ? 'off' : 'on';
   if (document.documentElement.dataset.skin !== (state.settings.skin || 'gold')) applySkin(state.settings.skin);
-  if (document.documentElement.dataset.skin === 'hell' && !FX.on) setTimeout(fxStart, 60);
+  if (FX_SKINS.has(document.documentElement.dataset.skin) && !state.settings.fxOff && !FX.on) setTimeout(fxStart, 60);
   const v = $('#view');
   v.innerHTML = ui.tab === 'today' ? viewToday() : ui.tab === 'plan' ? viewPlan() : ui.tab === 'week' ? viewWeek() : ui.tab === 'body' ? viewBody() : ui.tab === 'settings' ? viewMore() : coach() ? viewCoach() : viewMore();
   renderNav();
@@ -2121,10 +2219,19 @@ function painBanner() {
   const serious = A.some(p => p.level >= 3 || daysBetween(p.since, ymd()) >= 14);
   return `<div class="banner pain"><span class="bi">${ICON.alert}</span><div><b>Đang đau: ${A.map(p => esc(p.area) + ' · ' + PAIN_LV[p.level].t.toLowerCase()).join(', ')}</b><p>${serious ? 'Đau nặng hoặc kéo dài từ 2 tuần trở lên: nên đi khám bác sĩ hoặc chuyên viên vật lý trị liệu trước khi tập lại vùng này.' : 'App đã giảm tạ hoặc bỏ các bài liên quan. Bấm “Đã hết đau” khi khỏi để quay lại từ từ.'}</p><button class="btn sm" data-act="pain">Cập nhật</button></div></div>`;
 }
+function backupBanner() {
+  if (Cloud.ok) return '';
+  const nS = state.sessions.length; if (nS < 5) return '';
+  const now = Date.now(), st = state.settings;
+  if (st.backupSkipAt && now - st.backupSkipAt < 7 * 864e5) return '';
+  const lastAt = st.lastBackupAt || 0, newS = nS - (st.lastBackupSess || 0);
+  if (lastAt && (now - lastAt < 14 * 864e5 || newS < 5)) return '';
+  return `<div class="banner info"><span class="bi">${ICON.spark}</span><div><b>Nhắc sao lưu định kỳ</b><p>${lastAt ? `Bạn đã tập thêm ${newS} buổi từ lần sao lưu trước (${ago(ymd(new Date(lastAt)))}).` : `Bạn đã ghi ${nS} buổi tập trên máy này.`} Tải 1 bản sao lưu vào Tệp / iCloud để không mất dữ liệu khi đổi điện thoại.</p><div class="row"><button class="btn sm gold" data-act="backup">Sao lưu ngay</button><button class="btn sm ghost" data-act="backup-snooze">Nhắc sau 7 ngày</button></div></div></div>`;
+}
 function viewToday() {
   if (state.active) return viewSession(state.active);
   let h = (multi() && !coach() && !(profiles.coach && profiles.coach.dismiss) ? `<div class="banner"><span class="bi">${ICON.users}</span><div><b>Bạn đang kèm ${profiles.list.length} người?</b><p>Bật chế độ huấn luyện viên: bạn là HLV, những người còn lại là học viên. Có bảng theo dõi cả nhóm ngay ở đầu màn hình.</p><div class="row"><button class="btn sm gold" data-act="coach-setup">Bật chế độ HLV</button><button class="btn sm ghost" data-act="coach-dismiss">Để sau</button></div></div></div>` : '')
-    + wpBanner() + painBanner() + recoveryHint() + bodyPhotoBanner() + packBanner()
+    + wpBanner() + painBanner() + recoveryHint() + bodyPhotoBanner() + backupBanner() + packBanner()
     + (allExFull().some(x => x.ex.muscle === 'Khác') ? `<div class="banner"><span class="bi">?</span><div><b>Có bài đang để nhóm cơ “Khác”</b><p>Các bài này không được tính độ hồi phục. Gán đúng nhóm cơ để gợi ý buổi tập chính xác.</p><button class="btn sm gold" data-act="other-open">Gán nhóm cơ</button></div></div>` : '');
   if (!state.days.length) return h + onboarding();
   const today = ymd(), si = schedNext(), tm = state.settings.remindTime || '';
@@ -2139,7 +2246,7 @@ function viewToday() {
   else nid = state.days[0].id;
   if (doneToday.length) { const lastS = doneToday.reduce((a2, b2) => (b2.finishedAt || 0) > (a2.finishedAt || 0) ? b2 : a2), ls2 = sessStats(lastS);
     h += `<div class="restcard"><span class="bi">${ICON.check}</span><div><b>Hôm nay đã tập ${esc(doneToday.map(s => s.dayName).join(', '))}</b>${ls2.sets} set · ${fmtDur(durOf(lastS))}. Bấm nhầm “Kết thúc” hoặc muốn tập thêm thì mở lại buổi này — các set đã ghi vẫn giữ nguyên.
-      <div class="row"><button class="btn sm gold" data-act="reopen-session" data-id="${lastS.id}">${ICON.play} Tập tiếp buổi này</button><button class="btn sm" data-act="open-session" data-id="${lastS.id}">Xem lại</button>${state.coachLink && !coach() ? `<button class="btn sm" data-act="sync-open">⇄ Đồng bộ HLV</button>` : ''}</div></div></div>`; }
+      <div class="row"><button class="btn sm gold" data-act="share-card" data-id="${lastS.id}">${ICON.spark} Thẻ khoe buổi tập</button><button class="btn sm" data-act="reopen-session" data-id="${lastS.id}">${ICON.play} Tập tiếp</button><button class="btn sm" data-act="open-session" data-id="${lastS.id}">Xem lại</button>${state.coachLink && !coach() ? `<button class="btn sm" data-act="sync-open">⇄ Đồng bộ HLV</button>` : ''}</div></div></div>`; }
   else if (si && si.k > 0 && !ui.pick) h += `<div class="restcard"><span class="bi">${ICON.moon}</span><div><b>Hôm nay nghỉ theo lịch</b>Buổi tới: ${esc(findDay(si.dayId).name)} ${DOW[parseYmd(si.date).getDay()]} ${dm(si.date)}. Muốn tập thêm thì chọn buổi phù hợp bên dưới.</div></div>`;
   const nd = findDay(nid), l = lastSessionOfDay(nid), ent = rc.list.find(x => x.d.id === nid);
   const nsets = nd.exercises.reduce((a, e) => a + e.sets, 0);
@@ -2527,12 +2634,36 @@ function viewSession(a) {
 function curIdx() { const a = state.active; if (!a) return 0; const k = a.entries.findIndex(en => en.sets.some(x => !x.done)); return k < 0 ? Math.max(0, a.entries.length - 1) : k; }
 /* bài đang tập: bài người dùng chọn, nếu không thì bài đầu tiên chưa xong */
 function focusIdx() { const a = state.active; if (!a) return 0; const k = ui.focusEx ? a.entries.findIndex(en => en.exId === ui.focusEx) : -1; return k >= 0 ? k : curIdx(); }
+/* cập nhật nhanh từng thẻ bài tập thay vì vẽ lại toàn màn hình (60fps) */
+function refreshExCard(i) {
+  const a = state.active; if (!a || ui.tab !== 'today') { render(true); return; }
+  const old = $(`#view article.ex[data-i="${i}"]`);
+  if (!old) { render(true); return; }
+  const noteEl = $('textarea.note', old), hadFocus = document.activeElement === noteEl;
+  const tpl = document.createElement('template');
+  tpl.innerHTML = entryCard(a.entries[i], i).trim();
+  const next = tpl.content.firstElementChild;
+  old.replaceWith(next);
+  hydratePhotos(next);
+  $$('textarea.note', next).forEach(autoGrow);
+  if (hadFocus) { const nn = $('textarea.note', next); if (nn) nn.focus(); }
+  updateProgress(); markCurrent();
+}
+function switchFocusEx(exId) {
+  const a = state.active; if (!a || ui.tab !== 'today') { ui.focusEx = exId; ui.heroPh = 0; render(true); return; }
+  const prevI = focusIdx();
+  ui.focusEx = exId; ui.heroPh = 0;
+  const nextI = focusIdx();
+  if (prevI === nextI) { refreshExCard(nextI); return; }
+  refreshExCard(prevI);
+  refreshExCard(nextI);
+}
 /* xong bài đang tập: chờ một nhịp rồi thu gọn và mở bài kế tiếp chưa xong */
 function autoNext(i) {
   clearTimeout(ui.nextT);
   ui.nextT = setTimeout(() => { const a = state.active; if (!a || ui.tab !== 'today' || !$('#sheet').hidden) return; const cur = a.entries[i]; if (!cur || !entryDone(cur) || focusIdx() !== i) return;
     const order = [...a.entries.keys()].filter(k => k > i).concat([...a.entries.keys()].filter(k => k < i)), k = order.find(k2 => !entryDone(a.entries[k2]));
-    ui.focusEx = k == null ? null : a.entries[k].exId; ui.heroPh = 0; render(true); if (k != null) scrollFocus(); else toast('Xong hết các bài · bấm “Kết thúc buổi tập”'); }, 900);
+    switchFocusEx(k == null ? null : a.entries[k].exId); if (k != null) scrollFocus(); else toast('Xong hết các bài · bấm “Kết thúc buổi tập”'); }, 900);
 }
 function scrollFocus() { requestAnimationFrame(() => { const el = document.querySelector('article.ex.focus'); if (el) el.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' }); }); }
 const entryDone = en => en.sets.length > 0 && en.sets.every(x => x.done) && (!en.drop || en.drop.done);
@@ -2674,7 +2805,7 @@ function refreshWarm(i) { const box = $('#warm-' + i); if (box && state.active) 
 function getSet(i, j) { const en = state.active.entries[i]; return j === 'drop' ? en.drop : en.sets[+j]; }
 
 /* ---------- đồng hồ nghỉ ---------- */
-const APP_VERSION = '2026.10.13 · bản 28';
+const APP_VERSION = '2026.10.19 · bản 29';
 const PUSH_SERVER = '';
 const isIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const isStandalone = () => !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
@@ -2742,7 +2873,7 @@ function cancelPush() {
   if (alertMethod() === 'ntfy') { fetch(`${NTFY}/${ntfyTopic()}/rest/delete`, { keepalive: true }).catch(() => {}); return; }
   pushCall('/cancel', {}).catch(() => {});
 }
-const rest = { end: 0, total: 0, iv: null, hideT: null, fired: true };
+const rest = { end: 0, total: 0, iv: null, hideT: null, fired: true, lastTick: 0 };
 function showAlarm() {
   const late = Math.round((Date.now() - rest.end) / 1000);
   $('#alarm-ico').innerHTML = ICON.bell; $('#alarm-t').textContent = restTitle();
@@ -2750,7 +2881,7 @@ function showAlarm() {
   $('#alarm').hidden = false;
 }
 function startRest(sec, label) {
-  clearTimeout(rest.hideT); clearInterval(rest.iv); rest.fired = false; $('#alarm').hidden = true; rest.label = label || ''; rest.who = multi() ? curProf().name : '';
+  clearTimeout(rest.hideT); clearInterval(rest.iv); rest.fired = false; rest.lastTick = 0; $('#alarm').hidden = true; rest.label = label || ''; rest.who = multi() ? curProf().name : '';
   rest.total = sec * 1000; rest.end = Date.now() + rest.total;
   $('#rest').hidden = false; document.body.classList.add('resting'); $('#rest-l').textContent = 'Đang nghỉ';
   tickRest(); rest.iv = setInterval(tickRest, 250);
@@ -2768,19 +2899,44 @@ function tickRest() {
   const left = rest.end - Date.now();
   if (left <= 0) { clearInterval(rest.iv); $('#rest-t').textContent = '0:00'; $('#rest-l').textContent = 'Hết giờ nghỉ · vào set tiếp'; $('#rest-bar').style.transform = 'scaleX(0)';
     if (rest.fired) return; rest.fired = true;
-    try { navigator.vibrate && navigator.vibrate([300, 150, 300, 150, 300]); } catch (e) {} beep(); notifyRestEnd();
+    vibe([300, 150, 300, 150, 300]); beep(); notifyRestEnd();
     if (document.visibilityState === 'visible') showAlarm(); else rest.pending = true;
     rest.hideT = setTimeout(() => { $('#rest').hidden = true; document.body.classList.remove('resting'); }, 6000); return; }
+  const secLeft = Math.ceil(left / 1000);
+  if (secLeft >= 1 && secLeft <= 3 && rest.lastTick !== secLeft) { rest.lastTick = secLeft; sfx('tick'); vibe(12); }
   $('#rest-t').textContent = fmtDur(left + 999); $('#rest-bar').style.transform = `scaleX(${Math.min(1, left / rest.total)})`;
   $('.rest-in').classList.toggle('glow', left <= 10000);
 }
-function stopRest() { $('.rest-in').classList.remove('glow'); if (!rest.fired && rest.end > Date.now()) cancelPush(); rest.pushed = false; clearInterval(rest.iv); clearTimeout(rest.hideT); rest.fired = true; rest.pending = false; $('#alarm').hidden = true; $('#rest').hidden = true; document.body.classList.remove('resting'); }
+function stopRest() { $('.rest-in').classList.remove('glow'); if (!rest.fired && rest.end > Date.now()) cancelPush(); rest.pushed = false; clearInterval(rest.iv); clearTimeout(rest.hideT); rest.fired = true; rest.pending = false; rest.lastTick = 0; $('#alarm').hidden = true; $('#rest').hidden = true; document.body.classList.remove('resting'); }
 function initAudio() { try { if (!audio) audio = new (window.AudioContext || window.webkitAudioContext)(); if (audio.state === 'suspended') audio.resume(); } catch (e) { audio = null; } }
-function beep() {
-  if (!audio) return;
-  try { [[0, 880], [0.28, 880], [0.56, 1320]].forEach(([t, f]) => { const o = audio.createOscillator(), g = audio.createGain(); o.type = 'square'; o.frequency.value = f; o.connect(g); g.connect(audio.destination);
-    const s = audio.currentTime + t; g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(0.35, s + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, s + 0.22); o.start(s); o.stop(s + 0.24); }); } catch (e) {}
+function vibe(pat) {
+  if (state.settings && state.settings.haptics === false) return;
+  try { navigator.vibrate && navigator.vibrate(pat); } catch (e) {}
 }
+function sfx(kind) {
+  if (state.settings && state.settings.sfx === false) return;
+  initAudio(); if (!audio) return;
+  try {
+    const now = audio.currentTime;
+    const tone = (t, f, dur, type = 'sine', peak = 0.22, fEnd = null) => {
+      const o = audio.createOscillator(), g = audio.createGain();
+      o.type = type; o.frequency.setValueAtTime(f, now + t);
+      if (fEnd) o.frequency.exponentialRampToValueAtTime(fEnd, now + t + dur);
+      o.connect(g); g.connect(audio.destination);
+      g.gain.setValueAtTime(0.0001, now + t);
+      g.gain.exponentialRampToValueAtTime(peak, now + t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + t + dur);
+      o.start(now + t); o.stop(now + t + dur + 0.02);
+    };
+    if (kind === 'check') { tone(0, 587.33, 0.09, 'triangle', 0.2); tone(0.055, 880, 0.16, 'triangle', 0.24); }
+    else if (kind === 'uncheck') { tone(0, 440, 0.09, 'sine', 0.14, 293.66); }
+    else if (kind === 'step') { tone(0, 260, 0.032, 'triangle', 0.1, 180); }
+    else if (kind === 'tick') { tone(0, 660, 0.08, 'sine', 0.18); }
+    else if (kind === 'alarm') { [[0, 880], [0.28, 880], [0.56, 1320]].forEach(([t, f]) => tone(t, f, 0.22, 'square', 0.32)); }
+    else if (kind === 'fanfare') { [[0, 523.25, 0.14], [0.1, 659.25, 0.14], [0.2, 783.99, 0.16], [0.32, 1046.5, 0.36]].forEach(([t, f, d]) => tone(t, f, d, 'triangle', 0.26)); }
+  } catch (e) {}
+}
+function beep() { sfx('alarm'); }
 async function requestWake() { try { if (!wake && 'wakeLock' in navigator && document.visibilityState === 'visible') { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } } catch (e) { wake = null; } }
 function releaseWake() { try { wake && wake.release(); } catch (e) {} wake = null; }
 
@@ -2804,10 +2960,11 @@ function finishSummary() {
     <div class="kpi"><div class="k">${sets}</div><div class="l">set</div></div><div class="kpi"><div class="k">${fmt(vol / 1000, 2)}</div><div class="l">tấn tạ</div></div></div>
     <div class="cmpline">${a.est ? `Dự kiến ${minTxt(a.est)}, thực tế <b>${Math.round(durOf(a) / 60000)} phút</b> · trung bình <b>${fmtDur(durOf(a) / sets)}</b> mỗi set (gồm nghỉ). ` : ''}${tot ? `<b>${met}/${tot}</b> bài đạt đủ set × rep mục tiêu. ` : ''}${pv ? `Tổng tạ so với lần trước (${dm(pv.date)}): <b>${tons(pvol)}</b> → <b>${tons(vol)}</b> ${deltaHtml(vol, pvol)}` : 'Lần đầu tập buổi này.'}</div>`;
   if (prs.length) { h += `<div class="eyebrow" style="margin-top:18px">Kỷ lục mới · 1RM ước tính</div>`; for (const p of prs) h += `<div class="pr"><span>${esc(shortName(p.name))}</span><span class="tn"><b style="color:var(--up)">${fmt(p.best)} kg</b> <span class="muted">(trước ${fmt(p.prev)})</span></span></div>`; }
-  h += undone ? `<div class="sh-actions"><button class="btn gold big" data-act="close-sheet">${ICON.play} Tập tiếp</button><button class="btn" data-act="save-session">Vẫn lưu buổi tập</button></div>`
-    : `<div class="sh-actions"><button class="btn gold big" data-act="save-session">Lưu buổi tập</button><button class="btn ghost" data-act="close-sheet">Tập tiếp</button></div>`;
+  h += undone ? `<div class="sh-actions"><button class="btn gold big" data-act="close-sheet">${ICON.play} Tập tiếp</button><button class="btn" data-act="save-session">Vẫn lưu buổi tập</button><button class="btn" data-act="share-card" data-id="active">${ICON.share} ✨ Thẻ khoe buổi tập</button></div>`
+    : `<div class="sh-actions"><button class="btn gold big" data-act="save-session">Lưu buổi tập</button><button class="btn" data-act="share-card" data-id="active">${ICON.share} ✨ Thẻ khoe buổi tập</button><button class="btn ghost" data-act="close-sheet">Tập tiếp</button></div>`;
   h += `<p class="note-line" style="text-align:center">Lưu rồi vẫn mở lại được trong ngày, ở tab Tập.</p>`;
   openSheet(h);
+  sfx('fanfare'); vibe([40, 60, 80]);
   if (prs.length) setTimeout(confetti, 250);
 }
 function saveSession() {
@@ -3259,8 +3416,242 @@ function sessionSheet(id) {
     <div class="kpis"><div class="kpi"><div class="k">${s.finishedAt ? fmtDur(durOf(s)) : '–'}</div><div class="l">thời gian</div></div><div class="kpi"><div class="k">${st.sets}</div><div class="l">set</div></div><div class="kpi"><div class="k">${fmt(st.vol / 1000, 2)}</div><div class="l">tấn tạ</div></div></div>
     <div class="cmpline">${pv ? `So với lần trước (${dm(pv.date)}): <b>${tons(pst.vol)}</b> → <b>${tons(st.vol)}</b> ${deltaHtml(st.vol, pst.vol)}` : 'Đây là lần đầu tập buổi này.'}</div><div class="tbl-wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>Bài</th><th>Các set</th></tr></thead><tbody>`;
   for (const en of s.entries) h += `<tr><td>${esc(shortName(en.name))}${en.note ? `<div class="small muted">${esc(en.note)}</div>` : ''}</td><td class="tn">${setsStr(en.sets)}${en.drop ? ` · D ${fmt(en.drop.kg)}×${en.drop.reps}` : ''}</td></tr>`;
-  h += `</tbody></table></div><div class="sh-actions">${canReopen(s) ? `<button class="btn gold big" data-act="reopen-session" data-id="${s.id}">${ICON.play} Mở lại để tập tiếp</button>` : ''}<button class="btn ghost" data-act="close-sheet">Đóng</button><button class="btn ghost danger" data-act="del-session" data-id="${s.id}">Xoá buổi này</button></div>`;
+  h += `</tbody></table></div><div class="sh-actions"><button class="btn gold big" data-act="share-card" data-id="${s.id}">${ICON.share} ✨ Thẻ khoe buổi tập</button>${canReopen(s) ? `<button class="btn" data-act="reopen-session" data-id="${s.id}">${ICON.play} Mở lại để tập tiếp</button>` : ''}<button class="btn ghost" data-act="close-sheet">Đóng</button><button class="btn ghost danger" data-act="del-session" data-id="${s.id}">Xoá buổi này</button></div>`;
   openSheet(h);
+}
+
+/* ---------- thẻ khoe buổi tập (Canvas Story 9:16 & Vuông 1:1) ---------- */
+const SC_THEMES = {
+  gold: { bg0: '#161411', bg1: '#0a0908', card: 'rgba(28,25,22,0.88)', line: 'rgba(218,168,75,0.28)', fg: '#f4efe6', sub: '#9e9589', acc: '#e0a84b', acc2: '#f4c978', badge: 'GIÁO ÁN ĐỊA NGỤC', glow: 'rgba(224,168,75,0.22)' },
+  hell: { bg0: '#240804', bg1: '#0b0302', card: 'rgba(34,12,8,0.88)', line: 'rgba(255,90,31,0.36)', fg: '#fff1e6', sub: '#c88c76', acc: '#ff5a1f', acc2: '#ffae42', badge: 'ĐỊA NGỤC · RÈN THÉP', glow: 'rgba(255,82,20,0.28)' },
+  ice: { bg0: '#0b1929', bg1: '#040a12', card: 'rgba(13,26,42,0.88)', line: 'rgba(56,189,248,0.34)', fg: '#eef8ff', sub: '#7fa6c4', acc: '#38bdf8', acc2: '#a5f3fc', badge: 'BĂNG NGỤC · TINH KHIẾT', glow: 'rgba(56,189,248,0.25)' },
+  oled: { bg0: '#090002', bg1: '#000000', card: 'rgba(16,4,7,0.92)', line: 'rgba(244,63,94,0.36)', fg: '#fafafa', sub: '#a1707b', acc: '#f43f5e', acc2: '#fda4af', badge: 'HUYẾT NGUYỆT · OLED', glow: 'rgba(244,63,94,0.24)' },
+  neon: { bg0: '#08121e', bg1: '#04070d', card: 'rgba(14,22,36,0.88)', line: 'rgba(34,211,238,0.32)', fg: '#eef6ff', sub: '#7e93ad', acc: '#22d3ee', acc2: '#a855f7', badge: 'ĐÊM NEON · CYBER', glow: 'rgba(34,211,238,0.24)' },
+  light: { bg0: '#f7f4ee', bg1: '#eae4d7', card: 'rgba(255,255,255,0.92)', line: 'rgba(184,121,31,0.26)', fg: '#1a1714', sub: '#6e6559', acc: '#b8791f', acc2: '#d99b38', badge: 'GIÁO ÁN ĐỊA NGỤC', glow: 'rgba(184,121,31,0.16)' }
+};
+function normSessionForCard(id) {
+  if (id === 'active' && state.active) {
+    const a = state.active;
+    const entries = a.entries.map(en => ({
+      ...en,
+      sets: en.sets.filter(s => s.done && s.reps > 0).map(s => ({ kg: s.kg ?? 0, reps: s.reps })),
+      drop: en.drop && en.drop.done && en.drop.reps > 0 ? { kg: en.drop.kg ?? 0, reps: en.drop.reps } : null
+    })).filter(en => en.sets.length || en.drop);
+    return { ...a, finishedAt: Date.now(), entries, _isActive: true };
+  }
+  return state.sessions.find(x => x.id === id) || state.sessions[state.sessions.length - 1];
+}
+function shareCardSheet(id) {
+  const s = normSessionForCard(id); if (!s) { toast('Không tìm thấy buổi tập'); return; }
+  ui.scId = id;
+  ui.scFmt = ui.scFmt || 'story';
+  ui.scSkin = ui.scSkin || (state.settings.skin || 'gold');
+  const skins = Object.keys(SC_THEMES);
+  const h = `<h3 class="sh-title">Thẻ khoe buổi tập</h3>
+    <p class="sh-text">Chọn khổ ảnh và màu giao diện rồi bấm Chia sẻ hoặc Tải ảnh.</p>
+    <div class="sc-bar">
+      <div class="seg" style="margin:0;flex:1">
+        <button type="button" data-act="sc-fmt" data-k="story" aria-pressed="${ui.scFmt === 'story'}">Story 9:16</button>
+        <button type="button" data-act="sc-fmt" data-k="sq" aria-pressed="${ui.scFmt === 'sq'}">Vuông 1:1</button>
+      </div>
+      <div class="sc-skins">${skins.map(k => `<button type="button" class="sc-dot" data-act="sc-skin" data-k="${k}" aria-pressed="${ui.scSkin === k}" style="background:linear-gradient(135deg,${SC_THEMES[k].acc},${SC_THEMES[k].bg0})" title="${esc(k)}"></button>`).join('')}</div>
+    </div>
+    <div class="sc-wrap"><canvas id="sc-cv"></canvas></div>
+    <div class="sh-actions">
+      <button class="btn gold big" data-act="sc-send">${ICON.share} Chia sẻ ảnh (Zalo / Story / FB)</button>
+      <button class="btn" data-act="sc-dl">Tải ảnh PNG về máy</button>
+      <button class="btn ghost" data-act="close-sheet">Đóng</button>
+    </div>`;
+  openSheet(h);
+  requestAnimationFrame(drawShareCard);
+}
+function rrPath(ctx, x, y, w, h, r) {
+  const rad = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + rad, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rad);
+  ctx.arcTo(x + w, y + h, x, y + h, rad);
+  ctx.arcTo(x, y + h, x, y, rad);
+  ctx.arcTo(x, y, x + w, y, rad);
+  ctx.closePath();
+}
+function drawShareCard() {
+  const cv = $('#sc-cv'); if (!cv) return;
+  const s = normSessionForCard(ui.scId); if (!s) return;
+  const isStory = (ui.scFmt || 'story') === 'story';
+  const W = 1080, H = isStory ? 1920 : 1080;
+  cv.width = W; cv.height = H;
+  const ctx = cv.getContext('2d');
+  const T = SC_THEMES[ui.scSkin] || SC_THEMES.gold;
+  const st = sessStats(s), pv = prevSame(s), pst = pv && sessStats(pv);
+  const durTxt = s.finishedAt ? fmtDur(durOf(s)) : '–';
+  const volTons = fmt(st.vol / 1000, 2);
+  const who = (state.settings.userName || (multi() ? curProf().name : '') || '').trim();
+  const dateStr = `${DOW[parseYmd(s.date).getDay()]} · ${dmY(s.date)}`;
+
+  // 1. Nền gradient + quầng sáng
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, T.bg0); bg.addColorStop(1, T.bg1);
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+
+  const g1 = ctx.createRadialGradient(W * 0.85, H * 0.12, 20, W * 0.85, H * 0.12, W * 0.65);
+  g1.addColorStop(0, T.glow); g1.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g1; ctx.fillRect(0, 0, W, H);
+  const g2 = ctx.createRadialGradient(W * 0.15, H * 0.88, 20, W * 0.15, H * 0.88, W * 0.6);
+  g2.addColorStop(0, T.glow); g2.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g2; ctx.fillRect(0, 0, W, H);
+
+  // Hạt bụi sáng trang trí
+  ctx.save();
+  for (let i = 0; i < 28; i++) {
+    const px = ((i * 197 + 83) % 980) + 50, py = ((i * 353 + 129) % (H - 120)) + 60;
+    const pr = (i % 4) + 1.5;
+    ctx.fillStyle = i % 2 ? T.acc : T.acc2;
+    ctx.globalAlpha = 0.08 + (i % 5) * 0.03;
+    ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.restore();
+
+  const pad = isStory ? 76 : 64;
+  let y = isStory ? 110 : 68;
+
+  // 2. Huy hiệu trên cùng
+  ctx.font = '800 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.fillStyle = T.acc;
+  ctx.fillText('🔥 ' + T.badge, pad, y);
+  if (who) {
+    ctx.textAlign = 'right';
+    ctx.fillStyle = T.sub;
+    ctx.font = '700 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText(who.toUpperCase(), W - pad, y);
+    ctx.textAlign = 'left';
+  }
+  y += isStory ? 70 : 52;
+
+  // 3. Tên buổi tập & ngày
+  ctx.fillStyle = T.fg;
+  ctx.font = `900 ${isStory ? 68 : 54}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+  const titleLines = wrapCanvasText(ctx, s.dayName || 'Buổi tập', W - pad * 2);
+  for (const line of titleLines.slice(0, 2)) {
+    ctx.fillText(line, pad, y);
+    y += isStory ? 78 : 62;
+  }
+  ctx.fillStyle = T.sub;
+  ctx.font = '600 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  let subLine = dateStr;
+  if (pst && pst.vol > 0) {
+    const pct = Math.round((st.vol - pst.vol) / pst.vol * 100);
+    if (pct !== 0) subLine += `  ·  ${pct > 0 ? '▲ +' + pct : '▼ ' + pct}% so với buổi trước`;
+  }
+  ctx.fillText(subLine, pad, y);
+  y += isStory ? 56 : 40;
+
+  // 4. Ba ô KPI lớn
+  const kpiGap = 22, kpiW = (W - pad * 2 - kpiGap * 2) / 3, kpiH = isStory ? 186 : 148;
+  const kpis = [
+    [durTxt, 'THỜI GIAN'],
+    [String(st.sets), 'TỔNG SET'],
+    [volTons + ' T', 'KHỐI LƯỢNG']
+  ];
+  kpis.forEach(([val, lab], idx) => {
+    const kx = pad + idx * (kpiW + kpiGap);
+    rrPath(ctx, kx, y, kpiW, kpiH, 28);
+    ctx.fillStyle = T.card; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = T.line; ctx.stroke();
+    ctx.fillStyle = idx === 2 ? T.acc : T.fg;
+    ctx.font = `900 ${isStory ? 54 : 44}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillText(val, kx + kpiW / 2, y + (isStory ? 98 : 80));
+    ctx.fillStyle = T.sub;
+    ctx.font = '700 20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText(lab, kx + kpiW / 2, y + (isStory ? 144 : 118));
+  });
+  ctx.textAlign = 'left';
+  y += kpiH + (isStory ? 52 : 34);
+
+  // 5. Danh sách các bài tập nổi bật trong buổi
+  const maxRows = isStory ? 9 : 4;
+  const rows = s.entries.slice(0, maxRows);
+  const rowH = isStory ? 98 : 76;
+  const boxH = Math.max(120, rows.length * rowH + 44);
+  rrPath(ctx, pad, y, W - pad * 2, boxH, 32);
+  ctx.fillStyle = T.card; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = T.line; ctx.stroke();
+
+  let ry = y + (isStory ? 66 : 54);
+  rows.forEach((en, idx) => {
+    const bestSet = en.sets.reduce((b, x) => (!b || (x.kg || 0) * (1 + x.reps / 30) > (b.kg || 0) * (1 + b.reps / 30) ? x : b), null);
+    const exName = shortName(en.name);
+    ctx.fillStyle = T.acc;
+    ctx.font = '800 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText(String(idx + 1).padStart(2, '0'), pad + 32, ry);
+
+    ctx.fillStyle = T.fg;
+    ctx.font = `700 ${isStory ? 30 : 26}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    const maxNameW = W - pad * 2 - 360;
+    ctx.fillText(clipCanvasText(ctx, exName, maxNameW), pad + 82, ry);
+
+    ctx.textAlign = 'right';
+    const rightTxt = bestSet ? `${fmt(bestSet.kg)}${en.each ? 'kg/tay' : 'kg'} × ${bestSet.reps}  (${en.sets.length} set)` : `${en.sets.length} set`;
+    ctx.fillStyle = T.acc2;
+    ctx.font = `700 ${isStory ? 28 : 24}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    ctx.fillText(rightTxt, W - pad - 32, ry);
+    ctx.textAlign = 'left';
+
+    if (idx < rows.length - 1) {
+      ctx.strokeStyle = T.line; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(pad + 32, ry + (isStory ? 30 : 22)); ctx.lineTo(W - pad - 32, ry + (isStory ? 30 : 22)); ctx.stroke();
+    }
+    ry += rowH;
+  });
+  if (s.entries.length > maxRows) {
+    ctx.fillStyle = T.sub;
+    ctx.font = '600 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText(`+ ${s.entries.length - maxRows} bài tập khác trong buổi này`, pad + 32, y + boxH + 34);
+  }
+
+  // 6. Chân trang thương hiệu
+  ctx.fillStyle = T.sub;
+  ctx.font = '700 22px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('GIÁO ÁN ĐỊA NGỤC  ·  KỶ LUẬT RÈN THÉP', W / 2, H - (isStory ? 58 : 34));
+  ctx.textAlign = 'left';
+}
+function wrapCanvasText(ctx, text, maxW) {
+  const words = String(text || '').split(/\s+/);
+  const lines = []; let cur = '';
+  for (const w of words) {
+    const test = cur ? cur + ' ' + w : w;
+    if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = w; }
+    else cur = test;
+  }
+  if (cur) lines.push(cur);
+  return lines.length ? lines : ['Buổi tập'];
+}
+function clipCanvasText(ctx, text, maxW) {
+  let s = String(text || '');
+  if (ctx.measureText(s).width <= maxW) return s;
+  while (s.length > 1 && ctx.measureText(s + '…').width > maxW) s = s.slice(0, -1);
+  return s + '…';
+}
+function shareCardExport(dlOnly) {
+  const cv = $('#sc-cv'); if (!cv) return;
+  const s = normSessionForCard(ui.scId);
+  const fname = `giao-an-dia-nguc-${s ? s.date : ymd()}.png`;
+  cv.toBlob(async blob => {
+    if (!blob) { toast('Không tạo được ảnh'); return; }
+    if (!dlOnly && navigator.canShare) {
+      const file = new File([blob], fname, { type: 'image/png' });
+      if (navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: s ? s.dayName : 'Giáo Án Địa Ngục' }); return; }
+        catch (e) { if (e && e.name === 'AbortError') return; }
+      }
+    }
+    const url = URL.createObjectURL(blob), a = document.createElement('a');
+    a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+    toast('Đã tải ảnh thẻ buổi tập');
+  }, 'image/png');
 }
 
 /* ---------- biểu đồ ---------- */
@@ -3549,7 +3940,11 @@ function viewMore() {
     <div class="row"><button class="btn gold" data-act="coach-setup">Bật chế độ HLV</button><button class="btn" data-act="profiles">${ICON.users} Người tập (${profiles.list.length})</button></div>`}</div>
   ${syncCardHtml()}
   ${packCard()}
-  <div class="card set-card"><h3>Giao diện</h3><div class="skins">${SKINS.map(k => `<button type="button" class="skin" data-act="skin" data-k="${k.id}" data-sk="${k.id}" aria-pressed="${sk === k.id}" style="--sb:${k.bg};--ss:${k.surface};--sa:${k.acc};--sf:${k.fg};--sfont:${k.font};--srad:${k.rad}"><span class="sw"><em></em><i></i><b>Aa 42,5</b><span class="si">${['nTrain', 'nProg', 'nBody'].map(x => iconOf(k.id, x)).join('')}</span></span><span class="sn">${k.name}</span><span class="sd">${k.desc}</span></button>`).join('')}</div></div>
+  <div class="card set-card"><h3>Giao diện & Hiệu ứng</h3><div class="skins">${SKINS.map(k => `<button type="button" class="skin" data-act="skin" data-k="${k.id}" data-sk="${k.id}" aria-pressed="${sk === k.id}" style="--sb:${k.bg};--ss:${k.surface};--sa:${k.acc};--sf:${k.fg};--sfont:${k.font};--srad:${k.rad}"><span class="sw"><em></em><i></i><b>Aa 42,5</b><span class="si">${['nTrain', 'nProg', 'nBody'].map(x => iconOf(k.id, x)).join('')}</span></span><span class="sn">${k.name}</span><span class="sd">${k.desc}</span></button>`).join('')}</div>
+    <label class="toggle" style="margin-top:12px"><span>Hiệu ứng nền động (lửa / tuyết / huyết nguyệt)</span><input type="checkbox" id="fx-t" ${!st.fxOff ? 'checked' : ''}></label>
+    <label class="toggle"><span>Âm thanh hiệu ứng khi tập (set xong, đếm ngược 3-2-1, PR)</span><input type="checkbox" id="sfx-t" ${st.sfx !== false ? 'checked' : ''}></label>
+    <label class="toggle"><span>Rung phản hồi khi bấm</span><input type="checkbox" id="haptics-t" ${st.haptics !== false ? 'checked' : ''}></label>
+  </div>
   <div class="card set-card"><h3>Thông báo hết giờ nghỉ</h3><p>Hết giờ nghỉ giữa set, điện thoại hiện thông báo có âm thanh trên màn hình khoá và trên đầu màn hình, kể cả khi bạn đang lướt app khác.</p>
     <div class="seg" role="group" aria-label="Cách gửi thông báo">${[['shortcut', 'Phím tắt iPhone'], ['ntfy', 'App ntfy'], ['push', 'Của app']].map(([k, l]) => `<button type="button" data-act="alert-method" data-k="${k}" aria-pressed="${alertMethod() === k}">${l}</button>`).join('')}</div>
     ${alertMethod() === 'shortcut' ? `<details class="guide" ${st.notify ? '' : 'open'}><summary>Tạo phím tắt 1 lần (khoảng 1 phút)</summary><ol class="sc-steps">
@@ -3591,8 +3986,8 @@ function viewMore() {
     <div class="seg" role="group" aria-label="Nhịp nghỉ" style="margin-top:6px">${Object.entries(REST_MODES).map(([k, m]) => `<button type="button" data-act="rest-mode" data-k="${k}" aria-pressed="${(st.restMode || 'std') === k}">${m.label}</button>`).join('')}</div>
     <p class="small muted" style="margin:10px 0 0">${restMode().desc} Bài nào cần riêng thì chỉnh trong bài đó.</p>
     <details class="wpkeep"><summary>Căn cứ</summary><p class="note-line">Nhịp rep: tổng quan của Schoenfeld và cộng sự (2015) cho thấy mỗi rep 0,5–8 giây đều giúp cơ phát triển tương đương; ACSM khuyên tốc độ vừa phải, có kiểm soát. Nghỉ: từ 60 giây trở lên là đủ cho phát triển cơ, trên 90 giây chỉ giúp thêm ít, trừ bài nặng như squat, deadlift. Thời gian dự kiến của buổi = set + nghỉ + khởi động bài lớn (~3 phút) + đổi máy (~1 phút/bài).</p></details></div>
-  <div class="card set-card"><h3>Gửi & nhận bằng mã QR</h3><p>${co ? 'Gửi giáo án và kết quả tập với từng học viên bằng nút ⇄ Đồng bộ trên thẻ học viên ở Phòng HLV. Nhận mã từ máy khác bằng Quét mã.' : 'Gửi giáo án cho bạn bè bằng mã QR: họ quét trực tiếp, hoặc bạn lưu ảnh mã gửi đi. Mức tạ, ảnh và lịch sử tập của bạn không được gửi.'}</p>
-    <div class="row"><button class="btn gold" data-act="qr-scan">Quét mã</button>${co ? '' : `<button class="btn" data-act="share" ${state.days.length ? '' : 'disabled'}>Gửi giáo án (QR)</button><button class="btn" data-act="sync-open">⇄ Đồng bộ với HLV</button>`}</div></div>
+  <div class="card set-card"><h3>Gửi & nhận bằng mã QR hoặc tin nhắn</h3><p>${co ? 'Gửi giáo án và kết quả tập với từng học viên bằng nút ⇄ Đồng bộ trên thẻ học viên ở Phòng HLV. Nhận mã từ máy khác bằng Quét mã hoặc Dán mã.' : 'Gửi giáo án cho bạn bè bằng mã QR, ảnh mã hoặc sao chép mã gửi qua Zalo/Messenger. Mức tạ, ảnh và lịch sử tập của bạn không được gửi.'}</p>
+    <div class="row"><button class="btn gold" data-act="qr-scan">Quét / Dán mã</button><button class="btn" data-act="qr-paste">${ICON.paste} Dán mã ngay</button>${co ? '' : `<button class="btn" data-act="share" ${state.days.length ? '' : 'disabled'}>Gửi giáo án</button><button class="btn" data-act="sync-open">⇄ Đồng bộ với HLV</button>`}</div></div>
   <div class="card set-card"><h3>Sao lưu dữ liệu</h3><p>${multi() ? 'Tải file dữ liệu của <b>một người</b> (để gửi riêng cho người đó) hoặc của cả máy.' : 'Tải dữ liệu (gồm ảnh máy tập và ảnh body) thành một file để cất giữ, hoặc chuyển sang máy khác.'}</p>
     <div class="row"><button class="btn" data-act="backup">${multi() ? 'Tải file của 1 người' : 'Tải file sao lưu'}</button><label class="btn" for="restore-file">Khôi phục từ file</label><input type="file" id="restore-file" hidden></div></div>
   ${inArtifact || isStandalone() ? '' : `<div class="card set-card"><h3>Cài lên màn hình điện thoại</h3><p>iPhone: mở bằng Safari → nút Chia sẻ → “Thêm vào MH chính”. Android: mở bằng Chrome → ⋮ → “Cài đặt ứng dụng”. Cài xong mở được cả khi không có mạng.</p>
@@ -3822,9 +4217,9 @@ function drawQR(canvas, text) {
 async function qrSendSheet() {
   const P = await qrPayload(); ui.qrOut = P; clearInterval(ui.qrT);
   if (!P.ids.length) { openSheet(`<h3 class="sh-title">Gửi kết quả cho HLV</h3><p class="sh-text">Không có buổi tập mới cần gửi. Mọi buổi đã gửi hết.</p><div class="sh-actions"><button class="btn" data-act="qr-resend">Gửi lại 5 buổi gần nhất</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`); return; }
-  openSheet(`<h3 class="sh-title">Gửi kết quả cho HLV</h3><p class="sh-text">${P.ids.length} buổi tập${state.coachLink && state.coachLink.name ? ` · gửi HLV ${esc(state.coachLink.name)}` : ''}. HLV mở Phòng HLV → <b>Quét QR</b> rồi đưa camera vào mã này.${P.parts.length > 1 ? ' Mã tự đổi trang, giữ yên đến khi HLV báo xong.' : ''}</p>
+  openSheet(`<h3 class="sh-title">Gửi kết quả cho HLV</h3><p class="sh-text">${P.ids.length} buổi tập${state.coachLink && state.coachLink.name ? ` · gửi HLV ${esc(state.coachLink.name)}` : ''}. HLV mở Phòng HLV → <b>Quét QR</b> rồi đưa camera vào mã này, hoặc bấm <b>Sao chép mã gửi qua Zalo</b>.${P.parts.length > 1 ? ' Mã tự đổi trang, giữ yên đến khi HLV báo xong.' : ''}</p>
     <div class="qrbox"><canvas id="qr-c"></canvas><span class="pg" id="qr-pg"></span></div>
-    <div class="sh-actions"><button class="btn gold big" data-act="qr-done">HLV đã quét xong</button><button class="btn ghost" data-act="qr-close">Để sau</button></div>`);
+    <div class="sh-actions"><button class="btn gold big" data-act="qr-done">HLV đã quét xong</button><button class="btn" data-act="qr-copy">Sao chép mã gửi qua Zalo</button><button class="btn ghost" data-act="qr-close">Để sau</button></div>`);
   let i = 0; const show = () => { const c = $('#qr-c'); if (!c) { clearInterval(ui.qrT); return; } drawQR(c, P.parts[i]); $('#qr-pg').textContent = P.parts.length > 1 ? `Trang ${i + 1}/${P.parts.length}` : ''; i = (i + 1) % P.parts.length; };
   show(); if (P.parts.length > 1) ui.qrT = setInterval(show, 900);
 }
@@ -3836,10 +4231,11 @@ async function syncQrReceive2(body) {
   try { await syncReceive(syncExpand(await inflateB64(body))); } catch (e) { toast('Mã QR không đọc được, thử quét lại'); }
 }
 async function qrScanSheet(mode) {
-  openSheet((mode === 'sync' ? `<h3 class="sh-title">Quét mã máy kia</h3><p class="sh-text">Máy kia mở <b>Đồng bộ → Hiện mã QR</b>. Đưa camera vào mã đó.</p>`
-    : `<h3 class="sh-title">Quét mã</h3><p class="sh-text">Đưa camera vào mã QR trên máy kia: mã giáo án hoặc mã đồng bộ đều được.</p>`) + `
+  openSheet((mode === 'sync' ? `<h3 class="sh-title">Quét hoặc dán mã máy kia</h3><p class="sh-text">Máy kia mở <b>Đồng bộ → Hiện mã QR</b> hoặc gửi mã qua Zalo/Messenger.</p>`
+    : `<h3 class="sh-title">Quét hoặc dán mã</h3><p class="sh-text">Đưa camera vào mã QR, chọn ảnh mã, hoặc dán mã nhận qua Zalo/Messenger.</p>`) + `
     <div class="qrcam"><video id="qr-v" playsinline muted></video><div class="frame"></div><div class="st" id="qr-st">Đang mở camera…</div></div>
-    <div class="sh-actions"><label class="btn gold" for="img-in">Chọn từ Ảnh</label><input type="file" id="img-in" accept="image/*" multiple hidden><button class="btn ghost" data-act="qr-close">Đóng</button></div>`);
+    <div class="sh-actions"><button class="btn gold big" data-act="qr-paste">${ICON.paste} Dán mã từ bộ nhớ tạm</button><label class="btn" for="img-in">Chọn từ Ảnh</label><input type="file" id="img-in" accept="image/*" multiple hidden><button class="btn ghost" data-act="qr-close">Đóng</button></div>
+    <details class="wpkeep" style="margin-top:10px"><summary>Hoặc dán mã thủ công vào ô chữ</summary><div class="paste-box"><textarea class="inp" id="paste-in" rows="2" placeholder="Chạm giữ vào đây → Dán mã SOTA / GAP / GAS / GAQ…"></textarea><button type="button" class="btn sm gold" data-act="paste-go">Đọc mã</button></div></details>`);
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false }); ui.qrStream = stream;
     const v = $('#qr-v'); if (!v) { stream.getTracks().forEach(t => t.stop()); return; } v.srcObject = stream; await v.play();
@@ -3857,7 +4253,7 @@ async function qrScanSheet(mode) {
       ui.qrRaf = setTimeout(tick, 90);
     };
     $('#qr-st').textContent = 'Giữ mã QR trong khung, cách khoảng 20–30 cm'; tick();
-  } catch (e) { const st = $('#qr-st'); if (st) st.textContent = 'Không mở được camera. Cho phép camera trong Cài đặt iPhone → Safari / app.'; }
+  } catch (e) { const st = $('#qr-st'); if (st) st.textContent = 'Không mở được camera. Bạn vẫn có thể bấm “Dán mã từ bộ nhớ tạm” hoặc “Chọn từ Ảnh”.'; }
 }
 function qrStop() { clearTimeout(ui.qrRaf); if (ui.qrStream) { ui.qrStream.getTracks().forEach(t => t.stop()); ui.qrStream = null; } }
 async function qrReceive(body) {
@@ -3984,15 +4380,15 @@ async function decodePlan(text) {
   const out = (data.d || []).slice(0, 14).map(d => ({ name: String(d.n || 'Ngày tập').slice(0, 40), exercises: (d.e || []).slice(0, 30).map(x => ({ ...dec(x), slot: String(x.o || '').slice(0, 40), alts: (x.l || []).slice(0, 20).map(dec) })) }));
   out.meta = data.p ? { pk: String(data.p).slice(0, 40), cn: String(data.q || '').slice(0, 40) } : null; return out;
 }
-/* gửi giáo án bằng mã QR: máy kia quét trực tiếp, hoặc lưu ảnh mã vào Ảnh để gửi đi bằng bất cứ cách nào */
+/* gửi giáo án bằng mã QR: máy kia quét trực tiếp, hoặc lưu ảnh mã vào Ảnh / sao chép mã gửi đi bằng bất cứ cách nào */
 async function planQrSheet() {
   if (!state.days.length) { toast('Chưa có giáo án để gửi'); return; }
   const code = await encodePlan2(state.days), one = 'GAP2.' + Math.random().toString(36).slice(2, 6) + '.1.1.' + code, parts = one.length <= QR_MAX ? [one] : qrChunks('GAP2', code, QR_MAX - 40), n = parts.length;
   ui.planCode = code; clearInterval(ui.qrT);
-  openSheet(`<h3 class="sh-title">Gửi giáo án</h3><p class="sh-text">${state.days.length} ngày tập · ${state.days.reduce((a, d) => a + d.exercises.length, 0)} bài. Người nhận mở app → <b>Quét mã</b>, đưa camera lại gần để mã chiếm gần hết khung.${n > 1 ? ` Giáo án dài nên chia ${n} mã, quét xong mã này thì bấm nút để hiện mã tiếp theo.` : ''} Mức tạ, lịch sử và ảnh của bạn không được gửi đi.</p>
+  openSheet(`<h3 class="sh-title">Gửi giáo án</h3><p class="sh-text">${state.days.length} ngày tập · ${state.days.reduce((a, d) => a + d.exercises.length, 0)} bài. Người nhận mở app → <b>Quét mã</b>, hoặc bấm <b>Dán mã</b> nếu bạn gửi mã qua tin nhắn.${n > 1 ? ` Giáo án dài nên chia ${n} mã QR.` : ''} Mức tạ, lịch sử và ảnh của bạn không được gửi đi.</p>
     <div class="qrbox"><canvas id="qr-c"></canvas><span class="pg" id="qr-pg"></span></div>
-    <p class="small muted" style="margin:10px 0 0">Ở xa: bấm <b>Lưu ảnh mã vào Ảnh</b>, gửi tấm ảnh đó cho người nhận. Họ mở app → Quét mã → <b>Chọn từ Ảnh</b>.</p>
-    <div class="sh-actions">${n > 1 ? '<button class="btn gold" id="qr-next">…</button>' : ''}<button class="btn ${n > 1 ? '' : 'gold'}" data-act="plan-img">Lưu ảnh mã vào Ảnh</button><button class="btn ghost" data-act="qr-close">Đóng</button></div>`);
+    <p class="small muted" style="margin:10px 0 0">Ở xa: bấm <b>Sao chép mã gửi qua Zalo</b> (nhanh nhất, chỉ 1 tin nhắn) hoặc <b>Lưu ảnh mã vào Ảnh</b>.</p>
+    <div class="sh-actions">${n > 1 ? '<button class="btn gold" id="qr-next">…</button>' : ''}<button class="btn ${n > 1 ? '' : 'gold'}" data-act="plan-copy">Sao chép mã gửi qua Zalo</button><button class="btn" data-act="plan-img">Lưu ảnh mã vào Ảnh</button><button class="btn ghost" data-act="qr-close">Đóng</button></div>`);
   qrStatic(parts, 'qr-close', 'Xong');
 }
 /* giáo án nhận được (từ camera, ảnh, hoặc link cũ): xem trước rồi chọn Cập nhật / Thêm */
@@ -4190,12 +4586,13 @@ async function syncSheet(pid) {
   ui.syncPid = pid; const co = coach(), other = co ? `học viên ${esc(p.name)}` : (st.coachLink && st.coachLink.name ? `HLV ${esc(st.coachLink.name)}` : 'HLV');
   openSheet(`<h3 class="sh-title">Đồng bộ với ${other}</h3>
     <p class="sh-text">Hai máy cùng ghi buổi tập${co ? ` của ${esc(p.name)}` : ''}: ${co ? 'học viên tự tập ghi trên máy họ, bạn hướng dẫn thì ghi trên máy này' : 'tự tập thì ghi trên máy bạn, có HLV thì HLV ghi trên máy HLV'}. Đồng bộ để hai máy có cùng lịch sử. Chỉ hồ sơ ${esc(p.name)} được cập nhật, dữ liệu khác trên hai máy giữ nguyên.</p>
-    <div class="eyebrow" style="margin:6px 0 8px">Đang ở cạnh nhau</div>
-    <div class="row"><button class="btn gold" data-act="sync-qr">Hiện mã QR</button><button class="btn gold" data-act="sync-scan">Quét mã máy kia</button></div>
-    <p class="small muted" style="margin:8px 0 0">Mỗi máy lần lượt hiện mã cho máy kia quét.</p>
-    <div class="eyebrow" style="margin:18px 0 8px">Ở xa</div>
-    <div class="row"><button class="btn gold" data-act="sync-img">Lưu ảnh mã vào Ảnh</button><label class="btn gold" for="img-in">Chọn từ Ảnh</label><input type="file" id="img-in" accept="image/*" multiple hidden></div>
-    <p class="small muted" style="margin:8px 0 10px">Lưu ảnh mã rồi gửi tấm ảnh đó đi (Zalo, AirDrop…). Bên kia chọn ảnh từ thư viện Ảnh. Ảnh máy tập không gửi kèm, mỗi người tự chụp máy ở phòng tập.</p>
+    <div class="eyebrow" style="margin:6px 0 8px">Ở xa (Zalo / Messenger — nhanh nhất)</div>
+    <div class="row"><button class="btn gold" data-act="sync-copy">${ICON.share} Sao chép mã gửi đi</button><button class="btn gold" data-act="qr-paste">${ICON.paste} Dán mã nhận được</button></div>
+    <p class="small muted" style="margin:8px 0 0">Bấm Sao chép mã rồi dán vào tin nhắn Zalo gửi cho máy kia. Khi nhận được tin nhắn, copy rồi bấm Dán mã nhận được.</p>
+    <div class="eyebrow" style="margin:18px 0 8px">Đang ở cạnh nhau (Quét QR)</div>
+    <div class="row"><button class="btn" data-act="sync-qr">Hiện mã QR</button><button class="btn" data-act="sync-scan">Quét mã máy kia</button></div>
+    <div class="eyebrow" style="margin:18px 0 8px">Hoặc gửi bằng ảnh QR</div>
+    <div class="row"><button class="btn" data-act="sync-img">Lưu ảnh mã vào Ảnh</button><label class="btn" for="img-in">Chọn từ Ảnh</label><input type="file" id="img-in" accept="image/*" multiple hidden></div>
     <label class="toggle" style="margin-top:14px"><span>Gửi lại toàn bộ<br><span class="fhint">Mặc định chỉ gửi phần thay đổi từ lần trước</span></span><input type="checkbox" id="sync-full" ${ui.syncFull ? 'checked' : ''}></label>
     <p class="small muted" style="margin:10px 0 0">${syncAgo(st)}</p>
     <div class="sh-actions"><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`);
@@ -4215,7 +4612,7 @@ async function syncQrSheet() {
   openSheet(`<h3 class="sh-title">Mã đồng bộ</h3><p class="sh-text">${n > 1 ? 'Lượt này gửi <b>giáo án</b>' : `${Q.sent ? Q.sent + ' buổi tập' : 'Không có buổi tập mới'}${Q.pkg.plan ? ' · kèm giáo án' : ''}`}${Q.left ? ` · <b>còn ${Q.left} buổi gửi ở mã sau</b>` : ''}. Máy kia mở <b>Đồng bộ → Quét mã máy kia</b>, đưa camera lại gần để mã chiếm gần hết khung.</p>
     ${n > 1 ? `<p class="note-line">Giáo án dài nên chia ${n} mã. Máy kia quét xong mã này thì bấm nút bên dưới để hiện mã tiếp theo.</p>` : ''}
     <div class="qrbox"><canvas id="qr-c"></canvas><span class="pg" id="qr-pg"></span></div>
-    <div class="sh-actions"><button class="btn gold big" id="qr-next">…</button><button class="btn ghost" data-act="qr-close">Để sau</button></div>`);
+    <div class="sh-actions"><button class="btn gold big" id="qr-next">…</button><button class="btn" data-act="sync-copy">Sao chép mã gửi qua Zalo</button><button class="btn ghost" data-act="qr-close">Để sau</button></div>`);
   qrStatic(Q.parts, 'sync-qr-done', `Máy kia đã nhận xong${Q.left ? ' · gửi tiếp' : ''}`);
 }
 /* nhận gói: từ QR hoặc file */
@@ -4377,6 +4774,40 @@ async function receiveQrImage(files) {
   if (J.kind === 'GAS2') { await syncQrReceive2(J.body); return; }
   if (J.kind === 'GAS1') { await syncQrReceive(J.body); return; }
   await qrReceive(J.body);
+}
+/* sao chép / chia sẻ mã văn bản 1 chạm qua Zalo/Messenger & đọc mã từ bộ nhớ tạm */
+async function copyOrShareCode(text, label) {
+  let copied = false;
+  try { await navigator.clipboard.writeText(text); copied = true; } catch (e) {}
+  if (!inArtifact && navigator.share) {
+    try { await navigator.share({ text, title: label || 'Giáo Án Địa Ngục' }); return; }
+    catch (e) { if (e && e.name === 'AbortError' && copied) { toast('Đã sao chép mã vào bộ nhớ tạm · dán vào Zalo để gửi'); return; } }
+  }
+  if (copied) { toast('Đã sao chép mã · mở Zalo/Messenger và bấm Dán để gửi'); return; }
+  openSheet(`<h3 class="sh-title">${esc(label || 'Sao chép mã')}</h3><p class="sh-text">Bấm giữ vào ô bên dưới → Chọn tất cả → Sao chép rồi gửi qua Zalo/Messenger.</p>
+    <textarea class="inp" id="manual-copy-box" rows="4" readonly style="font-family:ui-monospace,Menlo,monospace;font-size:12px">${esc(text)}</textarea>
+    <div class="sh-actions"><button class="btn gold" data-act="copy" data-t="manual-copy-box">Sao chép</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`);
+}
+async function handleCodeText(raw) {
+  const txt = String(raw || '').trim();
+  if (!txt) { toast('Bộ nhớ tạm đang trống · hãy copy tin nhắn chứa mã trước'); return false; }
+  qrStop(); clearInterval(ui.qrT);
+  const parts = txt.match(/GA[QSP][12]\.[a-z0-9]+\.\d+\.\d+\.[A-Za-z0-9_-]+/g);
+  if (parts && parts.length) {
+    const J = joinQrParts(parts);
+    if (!J.ok) { toast(`Mã nhiều phần đang thiếu trang ${J.missing.join(', ')}/${J.n}`); return false; }
+    if (/^GAP/.test(J.kind)) { await planPreviewSheet(J.body); return true; }
+    if (J.kind === 'GAS2') { await syncQrReceive2(J.body); return true; }
+    if (J.kind === 'GAS1') { await syncQrReceive(J.body); return true; }
+    await qrReceive(J.body); return true;
+  }
+  const sota = txt.match(/SOTA[12]z?\.[A-Za-z0-9_-]+/);
+  if (sota) { await planPreviewSheet(sota[0]); return true; }
+  if (txt.startsWith('{') && txt.includes('"gadn-sync"')) {
+    try { await syncReceive(JSON.parse(txt)); return true; } catch (e) {}
+  }
+  toast('Không tìm thấy mã hợp lệ trong nội dung vừa dán');
+  return false;
 }
 /* nhập giáo án dạng "cập nhật": khớp bài theo mã gốc hoặc tên, giữ mã bài cũ nên lịch sử tập và mức tạ không mất */
 function planAsPkg(days, meta) {
@@ -4624,9 +5055,10 @@ const handlers = {
     set[f] = Math.max(0, r2((set[f] ?? 0) + d));
     const inp = $(`input[data-bind="set"][data-e="${e}"][data-s="${s}"][data-f="${f}"]`); if (inp) inp.value = fmtIn(set[f]);
     if (s === '0' && f === 'kg') refreshWarm(+e);
+    sfx('step'); vibe(6);
     save();
   },
-  'warm': t => { const en = state.active.entries[+t.dataset.e]; en.warm = en.warm || []; const k = +t.dataset.w; en.warm[k] = !en.warm[k]; t.setAttribute('aria-pressed', !!en.warm[k]); save(); },
+  'warm': t => { const en = state.active.entries[+t.dataset.e]; en.warm = en.warm || []; const k = +t.dataset.w; en.warm[k] = !en.warm[k]; t.setAttribute('aria-pressed', !!en.warm[k]); sfx(en.warm[k] ? 'check' : 'uncheck'); vibe(10); save(); },
   'set-done': t => {
     initAudio();
     const { e, s } = t.dataset; const set = getSet(+e, s); if (!set) return;
@@ -4634,28 +5066,29 @@ const handlers = {
     set.done = !set.done;
     if (set.done && (!set.reps || set.reps <= 0)) { set.done = false; toast('Nhập số rep trước khi bấm ✓'); return; }
     t.setAttribute('aria-pressed', set.done); const row = $(`#row-${e}-${s}`); row.classList.toggle('done', set.done);
-    if (set.done) { t.classList.remove('pop'); row.classList.remove('flash'); void t.offsetWidth; t.classList.add('pop'); row.classList.add('flash'); try { navigator.vibrate && navigator.vibrate(15); } catch (er) {} }
+    if (set.done) { t.classList.remove('pop'); row.classList.remove('flash'); void t.offsetWidth; t.classList.add('pop'); row.classList.add('flash'); sfx('check'); vibe([18, 30, 28]); }
+    else { sfx('uncheck'); vibe(10); }
     markCurrent();
     if (set.done) { const ex = exOrSnap(state.active.entries[+e]); if (s !== 'drop') startRest(restOf(ex), shortName(ex.name)); requestWake(); }
     refreshCue(+e); updateProgress(); save();
     if (set.done && +e === focusIdx() && entryDone(state.active.entries[+e])) autoNext(+e);
   },
-  'add-set': t => { const en = state.active.entries[+t.dataset.e]; const l = en.sets[en.sets.length - 1] || { kg: null, reps: null }; en.sets.push({ kg: l.kg, reps: l.reps, done: false }); save(); render(true); },
-  'rm-set': t => { const en = state.active.entries[+t.dataset.e]; if (en.sets.length <= 1) return; const last = en.sets[en.sets.length - 1];
-    const go = () => { en.sets.pop(); save(); closeSheet(); render(true); };
+  'add-set': t => { const i = +t.dataset.e, en = state.active.entries[i]; const l = en.sets[en.sets.length - 1] || { kg: null, reps: null }; en.sets.push({ kg: l.kg, reps: l.reps, done: false }); sfx('step'); vibe(8); save(); refreshExCard(i); },
+  'rm-set': t => { const i = +t.dataset.e, en = state.active.entries[i]; if (en.sets.length <= 1) return; const last = en.sets[en.sets.length - 1];
+    const go = () => { en.sets.pop(); save(); closeSheet(); refreshExCard(i); };
     if (last.done) confirmSheet({ title: `Xoá set ${en.sets.length} đã tập?`, text: `Set này đã ghi ${fmtIn(last.kg) || '—'} kg × ${last.reps} rep. Xoá rồi sẽ không tính vào buổi tập.`, ok: 'Xoá set', danger: true, onOk: go });
-    else { en.sets.pop(); save(); render(true); } },
+    else { en.sets.pop(); sfx('step'); vibe(8); save(); refreshExCard(i); } },
   'drop-toggle': t => {
-    const en = state.active.entries[+t.dataset.e]; const ex = exOrSnap(en);
+    const i = +t.dataset.e, en = state.active.entries[i], ex = exOrSnap(en);
     if (en.drop) en.drop = null; else { const k = Math.max(0, ...en.sets.map(s => s.kg || 0)); en.drop = { kg: k ? roundStep(k * 0.7, ex.step) : null, reps: null, done: false }; }
-    save(); render(true);
+    sfx('step'); vibe(8); save(); refreshExCard(i);
   },
   'finish': () => finishSummary(),
   'save-session': () => saveSession(),
   'reopen-session': t => { $('#toast').hidden = true; reopenSession(t.dataset.id); },
   'cancel-session': () => confirmSheet({ title: 'Huỷ buổi tập này?', text: 'Các set đã ghi trong buổi này sẽ không được lưu.', ok: 'Huỷ buổi tập', danger: true, onOk: discardSession }),
-  'rest-sub': () => { const left = rest.end - Date.now(); if (left <= 0) return; if (left <= 15000) { handlers['rest-skip'](); return; } rest.end -= 15000; rest.total = Math.max(rest.total - 15000, rest.end - Date.now()); tickRest(); schedulePush(rest.end, restBody()); },
-  'rest-add': () => { if (rest.end - Date.now() <= 0) { rest.end = Date.now(); rest.total = 0; clearTimeout(rest.hideT); rest.iv = setInterval(tickRest, 250); } rest.end += 15000; rest.total += 15000; rest.fired = false; $('#rest-l').textContent = 'Đang nghỉ'; tickRest(); schedulePush(rest.end, restBody()); },
+  'rest-sub': () => { const left = rest.end - Date.now(); if (left <= 0) return; if (left <= 15000) { handlers['rest-skip'](); return; } rest.end -= 15000; rest.total = Math.max(rest.total - 15000, rest.end - Date.now()); sfx('step'); vibe(8); tickRest(); schedulePush(rest.end, restBody()); },
+  'rest-add': () => { if (rest.end - Date.now() <= 0) { rest.end = Date.now(); rest.total = 0; clearTimeout(rest.hideT); rest.iv = setInterval(tickRest, 250); } rest.end += 15000; rest.total += 15000; rest.fired = false; $('#rest-l').textContent = 'Đang nghỉ'; sfx('step'); vibe(8); tickRest(); schedulePush(rest.end, restBody()); },
   'rest-skip': () => stopRest(),
   'alarm-ok': () => { $('#alarm').hidden = true; rest.pending = false; stopRest(); },
   'guide': t => guideSheet(t.dataset.id),
@@ -4666,8 +5099,8 @@ const handlers = {
   'guide-all': async t => { t.disabled = true; let n = 0, ok = 0; const L = allExFull().map(x => x.ex);
     for (const ex of L) { if (ex.gid === undefined) ex.gid = autoGid(ex); if (!ex.gid) continue; n++; t.textContent = `Đang tải ${n}…`; if (await exdbImg(ex.gid, 0) && await exdbImg(ex.gid, 1)) ok++; }
     save(); t.textContent = `Đã tải ${ok}/${n} bài`; toast(ok ? `Đã lưu hình ${ok} bài, dùng được khi không có mạng` : 'Không tải được hình. Kiểm tra mạng.'); render(true); },
-  'ex-focus': t => { const a = state.active; if (!a) return; const en = a.entries[+t.dataset.i]; if (!en) return; ui.focusEx = en.exId; ui.heroPh = 0; render(true); scrollFocus(); },
-  'hero-ph': t => { const a = state.active; if (!a) return; const ex = exOrSnap(a.entries[focusIdx()]); const n = (ex.photos || []).length; if (n < 2) return; ui.heroPh = ((ui.heroPh || 0) + +t.dataset.d + n) % n; render(true); },
+  'ex-focus': t => { const a = state.active; if (!a) return; const en = a.entries[+t.dataset.i]; if (!en) return; sfx('step'); vibe(8); switchFocusEx(en.exId); scrollFocus(); },
+  'hero-ph': t => { const a = state.active; if (!a) return; const fi = focusIdx(), ex = exOrSnap(a.entries[fi]); const n = (ex.photos || []).length; if (n < 2) return; ui.heroPh = ((ui.heroPh || 0) + +t.dataset.d + n) % n; refreshExCard(fi); },
   'view-photo': t => { const ex = findEx(t.dataset.ex); if (!ex || !ex.photos.length) return; viewer.ex = ex; viewer.i = 0; showViewer(); },
   'viewer-close': () => { $('#viewer').hidden = true; $('#viewer').innerHTML = ''; },
   'viewer-nav': t => { const n = viewer.ex.photos.length; viewer.i = (viewer.i + +t.dataset.d + n) % n; showViewer(); },
@@ -4809,6 +5242,21 @@ const handlers = {
   'sync-img': () => syncImageSend(),
   'plan-img': t => planImageSend(t.dataset.id || ''),
   'img-save': () => { if (ui.imgBlob) saveFile(ui.imgName || 'giao-an.png', ui.imgBlob, 'image/png'); },
+  'share-card': t => shareCardSheet(t.dataset.id),
+  'sc-fmt': t => { ui.scFmt = t.dataset.k; $$('[data-act="sc-fmt"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === ui.scFmt)); drawShareCard(); },
+  'sc-skin': t => { ui.scSkin = t.dataset.k; $$('[data-act="sc-skin"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === ui.scSkin)); drawShareCard(); },
+  'sc-send': () => shareCardExport(false),
+  'sc-dl': () => shareCardExport(true),
+  'plan-copy': async () => { const code = ui.planCode || await encodePlan2(state.days); await copyOrShareCode(code, 'Mã giáo án · Giáo Án Địa Ngục'); },
+  'sync-copy': async () => { const pid = ui.syncPid || profiles.active, Q = await syncPackQR(pid, { full: !!ui.syncFull }); await syncMarkSent(pid, Q.mark); await copyOrShareCode(Q.parts.join('\n'), 'Mã đồng bộ · Giáo Án Địa Ngục'); },
+  'qr-copy': async () => { const P = ui.qrOut || await qrPayload(); if (!P.parts.length) return; await copyOrShareCode(P.parts.join('\n'), 'Kết quả tập · Giáo Án Địa Ngục'); },
+  'qr-paste': async () => {
+    try { const txt = await navigator.clipboard.readText(); if (txt && txt.trim()) { await handleCodeText(txt); return; } } catch (e) {}
+    if ($('#paste-in')) { const det = $('#paste-in').closest('details'); if (det) det.open = true; $('#paste-in').focus(); toast('Chạm giữ vào ô chữ bên dưới → chọn Dán'); }
+    else { await qrScanSheet(); const det = $('#paste-in') && $('#paste-in').closest('details'); if (det) det.open = true; if ($('#paste-in')) $('#paste-in').focus(); }
+  },
+  'paste-go': async () => { const el = $('#paste-in'); if (!el || !el.value.trim()) { toast('Dán mã vào ô chữ trước'); return; } await handleCodeText(el.value); },
+  'backup-snooze': () => { state.settings.backupSkipAt = Date.now(); save(); render(true); toast('Sẽ nhắc lại sau 7 ngày'); },
   'qr-next': () => { ui.qrPage = Math.min((ui.qrPage || 0) + 1, (ui.qrParts || []).length - 1); qrStaticShow(); },
   'sync-qr-done': async () => { clearInterval(ui.qrT); const O = ui.syncOut; if (O) await syncMarkSent(O.pid, O.mark); ui.syncOut = null;
     if (O && O.left) { toast(`Còn ${O.left} buổi, đây là mã tiếp theo`); await syncQrSheet(); return; } closeSheet(); toast('Đã đánh dấu đã gửi'); },
@@ -4856,7 +5304,7 @@ const handlers = {
   'pain-ok': t => { const p = (state.pains || []).find(x => x.id === t.dataset.id); if (!p) return; p.resolvedAt = ymd(); save(); render(true); ui.painF = { area: '', level: 1, note: '' };
     if (activePains().length) painSheet(); else closeSheet(); toast(`Hết đau ${p.area.toLowerCase()} · buổi đầu quay lại tập khoảng 80% tạ`); },
   'form-lv': t => { state.settings.formCues = t.dataset.k; save(); render(true); toast('Lưu ý form: ' + FORM_LV[formLv()].label); },
-  'cue-open': t => { ui.cueOpen = t.dataset.k || null; render(true); },
+  'cue-open': t => { ui.cueOpen = t.dataset.k || null; if (state.active && ui.tab === 'today') refreshExCard(focusIdx()); else render(true); },
   'rest-mode': t => { state.settings.restMode = t.dataset.k; save(); render(true); toast('Nhịp nghỉ: ' + restMode().label); },
   'pace': t => { state.settings.pace = t.dataset.k; save(); render(true); },
   'body-add': () => bodySheet(null),
@@ -4867,7 +5315,7 @@ const handlers = {
   'bp-ab': t => { const bp = state.bodyPhotos.find(x => x.id === t.dataset.id); if (!bp) return; ui.pose = bp.pose; ui['cmp' + t.dataset.k] = bp.id; handlers['viewer-close'](); render(true); toast(t.dataset.k === 'A' ? 'Đã đặt làm ảnh Trước' : 'Đã đặt làm ảnh Sau'); const c = $('#cmp'); if (c) c.scrollIntoView({ block: 'center', behavior: 'smooth' }); },
   'bp-edit': t => { const id = t.dataset.id; handlers['viewer-close'](); bpEditSheet(id); },
   'bpe-pose': t => { ui.bpEdit.pose = t.dataset.k; $$('[data-act="bpe-pose"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === t.dataset.k)); },
-  'bpe-save': () => { const E = ui.bpEdit, bp = E && state.bodyPhotos.find(x => x.id === E.id); if (!bp) return; const d = $('#bpe-d').value; if (d) bp.date = d > ymd() ? ymd() : d; bp.pose = E.pose; ui.pose = bp.pose; save(); closeSheet(); render(true); toast('Đã cập nhật ảnh'); },
+  'bpe-save': () => { const E = ui.bpEdit, bp = E && state.bodyPhotos.find(x => x.id === E.id); if (!bp) return; const d = $('#bpe-d').value; if (d) bp.date = d > ymd() ? ymd() : d; bp.pose = E.pose; ui.pose = E.pose; save(); closeSheet(); render(true); toast('Đã cập nhật ảnh'); },
   'bpn-pose': t => { const x = ui.bpNew && ui.bpNew[+t.dataset.i]; if (!x) return; x.pose = t.dataset.k; $$(`[data-act="bpn-pose"][data-i="${t.dataset.i}"]`).forEach(b => b.setAttribute('aria-pressed', b.dataset.k === x.pose)); },
   'bpn-cancel': () => { (ui.bpNew || []).forEach(x => URL.revokeObjectURL(x.url)); ui.bpNew = null; closeSheet(); },
   'bpn-save': async t => { const N = ui.bpNew || []; if (!N.length) return; t.disabled = true; let ok = 0;
@@ -4950,11 +5398,14 @@ const handlers = {
   },
   'backup-save': async () => {
     const b = ui.backup; if (!b) return;
+    state.settings.lastBackupAt = Date.now();
+    state.settings.lastBackupSess = state.sessions.length;
+    save();
     const file = new File([b.json], b.name, { type: 'application/json' });
     if (!(window.claude && typeof window.claude.use === 'function') && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: b.name }); closeSheet(); toast('Đã lưu file sao lưu'); return; } catch (e) { if (e && e.name === 'AbortError') return; }
+      try { await navigator.share({ files: [file], title: b.name }); closeSheet(); render(true); toast('Đã lưu file sao lưu'); return; } catch (e) { if (e && e.name === 'AbortError') return; }
     }
-    await saveFile(b.name, b.json, 'application/json'); closeSheet();
+    await saveFile(b.name, b.json, 'application/json'); closeSheet(); render(true);
   },
   'install': async () => { if (!deferredInstall) return; deferredInstall.prompt(); try { await deferredInstall.userChoice; } catch (e) {} deferredInstall = null; render(true); },
   'wipe': () => confirmSheet({ title: 'Xoá toàn bộ dữ liệu?', text: 'Giáo án, lịch sử tập, ảnh và số đo trên máy này sẽ bị xoá vĩnh viễn. Nên tải file sao lưu trước.', ok: 'Xoá toàn bộ', danger: true,
@@ -5012,6 +5463,9 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', async e => {
   const t = e.target;
+  if (t.id === 'fx-t') { state.settings.fxOff = !t.checked; applySkin(state.settings.skin); save(); return; }
+  if (t.id === 'sfx-t') { state.settings.sfx = t.checked; if (t.checked) sfx('check'); save(); return; }
+  if (t.id === 'haptics-t') { state.settings.haptics = t.checked; if (t.checked) vibe(20); save(); return; }
   if (t.id === 'f-name' && ui.draft && ui.draft.isNew) {
     const lib = LIB.find(l => l[0] === t.value.trim());
     if (!lib && $('#f-zone') && !$('#f-zone').value) { const g = guessZone(t.value); if (g) $('#f-zone').value = g; }
