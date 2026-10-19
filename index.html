@@ -1284,6 +1284,7 @@ const parseYmd = s => { const [y, m, d] = s.split('-').map(Number); return new D
 const addDays = (s, n) => { const d = parseYmd(s); d.setDate(d.getDate() + n); return ymd(d); };
 const dm = s => { const d = parseYmd(s); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`; };
 const DOW = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const dmY = s => { const d = parseYmd(s); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`; };
 const DOWL = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 const num = v => { if (v === '' || v == null) return null; const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) ? n : null; };
 const r2 = v => Math.round(v * 100) / 100;
@@ -2649,6 +2650,8 @@ function refreshExCard(i) {
   if (hadFocus) { const nn = $('textarea.note', next); if (nn) nn.focus(); }
   updateProgress(); markCurrent();
 }
+/* ô ghi chú cao theo nội dung (bản trước gọi hàm này nhưng chưa định nghĩa, làm hỏng việc chuyển bài) */
+function autoGrow(el) { if (!el) return; el.style.height = 'auto'; el.style.height = Math.min(240, el.scrollHeight + 2) + 'px'; }
 function switchFocusEx(exId) {
   const a = state.active; if (!a || ui.tab !== 'today') { ui.focusEx = exId; ui.heroPh = 0; render(true); return; }
   const prevI = focusIdx();
@@ -3635,6 +3638,7 @@ function clipCanvasText(ctx, text, maxW) {
   return s + '…';
 }
 function shareCardExport(dlOnly) {
+  if (!$('#sc-cv') && ui.scBlob && !dlOnly) { const f = new File([ui.scBlob], ui.scName || 'the-buoi-tap.png', { type: 'image/png' }); if (navigator.canShare && navigator.canShare({ files: [f] })) navigator.share({ files: [f] }).catch(() => {}); return; }
   const cv = $('#sc-cv'); if (!cv) return;
   const s = normSessionForCard(ui.scId);
   const fname = `giao-an-dia-nguc-${s ? s.date : ymd()}.png`;
@@ -3646,6 +3650,14 @@ function shareCardExport(dlOnly) {
         try { await navigator.share({ files: [file], title: s ? s.dayName : 'Giáo Án Địa Ngục' }); return; }
         catch (e) { if (e && e.name === 'AbortError') return; }
       }
+    }
+    /* iPhone (nhất là app trên màn hình chính) không tải được file kiểu máy tính: hiện ảnh để bấm giữ → Lưu vào Ảnh */
+    if (isIOS()) {
+      if (ui.scUrl) URL.revokeObjectURL(ui.scUrl); ui.scUrl = URL.createObjectURL(blob); ui.scBlob = blob; ui.scName = fname;
+      openSheet(`<h3 class="sh-title">Lưu thẻ buổi tập</h3><p class="sh-text">Bấm giữ vào ảnh → <b>Lưu vào Ảnh</b>.</p>
+        <img src="${ui.scUrl}" alt="Thẻ buổi tập" style="width:100%;border-radius:14px;margin-top:8px">
+        <div class="sh-actions">${navigator.canShare ? '<button class="btn gold" data-act="sc-send">Mở bảng chia sẻ</button>' : ''}<button class="btn ghost" data-act="sc-back">Quay lại</button></div>`);
+      return;
     }
     const url = URL.createObjectURL(blob), a = document.createElement('a');
     a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
@@ -5247,6 +5259,7 @@ const handlers = {
   'sc-skin': t => { ui.scSkin = t.dataset.k; $$('[data-act="sc-skin"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === ui.scSkin)); drawShareCard(); },
   'sc-send': () => shareCardExport(false),
   'sc-dl': () => shareCardExport(true),
+  'sc-back': () => shareCardSheet(ui.scId),
   'plan-copy': async () => { const code = ui.planCode || await encodePlan2(state.days); await copyOrShareCode(code, 'Mã giáo án · Giáo Án Địa Ngục'); },
   'sync-copy': async () => { const pid = ui.syncPid || profiles.active, Q = await syncPackQR(pid, { full: !!ui.syncFull }); await syncMarkSent(pid, Q.mark); await copyOrShareCode(Q.parts.join('\n'), 'Mã đồng bộ · Giáo Án Địa Ngục'); },
   'qr-copy': async () => { const P = ui.qrOut || await qrPayload(); if (!P.parts.length) return; await copyOrShareCode(P.parts.join('\n'), 'Kết quả tập · Giáo Án Địa Ngục'); },
