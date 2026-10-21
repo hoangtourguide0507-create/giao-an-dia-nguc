@@ -1300,6 +1300,13 @@ body.restflash::after{content:"";position:fixed;inset:0;pointer-events:none;z-in
 #drv-st.ok i,.drv .st.ok i{background:var(--up)} #drv-st.err i,.drv .st.err i{background:var(--down)} #drv-st.busy i,.drv .st.busy i{background:var(--gold)}
 .drv .inp{margin-top:6px}
 .drv .row{margin-top:10px}
+
+/* ===== PA-16: thông báo của app (Web Push) ===== */
+.ncard .dows{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ncard .dows button{min-width:40px;height:34px;border-radius:17px;border:1px solid var(--line-2);background:var(--surface-2);color:var(--fg-2);font:inherit;font-size:13px;font-weight:800}
+.ncard .dows button[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:var(--gold-ink)}
+.ncard .nst{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;margin:10px 0 0}
+.ncard .nst i{width:9px;height:9px;border-radius:50%;background:var(--muted)} .ncard .nst.ok i{background:var(--up)} .ncard .nst.err i{background:var(--down)}
 </style>
 </head>
 <body>
@@ -1791,7 +1798,7 @@ const freshState = () => ({ v: 3, days: [], sessions: [], body: [], bodyPhotos: 
 let state = freshState();
 let profiles = { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] };
 const PCOLORS = ['#d9b45b', '#6ea8ff', '#ff86b4', '#5fdc9b', '#c79bff', '#ffa45c'];
-const GLOBAL_KEYS = ['skin', 'notify', 'alertMethod', 'ntfyTopic', 'pushServer', 'pushKey', 'restAlert', 'shortcutName', 'alertV17', 'sfx', 'haptics', 'eff', 'drvUrl', 'drvKey', 'fxOff', 'animOff', 'lastBackupAt', 'lastBackupSess', 'backupSkipAt'];
+const GLOBAL_KEYS = ['skin', 'notify', 'alertMethod', 'ntfyTopic', 'pushServer', 'pushKey', 'restAlert', 'shortcutName', 'alertV17', 'sfx', 'haptics', 'eff', 'drvUrl', 'drvKey', 'nRemind', 'nDays', 'nTime', 'nWeekly', 'nDrive', 'fxOff', 'animOff', 'lastBackupAt', 'lastBackupSess', 'backupSkipAt'];
 const stateKey = pid => pid === 'p1' ? 'state' : 'state:' + pid;
 const curProf = () => profiles.list.find(p => p.id === profiles.active) || profiles.list[0];
 const multi = () => profiles.list.length > 1;
@@ -1813,7 +1820,7 @@ function loadState(s) {
   if (!state.settings.alertV17) { state.settings.alertV17 = 1; if (state.settings.alertMethod !== 'shortcut') { state.settings.alertMethod = 'shortcut'; state.settings.notify = false; } }
   if (!state.settings.schedule || typeof state.settings.schedule !== 'object') state.settings.schedule = {};
   sets3(state); warmAll(state);
-  if (state.settings.alertMethod && state.settings.alertMethod !== 'shortcut') { state.settings.alertMethod = 'shortcut'; state.settings.notify = false; }
+  if (state.settings.alertMethod && !['shortcut', 'push'].includes(state.settings.alertMethod)) { state.settings.alertMethod = 'shortcut'; state.settings.notify = false; }
   if (!state.settings.skin || OLD_SKINS.has(state.settings.skin) || !SKINS.some(k => k.id === state.settings.skin)) state.settings.skin = 'gold';
 }
 let saveT = null;
@@ -3053,7 +3060,7 @@ async function enablePush() {
     let sub = await reg.pushManager.getSubscription();
     if (sub && state.settings.pushKey && state.settings.pushKey !== publicKey) { await sub.unsubscribe(); sub = null; }
     if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToBytes(publicKey) });
-    state.settings.pushKey = publicKey; pushSub = sub.toJSON();
+    state.settings.pushKey = publicKey; pushSub = sub.toJSON(); save(); pushRegister(true);
   } catch (e) { return 'Không kết nối được máy chủ thông báo. Kiểm tra mạng và địa chỉ máy chủ rồi thử lại.'; }
   return '';
 }
@@ -3064,13 +3071,14 @@ async function pushCall(path, extra) {
   return r.json();
 }
 const NTFY = 'https://ntfy.sh';
-const alertMethod = () => 'shortcut'; /* chỉ dùng Phím tắt iPhone; đã bỏ ntfy và máy chủ thông báo */
+const alertMethod = () => state.settings.alertMethod === 'push' ? 'push' : 'shortcut'; /* PA-16: thông báo của app (Web Push) hoặc Phím tắt iPhone */
 const scName = () => (state.settings.shortcutName || 'Nghỉ giữa set').trim() || 'Nghỉ giữa set';
 function runShortcut(sec) {
   const url = `shortcuts://run-shortcut?name=${encodeURIComponent(scName())}&input=text&text=${Math.max(1, Math.round(sec))}`;
   try { window.location.href = url; } catch (e) {}
 }
 const DEPLOY_URL = 'https://deploy.workers.cloudflare.com/?url=https://github.com/hoangtourguide0507-create/giao-an-dia-nguc/tree/main/push-server';
+const PUSH_GUIDE = 'https://github.com/hoangtourguide0507-create/giao-an-dia-nguc/blob/main/push-server/HUONG-DAN.md';
 function ntfyTopic() {
   if (!state.settings.ntfyTopic) { const a = 'abcdefghijkmnpqrstuvwxyz23456789'; let t = 'gadn-'; const r = crypto.getRandomValues(new Uint8Array(16)); for (const x of r) t += a[x % a.length]; state.settings.ntfyTopic = t; save(); }
   return state.settings.ntfyTopic;
@@ -3094,6 +3102,57 @@ function cancelPush() {
   pushCall('/cancel', {}).catch(() => {});
 }
 const rest = { end: 0, total: 0, iv: null, hideT: null, fired: true, lastTick: 0 };
+/* ===== PA-16: nhắc lịch tập, nhắc cuối tuần, tin mới từ Drive (Web Push) ===== */
+const NDOW = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+const nDays = () => Array.isArray(state.settings.nDays) ? state.settings.nDays : [];
+async function drvTopic(D, side) { const b = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(D.m + ':' + D.id + ':' + side))); return b64u(b).slice(0, 32); }
+async function drvTopics() {
+  if (coach()) { const out = []; for (const x of profiles.list) { const st = await profState(x.id); if (st && st.drv && st.drv.id && st.drv.m) out.push(await drvTopic(st.drv, 'hlv')); } return out; }
+  return state.drv && state.drv.id && state.drv.m ? [await drvTopic(state.drv, 'hv')] : [];
+}
+function pushRules() {
+  const S = state.settings, R = [];
+  if (S.nRemind !== false && nDays().length) for (const dw of nDays()) R.push({ dow: dw, hm: S.nTime || '17:30', title: 'Đến giờ tập rồi 💪', body: `${curProf().name} ơi, mở Giáo Án Địa Ngục xem buổi hôm nay và mức tạ cần đẩy.`, tag: 'remind' });
+  if (S.nWeekly !== false) R.push({ dow: 0, hm: '20:00', title: 'Cuối tuần rồi', body: 'Nhập cân nặng, số đo tuần này' + (state.drv && state.drv.id || drvCo() ? '.' : ' và tải bản sao lưu dữ liệu.'), tag: 'weekly' });
+  return R;
+}
+let pushRegT = null;
+function pushRegSoon() { clearTimeout(pushRegT); pushRegT = setTimeout(() => pushRegister(), 2500); }
+async function pushRegister(force) {
+  try {
+    if (inArtifact || !pushBase() || !(await currentPushSub())) return false;
+    const tzOff = new Date().getTimezoneOffset(), topics = state.settings.nDrive === false ? [] : await drvTopics(), rules = pushRules();
+    const h = strHash(JSON.stringify([pushBase(), pushSub.endpoint, topics, rules, tzOff, ymd()])); if (!force && h === (await LDB.get('kv', 'pushRegH'))) return true;
+    await pushCall('/sub', { topics, tzOff }); await pushCall('/remind', { rules, tzOff }); await LDB.put('kv', 'pushRegH', h); return true;
+  } catch (e) { return false; }
+}
+/* báo cho máy bên kia khi có dữ liệu mới qua Drive */
+async function pushNotify(topic, title, body) {
+  if (!pushBase() || state.settings.nDrive === false) return;
+  try { const sub = await currentPushSub().catch(() => null); await fetch(pushBase() + '/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ topic, title, body, tag: 'drive', from: sub ? sub.endpoint : '' }), keepalive: true }); } catch (e) {}
+}
+async function pushTestNow() { const r = await pushCall('/test', {}); if (!r.ok || r.r !== 'ok') throw new Error(r.loi || r.r || 'lỗi'); }
+function notifCardHtml(st) {
+  const sub = !!pushSub, np = 'Notification' in window ? Notification.permission : 'none', S = st;
+  const why = inArtifact ? 'Thông báo chỉ có trên app cài từ GitHub Pages.' : !pushSupported() ? (isIOS() && !isStandalone() ? 'Trên iPhone, mở app bằng icon trên màn hình chính rồi bật (cần iOS 16.4 trở lên).' : 'Trình duyệt này chưa hỗ trợ thông báo.') : np === 'denied' ? 'Bạn đã chặn thông báo. Vào Cài đặt iPhone → Thông báo → Địa Ngục để bật lại.' : '';
+  let h = `<div class="card set-card ncard"><h3>${ICON.bell} Thông báo của app</h3><p>Báo hết giờ nghỉ, nhắc lịch tập, nhắc cuối tuần và báo khi HLV / học viên có dữ liệu mới qua Drive, kể cả khi đang khoá màn hình.</p>`;
+  if (why) return h + `<p class="note-line">${why}</p></div>`;
+  h += `<label class="f full" style="margin-top:6px">Máy chủ thông báo<input class="inp" data-bind="setting" data-k="pushServer" placeholder="https://gadn-push.<tên>.workers.dev" value="${esc(S.pushServer || '')}" autocomplete="off" autocapitalize="off"></label>
+    <p class="small muted" style="margin:6px 0 0">${pushBase() ? 'Đã có địa chỉ máy chủ.' : `Chưa có máy chủ: HLV tạo 1 lần trên Cloudflare (miễn phí), xem <a href="${PUSH_GUIDE}" target="_blank" rel="noopener">hướng dẫn</a>. Học viên quét mã liên kết Drive là tự có.`}</p>
+    <div class="row" style="margin-top:10px"><button class="btn gold" data-act="push-on">${sub ? 'Đăng ký lại' : 'Bật thông báo'}</button>${sub ? '<button class="btn" data-act="push-try">Gửi thử ngay</button>' : ''}</div>
+    <div class="nst ${sub ? 'ok' : ''}"><i></i><span>${sub ? 'Máy này đã nhận được thông báo' : 'Chưa bật trên máy này'}</span></div>`;
+  if (!sub) return h + `</div>`;
+  h += `<div class="small muted" style="margin-top:16px;font-weight:700">Báo hết giờ nghỉ giữa set bằng</div>
+    <div class="seg" role="group" style="margin-top:6px">${[['push', 'Thông báo app'], ['shortcut', 'Phím tắt iPhone'], ['off', 'Tắt']].map(([k, l]) => `<button type="button" data-act="rest-alert" data-k="${k}" aria-pressed="${k === 'off' ? !S.notify : !!S.notify && alertMethod() === k}">${l}</button>`).join('')}</div>
+    <label class="toggle" style="margin-top:14px"><span>Nhắc lịch tập</span><input type="checkbox" id="n-remind" ${S.nRemind !== false ? 'checked' : ''}></label>
+    ${S.nRemind !== false ? `<div class="dows">${[1, 2, 3, 4, 5, 6, 0].map(d => `<button type="button" data-act="n-day" data-d="${d}" aria-pressed="${nDays().includes(d)}">${NDOW[d]}</button>`).join('')}</div>
+    <label class="f" style="margin-top:8px;max-width:180px">Giờ nhắc<input class="inp" type="time" id="n-time" value="${esc(S.nTime || '17:30')}"></label>` : ''}
+    <label class="toggle" style="margin-top:12px"><span>Tối Chủ nhật: nhắc nhập số đo${drvCo() || (state.drv && state.drv.id) ? '' : ' & sao lưu'}</span><input type="checkbox" id="n-weekly" ${S.nWeekly !== false ? 'checked' : ''}></label>
+    <label class="toggle"><span>${coach() ? 'Học viên tập xong (qua Drive)' : 'HLV cập nhật giáo án (qua Drive)'}</span><input type="checkbox" id="n-drive" ${S.nDrive !== false ? 'checked' : ''}></label>
+  </div>`;
+  return h;
+}
+
 function showAlarm() {
   const late = Math.round((Date.now() - rest.end) / 1000);
   $('#alarm-ico').innerHTML = ICON.bell; $('#alarm-t').textContent = restTitle();
@@ -3941,7 +4000,8 @@ function viewMore() {
     <label class="toggle"><span>Rung phản hồi khi bấm</span><input type="checkbox" id="haptics-t" ${st.haptics !== false ? 'checked' : ''}></label>
     <label class="toggle"><span>Chấm độ khó sau mỗi set<br><span class="fhint">Dễ · Vừa · Sát · Hỏng, giúp gợi ý tăng tạ chính xác hơn</span></span><input type="checkbox" id="eff-t" ${st.eff !== false ? 'checked' : ''}></label>
   </div>
-  <div class="card set-card"><h3>Thông báo hết giờ nghỉ</h3><p>Mỗi lần bấm ✓, app gọi <b>Phím tắt</b> của iPhone để hẹn giờ trong app Đồng hồ. Hết giờ nghỉ, iPhone báo chuông kể cả khi khoá màn hình hay đang dùng app khác.</p>
+  ${notifCardHtml(st)}
+  ${alertMethod() === 'push' && st.notify ? '' : `<div class="card set-card"><h3>Báo hết giờ nghỉ qua Phím tắt iPhone</h3><p>Mỗi lần bấm ✓, app gọi <b>Phím tắt</b> của iPhone để hẹn giờ trong app Đồng hồ. Hết giờ nghỉ, iPhone báo chuông kể cả khi khoá màn hình hay đang dùng app khác.</p>
     ${alertMethod() === 'shortcut' ? `<details class="guide" ${st.notify ? '' : 'open'}><summary>Tạo phím tắt 1 lần (khoảng 1 phút)</summary><ol class="sc-steps">
       <li>Mở app <b>Phím tắt</b> (Shortcuts) có sẵn trên iPhone, bấm <b>+</b> ở góc trên.</li>
       <li>Bấm vào tên ở trên cùng → <b>Đổi tên</b> → gõ đúng: <b>${esc(scName())}</b></li>
@@ -3954,7 +4014,7 @@ function viewMore() {
     <label class="toggle" style="margin-top:6px"><span>Báo hết giờ nghỉ qua Phím tắt</span><input type="checkbox" id="notify-t" ${st.notify ? 'checked' : ''}></label>
     <div class="row" style="margin-top:12px"><button class="btn gold" data-act="push-test" ${st.notify ? '' : 'disabled'}>${ICON.bell} Chạy thử 10 giây</button></div>
     <p class="note-line">Không cần mạng. Chỉ chạy trên iPhone, khi mở app bằng icon trên màn hình chính. Khi app đang mở, hết giờ nghỉ app vẫn kêu và rung như bình thường.</p>
-    <div class="diag">${diagRows()}</div></div>
+    <div class="diag">${diagRows()}</div></div>`}
   <div class="card set-card"><h3>Chiều cao của ${esc(curProf().name)}</h3><p>Dùng để tính BMI ở tab Cơ thể. Đổi tên người tập ở danh sách ${co ? 'học viên' : 'người tập'}.</p><div class="formgrid" style="margin-top:10px">
     <label class="f"><span>Chiều cao <span class="unit">cm</span></span><input class="inp" data-bind="setting" data-k="height" inputmode="decimal" value="${fmtIn(st.height)}" placeholder="Để tính BMI"></label>
   </div></div>
@@ -4696,7 +4756,10 @@ async function drvSyncOne(pid) {
     await drvPushPhotos(cr, D.id, pkg, st);
     let r = await drvCall(cr.url, { a: 'day', ma: cr.ma, id: D.id, vai: co ? 'hlv' : 'hv', rev: myRev, goi: pkg });
     if (r.xungDot) r = await drvCall(cr.url, { a: 'day', ma: cr.ma, id: D.id, vai: co ? 'hlv' : 'hv', rev: r.rev, goi: pkg });
-    await drvSetDrv(pid, { sentH: h, [co ? 'hlvRev' : 'hvRev']: r.rev, at: Date.now() }); out.sent = true;
+    const planH = strHash(JSON.stringify(pkg.plan || null)), nS = (pkg.sessions || []).length, last = [...(pkg.sessions || [])].sort((a, b) => b.startedAt - a.startedAt)[0];
+    if (co && pkg.plan && D.nP && planH !== D.nP) pushNotify(await drvTopic(D, 'hv'), `HLV ${(coach() || {}).name || ''} vừa cập nhật giáo án`.replace(/\s+/g, ' '), 'Mở app để nhận giáo án và mức tạ mới.');
+    if (!co && D.nS != null && nS > D.nS && last) pushNotify(await drvTopic(D, 'hlv'), `${D.n || pkg.name || 'Học viên'} vừa tập xong ${last.dayName || ''}`.trim(), `${last.entries.reduce((a, en) => a + en.sets.length, 0)} set · ${dm(last.date)}. Mở Phòng HLV để xem.`);
+    await drvSetDrv(pid, { sentH: h, [co ? 'hlvRev' : 'hvRev']: r.rev, at: Date.now(), ...(co ? (pkg.plan ? { nP: planH } : {}) : { nS }) }); out.sent = true;
   }
   return out;
 }
@@ -4734,7 +4797,7 @@ function drvCardHtml() {
   return `<div class="card set-card drv"><h3>☁ Đồng bộ Google Drive</h3><p>HLV gửi cho bạn <b>mã liên kết</b> (mã QR hoặc tin nhắn). Quét hoặc dán 1 lần, từ đó giáo án và buổi tập tự đồng bộ.</p>
     <div class="row"><button class="btn gold" data-act="qr-scan">⌗ Quét mã liên kết</button><button class="btn" data-act="qr-paste">${ICON.paste} Dán mã</button></div></div>`;
 }
-const drvCode = (url, id, ma, name, cn) => 'GAL1.' + Math.random().toString(36).slice(2, 6) + '.1.1.' + b64u(new TextEncoder().encode(JSON.stringify({ u: url, i: id, m: ma, n: name, c: cn || '' })));
+const drvCode = (url, id, ma, name, cn) => 'GAL1.' + Math.random().toString(36).slice(2, 6) + '.1.1.' + b64u(new TextEncoder().encode(JSON.stringify({ u: url, i: id, m: ma, n: name, c: cn || '', ...(pushBase() ? { p: pushBase() } : {}) })));
 async function drvHvSheet(pid) {
   const p = profiles.list.find(x => x.id === pid), st = await syncStateOf(pid); if (!p || !st) return; ui.drvPid = pid;
   if (!drvCo()) { openSheet(`<h3 class="sh-title">Chưa cài Google Drive</h3><p class="sh-text">Vào Cài đặt → <b>Đồng bộ Google Drive</b>, dán link Apps Script và MÃ HLV trước.</p><div class="sh-actions"><button class="btn gold" data-act="tab" data-tab="settings">Mở Cài đặt</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`); return; }
@@ -5383,14 +5446,14 @@ const handlers = {
     catch (e) { toast('Không kết nối được: ' + (e && e.message || e)); } t.disabled = false; },
   'drv-now': async t => { if (t.dataset.id) closeSheet(); await drvAuto(true); render(true); },
   'drv-new': async t => { const pid = t.dataset.id, p = profiles.list.find(x => x.id === pid); t.disabled = true;
-    try { const r = await drvCall(state.settings.drvUrl, { a: 'tv.them', ma: state.settings.drvKey, ten: p ? p.name : 'Học viên' }); await drvSetDrv(pid, { id: r.id, m: r.ma, hvSeen: 0, hlvRev: 0, sentH: '' }); await drvHvSheet(pid); drvAuto(true); }
+    try { const r = await drvCall(state.settings.drvUrl, { a: 'tv.them', ma: state.settings.drvKey, ten: p ? p.name : 'Học viên' }); await drvSetDrv(pid, { id: r.id, m: r.ma, hvSeen: 0, hlvRev: 0, sentH: '' }); await drvHvSheet(pid); drvAuto(true); pushRegSoon(); }
     catch (e) { toast('Không tạo được: ' + (e && e.message || e)); t.disabled = false; } },
   'drv-rekey': async t => { const pid = t.dataset.id, st = await syncStateOf(pid); if (!st || !st.drv) return;
-    try { const r = await drvCall(state.settings.drvUrl, { a: 'tv.doima', ma: state.settings.drvKey, id: st.drv.id }); await drvSetDrv(pid, { m: r.ma }); await drvHvSheet(pid); toast('Đã cấp mã mới · gửi lại cho học viên'); }
+    try { const r = await drvCall(state.settings.drvUrl, { a: 'tv.doima', ma: state.settings.drvKey, id: st.drv.id }); await drvSetDrv(pid, { m: r.ma }); await drvHvSheet(pid); pushRegSoon(); toast('Đã cấp mã mới · gửi lại cho học viên'); }
     catch (e) { toast('Không cấp được: ' + (e && e.message || e)); } },
   'drv-copy': () => copyOrShareCode(ui.drvCode, 'Mã liên kết Google Drive'),
   'drv-link': async () => { const L = ui.drvIn; if (!L) return; if (state.active) { toast('Kết thúc buổi tập đang dở rồi liên kết'); return; }
-    state.drv = { u: L.u.trim(), id: L.i, m: L.m, hlvSeen: 0, hvRev: 0, sentH: '' }; DRV.self = true; save(); DRV.self = false; ui.drvIn = null; closeSheet(); render(true);
+    state.drv = { u: L.u.trim(), id: L.i, m: L.m, n: String(L.n || '').slice(0, 40), hlvSeen: 0, hvRev: 0, sentH: '' }; if (L.p && /^https:\/\//.test(L.p) && !state.settings.pushServer) state.settings.pushServer = L.p; DRV.self = true; save(); DRV.self = false; ui.drvIn = null; closeSheet(); render(true); pushRegSoon();
     toast('Đang đồng bộ lần đầu…'); await drvAuto(true); render(true); },
   'drv-unlink': () => confirmSheet({ title: 'Ngắt liên kết Google Drive?', text: 'Dữ liệu trên máy này vẫn giữ nguyên, chỉ ngừng tự đồng bộ. Muốn liên kết lại thì quét mã HLV gửi.', ok: 'Ngắt liên kết', danger: true, onOk: () => { delete state.drv; save(); closeSheet(); render(true); toast('Đã ngắt liên kết Drive'); } }),
   'sync-undo': () => syncUndo(),
@@ -5553,6 +5616,10 @@ const handlers = {
   'fx-lv': t => { const k = t.dataset.k; state.settings.fxOff = true; state.settings.animOff = k === 'off'; applySkin(state.settings.skin); save(); render(true); toast('Hiệu ứng: ' + FX_LV[fxLevel()].label); },
   'skin': t => { const k = t.dataset.k; if (k === state.settings.skin) return; skinWipe(t, k, () => { state.settings.skin = k; applySkin(k); save(); render(true); }); },
   'copy-sc': async () => { try { await navigator.clipboard.writeText(scName()); toast('Đã sao chép tên phím tắt'); } catch (e) { toast('Tên phím tắt: ' + scName()); } },
+  'push-on': async t => { t.disabled = true; const m = await enablePush(); t.disabled = false; if (m) { toast(m); return; } render(true); toast('🔔 Đã bật thông báo trên máy này'); },
+  'push-try': async t => { t.disabled = true; try { await pushTestNow(); toast('Đã gửi · thông báo sẽ hiện trong vài giây'); } catch (e) { toast('Gửi thử không được: ' + (e && e.message || e)); } t.disabled = false; },
+  'rest-alert': t => { const k = t.dataset.k; if (k === 'off') { cancelPush(); state.settings.notify = false; } else { state.settings.alertMethod = k; state.settings.notify = true; } save(); render(true); },
+  'n-day': t => { const d = +t.dataset.d, L = nDays(); state.settings.nDays = L.includes(d) ? L.filter(x => x !== d) : [...L, d].sort(); save(); render(true); pushRegSoon(); },
   'push-test': async t => {
     if (!state.settings.notify) { toast('Bật “Báo hết giờ nghỉ qua Phím tắt” trước đã'); return; }
     if (alertMethod() === 'shortcut') { runShortcut(10); return; }
@@ -5589,6 +5656,7 @@ document.addEventListener('input', e => {
   else if (b === 'note' && state.active) { state.active.entries[+t.dataset.e].note = t.value; save(); }
   else if (b === 'setting') { const k = t.dataset.k; state.settings[k] = ['name', 'remindTime', 'shortcutName', 'pushServer'].includes(k) ? t.value : num(t.value);
     if (k === 'name') { curProf().name = t.value.trim() || 'Người tập'; clearTimeout(profT); profT = setTimeout(saveProfiles, 600); }
+    if (k === 'pushServer') pushRegSoon();
     save(); renderHeader(); }
 });
 document.addEventListener('change', async e => {
@@ -5610,6 +5678,8 @@ document.addEventListener('change', async e => {
     for (const f of files) { try { const id = await storePhoto(f); ui.draft.photos.push(id); ui.draft.added.push(id); } catch (err) { toast('Không đọc được ảnh, thử lại'); } }
     const y = $('#sheet-body').scrollTop; exSheet(); $('#sheet-body').scrollTop = y;
   }
+  if (t.id === 'n-remind' || t.id === 'n-weekly' || t.id === 'n-drive') { state.settings[{ 'n-remind': 'nRemind', 'n-weekly': 'nWeekly', 'n-drive': 'nDrive' }[t.id]] = t.checked; save(); render(true); pushRegSoon(); return; }
+  if (t.id === 'n-time') { state.settings.nTime = t.value || '17:30'; save(); pushRegSoon(); return; }
   if (t.id === 'notify-t') {
     if (!t.checked) { cancelPush(); state.settings.notify = false; save(); render(true); return; }
     if (alertMethod() === 'shortcut') {
@@ -5705,6 +5775,7 @@ setInterval(() => { const el = $('#elapsed'); if (el && state.active) { el.textC
   connectCloud(saved && Array.isArray(saved.days) ? saved : null);
   if (!location.hash.startsWith('#nhap=')) maybeWeekPlan();
   setTimeout(() => drvAuto(), 1500);
+  setTimeout(() => pushRegister(), 3000);
   if (state.settings.notify && alertMethod() === 'push') currentPushSub().then(() => { if (ui.tab === 'more') render(true); }).catch(() => {});
   const h = location.hash;
   if (h.startsWith('#nhap=')) { const code = decodeURIComponent(h.slice(6)); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} planPreviewSheet(code); }
