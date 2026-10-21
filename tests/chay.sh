@@ -10,9 +10,10 @@ import re; s = open('../index.html', encoding='utf-8').read(); m = max(re.findal
 PY
 node --check /tmp/gadn-main.js || { echo "LỖI CÚ PHÁP index.html"; exit 1; }
 FAIL=0
-LIST=${*:-sync form focus pa6 pa10 pa11 pa14 pa16 pa18 pa19 pa20}
+LIST=${*:-sync form focus pa6 pa10 pa11 pa14 pa16 pa18 pa19 pa20 pa21}
 for t in $LIST; do
   out=$(python3 test_$t.py 2>&1); p=$(grep -c '^PASS' <<<"$out"); f=$(grep '^FAIL\|pageerror' <<<"$out")
+  [ "$p" -eq 0 ] && f="không có kiểm thử nào chạy xong (lỗi giữa chừng?)"
   if [ -n "$f" ]; then echo "✗ $t ($p đạt)"; echo "$f" | sed 's/^/    /'; FAIL=1; else echo "✓ $t ($p đạt)"; fi
 done
 if [ $# -eq 0 ]; then

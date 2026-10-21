@@ -33,15 +33,28 @@ Làm trên laptop, đăng nhập đúng tài khoản Google sẽ giữ dữ li�
 Mở URL vừa chép trên trình duyệt. Thấy dòng chữ dạng
 `{"ok":true,"ten":"Giáo Án Địa Ngục · máy chủ đồng bộ","v":1,"daCaiDat":true}` là thành công.
 
-## Bước 6 · Nhập vào app
-Ở bản app có tính năng đồng bộ Drive: tab **Tôi** → **Đồng bộ Google Drive** → dán **URL** và **MÃ HLV**.
-Sau đó thêm từng học viên trong app, app tạo **mã QR liên kết**; học viên quét 1 lần là tự đồng bộ.
+## Bước 6 · Tạo tài khoản HLV trong app
+1. Mở app → tab **Cài đặt / Tôi** → thẻ **Đăng nhập** → **Tạo tài khoản HLV lần đầu**.
+2. Dán **URL** (bước 4) và **MÃ HLV** (bước 3), điền tên HLV, chọn **tên đăng nhập** và **mật khẩu** → **Tạo tài khoản & đăng nhập**.
+3. App tự đưa mọi hồ sơ trên máy lên Drive (kể cả hồ sơ tập của chính bạn).
+
+## Bước 7 · Cấp tài khoản cho học viên
+1. Thẻ **Tài khoản HLV** → **Quản lý học viên**.
+2. **Cấp tài khoản** cho học viên đã có, hoặc **＋ Thêm học viên** → app gợi ý tên đăng nhập và mật khẩu.
+3. Bấm **Gửi cho học viên** (gửi kèm link app và link máy chủ).
+4. Học viên mở app → tab **Tôi** → **Đăng nhập**. Từ đó giáo án và buổi tập tự đồng bộ hai chiều.
+
+Đổi điện thoại (HLV hay học viên): chỉ cần đăng nhập lại, dữ liệu tự về đủ.
 
 ---
 
 ## Khi cần
+- **Cập nhật lên bản có tài khoản (PA-21):** dán `Code.gs` mới → Lưu → Quản lý các bản triển khai → ✏️ → **Phiên bản mới** → Triển khai (URL giữ nguyên), rồi làm Bước 6.
 - **Sửa code về sau:** dán code mới → Lưu → **Triển khai → Quản lý các bản triển khai** → ✏️ → Phiên bản: **Phiên bản mới** → Triển khai. URL giữ nguyên, không phải nhập lại trên app.
 - **Lộ mã HLV:** chọn hàm **doiMaHLV** → Chạy → nhập mã mới vào app máy HLV.
 - **Quên mã HLV:** chọn hàm **xemMaHLV** → Chạy → xem Nhật ký thực thi.
-- **Học viên nghỉ / mất điện thoại:** trong app HLV thu hồi hoặc cấp lại mã liên kết của người đó.
+- **Học viên quên mật khẩu / mất điện thoại:** Quản lý học viên → **Đặt lại mật khẩu** (máy cũ tự bị đăng xuất).
+- **Học viên nghỉ:** Quản lý học viên → **Khoá** (dữ liệu giữ nguyên, mở khoá là dùng lại).
+- **HLV quên mật khẩu:** trong app bấm **Tạo tài khoản HLV lần đầu** và dùng lại MÃ HLV để đặt mật khẩu mới.
+- **Mã liên kết kiểu cũ (quét QR)** vẫn dùng được song song với tài khoản.
 - **Hạn mức:** tài khoản Google miễn phí đủ cho vài chục học viên đồng bộ hằng ngày. Dữ liệu chiếm dung lượng Drive của bạn (ảnh máy tập là phần nặng nhất).
