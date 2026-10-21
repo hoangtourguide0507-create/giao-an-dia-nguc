@@ -26,7 +26,7 @@ Không bao giờ tự gộp vào `main`.
 - CSS thêm ở cuối khối `<style>` thành một khối có chú thích `/* ===== PA-<số>: ... ===== */`, dùng biến màu `--gold --fg --fg-2 --muted --up --down --surface --surface-2 --line-2`.
 
 ## Nguyên tắc chủ repo đã chốt
-- Hiệu ứng: nền tĩnh, không lấp lánh; hiệu ứng mạnh, dứt khoát kiểu phòng gym.
+- Hiệu ứng: nền giao diện tĩnh; hiệu ứng theo bộ PA-20 (viền ánh sáng chạy, thẻ vé vàng có sao lấp lánh, chữ số có dải sáng, chấm đang diễn ra), dứt khoát kiểu phòng gym. Việc giao diện giao cho agent `ux-ui`.
 - Mọi bài 3 set; app chỉ **gợi ý** mức tạ, hiện gọn 1 dòng, không tự điền.
 - Không tự nhảy bài khi xong; có thanh số bài và nút "Sang bài N".
 - Đề xuất trước khi làm thay đổi lớn hoặc mơ hồ; với thay đổi rõ ràng thì làm luôn.
