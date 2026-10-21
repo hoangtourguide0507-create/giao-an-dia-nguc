@@ -26,7 +26,7 @@ with sync_playwright() as p:
     first.locator('.fcue1').click(); pg.wait_for_timeout(300)
     ok(pg.locator('article.ex.focus .fcue').count()==1, 'Bấm dòng thu gọn: mở lại')
     # mức Gọn và Tắt
-    pg.ev("() => { ui.tab = 'settings'; render(); }"); pg.wait_for_timeout(300)
+    pg.ev("() => { ui.tab = 'settings'; ui.moreSec = 'form'; render(); }"); pg.wait_for_timeout(300)
     card = pg.locator('.set-card', has_text='Lưu ý form khi tập'); ok(card.count()==1, 'Có mục cài đặt Lưu ý form khi tập')
     card.locator('[data-k="compact"]').click(); pg.wait_for_timeout(300)
     card = pg.locator('.set-card', has_text='Lưu ý form khi tập'); card.screenshot(path='f3-setting.png')

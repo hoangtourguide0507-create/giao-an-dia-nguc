@@ -18,7 +18,7 @@ with sync_playwright() as p:
         return n == 0
     for act in ['share', 'sync-open', 'sync-qr', 'sync-copy', 'plan-copy', 'plan-img']:
         ok(none(act), f'Đã bỏ nút gửi bằng QR / tin nhắn: {act}')
-    pg.ev("() => { ui.tab = 'settings'; render(true); }"); pg.wait_for_timeout(200)
+    pg.ev("() => { ui.tab = 'settings'; ui.moreSec = 'notif'; render(true); }"); pg.wait_for_timeout(200)
     ok('Phím tắt' not in pg.locator('#view').inner_text(), 'Đã bỏ thẻ Phím tắt iPhone')
     ok(pg.ev("() => alertMethod()") == 'push', 'Hết giờ nghỉ chỉ dùng thông báo của app')
     ok(pg.locator('.ncard #notify-t').count() == 1 and pg.locator('.ncard [data-act="notif-local-test"]').count() == 1, 'Thẻ Thông báo: bật báo hết giờ nghỉ không cần máy chủ')

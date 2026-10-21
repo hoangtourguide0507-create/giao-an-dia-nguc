@@ -10,10 +10,10 @@ with sync_playwright() as p:
     pg.on('pageerror', lambda e: errs.append('pageerror: '+str(e)))
     pg.goto('http://localhost:8786/index.html'); pg.wait_for_timeout(1500)
     # 1. nền tĩnh, hiệu ứng lấp lánh tắt
-    for sk in ['gold','hell','ice','oled']:
+    for sk in ['amber','gold']:
         pg.ev("(k) => { state.settings.skin = k; applySkin(k); render(true); }", sk); pg.wait_for_timeout(300)
-        ok(pg.ev("() => [FX.on, getComputedStyle($('#fx-back')).display]") == [False, 'none'], f'Giao diện {sk}: nền tĩnh')
-    pg.ev("() => { state.settings.skin = 'gold'; applySkin('gold'); }")
+        ok(pg.ev("() => [typeof FX, document.querySelectorAll('canvas#fx-back,canvas#fx-front').length]") == ['undefined', 0], f'Giao diện {sk}: nền tĩnh, không còn canvas hiệu ứng')
+    pg.ev("() => { state.settings.skin = 'amber'; applySkin('amber'); }")
     ok(pg.ev("() => Object.keys(FX_LV).join(',')") == 'full,off', 'Cài đặt hiệu ứng: Bật / Tắt')
     # 2. 3 set cho tất cả (kể cả bài cũ 4–5 set) và hồ sơ khác
     pg.ev("""() => { const a = newEx('Squat'); a.sets = 5; const b2 = newEx('Kéo xô (Lat pulldown)'); b2.sets = 4; b2.alts = [Object.assign(newEx('Chèo tạ đơn'), { sets: 2 })];
@@ -65,7 +65,7 @@ with sync_playwright() as p:
     pg.screenshot(path='p10-slam.png'); pg.wait_for_timeout(2300)
     pg.ev("() => { startRest(1, 'x'); }"); pg.wait_for_timeout(1500)
     ok(pg.ev("() => document.body.classList.contains('restflash')"), 'Hết giờ nghỉ: viền màn hình chớp')
-    ok(pg.ev("() => [typeof confetti, document.querySelectorAll('.burst,.medal,.confetti').length]") == ['function', 0], 'Không còn pháo giấy, hạt bung, huy chương')
+    ok(pg.ev("() => [typeof confetti, document.querySelectorAll('.burst,.medal,.confetti').length]") == ['undefined', 0], 'Không còn pháo giấy, hạt bung, huy chương')
     b.close()
 srv.terminate()
 print('\nLỖI:', errs if errs else 'không có')
