@@ -4763,6 +4763,20 @@ async function drvSyncOne(pid) {
   }
   return out;
 }
+/* PA-18: máy HLV tự đưa MỌI hồ sơ lên Drive, không cần bấm từng người */
+async function drvEnsureAll() {
+  if (!drvCo()) return 0; let n = 0;
+  for (const x of profiles.list) {
+    let st = await profState(x.id); if (st && st.drv && st.drv.id && st.drv.m) continue;
+    const r = await drvCall(state.settings.drvUrl, { a: 'tv.them', ma: state.settings.drvKey, ten: x.name || 'Người tập' });
+    const D = { id: r.id, m: r.ma, hvSeen: 0, hlvRev: 0, sentH: '' };
+    if (x.id === profiles.active) { state.drv = D; DRV.self = true; save(); DRV.self = false; }
+    else { if (!st) { st = freshState(); st.settings.name = x.name || ''; } st.drv = D; st.updatedAt = Date.now(); await LDB.put('kv', stateKey(x.id), clone(st)); }
+    n++;
+  }
+  if (n) pushRegSoon();
+  return n;
+}
 function drvSoon() { clearTimeout(DRV.t); DRV.t = setTimeout(() => drvAuto(), 20000); }
 /* tự chạy: khi mở app, quay lại app, 20 giây sau lần lưu gần nhất. Bỏ qua khi đang mở bảng chọn hoặc đang tập. */
 async function drvAuto(force) {
@@ -4771,6 +4785,7 @@ async function drvAuto(force) {
   const pids = coach() ? profiles.list.map(x => x.id) : [profiles.active];
   DRV.busy = true; DRV.last = Date.now(); DRV.st = 'busy'; drvPaint(); const got = [];
   try {
+    if (coach()) await drvEnsureAll();
     for (const pid of pids) { const r = await drvSyncOne(pid); if (r && r.got && (r.got.newS || r.got.updS || r.got.kg || r.got.newEx || r.got.updEx || r.got.dropEx)) got.push(r); }
     DRV.st = 'ok'; DRV.err = ''; DRV.at = Date.now();
   } catch (e) { DRV.st = 'err'; DRV.err = String(e && e.message || e); }
@@ -4788,10 +4803,12 @@ function drvStatusHtml(st) {
 function drvPaint() { const el = $('#drv-st'); if (el) el.outerHTML = drvStatusHtml(state); }
 function drvCardHtml() {
   const co = coach(), S = state.settings, D = state.drv;
-  if (co) return `<div class="card set-card drv"><h3>☁ Đồng bộ Google Drive</h3><p>Dán link Ứng dụng web của Apps Script và MÃ HLV (xem Nhật ký thực thi khi chạy hàm caiDat). Sau đó mở từng học viên ở Phòng HLV → <b>☁ Drive</b> để tạo mã liên kết.</p>
+  if (co) return `<div class="card set-card drv"><h3>☁ Đồng bộ Google Drive</h3><p>Dán link Ứng dụng web của Apps Script và MÃ HLV (xem Nhật ký thực thi khi chạy hàm caiDat). App tự đưa mọi hồ sơ lên Drive và tự đồng bộ khi mở app, sau mỗi lần lưu.</p>
     <label class="f full">Link Ứng dụng web<input class="inp" id="drv-url" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(S.drvUrl || '')}" autocomplete="off" autocapitalize="off"></label>
     <label class="f full" style="margin-top:8px">MÃ HLV<input class="inp" id="drv-key" placeholder="32 ký tự" value="${esc(S.drvKey || '')}" autocomplete="off" autocapitalize="off"></label>
-    <div class="row"><button class="btn gold" data-act="drv-save">Kiểm tra & lưu</button>${drvCo() ? '<button class="btn" data-act="drv-now">Đồng bộ ngay</button>' : ''}</div>${drvCo() ? `<div class="st ${DRV.st === 'err' ? 'err' : DRV.at ? 'ok' : ''}" id="drv-st"><i></i><span>${DRV.st === 'busy' ? 'Đang đồng bộ…' : DRV.st === 'err' ? 'Lỗi: ' + esc(DRV.err) : DRV.at ? 'Đã đồng bộ lúc ' + hhmm(DRV.at) : 'Tự đồng bộ khi mở app và sau mỗi lần lưu'}</span></div>` : ''}</div>`;
+    <div class="row"><button class="btn gold" data-act="drv-save">Kiểm tra & lưu</button>${drvCo() ? '<button class="btn" data-act="drv-now">Đồng bộ ngay</button>' : ''}</div>
+    ${drvCo() ? `<div class="small muted" style="margin-top:14px;font-weight:700">Mã liên kết · gửi 1 lần cho mỗi máy</div><div class="row" style="flex-wrap:wrap">${profiles.list.map(x => `<button class="btn sm" data-act="drv-hv" data-id="${x.id}">☁ ${esc(x.name)}</button>`).join('')}</div>
+    <p class="small muted" style="margin:8px 0 0">Mọi hồ sơ trên máy này (kể cả của bạn) tự lưu lên Drive. Học viên nhập mã của mình 1 lần là máy họ và máy bạn tự cập nhật cho nhau. Bạn dùng thêm iPad hay máy khác thì quét mã của chính bạn.</p>` : ''}${drvCo() ? `<div class="st ${DRV.st === 'err' ? 'err' : DRV.at ? 'ok' : ''}" id="drv-st"><i></i><span>${DRV.st === 'busy' ? 'Đang đồng bộ…' : DRV.st === 'err' ? 'Lỗi: ' + esc(DRV.err) : DRV.at ? 'Đã đồng bộ lúc ' + hhmm(DRV.at) : 'Tự đồng bộ khi mở app và sau mỗi lần lưu'}</span></div>` : ''}</div>`;
   if (D && D.id) return `<div class="card set-card drv"><h3>☁ Đồng bộ Google Drive</h3><p>Máy này đã liên kết với HLV qua Google Drive. App tự đồng bộ khi mở app và sau mỗi lần lưu.</p>${drvStatusHtml(state)}
     <div class="row"><button class="btn gold" data-act="drv-now">Đồng bộ ngay</button><button class="btn ghost" data-act="drv-unlink">Ngắt liên kết</button></div></div>`;
   return `<div class="card set-card drv"><h3>☁ Đồng bộ Google Drive</h3><p>HLV gửi cho bạn <b>mã liên kết</b> (mã QR hoặc tin nhắn). Quét hoặc dán 1 lần, từ đó giáo án và buổi tập tự đồng bộ.</p>
@@ -4802,10 +4819,12 @@ async function drvHvSheet(pid) {
   const p = profiles.list.find(x => x.id === pid), st = await syncStateOf(pid); if (!p || !st) return; ui.drvPid = pid;
   if (!drvCo()) { openSheet(`<h3 class="sh-title">Chưa cài Google Drive</h3><p class="sh-text">Vào Cài đặt → <b>Đồng bộ Google Drive</b>, dán link Apps Script và MÃ HLV trước.</p><div class="sh-actions"><button class="btn gold" data-act="tab" data-tab="settings">Mở Cài đặt</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`); return; }
   const D = st.drv;
+  if ((!D || !D.id) && !ui.drvMaking) { ui.drvMaking = true; openSheet(`<h3 class="sh-title">☁ ${esc(p.name)}</h3><p class="sh-text">Đang tạo chỗ lưu trên Drive…</p>`);
+    try { await drvEnsureAll(); } catch (e) { toast('Không tạo được: ' + (e && e.message || e)); } ui.drvMaking = false; return drvHvSheet(pid); }
   if (!D || !D.id) { openSheet(`<h3 class="sh-title">Kết nối ${esc(p.name)} với Google Drive</h3><p class="sh-text">App tạo cho ${esc(p.name)} một chỗ lưu riêng trong thư mục Drive của bạn và một <b>mã liên kết</b>. Học viên quét mã 1 lần, từ đó giáo án bạn sửa và buổi tập họ ghi tự đồng bộ hai chiều.</p>
       <div class="sh-actions"><button class="btn gold big" data-act="drv-new" data-id="${pid}">Tạo mã liên kết</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`); return; }
   ui.drvCode = drvCode(state.settings.drvUrl, D.id, D.m, p.name, (coach() || {}).name);
-  openSheet(`<h3 class="sh-title">☁ ${esc(p.name)} · Google Drive</h3><p class="sh-text">Học viên mở app → tab Tôi → <b>Quét mã liên kết</b> (hoặc dán mã bạn gửi qua Zalo). Chỉ cần làm 1 lần.</p>
+  openSheet(`<h3 class="sh-title">☁ ${esc(p.name)} · Google Drive</h3><p class="sh-text">Máy của ${esc(p.name)} mở app → tab Tôi → <b>Quét mã liên kết</b> (hoặc dán mã bạn gửi qua Zalo). Chỉ cần làm 1 lần, sau đó hai máy tự cập nhật cho nhau.</p>
     <div class="qrbox"><canvas id="qr-c"></canvas><span class="pg" id="qr-pg"></span></div>
     ${drvStatusHtml(st)}
     <div class="sh-actions"><button class="btn gold" data-act="drv-copy">${ICON.share} Gửi mã qua Zalo</button><button class="btn" data-act="drv-now" data-id="${pid}">Đồng bộ ngay</button>
@@ -5442,7 +5461,7 @@ const handlers = {
   'drv-hv': t => drvHvSheet(t.dataset.id),
   'drv-save': async t => { const u = ($('#drv-url').value || '').trim(), k = ($('#drv-key').value || '').trim();
     if (!drvOkUrl(u)) { toast('Link phải dạng https://script.google.com/macros/s/…/exec'); return; } if (k.length < 16) { toast('MÃ HLV chưa đúng'); return; }
-    t.disabled = true; try { const r = await drvCall(u, { a: 'ping', ma: k }); if (r.vai !== 'hlv') throw new Error('MÃ HLV không đúng'); state.settings.drvUrl = u; state.settings.drvKey = k; save(); render(true); toast('☁ Đã kết nối Google Drive'); }
+    t.disabled = true; try { const r = await drvCall(u, { a: 'ping', ma: k }); if (r.vai !== 'hlv') throw new Error('MÃ HLV không đúng'); state.settings.drvUrl = u; state.settings.drvKey = k; save(); render(true); toast('☁ Đã kết nối · đang đưa mọi hồ sơ lên Drive…'); DRV.last = 0; await drvAuto(true); render(true); }
     catch (e) { toast('Không kết nối được: ' + (e && e.message || e)); } t.disabled = false; },
   'drv-now': async t => { if (t.dataset.id) closeSheet(); await drvAuto(true); render(true); },
   'drv-new': async t => { const pid = t.dataset.id, p = profiles.list.find(x => x.id === pid); t.disabled = true;
