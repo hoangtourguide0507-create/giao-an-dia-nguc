@@ -49,7 +49,7 @@ with sync_playwright() as p:
     co.ev("""async (png) => { profiles.coach = { on: true, name: 'Hoàng' }; profiles.list.push({ id: 'p2', name: 'Lan', color: 1 }); saveProfiles();
       const xs = ['Kéo xô (Lat pulldown)', 'Chèo máy (Machine row)'].map(newEx); xs[0].currentKg = 40; xs[0].kgSetAt = Date.now(); await DB.put('photos', 'ph1', png); xs[0].photos = ['ph1'];
       const st = freshState(); st.settings.sets3 = 1; st.days = [{ id: 'd1', name: 'Lưng', exercises: xs.map(e => ({ ...e, alts: [], slot: '', mainSince: ymd() })) }];
-      await LDB.put('kv', stateKey('p2'), st); ui.tab = 'settings'; render(true); }""", PNG)
+      await LDB.put('kv', stateKey('p2'), st); ui.tab = 'settings'; ui.moreSec = 'drive'; render(true); }""", PNG)
     co.wait_for_timeout(300)
     co.ev("() => { state.settings.pushServer = 'https://gadn-push.test'; pushSub = { endpoint: 'https://push.example/co', keys: { p256dh: 'x', auth: 'y' } }; render(true); }"); co.wait_for_timeout(300)
     co.ev("() => document.querySelector('.acc').insertAdjacentHTML('afterend', drvCardHtml())")  # PA-21: cách cũ (MÃ HLV) không còn hiện sẵn
@@ -67,7 +67,7 @@ with sync_playwright() as p:
     # máy học viên: đã có 1 buổi tự tập trước đó
     hv.ev("""() => { const st = clone(state); const x = newEx('Kéo xô (Lat pulldown)'); st.days = [{ id: 'a', name: 'Tự tập', exercises: [{ ...x, alts: [], slot: '', mainSince: ymd() }] }];
       const t = Date.now() - 864e5; st.sessions = [{ id: 'sx1', dayId: 'a', dayName: 'Tự tập', date: ymd(new Date(t)), startedAt: t, finishedAt: t + 3e6, entries: [{ exId: x.id, name: x.name, muscle: x.muscle, note: '', each: false, sets: [{ kg: 45, reps: 10 }], drop: null }] }];
-      loadState(st); save(); ui.tab = 'settings'; render(true); }""")
+      loadState(st); save(); ui.tab = 'settings'; ui.moreSec = 'drive'; render(true); }""")
     hv.wait_for_timeout(300)
     ok(hv.locator('.drv [data-act="qr-scan"]').count() == 1, 'Máy học viên: thẻ Drive mời quét mã liên kết')
     hv.ev("() => { pushSub = { endpoint: 'https://push.example/hv', keys: { p256dh: 'x', auth: 'y' } }; }")
@@ -104,8 +104,8 @@ with sync_playwright() as p:
     before = sum(1 for c in calls if c=='day:hv'); hv.ev("() => drvAuto(true)"); hv.wait_for_timeout(1500); after = sum(1 for c in calls if c=='day:hv')
     print('CALLS2', calls[-8:]); print(hv.ev("""async () => { const b2 = (await syncPack(profiles.active, { full: true })).pkg; b2.at = 0; const A = window.__A, B = JSON.stringify(b2); let i = 0; while (i < A.length && A[i] === B[i]) i++; return [A === B, A.slice(i - 120, i + 120), B.slice(i - 120, i + 120), window.__D, state.drv]; }"""))
     ok(after == before, f'Không có thay đổi: không gửi lại ({before}→{after})')
-    hv.ev("() => { ui.tab = 'settings'; render(true); }"); hv.wait_for_timeout(300)
-    hv.locator('.drv:not(.acc)').screenshot(path='p15-hv.png'); co.ev("() => { ui.tab = 'settings'; render(true); }"); co.wait_for_timeout(300); co.locator('.drv:not(.acc)').screenshot(path='p15-co.png')
+    hv.ev("() => { ui.tab = 'settings'; ui.moreSec = 'drive'; render(true); }"); hv.wait_for_timeout(300)
+    hv.locator('.drv:not(.acc)').screenshot(path='p15-hv.png'); co.ev("() => { ui.tab = 'settings'; ui.moreSec = 'drive'; render(true); }"); co.wait_for_timeout(300); co.locator('.drv:not(.acc)').screenshot(path='p15-co.png')
     st = hv.locator('.drv:not(.acc)').inner_text(); ok('Đồng bộ lần cuối' in st, 'Máy học viên hiện trạng thái đồng bộ')
     for _ in range(2):
         co.ev("() => { DRV.last = 0; return drvAuto(true); }"); co.wait_for_timeout(1500); hv.ev("() => { DRV.last = 0; return drvAuto(true); }"); hv.wait_for_timeout(1500)
@@ -114,7 +114,7 @@ with sync_playwright() as p:
         co.ev("() => { DRV.last = 0; return drvAuto(true); }"); co.wait_for_timeout(1500); hv.ev("() => { DRV.last = 0; return drvAuto(true); }"); hv.wait_for_timeout(1500)
     ok(len([c for c in calls if c.startswith('day')]) == n0, 'Hai máy không gửi qua gửi lại vô hạn')
     # thẻ thông báo
-    hv.ev("() => { ui.tab = 'settings'; render(true); }"); hv.wait_for_timeout(300)
+    hv.ev("() => { ui.tab = 'settings'; ui.moreSec = 'drive'; render(true); }"); hv.wait_for_timeout(300)
     ok(hv.locator('.ncard').count() == 1 or True, 'Thẻ thông báo (trình duyệt test không hỗ trợ push nên có thể ẩn chi tiết)')
     hv.ev("() => { state.settings.nDays = [1, 3, 5]; state.settings.nTime = '18:00'; }")
     rules = hv.ev("() => pushRules()"); ok(len(rules) == 4 and rules[0]['hm'] == '18:00' and rules[-1]['tag'] == 'weekly', f'Lịch nhắc: 3 buổi + tối CN ({len(rules)})')
@@ -125,7 +125,7 @@ with sync_playwright() as p:
     tv = sorted(v['ten'] for v in DB['tv'].values()); print(tv)
     ok(tv == ['Lan', 'Tôi'], f'Lưu link + mã: mọi hồ sơ (kể cả của HLV) tự có chỗ lưu trên Drive {tv}')
     ok(sum(1 for k in DB['f'] if k[1] == 'hlv') == 2, 'Cả 2 hồ sơ đã tự đẩy lên Drive, không bấm gì thêm')
-    co.ev("() => { ui.tab = 'settings'; render(true); }"); co.wait_for_timeout(300)
+    co.ev("() => { ui.tab = 'settings'; ui.moreSec = 'drive'; render(true); }"); co.wait_for_timeout(300)
     ok(co.locator('.drv [data-act="drv-hv"]').count() == 2, 'Cài đặt HLV: có mã liên kết của từng hồ sơ')
     co.locator('.drv:not(.acc)').screenshot(path='p18-card.png')
     # thêm học viên mới → tự lên Drive

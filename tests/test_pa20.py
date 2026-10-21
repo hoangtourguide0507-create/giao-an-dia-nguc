@@ -31,7 +31,7 @@ with sync_playwright() as p:
     ok(pg.locator('.hero.tix .tstar').count() == 0, 'Tắt hiệu ứng: không có sao')
     ok(pg.ev("() => getComputedStyle(document.querySelector('.banner.pain.beam'), '::before').animationName") == 'none', 'Tắt hiệu ứng: viền đứng yên')
     pg.ev("() => { state.settings.animOff = false; applySkin(state.settings.skin); render(true); }"); pg.wait_for_timeout(500)
-    for sk in ['gold', 'hell', 'ice', 'oled']:
+    for sk in ['amber', 'gold']:
         pg.ev("(k) => { state.settings.skin = k; applySkin(k); render(true); }", sk); pg.wait_for_timeout(1200)
         pg.locator('.hero.tix').screenshot(path=f'p20-tix-{sk}.png')
     b.close()

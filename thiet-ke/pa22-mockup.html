@@ -1,0 +1,575 @@
+<!doctype html>
+<html lang="vi" data-skin="ho-phach">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PA-22 · Bản thiết kế lại</title>
+<style>
+/* ===================== TOKEN ===================== */
+@property --ang { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+:root, [data-skin="ho-phach"] {
+  --bg: #161518; --surface: #211f23; --surface-2: #2a282d; --surface-3: #333036;
+  --line: rgba(255,255,255,.075); --line-2: rgba(255,255,255,.13);
+  --fg: #f4efe8; --fg-2: #bdb6ad; --muted: #8b847c;
+  --acc: #ec6a2c; --acc-hi: #ff8b4d; --acc-ink: #fff; --acc-rgb: 236,106,44;
+  --acc-soft: rgba(236,106,44,.14);
+  --grad: linear-gradient(90deg, #f7a33a, #ef5a3c 55%, #e8457e);
+  --tix-bg: radial-gradient(120% 140% at 85% 0%, #7a4519 0%, #4a2a12 45%, #2e1b0e 100%);
+  --tix-line: #c78a44; --tix-num: linear-gradient(180deg, #f6d08a, #c88a3f);
+  --up: #46d184; --up-soft: rgba(70,209,132,.14);
+  --down: #ff5d50; --down-rgb: 255,93,80; --down-soft: rgba(255,93,80,.13);
+  --warn: #f4b13d;
+  --nav: rgba(28,27,30,.92);
+}
+[data-skin="den-tuyen"] {
+  --bg: #000; --surface: #0f0f10; --surface-2: #19191b; --surface-3: #222225;
+  --line: rgba(255,255,255,.07); --line-2: rgba(255,255,255,.12);
+  --fg: #f5f1e6; --fg-2: #b8b2a3; --muted: #827c70;
+  --acc: #e2b04f; --acc-hi: #f6cd72; --acc-ink: #1b1408; --acc-rgb: 226,176,79;
+  --acc-soft: rgba(226,176,79,.13);
+  --grad: linear-gradient(90deg, #f6d07a, #e2a43c 55%, #c9782a);
+  --tix-bg: radial-gradient(120% 140% at 85% 0%, #3d3016 0%, #1d170c 50%, #0c0a06 100%);
+  --tix-line: #b8913f; --tix-num: linear-gradient(180deg, #fbe2a4, #c99a3c);
+  --nav: rgba(8,8,9,.92);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { background: #0b0b0c; color: var(--fg); font: 15px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* ===================== KHUNG XEM THỬ ===================== */
+.deck-head { max-width: 1760px; margin: 0 auto; padding: 22px 16px 6px; display: flex; flex-wrap: wrap; gap: 12px; align-items: end; justify-content: space-between; color: #eee; }
+.deck-head h1 { font-size: 20px; letter-spacing: -.01em; } .deck-head p { color: #9a958e; font-size: 13px; margin-top: 2px; max-width: 640px; }
+.sw { display: flex; gap: 6px; background: #1d1c1f; padding: 4px; border-radius: 999px; border: 1px solid #2c2b2f; }
+.sw button { padding: 7px 14px; border-radius: 999px; font-size: 13px; color: #bbb; }
+.sw button[aria-pressed="true"] { background: #f1ece4; color: #141414; font-weight: 600; }
+.deck { display: flex; gap: 22px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 14px 16px 30px; max-width: 1760px; margin: 0 auto; }
+.frame { flex: none; scroll-snap-align: center; }
+.frame > .cap { color: #9a958e; font-size: 12px; margin: 0 4px 8px; letter-spacing: .02em; }
+.phone { width: 390px; height: 844px; border-radius: 44px; overflow: hidden; position: relative; background: var(--bg); box-shadow: 0 0 0 1px #2a292c, 0 30px 60px rgba(0,0,0,.5); }
+@media (max-width: 440px) {
+  .deck { flex-direction: column; overflow: visible; scroll-snap-type: none; padding: 10px 0 24px; gap: 28px; }
+  .frame > .cap { margin: 0 16px 8px; font-size: 13px; color: #c9c3ba; }
+  .phone { width: 100%; height: 100svh; max-height: 844px; border-radius: 0; box-shadow: none; }
+}
+.scr { position: absolute; inset: 0; overflow-y: auto; padding: 54px 16px 120px; scrollbar-width: none; }
+.scr::-webkit-scrollbar { display: none; }
+.status { position: absolute; top: 0; left: 0; right: 0; height: 47px; display: flex; align-items: center; justify-content: space-between; padding: 0 30px; font-size: 15px; font-weight: 600; z-index: 6; background: linear-gradient(var(--bg) 70%, transparent); }
+.status i { width: 110px; height: 30px; border-radius: 20px; background: #000; position: absolute; left: 50%; top: 10px; transform: translateX(-50%); }
+
+/* ===================== THÀNH PHẦN ===================== */
+.top { display: flex; align-items: center; gap: 10px; margin: 4px 0 16px; }
+.av { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 14px; background: var(--acc-soft); color: var(--acc-hi); border: 1px solid rgba(var(--acc-rgb),.35); }
+.top .who { flex: 1; min-width: 0; }
+.top .who b { display: flex; align-items: center; gap: 4px; font-size: 16px; }
+.top .who span { color: var(--muted); font-size: 13px; }
+.ibtn { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line); position: relative; color: var(--fg-2); }
+.ibtn .bd { position: absolute; top: 6px; right: 7px; min-width: 16px; height: 16px; border-radius: 8px; background: var(--acc); color: var(--acc-ink); font-size: 10px; font-weight: 700; display: grid; place-items: center; padding: 0 4px; border: 2px solid var(--bg); }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; }
+.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.h2 { font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
+.sec-h { display: flex; align-items: baseline; justify-content: space-between; margin: 22px 2px 10px; }
+.sec-h a { color: var(--acc-hi); font-size: 13px; font-weight: 600; text-decoration: none; }
+.sub { color: var(--fg-2); font-size: 13.5px; }
+.mut { color: var(--muted); font-size: 12.5px; }
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.stack > * + * { margin-top: 10px; }
+
+.btn { height: 46px; border-radius: 14px; padding: 0 18px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 650; font-size: 15px; border: 1px solid var(--line-2); }
+.btn.pri { background: var(--acc); color: var(--acc-ink); border-color: transparent; }
+.btn.big { height: 54px; width: 100%; font-size: 16.5px; border-radius: 16px; }
+.btn.sm { height: 36px; font-size: 13.5px; padding: 0 14px; border-radius: 11px; }
+.btn.ghost { background: transparent; }
+.chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; height: 36px; padding: 0 15px; border-radius: 999px; border: 1px solid var(--line-2); display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--fg-2); }
+.chip[aria-pressed="true"] { background: #efe1c8; color: #1d1610; border-color: transparent; font-weight: 600; }
+[data-skin="den-tuyen"] .chip[aria-pressed="true"] { background: var(--acc); color: var(--acc-ink); }
+.chip .tag { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: var(--acc); color: var(--acc-ink); }
+.pill { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 650; padding: 3px 8px; border-radius: 7px; }
+.pill.ok { background: var(--up-soft); color: var(--up); }
+.pill.bad { background: var(--down-soft); color: var(--down); }
+.pill.acc { background: var(--acc-soft); color: var(--acc-hi); }
+.prog { height: 6px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
+.prog i { display: block; height: 100%; border-radius: 3px; background: var(--grad); }
+
+/* ---- thẻ vé (tix) ---- */
+.tix { position: relative; border-radius: 20px; padding: 18px 18px 16px; background: var(--tix-bg); border: 1px solid var(--tix-line); overflow: hidden;
+  -webkit-mask: radial-gradient(circle 9px at 0 62%, transparent 98%, #000) , radial-gradient(circle 9px at 100% 62%, transparent 98%, #000);
+  -webkit-mask-composite: source-in; mask-composite: intersect; box-shadow: 0 10px 30px rgba(var(--acc-rgb),.12); }
+.tix .badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .14em; padding: 5px 11px; border-radius: 999px; border: 1px solid rgba(255,214,150,.45); color: #f3d6a6; background: rgba(0,0,0,.18); }
+.tix .ttl { font-size: 30px; font-weight: 800; letter-spacing: -.02em; margin: 12px 0 2px; color: #fff4e3; }
+.tix .meta { color: rgba(255,236,210,.72); font-size: 13.5px; }
+.tix .kgs { margin: 14px 0 0; display: grid; grid-template-columns: 1fr auto; row-gap: 7px; font-size: 14.5px; }
+.tix .kgs span { color: rgba(255,240,220,.85); }
+.tix .kgs b { font-weight: 700; text-align: right; color: #ffe9c6; }
+.tix .kgs b.up { color: #8ff0b7; }
+.tix .cut { border-top: 1.5px dashed rgba(255,214,150,.35); margin: 16px -2px 14px; }
+.tix .foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.tix .why { color: rgba(255,236,210,.7); font-size: 12.5px; flex: 1; }
+.tix .go { height: 48px; padding: 0 18px; border-radius: 14px; background: var(--acc); color: var(--acc-ink); font-weight: 700; font-size: 15.5px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 6px 18px rgba(var(--acc-rgb),.35); }
+[data-skin="ho-phach"] .tix .go { background: #fff1dc; color: #3a1f0b; }
+.tix .star { position: absolute; color: #ffe7bd; opacity: .0; }
+.tix .big { font-size: 46px; font-weight: 800; letter-spacing: -.03em; background: var(--tix-num); -webkit-background-clip: text; background-clip: text; color: transparent; line-height: 1.05; }
+
+/* ---- viền ánh sáng chạy (beam) ---- */
+.beam { position: relative; isolation: isolate; }
+.beam::before { content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1.5px; z-index: -1;
+  background: conic-gradient(from var(--ang), transparent 0 62%, var(--beam, var(--acc-hi)) 78%, transparent 92%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.beam.red { --beam: var(--down); border-color: rgba(var(--down-rgb),.45); }
+
+/* ---- mini thẻ 2 cột ---- */
+.mini { padding: 14px; min-height: 124px; display: flex; flex-direction: column; }
+.mini .ic { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; margin-bottom: 10px; }
+.mini .ic svg { width: 17px; height: 17px; }
+.mini b { font-size: 15.5px; line-height: 1.25; }
+.mini .v { font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+.mini .v small { font-size: 14px; color: var(--muted); font-weight: 600; }
+.mini .mut { margin-top: auto; }
+
+/* ---- việc cần làm (gom banner) ---- */
+.todo { padding: 14px 16px 12px; }
+.todo .row { display: flex; gap: 12px; align-items: flex-start; }
+.todo .row .ic2 { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--acc-soft); color: var(--acc-hi); flex: none; }
+.todo .row b { display: block; font-size: 15px; }
+.todo .acts { display: flex; gap: 8px; margin-top: 12px; }
+.todo .acts .btn { flex: 1; }
+.dots { display: flex; gap: 5px; justify-content: center; margin-top: 12px; }
+.dots i { width: 6px; height: 6px; border-radius: 3px; background: var(--surface-3); }
+.dots i.on { width: 18px; background: var(--acc); }
+
+/* ---- hồi phục ---- */
+.rrow { display: grid; grid-template-columns: 76px 1fr 70px; align-items: center; gap: 10px; font-size: 13.5px; padding: 6px 0; }
+.rrow .rbar { height: 6px; border-radius: 3px; background: var(--surface-3); overflow: hidden; }
+.rrow .rbar i { display: block; height: 100%; border-radius: 3px; }
+.rrow .rs { text-align: right; font-size: 12.5px; }
+
+/* ---- thanh tab ---- */
+.nav { position: absolute; left: 0; right: 0; bottom: 0; height: 92px; background: var(--nav); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(5, 1fr); align-items: start; padding-top: 9px; z-index: 5; }
+.nav button { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; color: var(--muted); position: relative; padding-top: 6px; }
+.nav button[aria-current="page"] { color: var(--acc-hi); font-weight: 650; }
+.nav button[aria-current="page"]::before { content: ""; position: absolute; top: -10px; width: 26px; height: 3px; border-radius: 0 0 3px 3px; background: var(--acc); box-shadow: 0 0 12px rgba(var(--acc-rgb),.8); }
+.nav .fab { margin-top: -30px; color: var(--fg); font-weight: 600; }
+.nav .fab .c { width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; background: var(--acc); color: var(--acc-ink); border: 4px solid var(--bg); box-shadow: 0 6px 20px rgba(var(--acc-rgb),.45); }
+.nav .fab .c svg { width: 28px; height: 28px; stroke-width: 2; }
+.nav .fab.live .c::after { content: ""; position: absolute; top: 2px; right: calc(50% - 30px); width: 12px; height: 12px; border-radius: 50%; background: var(--down); border: 2px solid var(--bg); }
+.nav .fab .c { position: relative; }
+
+/* ---- màn đang tập ---- */
+.sbar { position: absolute; top: 47px; left: 0; right: 0; z-index: 4; padding: 8px 16px 12px; background: linear-gradient(var(--bg) 82%, transparent); }
+.sbar .r1 { display: flex; align-items: center; gap: 10px; }
+.sbar .r1 .t { flex: 1; min-width: 0; }
+.sbar .r1 .t b { font-size: 17px; display: block; }
+.livedot { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; letter-spacing: .1em; color: var(--down); }
+.livedot::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--down); }
+.clock { font-size: 28px; font-weight: 800; letter-spacing: -.02em; }
+.steps { display: flex; gap: 4px; margin-top: 10px; }
+.steps i { flex: 1; height: 4px; border-radius: 2px; background: var(--surface-3); }
+.steps i.done { background: var(--acc); } .steps i.now { background: linear-gradient(90deg, var(--acc) 40%, var(--surface-3) 40%); }
+.excard { padding: 0; overflow: hidden; border-radius: 20px; border-color: rgba(var(--acc-rgb),.35); }
+.excard .ph { height: 150px; background: linear-gradient(135deg, #3a3036, #1f1c20); position: relative; display: grid; place-items: center; color: var(--muted); }
+.excard .ph .tagn { position: absolute; left: 12px; top: 12px; font-size: 11.5px; font-weight: 700; padding: 4px 9px; border-radius: 8px; background: rgba(0,0,0,.55); color: #fff; }
+.excard .ph .cam { position: absolute; right: 12px; bottom: 12px; font-size: 12px; padding: 6px 10px; border-radius: 10px; background: rgba(0,0,0,.55); color: #fff; display: inline-flex; gap: 5px; align-items: center; }
+.excard .ph .cam svg { width: 15px; height: 15px; }
+.excard .bd { padding: 14px 14px 12px; }
+.excard .nm { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; }
+.excard .nm b { font-size: 19px; }
+.target { display: flex; gap: 10px; margin: 12px 0 4px; }
+.target > div { flex: 1; background: var(--surface-2); border-radius: 13px; padding: 9px 12px; }
+.target .l { font-size: 11px; color: var(--muted); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+.target .v { font-size: 20px; font-weight: 800; }
+.target .v small { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.target .v.up { color: var(--up); }
+.form-chip { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 10px; padding: 10px 12px; border-radius: 12px; background: rgba(244,177,61,.09); color: var(--warn); font-size: 13.5px; font-weight: 600; text-align: left; }
+.form-chip span { flex: 1; color: var(--fg-2); font-weight: 500; }
+.sets { margin-top: 12px; }
+.set { display: grid; grid-template-columns: 22px minmax(0,1fr) minmax(0,1fr) 48px; gap: 8px; align-items: center; padding: 6px 0; }
+.set .n { font-size: 13px; color: var(--muted); font-weight: 700; text-align: center; }
+.set.hd { padding: 0 0 2px; font-size: 11px; font-weight: 700; letter-spacing: .1em; color: var(--muted); text-align: center; }
+.step { height: 50px; border-radius: 13px; background: var(--surface-2); display: grid; grid-template-columns: 32px minmax(0,1fr) 32px; align-items: center; text-align: center; }
+.step button { height: 100%; color: var(--muted); font-size: 22px; font-weight: 300; }
+.step b { font-size: 21px; font-weight: 800; }
+.step b small { font-size: 11px; color: var(--muted); font-weight: 600; margin-left: 2px; }
+.ok-b { height: 50px; border-radius: 13px; display: grid; place-items: center; border: 1.5px solid var(--line-2); color: var(--muted); }
+.set.done .step { background: transparent; border: 1px solid var(--line); }
+.set.done .step b { color: var(--fg-2); }
+.set.done .ok-b { background: var(--up); border-color: transparent; color: #08210f; }
+.set.cur .step { background: var(--surface-3); box-shadow: inset 0 0 0 1.5px rgba(var(--acc-rgb),.55); }
+.set.cur .ok-b { border-color: var(--acc); color: var(--acc-hi); }
+.minirow { display: flex; gap: 8px; margin-top: 10px; }
+.minirow .btn { flex: 1; height: 38px; font-size: 13px; border-radius: 11px; }
+.nextl .li { display: flex; align-items: center; gap: 12px; padding: 12px 14px; }
+.nextl .li + .li { border-top: 1px solid var(--line); }
+.nextl .no { width: 30px; height: 30px; border-radius: 9px; background: var(--surface-2); display: grid; place-items: center; font-size: 13px; font-weight: 700; color: var(--fg-2); flex: none; }
+.nextl .li b { font-size: 14.5px; display: block; }
+.rest { position: absolute; left: 12px; right: 12px; bottom: 102px; z-index: 6; border-radius: 18px; padding: 10px 12px 12px 16px; background: rgba(36,33,38,.96); border: 1px solid var(--line-2); display: flex; align-items: center; gap: 10px; box-shadow: 0 12px 30px rgba(0,0,0,.5); overflow: hidden; }
+[data-skin="den-tuyen"] .rest { background: rgba(22,22,24,.97); }
+.rest .t { font-size: 26px; font-weight: 800; letter-spacing: -.02em; }
+.rest .l { font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.rest .sp { flex: 1; }
+.rest .btn { height: 38px; padding: 0 12px; font-size: 13px; border-radius: 11px; }
+.rest .bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 64%; background: var(--grad); }
+
+/* ---- lịch tập ---- */
+.week { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; }
+.week .d { padding: 8px 0 9px; border-radius: 13px; font-size: 11.5px; color: var(--muted); }
+.week .d b { display: block; font-size: 16px; color: var(--fg); margin: 3px 0 5px; }
+.week .d i { display: block; width: 6px; height: 6px; border-radius: 50%; margin: 0 auto; background: transparent; }
+.week .d.done i { background: var(--up); } .week .d.plan i { background: var(--acc); } .week .d.miss i { background: var(--down); }
+.week .d.today { background: var(--surface-2); box-shadow: inset 0 0 0 1px rgba(var(--acc-rgb),.5); }
+.week .d.today b { color: var(--acc-hi); }
+.legend { display: flex; gap: 14px; margin-top: 12px; font-size: 12px; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; background: var(--c); }
+.day { display: flex; gap: 12px; align-items: center; padding: 14px; }
+.day .no { width: 44px; height: 52px; border-radius: 13px; background: var(--surface-2); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10.5px; color: var(--muted); font-weight: 600; flex: none; }
+.day .no b { font-size: 17px; color: var(--fg); }
+.day .t { flex: 1; min-width: 0; }
+.day .t b { font-size: 16px; }
+.day .t .mus { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; }
+.day .t .mus span { font-size: 11px; padding: 2px 7px; border-radius: 6px; background: var(--surface-2); color: var(--fg-2); }
+.day .r { text-align: right; flex: none; }
+.day.sel { border-color: rgba(var(--acc-rgb),.45); }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--surface); border: 1px solid var(--line); border-radius: 13px; padding: 3px; }
+.seg button { height: 34px; border-radius: 10px; font-size: 13.5px; color: var(--fg-2); font-weight: 600; }
+.seg button[aria-pressed="true"] { background: var(--surface-3); color: var(--fg); }
+
+/* ---- tài khoản ---- */
+.prof { display: flex; gap: 14px; align-items: center; padding: 16px; }
+.prof .av { width: 58px; height: 58px; font-size: 19px; }
+.prof b { font-size: 19px; display: block; }
+.stats3 { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--line); margin: 0 -16px -16px; }
+.stats3 div { padding: 12px 0; text-align: center; }
+.stats3 div + div { border-left: 1px solid var(--line); }
+.stats3 b { font-size: 18px; display: block; }
+.stats3 span { font-size: 11.5px; color: var(--muted); }
+.group { padding: 0; overflow: hidden; }
+.group .gr { display: flex; align-items: center; gap: 12px; padding: 13px 14px; }
+.group .gr + .gr { border-top: 1px solid var(--line); }
+.group .gr .gi { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: var(--surface-2); color: var(--fg-2); flex: none; }
+.group .gr .gi svg { width: 18px; height: 18px; }
+.group .gr .gt { flex: 1; min-width: 0; }
+.group .gr .gt b { font-size: 15px; font-weight: 600; display: block; }
+.group .gr .gt span { font-size: 12.5px; color: var(--muted); }
+.group .gr .chev { color: var(--muted); width: 18px; height: 18px; }
+.gh { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 22px 4px 8px; }
+.coach { padding: 16px; }
+.coach .people { display: flex; gap: -8px; margin-top: 12px; }
+.coach .people .av { width: 34px; height: 34px; font-size: 12px; margin-right: -8px; border: 2px solid var(--surface); }
+.skinpick { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 14px; }
+.skinpick .o { border-radius: 14px; border: 1.5px solid var(--line-2); padding: 10px; text-align: left; }
+.skinpick .o[aria-pressed="true"] { border-color: var(--acc); }
+.skinpick .sw2 { height: 44px; border-radius: 9px; margin-bottom: 8px; display: flex; align-items: end; padding: 7px; gap: 5px; }
+.skinpick .sw2 i { width: 16px; height: 16px; border-radius: 50%; }
+.skinpick b { font-size: 14px; } .skinpick span { font-size: 11.5px; color: var(--muted); display: block; }
+.tog { width: 46px; height: 28px; border-radius: 14px; background: var(--acc); position: relative; flex: none; }
+.tog::after { content: ""; position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; }
+
+@media (max-width: 380px) { .step { grid-template-columns: 26px minmax(0,1fr) 26px; } .step b { font-size: 19px; } }
+
+/* ===================== CHUYỂN ĐỘNG ===================== */
+@media (prefers-reduced-motion: no-preference) {
+  :root:not([data-anim="off"]) .beam::before { animation: beamspin 3.2s linear infinite; }
+  :root:not([data-anim="off"]) .tix .star { animation: twinkle 2.8s ease-in-out infinite; }
+  :root:not([data-anim="off"]) .shine { background: linear-gradient(100deg, currentColor 40%, #fff 50%, currentColor 60%) 0 0 / 250% 100%; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: shine 3.6s ease-in-out infinite; }
+  :root:not([data-anim="off"]) .livedot::before { animation: pulse 1.6s ease-in-out infinite; }
+  :root:not([data-anim="off"]) .nav .fab .c { animation: breathe 2.6s ease-in-out infinite; }
+  :root:not([data-anim="off"]) .rest .bar { animation: drain 90s linear forwards; transform-origin: left; }
+  :root:not([data-anim="off"]) .prog i { background-size: 200% 100%; animation: flow 4s linear infinite; }
+}
+@keyframes beamspin { to { --ang: 360deg; } }
+@keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.5) rotate(0); } 50% { opacity: .95; transform: scale(1) rotate(45deg); } }
+@keyframes shine { 0%, 55% { background-position: 100% 0; } 100% { background-position: -50% 0; } }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.7); } }
+@keyframes breathe { 0%, 100% { box-shadow: 0 6px 18px rgba(var(--acc-rgb),.35); } 50% { box-shadow: 0 6px 28px rgba(var(--acc-rgb),.7); } }
+@keyframes flow { to { background-position: -200% 0; } }
+@keyframes drain { to { transform: scaleX(0); } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="cal" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="2.5"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></symbol>
+  <symbol id="db" viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></symbol>
+  <symbol id="chart" viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></symbol>
+  <symbol id="user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 21h4"/></symbol>
+  <symbol id="play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+  <symbol id="cloud" viewBox="0 0 24 24"><path d="M7 18a4.5 4.5 0 0 1-.5-9A6 6 0 0 1 18 8a4.5 4.5 0 0 1-.5 10z"/><path d="m9.5 13 2.5 2.5 3.5-4"/></symbol>
+  <symbol id="heart" viewBox="0 0 24 24"><path d="M12 20s-8-4.6-8-10.2A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8 2.8C20 15.4 12 20 12 20z"/></symbol>
+  <symbol id="fire" viewBox="0 0 24 24"><path d="M12 21c4 0 7-2.8 7-6.7 0-3.6-2.6-5.6-4-8.3-.6 2-1.6 3-3 3.5.3-2.6-.7-5.3-3-7C9 6 5 8.8 5 14.3 5 18.2 8 21 12 21z"/></symbol>
+  <symbol id="users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.2a6.5 6.5 0 0 1 3.5 5.8"/></symbol>
+  <symbol id="cam" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+  <symbol id="alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20zM12 10v4M12 17.2v.1"/></symbol>
+  <symbol id="swap" viewBox="0 0 24 24"><path d="M4 8h14l-3-3M20 16H6l3 3"/></symbol>
+  <symbol id="palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 0 0 0 18c1.4 0 2-.8 2-1.8 0-1.4-1.3-1.7-1.3-3 0-1 .8-1.7 1.8-1.7H17a4 4 0 0 0 4-4C21 6.4 17 3 12 3z"/><circle cx="7.5" cy="11" r="1"/><circle cx="11" cy="7" r="1"/><circle cx="16" cy="8" r="1"/></symbol>
+  <symbol id="clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="book" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2zM4 5v16"/></symbol>
+  <symbol id="save" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 19h16"/></symbol>
+  <symbol id="plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="spark" viewBox="0 0 24 24"><path d="M12 2c.6 4.9 2.6 8 8 10-5.4 2-7.4 5.1-8 10-.6-4.9-2.6-8-8-10 5.4-2 7.4-5.1 8-10z" fill="currentColor" stroke="none"/></symbol>
+</svg>
+
+<header class="deck-head">
+  <div><h1>PA-22 · Thiết kế lại Giáo Án Địa Ngục</h1><p>Bản mockup 4 màn chính theo clip mẫu. Máy tính: vuốt ngang; điện thoại: cuộn xuống, mỗi màn cuộn được bên trong. Chưa phải app thật, chỉ để duyệt hướng.</p></div>
+  <div class="sw" role="group" aria-label="Giao diện"><button type="button" data-skin="ho-phach" aria-pressed="true">Hổ Phách</button><button type="button" data-skin="den-tuyen" aria-pressed="false">Đen Tuyền</button></div>
+</header>
+
+<div class="deck">
+
+<!-- ============ 1. TRANG CHỦ ============ -->
+<section class="frame" id="m-home"><div class="cap">1 · Trang chủ</div><div class="phone">
+  <div class="status"><span>9:41</span><i></i><span>●●● 85</span></div>
+  <div class="scr">
+    <div class="top">
+      <span class="av">HO</span>
+      <div class="who"><b>Chào Hoàng <svg class="i" style="width:16px;height:16px;color:var(--muted)"><use href="#down"/></svg></b><span>Thứ Năm, 22/10 · tuần 3 của chu kỳ</span></div>
+      <button class="ibtn" aria-label="Việc cần làm"><svg class="i"><use href="#bell"/></svg><span class="bd">3</span></button>
+    </div>
+
+    <section class="tix">
+      <svg class="star i" style="top:18px;right:70px;width:12px;height:12px;animation-delay:.2s"><use href="#spark"/></svg>
+      <svg class="star i" style="top:46px;right:28px;width:16px;height:16px;animation-delay:1.1s"><use href="#spark"/></svg>
+      <svg class="star i" style="top:96px;right:110px;width:9px;height:9px;animation-delay:1.9s"><use href="#spark"/></svg>
+      <svg class="star i" style="top:150px;right:40px;width:11px;height:11px;animation-delay:.7s"><use href="#spark"/></svg>
+      <span class="badge">HÔM NAY THEO LỊCH · 18:00</span>
+      <div class="ttl">Lưng · Tay trước</div>
+      <div class="meta">5 bài · 15 set · ~55 phút · lần cuối 4 ngày trước</div>
+      <div class="kgs num">
+        <span>Kéo xô</span><b class="up">45 kg ▲</b>
+        <span>Chèo cáp ngồi</span><b>40 kg</b>
+        <span>Chèo tạ đơn</span><b class="up">22,5 kg ▲</b>
+        <span class="mut" style="color:rgba(255,236,210,.55)">+2 bài khác</span><b></b>
+      </div>
+      <div class="cut"></div>
+      <div class="foot">
+        <div class="why">Lưng đã hồi phục 100%. Có 2 bài nên lên tạ.</div>
+        <button class="go"><svg class="i" style="width:16px;height:16px"><use href="#play"/></svg>Bắt đầu</button>
+      </div>
+    </section>
+
+    <div class="sec-h"><span class="h2">Chọn buổi khác</span><a href="#">Lịch tập</a></div>
+    <div class="chips">
+      <button class="chip" aria-pressed="true">Lưng · Tay trước <span class="tag">Gợi ý</span></button>
+      <button class="chip">Ngực · Vai</button>
+      <button class="chip">Chân</button>
+      <button class="chip">Tay sau · Bụng</button>
+      <button class="chip">+ Tự chọn bài</button>
+    </div>
+
+    <div class="g2" style="margin-top:14px">
+      <div class="card mini">
+        <span class="ic" style="background:var(--acc-soft);color:var(--acc-hi)"><svg class="i"><use href="#fire"/></svg></span>
+        <span class="mut" style="margin:0 0 2px">Tuần này</span>
+        <span class="v num">3<small>/5 buổi</small></span>
+        <div class="prog" style="margin-top:10px"><i style="width:60%"></i></div>
+      </div>
+      <div class="card mini beam red">
+        <span class="ic" style="background:var(--down-soft);color:var(--down)"><svg class="i"><use href="#alert"/></svg></span>
+        <b>Vai đang đau nhẹ</b>
+        <span class="mut">2 bài vai tự giảm 20% · báo đau</span>
+      </div>
+    </div>
+
+    <div class="card todo" style="margin-top:10px">
+      <div class="row">
+        <span class="ic2"><svg class="i" style="width:19px;height:19px"><use href="#cal"/></svg></span>
+        <div><b>Kế hoạch tuần 19/10 chưa duyệt</b><span class="sub">Xem kết quả tuần, chọn mức tạ từng bài cho tuần này.</span></div>
+      </div>
+      <div class="acts"><button class="btn sm pri">Lập kế hoạch</button><button class="btn sm ghost">Để sau</button></div>
+      <div class="dots"><i class="on"></i><i></i><i></i></div>
+    </div>
+
+    <div class="sec-h"><span class="h2">Độ hồi phục</span><a href="#">Chi tiết</a></div>
+    <div class="card" style="padding:10px 14px">
+      <div class="rrow"><span>Lưng</span><span class="rbar"><i style="width:100%;background:var(--up)"></i></span><span class="rs" style="color:var(--up)">Sẵn sàng</span></div>
+      <div class="rrow"><span>Ngực</span><span class="rbar"><i style="width:72%;background:var(--warn)"></i></span><span class="rs mut">còn 18 giờ</span></div>
+      <div class="rrow"><span>Đùi trước</span><span class="rbar"><i style="width:40%;background:var(--down)"></i></span><span class="rs mut">còn 40 giờ</span></div>
+    </div>
+  </div>
+  <nav class="nav">
+    <button aria-current="page"><svg class="i"><use href="#home"/></svg>Trang chủ</button>
+    <button><svg class="i"><use href="#cal"/></svg>Lịch tập</button>
+    <button class="fab"><span class="c"><svg class="i"><use href="#db"/></svg></span>Tập</button>
+    <button><svg class="i"><use href="#chart"/></svg>Tiến độ</button>
+    <button><svg class="i"><use href="#user"/></svg>Tài khoản</button>
+  </nav>
+</div></section>
+
+<!-- ============ 2. ĐANG TẬP ============ -->
+<section class="frame" id="m-session"><div class="cap">2 · Đang tập</div><div class="phone">
+  <div class="status"><span>9:41</span><i></i><span>●●● 85</span></div>
+  <div class="sbar">
+    <div class="r1">
+      <div class="t"><span class="livedot">ĐANG TẬP</span><b>Lưng · Tay trước</b></div>
+      <span class="clock num shine" style="color:var(--fg)">24:18</span>
+    </div>
+    <div class="steps"><i class="done"></i><i class="now"></i><i></i><i></i><i></i></div>
+  </div>
+  <div class="scr" style="padding-top:128px;padding-bottom:200px">
+    <article class="card excard beam">
+      <div class="ph"><span class="tagn">BÀI 2/5</span><svg class="i" style="width:44px;height:44px;opacity:.5"><use href="#db"/></svg><span class="cam"><svg class="i"><use href="#cam"/></svg>Ảnh máy</span></div>
+      <div class="bd">
+        <div class="nm"><div><b>Chèo cáp ngồi</b><div class="mut">Lưng giữa · 3×10 · nghỉ 1:30</div></div><span class="pill acc">Set 2/3</span></div>
+        <div class="target">
+          <div><div class="l">Lần trước</div><div class="v num">40<small> kg × 10·10·9</small></div></div>
+          <div><div class="l">Hôm nay</div><div class="v num up">42,5<small> kg</small></div></div>
+        </div>
+        <button class="form-chip"><svg class="i" style="width:18px;height:18px"><use href="#alert"/></svg>Điểm form<span>Ưỡn ngực, kéo khuỷu ra sau</span><svg class="i chev" style="width:16px;height:16px"><use href="#chev"/></svg></button>
+        <div class="sets"><div class="set hd"><span></span><span>KG</span><span>REP</span><span></span></div>
+          <div class="set done"><span class="n">1</span><div class="step"><button>−</button><b class="num">42,5</b><button>+</button></div><div class="step"><button>−</button><b class="num">10</b><button>+</button></div><span class="ok-b"><svg class="i"><use href="#check"/></svg></span></div>
+          <div class="set cur"><span class="n">2</span><div class="step"><button>−</button><b class="num">42,5</b><button>+</button></div><div class="step"><button>−</button><b class="num">10</b><button>+</button></div><span class="ok-b"><svg class="i"><use href="#check"/></svg></span></div>
+          <div class="set"><span class="n">3</span><div class="step"><button>−</button><b class="num">42,5</b><button>+</button></div><div class="step"><button>−</button><b class="num">10</b><button>+</button></div><span class="ok-b"><svg class="i"><use href="#check"/></svg></span></div>
+        </div>
+        <div class="minirow"><button class="btn">+ Set</button><button class="btn">+ Drop set</button><button class="btn"><svg class="i" style="width:16px;height:16px"><use href="#swap"/></svg>Đổi bài</button></div>
+      </div>
+    </article>
+    <div class="sec-h" style="margin-top:18px"><span class="h2" style="font-size:16px">Tiếp theo</span><a href="#">+ Thêm bài</a></div>
+    <div class="card nextl" style="padding:0">
+      <div class="li"><span class="no">3</span><div style="flex:1"><b>Chèo tạ đơn</b><span class="mut">3×10 · 22,5 kg ▲</span></div><svg class="i chev" style="color:var(--muted)"><use href="#chev"/></svg></div>
+      <div class="li"><span class="no">4</span><div style="flex:1"><b>Cuốn tạ đơn</b><span class="mut">3×12 · 12 kg</span></div><svg class="i chev" style="color:var(--muted)"><use href="#chev"/></svg></div>
+    </div>
+  </div>
+  <div class="rest">
+    <div><div class="l">Nghỉ</div><div class="t num">1:02</div></div><span class="sp"></span>
+    <button class="btn">−15s</button><button class="btn">+15s</button><button class="btn pri">Bỏ qua</button>
+    <span class="bar"></span>
+  </div>
+  <nav class="nav">
+    <button><svg class="i"><use href="#home"/></svg>Trang chủ</button>
+    <button><svg class="i"><use href="#cal"/></svg>Lịch tập</button>
+    <button class="fab live" aria-current="page"><span class="c"><svg class="i"><use href="#db"/></svg></span>Đang tập</button>
+    <button><svg class="i"><use href="#chart"/></svg>Tiến độ</button>
+    <button><svg class="i"><use href="#user"/></svg>Tài khoản</button>
+  </nav>
+</div></section>
+
+<!-- ============ 3. LỊCH TẬP ============ -->
+<section class="frame" id="m-plan"><div class="cap">3 · Lịch tập (gộp Giáo án + Kế hoạch tuần)</div><div class="phone">
+  <div class="status"><span>9:41</span><i></i><span>●●● 85</span></div>
+  <div class="scr">
+    <div class="top" style="margin-bottom:14px"><div class="who"><b style="font-size:26px;letter-spacing:-.02em">Lịch tập</b></div><button class="btn sm" style="height:38px"><svg class="i" style="width:16px;height:16px"><use href="#book"/></svg>Kho bài</button></div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><b>Tuần 19/10 – 25/10</b><span class="pill acc">3/5 buổi</span></div>
+      <div class="week num">
+        <div class="d done">T2<b>19</b><i></i></div>
+        <div class="d">T3<b>20</b><i></i></div>
+        <div class="d done">T4<b>21</b><i></i></div>
+        <div class="d today">T5<b>22</b><i style="background:var(--acc)"></i></div>
+        <div class="d plan">T6<b>23</b><i></i></div>
+        <div class="d">T7<b>24</b><i></i></div>
+        <div class="d plan">CN<b>25</b><i></i></div>
+      </div>
+      <div class="legend"><span style="--c:var(--up)">Đã tập</span><span style="--c:var(--acc)">Theo lịch</span><span style="--c:var(--down)">Lỡ buổi</span></div>
+    </div>
+    <div class="card todo beam" style="margin-top:10px">
+      <div class="row"><span class="ic2"><svg class="i" style="width:19px;height:19px"><use href="#spark"/></svg></span><div><b>Kế hoạch tuần chưa duyệt</b><span class="sub">4 bài đủ điều kiện lên tạ tuần này.</span></div></div>
+      <div class="acts"><button class="btn sm pri">Duyệt mức tạ</button></div>
+    </div>
+    <div class="sec-h"><span class="h2">Ngày tập · 4</span><a href="#">+ Ngày tập</a></div>
+    <div class="stack">
+      <div class="card day sel"><span class="no">NGÀY<b>01</b></span><div class="t"><b>Lưng · Tay trước</b><div class="mut">5 bài · 15 set · ~55 phút</div><div class="mus"><span>Lưng</span><span>Tay trước</span><span>Cẳng tay</span></div></div><div class="r"><span class="pill ok">Sẵn sàng</span></div></div>
+      <div class="card day"><span class="no">NGÀY<b>02</b></span><div class="t"><b>Ngực · Vai</b><div class="mut">5 bài · 15 set · ~50 phút</div><div class="mus"><span>Ngực</span><span>Vai</span><span>Tay sau</span></div></div><div class="r"><span class="pill bad">còn 18h</span></div></div>
+      <div class="card day"><span class="no">NGÀY<b>03</b></span><div class="t"><b>Chân</b><div class="mut">5 bài · 16 set · ~60 phút</div><div class="mus"><span>Đùi trước</span><span>Đùi sau</span><span>Mông</span></div></div><div class="r"><span class="pill bad">còn 40h</span></div></div>
+    </div>
+  </div>
+  <nav class="nav">
+    <button><svg class="i"><use href="#home"/></svg>Trang chủ</button>
+    <button aria-current="page"><svg class="i"><use href="#cal"/></svg>Lịch tập</button>
+    <button class="fab"><span class="c"><svg class="i"><use href="#db"/></svg></span>Tập</button>
+    <button><svg class="i"><use href="#chart"/></svg>Tiến độ</button>
+    <button><svg class="i"><use href="#user"/></svg>Tài khoản</button>
+  </nav>
+</div></section>
+
+<!-- ============ 4. TIẾN ĐỘ ============ -->
+<section class="frame" id="m-prog"><div class="cap">4 · Tiến độ (gộp Tiến độ + Cơ thể)</div><div class="phone">
+  <div class="status"><span>9:41</span><i></i><span>●●● 85</span></div>
+  <div class="scr">
+    <div class="top" style="margin-bottom:14px"><div class="who"><b style="font-size:26px;letter-spacing:-.02em">Tiến độ</b></div><button class="btn sm pri" style="height:38px">+ Số đo</button></div>
+    <div class="seg"><button aria-pressed="true">Sức mạnh</button><button>Cơ thể</button><button>Ảnh</button></div>
+    <section class="tix" style="margin-top:14px">
+      <svg class="star i" style="top:20px;right:40px;width:14px;height:14px"><use href="#spark"/></svg>
+      <svg class="star i" style="top:70px;right:90px;width:9px;height:9px;animation-delay:1.3s"><use href="#spark"/></svg>
+      <span class="badge">TỔNG TẠ 4 TUẦN</span>
+      <div style="margin-top:12px" class="meta">Đã nâng</div>
+      <div><span class="big num">48,6</span> <b style="color:#f3d6a6;letter-spacing:.12em;font-size:15px">TẤN</b></div>
+      <div class="cut"></div>
+      <div class="foot"><div class="why">+12% so với 4 tuần trước · 18 buổi · 252 set</div><span class="pill ok" style="background:rgba(70,209,132,.18)">▲ 12%</span></div>
+    </section>
+    <div class="sec-h"><span class="h2">Lên tạ nhiều nhất</span><a href="#">Tất cả</a></div>
+    <div class="card nextl" style="padding:0">
+      <div class="li"><span class="no">1</span><div style="flex:1"><b>Kéo xô</b><span class="mut">35 → 45 kg · 4 tuần</span></div><b class="num" style="color:var(--up)">+10</b></div>
+      <div class="li"><span class="no">2</span><div style="flex:1"><b>Đạp đùi</b><span class="mut">120 → 130 kg</span></div><b class="num" style="color:var(--up)">+10</b></div>
+      <div class="li"><span class="no">3</span><div style="flex:1"><b>Đẩy ngực tạ đòn</b><span class="mut">50 → 55 kg</span></div><b class="num" style="color:var(--up)">+5</b></div>
+    </div>
+    <div class="sec-h"><span class="h2">Nhóm cơ tuần này</span></div>
+    <div class="card" style="padding:12px 14px">
+      <div class="rrow"><span>Lưng</span><span class="rbar"><i style="width:80%;background:var(--grad)"></i></span><span class="rs num">16 set</span></div>
+      <div class="rrow"><span>Ngực</span><span class="rbar"><i style="width:60%;background:var(--grad)"></i></span><span class="rs num">12 set</span></div>
+      <div class="rrow"><span>Vai</span><span class="rbar"><i style="width:30%;background:var(--grad)"></i></span><span class="rs num" style="color:var(--down)">6 set</span></div>
+      <p class="mut" style="margin-top:6px">Mục tiêu 10–20 set mỗi nhóm cơ mỗi tuần.</p>
+    </div>
+  </div>
+  <nav class="nav">
+    <button><svg class="i"><use href="#home"/></svg>Trang chủ</button>
+    <button><svg class="i"><use href="#cal"/></svg>Lịch tập</button>
+    <button class="fab"><span class="c"><svg class="i"><use href="#db"/></svg></span>Tập</button>
+    <button aria-current="page"><svg class="i"><use href="#chart"/></svg>Tiến độ</button>
+    <button><svg class="i"><use href="#user"/></svg>Tài khoản</button>
+  </nav>
+</div></section>
+
+<!-- ============ 5. TÀI KHOẢN ============ -->
+<section class="frame" id="m-acc"><div class="cap">5 · Tài khoản (gọn thành danh mục)</div><div class="phone">
+  <div class="status"><span>9:41</span><i></i><span>●●● 85</span></div>
+  <div class="scr">
+    <div class="top" style="margin-bottom:14px"><div class="who"><b style="font-size:26px;letter-spacing:-.02em">Tài khoản</b></div></div>
+    <div class="card">
+      <div class="prof" style="padding:0 0 16px"><span class="av">HO</span><div style="flex:1"><b>Hoàng</b><span class="mut">Huấn luyện viên · đang xem hồ sơ của mình</span></div><button class="btn sm">Đổi</button></div>
+      <div class="stats3 num"><div><b>42</b><span>buổi</span></div><div><b>11</b><span>tuần liên tục</span></div><div><b>48,6t</b><span>tạ 4 tuần</span></div></div>
+    </div>
+    <div class="card coach beam" style="margin-top:10px">
+      <div style="display:flex;align-items:center;gap:10px"><span class="ic2" style="width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:var(--acc-soft);color:var(--acc-hi)"><svg class="i" style="width:19px;height:19px"><use href="#users"/></svg></span><div style="flex:1"><b>Phòng HLV</b><div class="mut">2 học viên · 1 việc cần xem</div></div><svg class="i chev" style="color:var(--muted)"><use href="#chev"/></svg></div>
+      <div class="people"><span class="av">VO</span><span class="av" style="background:rgba(70,209,132,.15);color:var(--up);border-color:rgba(70,209,132,.35)">BN</span></div>
+    </div>
+    <div class="gh">Đồng bộ & dữ liệu</div>
+    <div class="card group">
+      <div class="gr"><span class="gi" style="color:var(--up)"><svg class="i"><use href="#cloud"/></svg></span><div class="gt"><b>Google Drive</b><span>Đã đồng bộ 2 phút trước</span></div><svg class="i chev"><use href="#chev"/></svg></div>
+      <div class="gr"><span class="gi"><svg class="i"><use href="#save"/></svg></span><div class="gt"><b>Sao lưu & khôi phục</b><span>Lần cuối 7 ngày trước</span></div><svg class="i chev"><use href="#chev"/></svg></div>
+      <div class="gr"><span class="gi"><svg class="i"><use href="#book"/></svg></span><div class="gt"><b>Thư viện hình hướng dẫn</b><span>Chưa tải · 20 MB</span></div><svg class="i chev"><use href="#chev"/></svg></div>
+    </div>
+    <div class="gh">Tập luyện</div>
+    <div class="card group">
+      <div class="gr"><span class="gi"><svg class="i"><use href="#clock"/></svg></span><div class="gt"><b>Nhịp nghỉ & lịch tập</b><span>Chuẩn · nhắc 17:30</span></div><svg class="i chev"><use href="#chev"/></svg></div>
+      <div class="gr"><span class="gi"><svg class="i"><use href="#heart"/></svg></span><div class="gt"><b>Chỉ số cơ thể</b><span>Chiều cao, giới tính</span></div><svg class="i chev"><use href="#chev"/></svg></div>
+      <div class="gr"><span class="gi"><svg class="i"><use href="#bell"/></svg></span><div class="gt"><b>Thông báo</b><span>Đang bật</span></div><span class="tog"></span></div>
+    </div>
+    <div class="gh">Giao diện</div>
+    <div class="card skinpick" style="padding:12px">
+      <button class="o" data-skin="ho-phach" aria-pressed="true"><div class="sw2" style="background:#161518;border:1px solid #2b292d"><i style="background:#ec6a2c"></i><i style="background:#c78a44"></i></div><b>Hổ Phách</b><span>Tối ấm, nhấn cam</span></button>
+      <button class="o" data-skin="den-tuyen" aria-pressed="false"><div class="sw2" style="background:#000;border:1px solid #222"><i style="background:#e2b04f"></i><i style="background:#f6d07a"></i></div><b>Đen Tuyền</b><span>Đen OLED, nhấn vàng</span></button>
+    </div>
+  </div>
+  <nav class="nav">
+    <button><svg class="i"><use href="#home"/></svg>Trang chủ</button>
+    <button><svg class="i"><use href="#cal"/></svg>Lịch tập</button>
+    <button class="fab"><span class="c"><svg class="i"><use href="#db"/></svg></span>Tập</button>
+    <button><svg class="i"><use href="#chart"/></svg>Tiến độ</button>
+    <button aria-current="page"><svg class="i"><use href="#user"/></svg>Tài khoản</button>
+  </nav>
+</div></section>
+
+</div>
+<script>
+document.querySelectorAll('[data-skin]').forEach(b => { if (b.tagName !== 'BUTTON') return;
+  b.addEventListener('click', () => { const k = b.dataset.skin; document.documentElement.dataset.skin = k;
+    document.querySelectorAll('button[data-skin]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.skin === k))); }); });
+</script>
+</body>
+</html>

@@ -20,7 +20,7 @@ with sync_playwright() as p:
     def mk():
         c = b.new_context(viewport={'width':390,'height':844}); c.route('https://script.google.com/**', route); pg = c.new_page()
         pg.on('pageerror', lambda e: errs.append('pageerror: '+str(e))); pg.goto('http://localhost:8793/index.html'); pg.wait_for_timeout(1500)
-        pg.ev("() => { ui.tab = 'settings'; render(true); }"); pg.wait_for_timeout(200); return pg
+        pg.ev("() => { ui.tab = 'settings'; ui.moreSec = 'drive'; render(true); }"); pg.wait_for_timeout(200); return pg
     def toast(pg): return pg.locator('#toast').inner_text()
     co = mk()
     # ===== máy HLV đang dùng: hồ sơ Hoàng (có giáo án + 1 buổi) và Lan =====
@@ -29,7 +29,7 @@ with sync_playwright() as p:
       const t = Date.now() - 864e5; st.sessions = [{ id: 'hs1', dayId: 'd1', dayName: 'Chân', date: ymd(new Date(t)), startedAt: t, finishedAt: t + 3e6, entries: [{ exId: x.id, name: x.name, muscle: x.muscle, note: '', each: false, sets: [{ kg: 80, reps: 8 }], drop: null }] }];
       loadState(st); save();
       const y = newEx('Kéo xô (Lat pulldown)'); const s2 = freshState(); s2.settings.name = 'Lan'; s2.days = [{ id: 'l1', name: 'Lưng', exercises: [{ ...y, currentKg: 30, kgSetAt: Date.now(), alts: [], slot: '', mainSince: ymd() }] }];
-      await LDB.put('kv', stateKey('p2'), s2); ui.tab = 'settings'; render(true); }"""); co.wait_for_timeout(300)
+      await LDB.put('kv', stateKey('p2'), s2); ui.tab = 'settings'; ui.moreSec = 'drive'; render(true); }"""); co.wait_for_timeout(300)
     ok(co.locator('.acc [data-act="acc-login"]').count() == 1 and co.locator('.acc [data-act="acc-hlv-new"]').count() == 1, 'Thẻ Đăng nhập + nút Tạo tài khoản HLV')
     co.locator('.acc').screenshot(path='p21-login.png')
     co.click('[data-act="acc-hlv-new"]'); co.wait_for_timeout(200)
@@ -40,7 +40,7 @@ with sync_playwright() as p:
     ok(A[0]['vai'] == 'hlv' and A[0]['u'] == 'hoang' and A[1] == 40 and A[2] == URL, 'Tạo TK HLV: máy HLV đăng nhập bằng phiên (không cần lưu MÃ HLV)')
     ds = gas_post({'a':'tv.ds','ma':HLV})['ds']
     ok(sorted(t['ten'] for t in ds) == ['Hoàng', 'Lan'] and all(t['hlv'] for t in ds), 'Mọi hồ sơ (kể cả của HLV) đã lên Drive')
-    co.ev("() => { ui.tab = 'settings'; render(true); }"); co.wait_for_timeout(200)
+    co.ev("() => { ui.tab = 'settings'; ui.moreSec = 'drive'; render(true); }"); co.wait_for_timeout(200)
     ok('Tài khoản HLV' in co.locator('.acc').inner_text() and co.locator('[data-act="acc-tv"]').count() == 1, 'Thẻ Tài khoản HLV: có Quản lý học viên')
     co.locator('.acc').screenshot(path='p21-hlv.png')
     # ===== quản lý học viên =====
@@ -68,7 +68,7 @@ with sync_playwright() as p:
     hv.fill('#acc-p', 'lan12345'); hv.click('[data-act="acc-login"]'); hv.wait_for_timeout(4000)
     ok(hv.ev("() => [state.settings.acc.vai, state.drv.id]") == ['hv', lan], 'Học viên đăng nhập: gắn đúng hồ sơ Lan')
     ok('Kéo xô (Lat pulldown)' in hv.ev("() => state.days.flatMap(d => d.exercises.map(e => e.name))"), 'Học viên nhận giáo án HLV soạn')
-    hv.ev("() => { ui.tab = 'settings'; render(true); }"); hv.wait_for_timeout(200)
+    hv.ev("() => { ui.tab = 'settings'; ui.moreSec = 'drive'; render(true); }"); hv.wait_for_timeout(200)
     ok('Đang đăng nhập lan' in hv.locator('.acc').inner_text() and 'HLV Hoàng' in hv.locator('.acc').inner_text(), 'Thẻ tài khoản học viên: tên đăng nhập + tên HLV')
     hv.locator('.acc').screenshot(path='p21-hv.png')
     hv.ev("""() => { const ex = state.days[0].exercises[0]; const t = Date.now(); state.sessions.push({ id: 'ls1', dayId: state.days[0].id, dayName: state.days[0].name, date: ymd(), startedAt: t, finishedAt: t + 3e6, entries: [{ exId: ex.id, name: ex.name, muscle: ex.muscle, note: '', each: false, sets: [{ kg: 32.5, reps: 10 }], drop: null }] }); save(); DRV.last = 0; return drvAuto(true); }"""); hv.wait_for_timeout(2500)
@@ -105,7 +105,7 @@ with sync_playwright() as p:
     ok('Chèo cáp ngồi (Seated cable row)' in hv.ev("() => state.days.flatMap(d => d.exercises.map(e => e.name))"), 'Học viên nhận giáo án sửa từ máy HLV mới')
     # ===== HLV đặt lại mật khẩu cho Lan → máy Lan phải đăng nhập lại =====
     gas_post({'a':'tv.tk','ma':HLV,'id':lan,'u':'lan','mk':'datlai12'})
-    hv.ev("() => { DRV.last = 0; return drvAuto(true); }"); hv.wait_for_timeout(1500); hv.ev("() => { ui.tab = 'settings'; render(true); }"); hv.wait_for_timeout(200)
+    hv.ev("() => { DRV.last = 0; return drvAuto(true); }"); hv.wait_for_timeout(1500); hv.ev("() => { ui.tab = 'settings'; ui.moreSec = 'drive'; render(true); }"); hv.wait_for_timeout(200)
     ok('hết hạn' in hv.locator('.acc').inner_text() and hv.locator('[data-act="acc-relogin"]').count() == 1, 'Mật khẩu bị đặt lại: báo phiên hết hạn')
     hv.locator('.acc').screenshot(path='p21-het.png')
     hv.click('[data-act="acc-relogin"]'); hv.wait_for_timeout(300)
@@ -117,11 +117,11 @@ with sync_playwright() as p:
     gas_post({'a':'tv.tat','ma':HLV,'id':lan}); hv.ev("() => { DRV.last = 0; return drvAuto(true); }"); hv.wait_for_timeout(1200)
     ok(hv.ev("() => DRV.st") == 'err', 'HLV khoá học viên: máy học viên ngừng đồng bộ'); gas_post({'a':'tv.bat','ma':HLV,'id':lan})
     # đăng xuất
-    hv.ev("() => { ui.tab = 'settings'; render(true); }"); hv.wait_for_timeout(200)
+    hv.ev("() => { ui.tab = 'settings'; ui.moreSec = 'drive'; render(true); }"); hv.wait_for_timeout(200)
     hv.click('.acc [data-act="acc-out"]'); hv.wait_for_timeout(200); hv.click('#sheet-body .btn.danger, #sheet-body [data-act="confirm-ok"]'); hv.wait_for_timeout(1200)
     ok(hv.ev("() => [!!state.drv, state.sessions.length, (state.settings.acc || {}).vai || '']") == [False, nS, ''], 'Đăng xuất: ngừng đồng bộ, dữ liệu giữ nguyên')
     # máy HLV bật chế độ HLV không đăng nhập được tài khoản học viên
-    co.ev("() => { ui.tab = 'settings'; render(true); }")
+    co.ev("() => { ui.tab = 'settings'; ui.moreSec = 'drive'; render(true); }")
     co.ev(f"async () => accApply('{URL}', {{ vai: 'hv', id: 'x', ma: 'y'.repeat(40), ten: 'Lan', u: 'lan' }})"); co.wait_for_timeout(300)
     ok('chế độ HLV' in toast(co) and co.ev("() => state.settings.acc.vai") == 'hlv', 'Máy HLV: không cho đăng nhập nhầm tài khoản học viên')
     b.close()
