@@ -1,0 +1,3 @@
+site/
+*.png
+__pycache__/
