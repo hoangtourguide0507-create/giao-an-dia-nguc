@@ -24,3 +24,4 @@
 - `kiem-thu`: kiểm tra độc lập một nhánh trước khi duyệt, tái hiện lỗi chủ repo báo.
 - `kiem-chung-y-khoa`: đối chiếu số liệu tập luyện / dinh dưỡng / chấn thương với nguồn chuyên môn trước khi đưa vào app.
 - `may-chu`: máy chủ đồng bộ Apps Script (`drive/`) và máy chủ thông báo Cloudflare (`push-server/`).
+- `ux-ui`: giao diện, màu sắc, hiệu ứng; phân tích ảnh/clip mẫu và làm theo.

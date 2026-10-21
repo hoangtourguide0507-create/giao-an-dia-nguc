@@ -1134,7 +1134,7 @@ details.rdyc .rrows{padding:0 14px 14px}
 :root[data-skin="gold"] #view,:root[data-skin="gold"] .top{position:relative;z-index:1}
 :root[data-skin="gold"] .top{position:sticky;z-index:20}
 /* chữ vàng kim loại, ánh sáng trôi chậm */
-:root[data-skin="gold"] :is(.hero .h1,.chero .big,.hero .big,.tv:not(.up),.elapsed,.kpi .k,.pst .k){background:linear-gradient(180deg,#fff6d8 0%,#f2d68d 30%,#d9b45b 55%,#a87a2c 78%,#f2d68d 100%);background-size:100% 240%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 1px 0 rgba(0,0,0,.35))}
+:root[data-skin="gold"] :is(.hero .h1,.chero .big:not(.btn),.hero .big:not(.btn),.tv:not(.up),.elapsed,.kpi .k,.pst .k){background:linear-gradient(180deg,#fff6d8 0%,#f2d68d 30%,#d9b45b 55%,#a87a2c 78%,#f2d68d 100%);background-size:100% 240%;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 1px 0 rgba(0,0,0,.35))}
 :root[data-skin="gold"][data-anim="on"] :is(.hero .h1,.chero .big,.hero .big,.tv:not(.up),.elapsed,.kpi .k,.pst .k){animation:goldflow 6s ease-in-out infinite}
 @keyframes goldflow{0%,100%{background-position:50% 0%}50%{background-position:50% 100%}}
 /* vệt ánh kim lướt qua bài đang tập */
@@ -1232,8 +1232,8 @@ details.rdyc .rrows{padding:0 14px 14px}
 .twk,.upb,.exr-kg .upn,.ex.focus,.prog i::after,.nav button .ico{animation:none!important}
 .li.upli::after,.hero .btn.gold::after,.btn.gold::after,.ex.focus::after,.prog i::after{display:none!important}
 :root[data-skin="hell"] .hero .h1,:root[data-skin="hell"] .chero .big,:root[data-skin="hell"] .btn.gold,:root[data-skin="hell"] .hero::after{animation:none!important}
-:root[data-skin="gold"] :is(.hero .h1,.chero .big,.hero .big,.tv:not(.up),.elapsed,.kpi .k,.pst .k){background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;color:var(--gold)!important;filter:none!important;animation:none!important}
-:root[data-skin="gold"] .hero .h1{color:var(--fg)!important}
+:root[data-skin="gold"] :is(.hero .h1,.chero .big:not(.btn),.hero .big:not(.btn),.tv:not(.up),.elapsed,.kpi .k,.pst .k){background:none!important;-webkit-background-clip:border-box!important;background-clip:border-box!important;color:var(--gold)!important;filter:none!important;animation:none!important}
+:root[data-skin="gold"] .hero .h1.h1.h1{color:var(--fg)!important}
 .rpl,.burst,.medal,.skinwipe{display:none!important}
 /* bài đang tập: viền đậm, không nhấp nháy */
 .ex.focus{border:2px solid rgb(var(--acc-rgb) / .8)!important;box-shadow:0 14px 32px -20px rgb(var(--acc-rgb) / .7)!important}
@@ -1307,6 +1307,47 @@ body.restflash::after{content:"";position:fixed;inset:0;pointer-events:none;z-in
 .ncard .dows button[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:var(--gold-ink)}
 .ncard .nst{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;margin:10px 0 0}
 .ncard .nst i{width:9px;height:9px;border-radius:50%;background:var(--muted)} .ncard .nst.ok i{background:var(--up)} .ncard .nst.err i{background:var(--down)}
+
+/* ===== PA-20: hiệu ứng theo clip mẫu (agent ux-ui) ===== */
+@property --ang{syntax:'<angle>';inherits:false;initial-value:0deg}
+/* 1. viền ánh sáng chạy quanh thẻ: bài đang tập (vàng), cảnh báo đau (đỏ) */
+.beam{position:relative;isolation:isolate}
+.beam.beam::before{content:"";display:block!important;position:absolute;inset:-1px;border-radius:inherit;padding:1.5px;pointer-events:none;z-index:3;
+  background:conic-gradient(from var(--ang),transparent 0 62%,rgb(var(--beam-rgb,var(--acc-rgb)) / .0) 66%,rgb(var(--beam-rgb,var(--acc-rgb))) 84%,#fff 88%,rgb(var(--beam-rgb,var(--acc-rgb))) 91%,transparent 96%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);opacity:0}
+:root[data-anim="on"] .beam.beam::before{opacity:1;animation:beamspin 3.4s linear infinite}
+@keyframes beamspin{to{--ang:360deg}}
+.banner.pain{--beam-rgb:var(--down-rgb)}
+/* 2. thẻ vé vàng: nền hổ phách, khoét hai bên, sao lấp lánh */
+.tix{background:radial-gradient(120% 90% at 85% 0%,rgb(var(--acc-rgb) / .34),transparent 60%),linear-gradient(135deg,rgb(var(--acc-rgb) / .30),rgb(var(--acc-rgb) / .10) 55%,rgb(var(--acc-rgb) / .22)),var(--surface)!important;border-color:rgb(var(--acc-rgb) / .45)!important;
+  -webkit-mask:radial-gradient(circle at 0 58%,transparent 10px,#000 10.5px) left/51% 100% no-repeat,radial-gradient(circle at 100% 58%,transparent 10px,#000 10.5px) right/51% 100% no-repeat;
+  mask:radial-gradient(circle at 0 58%,transparent 10px,#000 10.5px) left/51% 100% no-repeat,radial-gradient(circle at 100% 58%,transparent 10px,#000 10.5px) right/51% 100% no-repeat}
+.tix .tstar{position:absolute;width:var(--s,10px);height:var(--s,10px);left:var(--x);top:var(--y);pointer-events:none;z-index:1;background:#fff7df;clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);opacity:0;filter:drop-shadow(0 0 4px rgb(var(--acc-rgb)))}
+:root[data-anim="on"] .tix .tstar{animation:twk2 var(--t,2.6s) ease-in-out var(--d,0s) infinite}
+@keyframes twk2{0%,100%{opacity:0;transform:scale(.2) rotate(0)}45%{opacity:1;transform:scale(1) rotate(45deg)}60%{opacity:.85;transform:scale(.8) rotate(60deg)}}
+.tix > *{position:relative;z-index:2}
+/* 3. dải sáng lướt qua chữ số lớn */
+:root:root .shine.shine.shine{background:linear-gradient(100deg,var(--gold) 0 38%,#fff7df 48%,var(--gold-hi,var(--gold)) 52%,var(--gold) 62%)!important;background-size:260% 100%!important;background-position:100% 0;-webkit-background-clip:text!important;background-clip:text!important;color:transparent!important;-webkit-text-fill-color:transparent}
+:root:root[data-anim="on"] .shine.shine.shine{animation:shine 3.6s ease-in-out infinite!important}
+@keyframes shine{0%,35%{background-position:100% 0}75%,100%{background-position:0 0}}
+.shine small{-webkit-text-fill-color:var(--fg-2)}
+/* 4. chấm đỏ "đang diễn ra" */
+.livedot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--down);margin-right:6px;vertical-align:1px;box-shadow:0 0 0 0 rgb(var(--down-rgb) / .55)}
+:root[data-anim="on"] .livedot{animation:livep 1.6s ease-out infinite}
+@keyframes livep{0%{box-shadow:0 0 0 0 rgb(var(--down-rgb) / .6)}70%{box-shadow:0 0 0 7px rgb(var(--down-rgb) / 0)}100%{box-shadow:0 0 0 0 rgb(var(--down-rgb) / 0)}}
+/* 5. thanh tab: vạch sáng trên tab đang mở, nút giữa phát sáng nhịp thở */
+.nav button[aria-current="page"]:not(.fab){background:transparent!important}
+.nav button[aria-current="page"]:not(.fab)::before{content:"";position:absolute;top:3px;left:50%;width:20px;height:3px;border-radius:2px;background:var(--gold);box-shadow:0 0 8px rgb(var(--acc-rgb) / .8);transform:translateX(-50%)}
+:root[data-anim="on"] .nav .fabc{animation:fabglow 2.6s ease-in-out infinite!important}
+@keyframes fabglow{0%,100%{filter:drop-shadow(0 0 0 rgb(var(--acc-rgb) / 0))}50%{filter:drop-shadow(0 0 12px rgb(var(--acc-rgb) / .75))}}
+/* 6. thanh tiến độ cam → hồng */
+.prog i{background:linear-gradient(90deg,var(--gold-lo,var(--gold)),var(--gold-hi,var(--gold)) 55%,#e0336e)!important}
+/* 7. chấm phân trang ảnh dạng viên thuốc */
+.hdots i{transition:width .3s cubic-bezier(.2,1.2,.4,1),background .3s}
+.hdots i.on{width:16px;border-radius:3px;background:var(--gold)}
+/* 8. vạch nhấn bên trái của thẻ thông tin */
+.banner{box-shadow:inset 3px 0 0 rgb(var(--acc-rgb) / .75)}
+.banner.pain{box-shadow:inset 3px 0 0 var(--down)}
 </style>
 </head>
 <body>
@@ -2385,7 +2426,7 @@ function wpBanner() {
 function painBanner() {
   const A = activePains(); if (!A.length) return '';
   const serious = A.some(p => p.level >= 3 || daysBetween(p.since, ymd()) >= 14);
-  return `<div class="banner pain"><span class="bi">${ICON.alert}</span><div><b>Đang đau: ${A.map(p => esc(p.area) + ' · ' + PAIN_LV[p.level].t.toLowerCase()).join(', ')}</b><p>${serious ? 'Đau nặng hoặc kéo dài từ 2 tuần trở lên: nên đi khám bác sĩ hoặc chuyên viên vật lý trị liệu trước khi tập lại vùng này.' : 'App đã giảm tạ hoặc bỏ các bài liên quan. Bấm “Đã hết đau” khi khỏi để quay lại từ từ.'}</p><button class="btn sm" data-act="pain">Cập nhật</button></div></div>`;
+  return `<div class="banner pain beam"><span class="bi">${ICON.alert}</span><div><b>Đang đau: ${A.map(p => esc(p.area) + ' · ' + PAIN_LV[p.level].t.toLowerCase()).join(', ')}</b><p>${serious ? 'Đau nặng hoặc kéo dài từ 2 tuần trở lên: nên đi khám bác sĩ hoặc chuyên viên vật lý trị liệu trước khi tập lại vùng này.' : 'App đã giảm tạ hoặc bỏ các bài liên quan. Bấm “Đã hết đau” khi khỏi để quay lại từ từ.'}</p><button class="btn sm" data-act="pain">Cập nhật</button></div></div>`;
 }
 function backupBanner() {
   if (Cloud.ok) return '';
@@ -2427,7 +2468,7 @@ function viewToday() {
   const missed = started && yId && findDay(yId) && !state.sessions.some(s => s.date === y) ? `<div class="meta miss">Hôm qua lỡ buổi ${esc(findDay(yId).name)}</div>` : '';
   const alt = ent && rc.best && rc.best.d.id !== nid && ent.rd < 0.66 && rc.best.rd >= 0.9
     ? `<div class="warnline">Nhóm cơ chính chưa phục hồi đủ.<button class="btn sm" data-act="pick-day" data-id="${rc.best.d.id}">Đổi sang ${esc(rc.best.d.name)}</button></div>` : '';
-  h += `<section class="hero glow"><div class="eyebrow">${eyebrow}</div><div class="h1">${esc(nd.name)}</div>
+  h += `<section class="hero glow tix"><div class="eyebrow">${eyebrow}</div><div class="h1">${esc(nd.name)}</div>
     <div class="meta">${pSkip.length ? runEx.length + '/' : ''}${nd.exercises.length} bài · ${runEx.reduce((x, e) => x + e.sets, 0)} set · <span class="etm">${minTxt(dayEst(runEx))}</span> · ${l ? 'lần cuối ' + ago(l.date) : 'chưa tập lần nào'}</div>${missed}${painLine}
     ${ent ? `<div class="why">${dayWhy(ent, rc.last)}</div>` : ''}${alt}<ul>`;
   nd.exercises.slice(0, 4).forEach(ex => { const sg = suggest(ex);
@@ -2793,8 +2834,8 @@ function thumbHtml(ex) {
   return id ? `<img class="thumb" data-photo="${id}" alt="">` : ex.gid ? `<span class="thumb" style="position:relative;overflow:hidden;background:#fff">${ICON.cam}<img data-photo="exdb:${ex.gid}:0" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></span>` : `<span class="thumb">${ICON.cam}</span>`;
 }
 function viewSession(a) {
-  let h = `<section class="sbar"><div class="sbar-top"><div><div class="eyebrow">Đang tập · ${DOW[parseYmd(a.date).getDay()]} ${dm(a.date)}${a.deload ? ' · deload' : ''}</div><div class="h1">${esc(a.dayName)}</div></div>
-    <div class="elapsed" id="elapsed">${fmtDur(durOf(a))}</div></div><div class="prog"><i id="prog-bar"></i></div><div class="prog-l" id="prog-l"></div><div class="exnav" id="exnav">${exNavHtml()}</div></section>`;
+  let h = `<section class="sbar"><div class="sbar-top"><div><div class="eyebrow"><span class="livedot"></span>Đang tập · ${DOW[parseYmd(a.date).getDay()]} ${dm(a.date)}${a.deload ? ' · deload' : ''}</div><div class="h1">${esc(a.dayName)}</div></div>
+    <div class="elapsed shine" id="elapsed">${fmtDur(durOf(a))}</div></div><div class="prog"><i id="prog-bar"></i></div><div class="prog-l" id="prog-l"></div><div class="exnav" id="exnav">${exNavHtml()}</div></section>`;
   a.entries.forEach((en, i) => { h += entryCard(en, i); });
   h += `<div class="sess-actions"><button class="btn" data-act="add-ex-session">${ICON.plus} Thêm bài</button><button class="btn gold big" data-act="finish">Kết thúc buổi tập</button><button class="btn ghost" data-act="pain">Báo đau / chấn thương</button><button class="btn ghost" data-act="cancel-session">Huỷ buổi này</button></div>`;
   return h;
@@ -2955,11 +2996,11 @@ function entryCard(en, i) {
   const a = state.active, fi = focusIdx(), ex = exOrSnap(en);
   if (i !== fi) return entryMini(en, i, ex, entryDone(en));
   const sg = suggest(ex), last = workHistory(ex)[0];
-  let h = `<article class="ex focus${ui.arriveEx === en.exId ? ' arrive' : ''}" data-i="${i}">${exHero(ex, i, a ? a.entries.length : 1)}`;
+  let h = `<article class="ex focus beam${ui.arriveEx === en.exId ? ' arrive' : ''}" data-i="${i}">${exHero(ex, i, a ? a.entries.length : 1)}`;
   const thumb = '';
   const tReps = en.sets[0] ? en.sets[0].reps : sg.reps[0];
   h += `<div class="ex-body"><div class="ex-head">${thumb}<div class="mid"><div class="ex-name">${esc(ex.name)}</div><div class="ex-sub">${esc(ex.muscle)} · ${ex.sets}×${ex.repTarget || 10} · nghỉ ${fmtDur(restOf(ex) * 1000)}</div>${ex.ghost ? '' : `<button type="button" class="gbtn" data-act="guide" data-id="${ex.id}">${GUIDE_ICO} Hướng dẫn & nhóm cơ</button>`}</div></div>${formCueHtml(ex, en, 'l' + i)}
-    <div class="target"><div><div class="tl">${last ? 'Lần trước · ' + dm(last.date) : 'Lần trước'}</div><div class="tv">${last ? `${fmt(wt(last))}<small>${U(ex)} × ${last.sets.filter(x => !x.dr).map(s => s.reps).join('·')}${effList(last.sets).length ? ` <span class="effl">· ${effList(last.sets).join('·')}</span>` : ''}</small>` : '<small>Chưa tập · tự chọn mức tạ</small>'}</div>${sugChip(ex, sg)}</div></div>`;
+    <div class="target"><div><div class="tl">${last ? 'Lần trước · ' + dm(last.date) : 'Lần trước'}</div><div class="tv shine">${last ? `${fmt(wt(last))}<small>${U(ex)} × ${last.sets.filter(x => !x.dr).map(s => s.reps).join('·')}${effList(last.sets).length ? ` <span class="effl">· ${effList(last.sets).join('·')}</span>` : ''}</small>` : '<small>Chưa tập · tự chọn mức tạ</small>'}</div>${sugChip(ex, sg)}</div></div>`;
   if (ex.setup) h += `<details class="setup"><summary>Cách chỉnh máy ›</summary><p>${esc(ex.setup)}</p></details>`;
   if (needsWarm(en, i)) h += `<div class="warm"><div class="warm-h">${ICON.flame} ${warmKind(en, i) === 'feel' ? 'Set làm quen máy' : 'Set khởi động'}<span>không tính vào khối lượng</span></div><div class="warm-sets" id="warm-${i}">${warmInner(en, i)}</div></div>`;
   h += `<div class="sets"><div class="sethead"><span></span><span>${ex.each ? 'Kg mỗi tay' : 'Kg'}</span><span>Rep</span><span></span></div>`;
@@ -3100,6 +3141,19 @@ function cancelPush() {
   pushCall('/cancel', {}).catch(() => {});
 }
 const rest = { end: 0, total: 0, iv: null, hideT: null, fired: true, lastTick: 0 };
+/* ===== PA-20: sao lấp lánh trên thẻ vé (.tix) ===== */
+function tixStars(root) {
+  if (!animOn()) return;
+  (root || document).querySelectorAll('.tix:not([data-st])').forEach(el => {
+    el.dataset.st = '1'; const n = 7;
+    for (let k = 0; k < n; k++) { const s = document.createElement('i'); s.className = 'tstar'; s.setAttribute('aria-hidden', 'true');
+      const x = 8 + Math.random() * 84, y = 6 + Math.random() * 70;
+      s.style.cssText = `--x:${x.toFixed(1)}%;--y:${y.toFixed(1)}%;--s:${(9 + Math.random() * 9).toFixed(1)}px;--d:${(k * 0.45 + Math.random() * 0.6).toFixed(2)}s;--t:${(2.2 + Math.random() * 1.6).toFixed(2)}s`;
+      el.appendChild(s); }
+  });
+}
+try { new MutationObserver(() => tixStars()).observe(document.getElementById('view') || document.body, { childList: true, subtree: true }); } catch (e) {}
+setTimeout(() => tixStars(), 500);
 /* ===== PA-16: nhắc lịch tập, nhắc cuối tuần, tin mới từ Drive (Web Push) ===== */
 const NDOW = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 const nDays = () => Array.isArray(state.settings.nDays) ? state.settings.nDays : [];
@@ -4132,7 +4186,7 @@ function viewCoach() {
   const rows = D.rows.filter(r => r.c), col = p => PCOLORS[p.color % PCOLORS.length];
   const T = rows.reduce((a, r) => ({ n7: a.n7 + r.c.n7, vol7: a.vol7 + r.c.vol7, ups: a.ups + r.c.ups.length, warn: a.warn + ((r.c.gap == null || r.c.gap >= 4) || r.c.pains.length ? 1 : 0) }), { n7: 0, vol7: 0, ups: 0, warn: 0 });
   const today = ymd();
-  h += `<section class="hero glow chero"><div class="eyebrow">${ICON.users} HLV ${esc(co.name)} · ${profiles.list.length} học viên</div>
+  h += `<section class="hero glow chero tix"><div class="eyebrow">${ICON.users} HLV ${esc(co.name)} · ${profiles.list.length} học viên</div>
     <span class="big">${T.n7 ? `Cả đội ${T.n7} buổi / 7 ngày` : 'Cả đội chưa tập tuần này'}</span><div class="sub">${T.warn ? `${T.warn} người cần bạn để ý hôm nay` : 'Mọi người đang tập đều'}</div>
     <div class="pst"><div><span class="k">${fmt(T.vol7 / 1000, 1)}</span><span class="l">tấn tạ 7 ngày</span></div><div><span class="k">${rows.reduce((a, r) => a + r.c.up28, 0)}</span><span class="l">bài đã lên tạ · 4 tuần</span></div><div><span class="k">${rows.filter(r => r.c.wpOk).length}/${rows.length}</span><span class="l">đã duyệt kế hoạch tuần</span></div><div><span class="k">${rows.reduce((a, r) => a + r.c.nMonth, 0)}</span><span class="l">buổi tháng này</span></div></div>
     <div class="act14">${rows.map(r => `<div class="r" style="--pc:${col(r.p)}"><span class="av">${esc(initials(r.p.name))}</span><div class="cells">${r.c.d14.map((n, k) => `<i class="${n ? 'on' : ''} ${k === 13 ? 'td' : ''}" style="--k:${k}"></i>`).join('')}</div></div>`).join('')}
@@ -4161,7 +4215,7 @@ function viewCoach() {
     const pc = col(p);
     if (!c) { h += `<div class="tcard" style="--pc:${pc}"><div class="tt"><div class="ring"><span class="in">${esc(initials(p.name))}</span></div><div><div class="nm">${esc(p.name)}</div><div class="tline">Chưa mở hồ sơ này trên máy.</div></div></div><div class="tact"><button class="btn" data-act="switch-profile" data-id="${p.id}">Mở hồ sơ</button></div></div>`; continue; }
     const goal = p.goal || 5, pct = Math.min(1, c.n7 / goal), mxw = Math.max(1, ...c.wk8);
-    const pill = c.active ? '<span class="spill live">ĐANG TẬP</span>' : c.pains.length ? '<span class="spill warn">ĐANG ĐAU</span>' : c.gap == null ? '<span class="spill ok">CHƯA TẬP</span>' : c.gap >= 4 ? `<span class="spill warn">${c.gap} NGÀY NGHỈ</span>` : '<span class="spill ok">ĐỀU ĐẶN</span>';
+    const pill = c.active ? '<span class="spill live"><span class="livedot"></span>ĐANG TẬP</span>' : c.pains.length ? '<span class="spill warn">ĐANG ĐAU</span>' : c.gap == null ? '<span class="spill ok">CHƯA TẬP</span>' : c.gap >= 4 ? `<span class="spill warn">${c.gap} NGÀY NGHỈ</span>` : '<span class="spill ok">ĐỀU ĐẶN</span>';
     h += `<div class="tcard" style="--pc:${pc}"><div class="tt"><div class="ring"><svg viewBox="0 0 62 62"><circle class="bg" cx="31" cy="31" r="26"/><circle class="fg" cx="31" cy="31" r="26" style="stroke-dashoffset:${(163.4 * (1 - pct)).toFixed(1)}"/></svg><span class="in">${esc(initials(p.name))}</span></div>
       <div style="min-width:0;flex:1"><div class="nm">${esc(p.name)}${pill}</div>${c.wpOk ? `<span class="wpchip">Tuần này: ${esc(c.wpMode)}</span><br>` : ''}<button type="button" class="gl" data-act="goal" data-id="${p.id}">${c.n7}/${goal} buổi trong 7 ngày · đổi mục tiêu</button></div></div>
       <div class="wk8">${c.wk8.map((v, k) => `<i class="${k === 7 ? 'cur' : ''}" style="height:${Math.max(4, v / mxw * 100)}%;--k:${k}"></i>`).join('')}</div><div class="wk8l"><span>8 tuần trước</span><span>tấn tạ mỗi tuần</span><span>tuần này</span></div>
