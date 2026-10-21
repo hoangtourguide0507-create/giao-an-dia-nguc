@@ -1293,6 +1293,13 @@ body.restflash::after{content:"";position:fixed;inset:0;pointer-events:none;z-in
 .eff button[aria-pressed="true"].h{background:#f0a020;border-color:#f0a020;color:#1b1406}
 .eff button[aria-pressed="true"].f{background:var(--down);border-color:var(--down);color:#fff}
 .effl{color:var(--fg-2);font-weight:600}
+
+/* ===== PA-15: đồng bộ Google Drive ===== */
+.drv .st,#drv-st{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;margin:8px 0 0}
+.drv .st i,#drv-st i{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
+#drv-st.ok i,.drv .st.ok i{background:var(--up)} #drv-st.err i,.drv .st.err i{background:var(--down)} #drv-st.busy i,.drv .st.busy i{background:var(--gold)}
+.drv .inp{margin-top:6px}
+.drv .row{margin-top:10px}
 </style>
 </head>
 <body>
@@ -1784,7 +1791,7 @@ const freshState = () => ({ v: 3, days: [], sessions: [], body: [], bodyPhotos: 
 let state = freshState();
 let profiles = { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] };
 const PCOLORS = ['#d9b45b', '#6ea8ff', '#ff86b4', '#5fdc9b', '#c79bff', '#ffa45c'];
-const GLOBAL_KEYS = ['skin', 'notify', 'alertMethod', 'ntfyTopic', 'pushServer', 'pushKey', 'restAlert', 'shortcutName', 'alertV17', 'sfx', 'haptics', 'eff', 'fxOff', 'animOff', 'lastBackupAt', 'lastBackupSess', 'backupSkipAt'];
+const GLOBAL_KEYS = ['skin', 'notify', 'alertMethod', 'ntfyTopic', 'pushServer', 'pushKey', 'restAlert', 'shortcutName', 'alertV17', 'sfx', 'haptics', 'eff', 'drvUrl', 'drvKey', 'fxOff', 'animOff', 'lastBackupAt', 'lastBackupSess', 'backupSkipAt'];
 const stateKey = pid => pid === 'p1' ? 'state' : 'state:' + pid;
 const curProf = () => profiles.list.find(p => p.id === profiles.active) || profiles.list[0];
 const multi = () => profiles.list.length > 1;
@@ -1810,7 +1817,7 @@ function loadState(s) {
   if (!state.settings.skin || OLD_SKINS.has(state.settings.skin) || !SKINS.some(k => k.id === state.settings.skin)) state.settings.skin = 'gold';
 }
 let saveT = null;
-function save() { state.updatedAt = Date.now(); clearTimeout(saveT); saveT = setTimeout(flush, 300); }
+function save() { state.updatedAt = Date.now(); clearTimeout(saveT); saveT = setTimeout(flush, 300); if (!DRV.self) drvSoon(); }
 function flush(now) { clearTimeout(saveT); saveT = null; LDB.put('kv', stateKey(profiles.active), clone(state)); Cloud.sync(now); }
 
 /* ---------- truy vấn ---------- */
@@ -3923,6 +3930,7 @@ function viewMore() {
     <div class="row"><button class="btn sm" data-act="coach-setup">Đổi tên HLV</button><button class="btn sm ghost" data-act="coach-off">Tắt chế độ HLV</button></div>`
     : `<p>Bạn kèm người khác tập? Bật chế độ HLV: bạn là huấn luyện viên, mỗi học viên có giáo án, mức tạ, lịch sử và số đo riêng. Một bảng theo dõi cả nhóm: ai lỡ buổi, ai cần lên tạ, ai đang đau.</p>
     <div class="row"><button class="btn gold" data-act="coach-setup">Bật chế độ HLV</button><button class="btn" data-act="profiles">${ICON.users} Người tập (${profiles.list.length})</button></div>`}</div>
+  ${drvCardHtml()}
   ${syncCardHtml()}
   ${packCard()}
   <div class="card set-card"><h3>Giao diện & Hiệu ứng</h3><div class="skins">${SKINS.map(k => `<button type="button" class="skin" data-act="skin" data-k="${k.id}" data-sk="${k.id}" aria-pressed="${sk === k.id}" style="--sb:${k.bg};--ss:${k.surface};--sa:${k.acc};--sf:${k.fg};--sfont:${k.font};--srad:${k.rad}"><span class="sw"><em></em><i></i><b>Aa 42,5</b><span class="si">${['nTrain', 'nProg', 'nBody'].map(x => iconOf(k.id, x)).join('')}</span></span><span class="sn">${k.name}</span><span class="sd">${k.desc}</span></button>`).join('')}</div>
@@ -4115,7 +4123,7 @@ function viewCoach() {
       <div class="tinfo"><div><b>${c.total}</b><span>tổng buổi · tháng này ${c.nMonth}</span></div><div><b>${c.w ? fmt(c.w.weight) + ' kg' : '—'}</b><span>${c.w ? 'cân nặng · ' + dm(c.w.date) : 'chưa nhập cân nặng'}</span></div>
         <div><b style="${c.ups.length ? 'color:var(--up)' : ''}">${c.ups.length}</b><span>bài cần lên tạ</span></div><div><b>${c.up28}</b><span>bài đã lên tạ · 4 tuần</span></div></div>
       ${c.last ? `<div class="tline">Lần cuối: <b>${esc(c.last.dayName)}</b> · ${ago(c.last.date)} · ${c.lastSt.sets} set · ${tons(c.lastSt.vol)}</div>` : ''}
-      <div class="tact"><button class="btn gold" data-act="switch-profile" data-id="${p.id}">Mở hồ sơ</button><button class="btn" data-act="sync-open" data-id="${p.id}">⇄ Đồng bộ</button></div></div>`;
+      <div class="tact"><button class="btn gold" data-act="switch-profile" data-id="${p.id}">Mở hồ sơ</button><button class="btn" data-act="sync-open" data-id="${p.id}">⇄ Đồng bộ</button><button class="btn" data-act="drv-hv" data-id="${p.id}">☁ Drive</button></div></div>`;
   }
   return h + `</section>`;
 }
@@ -4224,9 +4232,9 @@ async function qrScanSheet(mode) {
         const vw = v.videoWidth, vh = v.videoHeight, side = Math.round(Math.min(vw, vh) * 0.85), sx = (vw - side) / 2, sy = (vh - side) / 2;
         pass = !pass; const w = Math.min(side, pass ? 960 : 480), h = w; cv.width = w; cv.height = h; g.drawImage(v, sx, sy, side, side, 0, 0, w, h);
         const r = jsQR(g.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' });
-        if (r && /^GA[QSP][12]\./.test(r.data)) { const [kind, id, i, n, body] = r.data.split('.'); if (id !== msg) { kindIn = kind; msg = id; for (const k in got) delete got[k]; need = +n; } got[i] = body;
+        if (r && /^GA[QSPL][12]\./.test(r.data)) { const [kind, id, i, n, body] = r.data.split('.'); if (id !== msg) { kindIn = kind; msg = id; for (const k in got) delete got[k]; need = +n; } got[i] = body;
           const have = Object.keys(got).length; $('#qr-st').textContent = need > 1 ? `Đã nhận ${have}/${need} trang…` : 'Đã nhận';
-          if (have >= need) { const body2 = Array.from({ length: need }, (_, k) => got[k + 1]).join(''); qrStop(); if (kindIn === 'GAS2') syncQrReceive2(body2); else if (kindIn === 'GAS1') syncQrReceive(body2); else if (/^GAP/.test(kindIn)) planPreviewSheet(body2); else qrReceive(body2); return; } } }
+          if (have >= need) { const body2 = Array.from({ length: need }, (_, k) => got[k + 1]).join(''); qrStop(); if (kindIn === 'GAL1') drvLinkReceive(body2); else if (kindIn === 'GAS2') syncQrReceive2(body2); else if (kindIn === 'GAS1') syncQrReceive(body2); else if (/^GAP/.test(kindIn)) planPreviewSheet(body2); else qrReceive(body2); return; } } }
       ui.qrRaf = setTimeout(tick, 90);
     };
     $('#qr-st').textContent = 'Giữ mã QR trong khung, cách khoảng 20–30 cm'; tick();
@@ -4628,6 +4636,127 @@ async function syncPreview(pid) {
     ${P.plan && P.role === 'coach' ? '<p class="note-line">Giáo án theo HLV. Lịch sử tập và mức tạ của bạn được giữ.</p>' : ''}
     <div class="sh-actions">${nothing ? '' : '<button class="btn gold big" data-act="sync-apply">Gộp dữ liệu</button>'}<button class="btn ghost" data-act="close-sheet">${nothing ? 'Đóng' : 'Huỷ'}</button></div>`);
 }
+/* ===== PA-15: tự đồng bộ qua thư mục Google Drive (Apps Script làm máy chủ) =====
+   Máy HLV: đọc phía 'hv' (học viên gửi lên) → gộp; gửi phía 'hlv' (giáo án + mọi buổi tập).
+   Máy học viên: đọc phía 'hlv' → gộp; gửi phía 'hv'. Dùng lại đúng cách gộp của đồng bộ QR. */
+const DRV = { busy: false, t: null, last: 0, self: false, st: '', err: '', at: 0 };
+async function drvCall(url, body) {
+  const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 45000);
+  try {
+    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), redirect: 'follow', signal: ctl.signal });
+    if (!r.ok) throw new Error('Máy chủ trả lỗi ' + r.status);
+    let j; try { j = await r.json(); } catch (e) { throw new Error('Link Apps Script chưa đúng hoặc chưa cho "Bất kỳ ai" truy cập'); }
+    if (!j.ok && !j.xungDot) throw new Error(j.loi || 'Máy chủ báo lỗi'); return j;
+  } finally { clearTimeout(to); }
+}
+const drvOkUrl = u => /^https:\/\/script\.google(usercontent)?\.com\/.+\/exec(\?.*)?$/.test(String(u || '').trim());
+const drvCo = () => !!coach() && !!state.settings.drvUrl && !!state.settings.drvKey;
+function drvCred(st) { const D = st && st.drv; if (!D || !D.id) return null; return coach() ? (drvCo() ? { url: state.settings.drvUrl, ma: state.settings.drvKey } : null) : (D.u && D.m ? { url: D.u, ma: D.m } : null); }
+async function drvStore(pid, st) {
+  if (pid === profiles.active) { const g = globalsOf(state); DRV.self = true; loadState(st); Object.assign(state.settings, g); save(); DRV.self = false; }
+  else { st.updatedAt = Date.now(); await LDB.put('kv', stateKey(pid), clone(st)); }
+}
+function drvSetDrv(pid, patch) { return (async () => { if (pid === profiles.active) { state.drv = { ...(state.drv || {}), ...patch }; DRV.self = true; save(); DRV.self = false; return; } const st = await profState(pid); if (!st) return; st.drv = { ...(st.drv || {}), ...patch }; await LDB.put('kv', stateKey(pid), clone(st)); })(); }
+/* ảnh máy tập: mã băm → ảnh trên máy này */
+async function drvLocalPhotos(st) { const m = new Map(); for (const d of st.days || []) for (const e of d.exercises || []) for (const x of [e, ...(e.alts || [])]) for (const id of x.photos || []) { const h = await photoHash(id); if (h && !m.has(h)) m.set(h, id); } return m; }
+const drvPlanHashes = plan => { const out = new Set(); for (const d of plan || []) for (const o of d.e || []) for (const x of [o, ...(o.l || [])]) for (const h of x.ph || []) out.add(h); return out; };
+async function drvPushPhotos(cr, id, pkg, st) {
+  const need = [...drvPlanHashes(pkg.plan)]; if (!need.length) return;
+  const key = 'drvUp:' + cr.url, up = new Set((await LDB.get('kv', key)) || []), ask = need.filter(h => !up.has(h)); if (!ask.length) return;
+  const { thieu } = await drvCall(cr.url, { a: 'anh.co', ma: cr.ma, id, ds: ask }); const loc = await drvLocalPhotos(st);
+  let batch = {}, size = 0;
+  const send = async () => { if (!size) return; await drvCall(cr.url, { a: 'anh.day', ma: cr.ma, id, anh: batch }); batch = {}; size = 0; };
+  for (const h of thieu) { const pid = loc.get(h); if (!pid) continue; const v = await DB.get('photos', pid); if (typeof v !== 'string' || !v.startsWith('data:image/')) continue; if (size + v.length > 4e6) await send(); batch[h] = v; size += v.length; }
+  await send(); ask.forEach(h => up.add(h)); await LDB.put('kv', key, [...up].slice(-3000));
+}
+async function drvPullPhotos(cr, id, P, st) {
+  const need = drvPlanHashes(P.plan); if (!need.size) return; const loc = await drvLocalPhotos(st); let ds = [...need].filter(h => !loc.has(h) && !P.photos[h]);
+  for (let k = 0; k < 6 && ds.length; k++) { const r = await drvCall(cr.url, { a: 'anh.lay', ma: cr.ma, id, ds }); Object.assign(P.photos, r.anh || {}); ds = r.con || []; }
+}
+/* đồng bộ 1 hồ sơ: kéo phía bên kia → gộp → gửi phía mình nếu có thay đổi */
+async function drvSyncOne(pid) {
+  let st = await syncStateOf(pid); const cr = drvCred(st); if (!cr) return null;
+  if (st.active) return { skip: 'active' };
+  const co = !!coach(), D = st.drv, seenK = co ? 'hvSeen' : 'hlvSeen', out = { pid, got: null };
+  const K = await drvCall(cr.url, { a: 'keo', ma: cr.ma, id: D.id, biet: { hv: co ? D.hvSeen || 0 : D.hvRev || 0, hlv: co ? D.hlvRev || 0 : D.hlvSeen || 0 } });
+  const them = co ? K.hv : K.hlv, mine = co ? K.hlv : K.hv;
+  if (them && them.goi && them.rev > (D[seenK] || 0)) {
+    const P = cleanPkg(them.goi);
+    if (P.role === (co ? 'coach' : 'student')) throw new Error('Dữ liệu trên Drive cùng vai với máy này');
+    await drvPullPhotos(cr, D.id, P, st);
+    const res = await syncMerge(st, P, {});
+    for (const [nid, v, h] of res.newPhotos) { await DB.put('photos', nid, v); photoCache.set(nid, v); photoHashCache.set(nid, h); }
+    st = res.st; out.got = res.R;
+  }
+  st.drv = { ...D, [seenK]: them ? them.rev : (D[seenK] || 0), at: Date.now() };
+  await drvStore(pid, st);
+  const { pkg } = await syncPack(pid, { full: true }); pkg.at = 0; const h = strHash(JSON.stringify(pkg)); pkg.at = Date.now();
+  const myRev = mine ? mine.rev : 0;
+  if (h !== D.sentH || myRev !== (co ? D.hlvRev || 0 : D.hvRev || 0)) {
+    await drvPushPhotos(cr, D.id, pkg, st);
+    let r = await drvCall(cr.url, { a: 'day', ma: cr.ma, id: D.id, vai: co ? 'hlv' : 'hv', rev: myRev, goi: pkg });
+    if (r.xungDot) r = await drvCall(cr.url, { a: 'day', ma: cr.ma, id: D.id, vai: co ? 'hlv' : 'hv', rev: r.rev, goi: pkg });
+    await drvSetDrv(pid, { sentH: h, [co ? 'hlvRev' : 'hvRev']: r.rev, at: Date.now() }); out.sent = true;
+  }
+  return out;
+}
+function drvSoon() { clearTimeout(DRV.t); DRV.t = setTimeout(() => drvAuto(), 20000); }
+/* tự chạy: khi mở app, quay lại app, 20 giây sau lần lưu gần nhất. Bỏ qua khi đang mở bảng chọn hoặc đang tập. */
+async function drvAuto(force) {
+  if (DRV.busy || !navigator.onLine) return; if (!force && Date.now() - DRV.last < 15000) return;
+  if (!force && document.querySelector('.sheet:not([hidden])')) { drvSoon(); return; }
+  const pids = coach() ? profiles.list.map(x => x.id) : [profiles.active];
+  DRV.busy = true; DRV.last = Date.now(); DRV.st = 'busy'; drvPaint(); const got = [];
+  try {
+    for (const pid of pids) { const r = await drvSyncOne(pid); if (r && r.got && (r.got.newS || r.got.updS || r.got.kg || r.got.newEx || r.got.updEx || r.got.dropEx)) got.push(r); }
+    DRV.st = 'ok'; DRV.err = ''; DRV.at = Date.now();
+  } catch (e) { DRV.st = 'err'; DRV.err = String(e && e.message || e); }
+  finally { DRV.busy = false; }
+  ui.coachData = null; drvPaint();
+  if (got.length) { render(true); const nm = r => (profiles.list.find(x => x.id === r.pid) || {}).name || '';
+    toast(coach() ? '☁ Drive: ' + got.map(r => `${nm(r)}${r.got.newS ? ` +${r.got.newS} buổi` : ' cập nhật'}`).join(', ') : `☁ Đã nhận từ HLV${got[0].got.newEx || got[0].got.updEx || got[0].got.dropEx ? ': giáo án mới' : ''}${got[0].got.newS ? `, ${got[0].got.newS} buổi tập` : ''}`); }
+  else if (force) toast(DRV.st === 'ok' ? '☁ Đã đồng bộ với Google Drive' : '☁ Chưa đồng bộ được: ' + DRV.err);
+}
+function drvStatusHtml(st) {
+  const D = st && st.drv, k = DRV.st === 'busy' ? 'busy' : DRV.st === 'err' ? 'err' : D && D.at ? 'ok' : '';
+  const t = DRV.st === 'busy' ? 'Đang đồng bộ…' : DRV.st === 'err' ? 'Lỗi: ' + esc(DRV.err) : D && D.at ? 'Đồng bộ lần cuối ' + ago(ymd(new Date(D.at))) + ' lúc ' + hhmm(D.at) : 'Chưa đồng bộ lần nào';
+  return `<div class="st ${k}" id="drv-st"><i></i><span>${t}</span></div>`;
+}
+function drvPaint() { const el = $('#drv-st'); if (el) el.outerHTML = drvStatusHtml(state); }
+function drvCardHtml() {
+  const co = coach(), S = state.settings, D = state.drv;
+  if (co) return `<div class="card set-card drv"><h3>☁ Đồng bộ Google Drive</h3><p>Dán link Ứng dụng web của Apps Script và MÃ HLV (xem Nhật ký thực thi khi chạy hàm caiDat). Sau đó mở từng học viên ở Phòng HLV → <b>☁ Drive</b> để tạo mã liên kết.</p>
+    <label class="f full">Link Ứng dụng web<input class="inp" id="drv-url" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(S.drvUrl || '')}" autocomplete="off" autocapitalize="off"></label>
+    <label class="f full" style="margin-top:8px">MÃ HLV<input class="inp" id="drv-key" placeholder="32 ký tự" value="${esc(S.drvKey || '')}" autocomplete="off" autocapitalize="off"></label>
+    <div class="row"><button class="btn gold" data-act="drv-save">Kiểm tra & lưu</button>${drvCo() ? '<button class="btn" data-act="drv-now">Đồng bộ ngay</button>' : ''}</div>${drvCo() ? `<div class="st ${DRV.st === 'err' ? 'err' : DRV.at ? 'ok' : ''}" id="drv-st"><i></i><span>${DRV.st === 'busy' ? 'Đang đồng bộ…' : DRV.st === 'err' ? 'Lỗi: ' + esc(DRV.err) : DRV.at ? 'Đã đồng bộ lúc ' + hhmm(DRV.at) : 'Tự đồng bộ khi mở app và sau mỗi lần lưu'}</span></div>` : ''}</div>`;
+  if (D && D.id) return `<div class="card set-card drv"><h3>☁ Đồng bộ Google Drive</h3><p>Máy này đã liên kết với HLV qua Google Drive. App tự đồng bộ khi mở app và sau mỗi lần lưu.</p>${drvStatusHtml(state)}
+    <div class="row"><button class="btn gold" data-act="drv-now">Đồng bộ ngay</button><button class="btn ghost" data-act="drv-unlink">Ngắt liên kết</button></div></div>`;
+  return `<div class="card set-card drv"><h3>☁ Đồng bộ Google Drive</h3><p>HLV gửi cho bạn <b>mã liên kết</b> (mã QR hoặc tin nhắn). Quét hoặc dán 1 lần, từ đó giáo án và buổi tập tự đồng bộ.</p>
+    <div class="row"><button class="btn gold" data-act="qr-scan">⌗ Quét mã liên kết</button><button class="btn" data-act="qr-paste">${ICON.paste} Dán mã</button></div></div>`;
+}
+const drvCode = (url, id, ma, name, cn) => 'GAL1.' + Math.random().toString(36).slice(2, 6) + '.1.1.' + b64u(new TextEncoder().encode(JSON.stringify({ u: url, i: id, m: ma, n: name, c: cn || '' })));
+async function drvHvSheet(pid) {
+  const p = profiles.list.find(x => x.id === pid), st = await syncStateOf(pid); if (!p || !st) return; ui.drvPid = pid;
+  if (!drvCo()) { openSheet(`<h3 class="sh-title">Chưa cài Google Drive</h3><p class="sh-text">Vào Cài đặt → <b>Đồng bộ Google Drive</b>, dán link Apps Script và MÃ HLV trước.</p><div class="sh-actions"><button class="btn gold" data-act="tab" data-tab="settings">Mở Cài đặt</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`); return; }
+  const D = st.drv;
+  if (!D || !D.id) { openSheet(`<h3 class="sh-title">Kết nối ${esc(p.name)} với Google Drive</h3><p class="sh-text">App tạo cho ${esc(p.name)} một chỗ lưu riêng trong thư mục Drive của bạn và một <b>mã liên kết</b>. Học viên quét mã 1 lần, từ đó giáo án bạn sửa và buổi tập họ ghi tự đồng bộ hai chiều.</p>
+      <div class="sh-actions"><button class="btn gold big" data-act="drv-new" data-id="${pid}">Tạo mã liên kết</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`); return; }
+  ui.drvCode = drvCode(state.settings.drvUrl, D.id, D.m, p.name, (coach() || {}).name);
+  openSheet(`<h3 class="sh-title">☁ ${esc(p.name)} · Google Drive</h3><p class="sh-text">Học viên mở app → tab Tôi → <b>Quét mã liên kết</b> (hoặc dán mã bạn gửi qua Zalo). Chỉ cần làm 1 lần.</p>
+    <div class="qrbox"><canvas id="qr-c"></canvas><span class="pg" id="qr-pg"></span></div>
+    ${drvStatusHtml(st)}
+    <div class="sh-actions"><button class="btn gold" data-act="drv-copy">${ICON.share} Gửi mã qua Zalo</button><button class="btn" data-act="drv-now" data-id="${pid}">Đồng bộ ngay</button>
+    <button class="btn ghost" data-act="drv-rekey" data-id="${pid}">Cấp mã mới (mã cũ hết hiệu lực)</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>
+    <p class="small muted" style="margin:8px 0 0">Ai có mã này đều xem và ghi được dữ liệu của ${esc(p.name)}. Lộ mã hoặc học viên đổi máy thì bấm Cấp mã mới.</p>`);
+  const c = $('#qr-c'); if (c) drawQR(c, ui.drvCode);
+}
+async function drvLinkReceive(body) {
+  let L; try { L = JSON.parse(new TextDecoder().decode(unb64u(body))); if (!drvOkUrl(L.u) || !L.i || !L.m) throw 0; } catch (e) { toast('Mã liên kết không đọc được'); return; }
+  if (coach()) { toast('Đây là mã cho máy học viên. Máy HLV không cần quét.'); return; }
+  ui.drvIn = L;
+  openSheet(`<h3 class="sh-title">Liên kết Google Drive</h3><p class="sh-text">Liên kết hồ sơ <b>${esc(curProf().name)}</b> trên máy này với dữ liệu <b>${esc(L.n || 'học viên')}</b>${L.c ? ` của HLV <b>${esc(L.c)}</b>` : ''}. Giáo án sẽ theo bản của HLV, lịch sử tập trên máy này được giữ nguyên và gửi lên cho HLV.</p>
+    <div class="sh-actions"><button class="btn gold big" data-act="drv-link">Liên kết & đồng bộ</button><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
+}
 async function syncApply() {
   const P = ui.syncIn, pid = ui.syncTo; if (!P || !pid) return;
   const prev = await syncStateOf(pid) || freshState(); if (prev.active) return;
@@ -4700,7 +4829,7 @@ async function decodeQrImage(file) {
 /* ghép các trang mã: PREFIX.id.i.n.phần */
 function joinQrParts(texts) {
   const groups = {};
-  for (const t of texts) { const m = /^(GA[QSP][12])\.([a-z0-9]+)\.(\d+)\.(\d+)\.(.*)$/.exec(t); if (!m) continue; const k = m[1] + '.' + m[2]; (groups[k] = groups[k] || { kind: m[1], n: +m[4], got: {} }).got[m[3]] = m[5]; }
+  for (const t of texts) { const m = /^(GA[QSPL][12])\.([a-z0-9]+)\.(\d+)\.(\d+)\.(.*)$/.exec(t); if (!m) continue; const k = m[1] + '.' + m[2]; (groups[k] = groups[k] || { kind: m[1], n: +m[4], got: {} }).got[m[3]] = m[5]; }
   const G = Object.values(groups).sort((a, b) => Object.keys(b.got).length - Object.keys(a.got).length)[0]; if (!G) return { ok: false, kind: null, missing: [] };
   const missing = []; for (let i = 1; i <= G.n; i++) if (G.got[i] == null) missing.push(i);
   return { ok: !missing.length, kind: G.kind, n: G.n, missing, body: missing.length ? '' : Array.from({ length: G.n }, (_, i) => G.got[i + 1]).join('') };
@@ -4748,6 +4877,7 @@ async function receiveQrImage(files) {
   if (!J.kind) { toast('Không tìm thấy mã QR trong ảnh đã chọn'); return; }
   if (!J.ok) { toast(`Còn thiếu trang ${J.missing.slice(0, 8).join(', ')}${J.missing.length > 8 ? '…' : ''} trên tổng ${J.n}. Chụp thêm các trang đó rồi chọn lại tất cả ảnh.`); return; }
   if (/^GAP/.test(J.kind)) { await planPreviewSheet(J.body); return; }
+  if (J.kind === 'GAL1') { await drvLinkReceive(J.body); return; }
   if (J.kind === 'GAS2') { await syncQrReceive2(J.body); return; }
   if (J.kind === 'GAS1') { await syncQrReceive(J.body); return; }
   await qrReceive(J.body);
@@ -4769,11 +4899,12 @@ async function handleCodeText(raw) {
   const txt = String(raw || '').trim();
   if (!txt) { toast('Bộ nhớ tạm đang trống · hãy copy tin nhắn chứa mã trước'); return false; }
   qrStop(); clearInterval(ui.qrT);
-  const parts = txt.match(/GA[QSP][12]\.[a-z0-9]+\.\d+\.\d+\.[A-Za-z0-9_-]+/g);
+  const parts = txt.match(/GA[QSPL][12]\.[a-z0-9]+\.\d+\.\d+\.[A-Za-z0-9_-]+/g);
   if (parts && parts.length) {
     const J = joinQrParts(parts);
     if (!J.ok) { toast(`Mã nhiều phần đang thiếu trang ${J.missing.join(', ')}/${J.n}`); return false; }
     if (/^GAP/.test(J.kind)) { await planPreviewSheet(J.body); return true; }
+    if (J.kind === 'GAL1') { await drvLinkReceive(J.body); return true; }
     if (J.kind === 'GAS2') { await syncQrReceive2(J.body); return true; }
     if (J.kind === 'GAS1') { await syncQrReceive(J.body); return true; }
     await qrReceive(J.body); return true;
@@ -5245,6 +5376,23 @@ const handlers = {
   'sync-to': t => syncPreview(t.dataset.id),
   'sync-pick': t => { ui.syncChoices = { ...(ui.syncChoices || {}), [t.dataset.id]: t.dataset.v }; syncPreview(ui.syncTo); },
   'sync-apply': () => syncApply(),
+  'drv-hv': t => drvHvSheet(t.dataset.id),
+  'drv-save': async t => { const u = ($('#drv-url').value || '').trim(), k = ($('#drv-key').value || '').trim();
+    if (!drvOkUrl(u)) { toast('Link phải dạng https://script.google.com/macros/s/…/exec'); return; } if (k.length < 16) { toast('MÃ HLV chưa đúng'); return; }
+    t.disabled = true; try { const r = await drvCall(u, { a: 'ping', ma: k }); if (r.vai !== 'hlv') throw new Error('MÃ HLV không đúng'); state.settings.drvUrl = u; state.settings.drvKey = k; save(); render(true); toast('☁ Đã kết nối Google Drive'); }
+    catch (e) { toast('Không kết nối được: ' + (e && e.message || e)); } t.disabled = false; },
+  'drv-now': async t => { if (t.dataset.id) closeSheet(); await drvAuto(true); render(true); },
+  'drv-new': async t => { const pid = t.dataset.id, p = profiles.list.find(x => x.id === pid); t.disabled = true;
+    try { const r = await drvCall(state.settings.drvUrl, { a: 'tv.them', ma: state.settings.drvKey, ten: p ? p.name : 'Học viên' }); await drvSetDrv(pid, { id: r.id, m: r.ma, hvSeen: 0, hlvRev: 0, sentH: '' }); await drvHvSheet(pid); drvAuto(true); }
+    catch (e) { toast('Không tạo được: ' + (e && e.message || e)); t.disabled = false; } },
+  'drv-rekey': async t => { const pid = t.dataset.id, st = await syncStateOf(pid); if (!st || !st.drv) return;
+    try { const r = await drvCall(state.settings.drvUrl, { a: 'tv.doima', ma: state.settings.drvKey, id: st.drv.id }); await drvSetDrv(pid, { m: r.ma }); await drvHvSheet(pid); toast('Đã cấp mã mới · gửi lại cho học viên'); }
+    catch (e) { toast('Không cấp được: ' + (e && e.message || e)); } },
+  'drv-copy': () => copyOrShareCode(ui.drvCode, 'Mã liên kết Google Drive'),
+  'drv-link': async () => { const L = ui.drvIn; if (!L) return; if (state.active) { toast('Kết thúc buổi tập đang dở rồi liên kết'); return; }
+    state.drv = { u: L.u.trim(), id: L.i, m: L.m, hlvSeen: 0, hvRev: 0, sentH: '' }; DRV.self = true; save(); DRV.self = false; ui.drvIn = null; closeSheet(); render(true);
+    toast('Đang đồng bộ lần đầu…'); await drvAuto(true); render(true); },
+  'drv-unlink': () => confirmSheet({ title: 'Ngắt liên kết Google Drive?', text: 'Dữ liệu trên máy này vẫn giữ nguyên, chỉ ngừng tự đồng bộ. Muốn liên kết lại thì quét mã HLV gửi.', ok: 'Ngắt liên kết', danger: true, onOk: () => { delete state.drv; save(); closeSheet(); render(true); toast('Đã ngắt liên kết Drive'); } }),
   'sync-undo': () => syncUndo(),
   'restore-one-new': () => restoreOneApply(null, true),
   'restore-one-into': t => confirmSheet({ title: `Thay dữ liệu của ${esc((profiles.list.find(x => x.id === t.dataset.id) || {}).name || '')}?`, text: 'Giáo án, buổi tập, số đo của hồ sơ này sẽ được thay bằng dữ liệu trong file. Hồ sơ khác giữ nguyên. Có thể hoàn tác ngay sau đó.', ok: 'Thay dữ liệu', danger: true, onOk: () => restoreOneApply(t.dataset.id, false) }),
@@ -5531,6 +5679,7 @@ document.addEventListener('change', async e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('#viewer').hidden) handlers['viewer-close'](); else if (!$('#sheet').hidden) handlers['close-sheet'](); } });
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'hidden') { if (saveT) flush(true); else Cloud.sync(true); return; }
+  setTimeout(() => drvAuto(), 800);
   if (state.active && ui.tab === 'today') requestWake();
   if (rest.pending || (!rest.fired && rest.end && Date.now() >= rest.end)) { rest.pending = false; if (!rest.fired) tickRest(); else { initAudio(); beep(); showAlarm(); } }
   if (inArtifact && !Cloud.ok && syncStatus === 'retry') { connectCloud(state); return; }
@@ -5555,6 +5704,7 @@ setInterval(() => { const el = $('#elapsed'); if (el && state.active) { el.textC
   LDB.get('kv', 'exdbPack').then(p => { ui.pack = p || false; if (ui.tab === 'today' || ui.tab === 'more') render(true); }).catch(() => { ui.pack = false; });
   connectCloud(saved && Array.isArray(saved.days) ? saved : null);
   if (!location.hash.startsWith('#nhap=')) maybeWeekPlan();
+  setTimeout(() => drvAuto(), 1500);
   if (state.settings.notify && alertMethod() === 'push') currentPushSub().then(() => { if (ui.tab === 'more') render(true); }).catch(() => {});
   const h = location.hash;
   if (h.startsWith('#nhap=')) { const code = decodeURIComponent(h.slice(6)); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} planPreviewSheet(code); }
