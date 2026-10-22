@@ -2819,8 +2819,8 @@ function refreshWarm(i) { const box = $('#warm-' + i); if (box && state.active) 
 function getSet(i, j) { const en = state.active.entries[i]; return j === 'drop' ? en.drop : en.sets[+j]; }
 
 /* ---------- đồng hồ nghỉ ---------- */
-const APP_VERSION = '2026.10.19 · bản 29';
-const PUSH_SERVER = '';
+const APP_VERSION = '2026.10.22 · bản 30';
+const PUSH_SERVER = 'https://gadn-push.hoangtourguide0507.workers.dev'; /* PA-23: máy chủ thông báo dựng sẵn cho cả nhóm */
 const isIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const isStandalone = () => !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
 const pushBase = () => String(state.settings.pushServer || PUSH_SERVER || '').trim().replace(/\/+$/, '');
@@ -2946,7 +2946,7 @@ function notifCardHtml(st) {
     <p class="small muted" style="margin:8px 0 0">${sub ? 'Có máy chủ thông báo: báo đúng giờ kể cả khi khoá màn hình.' : 'Chưa có máy chủ: app báo khi đang mở hoặc vừa chuyển sang app khác. iPhone khoá màn hình sẽ dừng app, lúc đó cần máy chủ thông báo bên dưới.'}</p>
     <details class="wpkeep" ${pushBase() ? 'open' : ''} style="margin-top:12px"><summary>Khi khoá màn hình · nhắc lịch tập · dữ liệu mới từ Drive</summary>
     <p class="small muted" style="margin:8px 0 0">iPhone không cho app web tự chạy khi đã khoá màn hình hay đóng app. Muốn có thông báo lúc đó, điện thoại phải nhận "thông báo đẩy" từ một máy chủ. App dùng máy chủ miễn phí trên Cloudflare, HLV cài 1 lần (<a href="${PUSH_GUIDE}" target="_blank" rel="noopener">hướng dẫn</a>), học viên quét mã liên kết là tự có.</p>
-    <label class="f full" style="margin-top:8px">Máy chủ thông báo<input class="inp" data-bind="setting" data-k="pushServer" placeholder="https://gadn-push.<tên>.workers.dev" value="${esc(S.pushServer || '')}" autocomplete="off" autocapitalize="off"></label>
+    <label class="f full" style="margin-top:8px">Máy chủ thông báo<input class="inp" data-bind="setting" data-k="pushServer" placeholder="${esc(PUSH_SERVER || 'https://gadn-push.<tên>.workers.dev')}" value="${esc(S.pushServer || '')}" autocomplete="off" autocapitalize="off"></label>
     <div class="row" style="margin-top:10px"><button class="btn gold" data-act="push-on">${sub ? 'Đăng ký lại' : 'Kết nối máy chủ'}</button>${sub ? '<button class="btn" data-act="push-try">Gửi thử</button>' : ''}</div>
     <div class="nst ${sub ? 'ok' : ''}"><i></i><span>${sub ? 'Máy này nhận được thông báo đẩy' : 'Chưa kết nối máy chủ'}</span></div>`;
   if (sub) h += `<label class="toggle" style="margin-top:14px"><span>Nhắc lịch tập</span><input type="checkbox" id="n-remind" ${S.nRemind !== false ? 'checked' : ''}></label>
@@ -5652,7 +5652,7 @@ const handlers = {
   'copy-sc': async () => { try { await navigator.clipboard.writeText(scName()); toast('Đã sao chép tên phím tắt'); } catch (e) { toast('Tên phím tắt: ' + scName()); } },
   'push-on': async t => { t.disabled = true; const m = await enablePush(); t.disabled = false; if (m) { toast(m); return; } render(true); toast('🔔 Đã bật thông báo trên máy này'); },
   'push-try': async t => { t.disabled = true; try { await pushTestNow(); toast('Đã gửi · thông báo sẽ hiện trong vài giây'); } catch (e) { toast('Gửi thử không được: ' + (e && e.message || e)); } t.disabled = false; },
-  'notif-allow': async () => { try { const r = await Notification.requestPermission(); if (r === 'granted') { state.settings.notify = true; save(); toast('🔔 Đã bật thông báo'); } else toast('Chưa được phép · vào Cài đặt iPhone → Thông báo → Địa Ngục'); } catch (e) { toast('Máy này chưa hỗ trợ thông báo'); } render(true); },
+  'notif-allow': async () => { try { const r = await Notification.requestPermission(); if (r === 'granted') { state.settings.notify = true; save(); if (pushBase()) await enablePush().catch(() => {}); toast('🔔 Đã bật thông báo'); } else toast('Chưa được phép · vào Cài đặt iPhone → Thông báo → Địa Ngục'); } catch (e) { toast('Máy này chưa hỗ trợ thông báo'); } render(true); },
   'notif-local-test': async () => { try { const reg = await navigator.serviceWorker.getRegistration(); const o = { body: 'Thông báo đã hoạt động 💪', tag: 'test', icon: 'icon-192.png', badge: 'icon-192.png' }; if (reg) await reg.showNotification('Giáo Án Địa Ngục', o); else new Notification('Giáo Án Địa Ngục', o); } catch (e) { toast('Không hiện được thông báo trên máy này'); } },
   'rest-alert': t => { const k = t.dataset.k; if (k === 'off') { cancelPush(); state.settings.notify = false; } else { state.settings.alertMethod = k; state.settings.notify = true; } save(); render(true); },
   'n-day': t => { const d = +t.dataset.d, L = nDays(); state.settings.nDays = L.includes(d) ? L.filter(x => x !== d) : [...L, d].sort(); save(); render(true); pushRegSoon(); },
@@ -5802,7 +5802,11 @@ setInterval(() => { const el = $('#elapsed'); if (el && state.active) { el.textC
   if (!location.hash.startsWith('#nhap=')) maybeWeekPlan();
   setTimeout(() => drvAuto(), 1500);
   setTimeout(() => pushRegister(), 3000);
-  if (state.settings.notify && alertMethod() === 'push') currentPushSub().then(() => { if (ui.tab === 'more') render(true); }).catch(() => {});
+  if (state.settings.notify && alertMethod() === 'push') currentPushSub().then(async sub => {
+    /* PA-23: đã cho phép thông báo mà máy chưa nối máy chủ thì tự nối, không cần dán địa chỉ */
+    if (!sub && pushBase() && pushSupported() && Notification.permission === 'granted') await enablePush().catch(() => {});
+    if (ui.tab === 'more') render(true);
+  }).catch(() => {});
   const h = location.hash;
   if (h.startsWith('#nhap=')) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} oldCode(); }
   if ('serviceWorker' in navigator && location.protocol === 'https:' && document.documentElement.dataset.pwa === '1') { navigator.serviceWorker.register('sw.js').catch(() => {}); }
