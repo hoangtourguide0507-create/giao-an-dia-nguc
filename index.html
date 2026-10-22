@@ -1740,7 +1740,7 @@ function loadState(s) {
   state.settings.skin22 = 1;
 }
 let saveT = null;
-function save() { state.updatedAt = Date.now(); clearTimeout(saveT); saveT = setTimeout(flush, 300); if (!DRV.self) drvSoon(); }
+function save() { state.updatedAt = Date.now(); clearTimeout(saveT); saveT = setTimeout(flush, 300); if (!DRV.self) drvSoon(); if (hubRole() === 'hv') hubFlushSoon(); }
 function flush(now) { clearTimeout(saveT); saveT = null; LDB.put('kv', stateKey(profiles.active), clone(state)); Cloud.sync(now); }
 
 /* ---------- truy vấn ---------- */
@@ -4884,10 +4884,13 @@ const slugName = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace
 /* ---------- PA-34.1 · máy chủ đồng bộ mới: HLV đăng ký bằng QR HLV, thêm học viên bằng thẻ QR vĩnh viễn ----------
    Mã QR HLV (GAH1) chứa địa chỉ máy chủ và khoá HLV; khoá chỉ lưu trên máy này (settings.sync.hk). Thẻ học viên (GAV1)
    có khoá k = HMAC-SHA256(khoá HLV, "gadn-hv:<mã>:<epoch>"), nên HLV tính lại được bất cứ lúc nào, không cần lưu. */
-const hubOn = () => !!(state.settings.sync && state.settings.sync.hk);
+const hubOn = () => !!hubRole();
+/* hlv: máy có khoá HLV · hv: máy học viên đã nối bằng thẻ · '': chưa nối */
+function hubRole() { const sy = state.settings.sync || {}; return sy.hk ? 'hlv' : sy.dk ? 'hv' : ''; }
 async function hubCall(path, body, method) {
   const sy = state.settings.sync || {};
-  const r = await fetch(sy.s + path, { method: method || 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer h.' + sy.hk }, body: method === 'GET' ? undefined : JSON.stringify(body || {}) });
+  const auth = hubRole() === 'hv' ? 'Bearer v.' + sy.i + '.' + sy.dk : 'Bearer h.' + sy.hk;
+  const r = await fetch(sy.s + path, { method: method || 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth }, body: method === 'GET' ? undefined : JSON.stringify(body || {}) });
   return { s: r.status, j: await r.json().catch(() => ({})) };
 }
 async function hubKey(id, epoch) {
@@ -4906,11 +4909,39 @@ async function hubRegister(body) {
 async function hubCode(text) {
   const m = /GA(H1|V1)\.([A-Za-z0-9_-]+)/.exec(String(text || '')); if (!m) return false;
   if (m[1] === 'H1') { await hubRegister(m[2]); return true; }
-  toast('Thẻ này dành cho máy của học viên. Bước nối máy học viên sẽ có ở bản sau.'); return true;
+  if (hubRole() === 'hlv') { toast('Thẻ này dành cho máy của học viên'); return true; }
+  await hubPair(m[2]); return true;
+}
+/* học viên quét thẻ: máy chủ cấp khoá riêng cho máy này; từ đó buổi tập tự gửi lên */
+async function hubPair(body) {
+  let J = null; try { J = JSON.parse(new TextDecoder().decode(unb64u(body))); } catch (e) {}
+  if (!J || !/^https:\/\//.test(J.s || '') || !J.i || !J.k) { toast('Thẻ học viên không đúng'); return false; }
+  const r = await fetch(J.s + '/s/noi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ i: J.i, k: J.k, tb: /iPhone|iPad/.test(navigator.userAgent) ? 'iPhone' : 'Máy học viên' }) });
+  const j = await r.json().catch(() => ({}));
+  if (r.status !== 200) { toast(j.loi || 'Thẻ không đúng hoặc đã bị khoá'); return false; }
+  state.settings.sync = { s: J.s, i: J.i, dk: j.dk, ten: j.ten };
+  save(); closeSheet(); render(true); toast(`Đã nối với HLV · ${j.ten}`); hubFlushSoon(); return true;
+}
+/* gửi các buổi đã tập chưa gửi (hoặc đã sửa sau lần gửi trước); buổi đang tập dở không gửi. Trạng thái trong state.sync.sent */
+const hubRev = s => s.finishedAt || s.startedAt;
+let hubT = 0, hubBusy = false;
+function hubFlushSoon() { clearTimeout(hubT); hubT = setTimeout(hubFlush, 1500); }
+async function hubFlush() {
+  if (hubRole() !== 'hv' || hubBusy || !navigator.onLine) return;
+  state.sync = state.sync || { sent: {} }; const sent = state.sync.sent;
+  const todo = state.sessions.filter(x => x.finishedAt && sent[x.id] !== hubRev(x)).slice(0, 20);
+  if (!todo.length) return;
+  hubBusy = true;
+  try {
+    const r = await hubCall('/s/ghi', { hv: state.settings.sync.i, recs: todo.map(x => ({ k: 'buoi:' + x.id, id: x.id, t: hubRev(x), vai: 'hv', d: JSON.stringify(x) })) });
+    if (r.s === 200) { for (const x of todo) sent[x.id] = hubRev(x); save(); }
+  } catch (e) { /* mất mạng: lần sau thử lại */ } finally { hubBusy = false; }
 }
 function hubCardHtml() {
-  if (!hubOn()) return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đăng ký làm HLV bằng mã QR HLV. Chỉ cần làm một lần.</p>
-    <div class="row"><button class="btn gold" data-act="hub-reg">Quét mã QR HLV</button></div></div>`;
+  if (hubRole() === 'hv') return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã nối với HLV ${esc(state.settings.sync.ten || '')}. Buổi tập đã lưu tự gửi lên máy chủ.</p>
+    <div class="row"><button class="btn ghost" data-act="hub-unlink">Ngắt kết nối trên máy này</button></div></div>`;
+  if (!hubOn()) return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>HLV: quét mã QR HLV để đăng ký (chỉ làm một lần). Học viên: quét thẻ học viên của HLV.</p>
+    <div class="row"><button class="btn gold" data-act="hub-reg">Quét mã QR</button></div></div>`;
   return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã đăng ký làm HLV. Thêm học viên bằng thẻ QR; thẻ dùng được lâu dài.</p>
     <div class="row"><button class="btn gold" data-act="hub-add">Thêm học viên</button><button class="btn" data-act="hub-reg">Quét mã</button><button class="btn ghost" data-act="hub-unlink">Ngắt đăng ký trên máy này</button></div></div>`;
 }
@@ -5357,7 +5388,7 @@ const handlers = {
   'hub-reg': () => qrScanSheet('hub'),
   'hub-add': () => hubAddSheet(),
   'hub-add-go': () => hubAddGo(),
-  'hub-unlink': () => confirmSheet({ title: 'Ngắt đăng ký trên máy này?', text: 'Chỉ xoá khoá HLV trên máy này. Dữ liệu trên máy chủ và các thẻ học viên đã cấp vẫn giữ nguyên.', ok: 'Ngắt', danger: true, onOk: () => { state.settings.sync = {}; save(); render(true); toast('Đã ngắt đăng ký trên máy này'); } }),
+  'hub-unlink': () => confirmSheet({ title: 'Ngắt kết nối trên máy này?', text: 'Chỉ xoá khoá trên máy này. Dữ liệu trên máy chủ vẫn giữ nguyên; quét lại thẻ để nối lại.', ok: 'Ngắt', danger: true, onOk: () => { state.settings.sync = {}; save(); render(true); toast('Đã ngắt kết nối trên máy này'); } }),
   'drv-hv': t => drvHvSheet(t.dataset.id),
   'coach-share': t => drvHvSheet(t.dataset.id),
   'drv-save': async t => { const u = ($('#drv-url').value || '').trim(), k = ($('#drv-key').value || '').trim();
@@ -5627,7 +5658,7 @@ document.addEventListener('change', async e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('#viewer').hidden) handlers['viewer-close'](); else if (!$('#sheet').hidden) handlers['close-sheet'](); } });
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'hidden') { if (saveT) flush(true); else Cloud.sync(true); return; }
-  setTimeout(() => drvAuto(), 800);
+  setTimeout(() => drvAuto(), 800); hubFlushSoon();
   if (state.active && ui.tab === 'today') requestWake();
   if (rest.pending || (!rest.fired && rest.end && Date.now() >= rest.end)) { rest.pending = false; if (!rest.fired) tickRest(); else { initAudio(); beep(); showAlarm(); } }
   if (inArtifact && !Cloud.ok && syncStatus === 'retry') { connectCloud(state); return; }
@@ -5655,6 +5686,7 @@ setInterval(() => { const el = $('#elapsed'); if (el && state.active) { el.textC
   window.addEventListener('hashchange', shareHash);
   shareHash();
   setTimeout(() => drvAuto(), 1500);
+  setTimeout(() => hubFlush(), 1600); window.addEventListener('online', () => hubFlush());
   setTimeout(() => pushRegister(), 3000);
   if (state.settings.notify) currentPushSub().then(async sub => {
     /* PA-23: đã cho phép thông báo mà máy chưa nối máy chủ thì tự nối, không cần dán địa chỉ */

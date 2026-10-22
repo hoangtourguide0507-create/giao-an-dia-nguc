@@ -1,6 +1,7 @@
 // BR-24.1 · BR-24.2 Máy chủ đồng bộ mới (PA-34.1): HLV đăng ký bằng QR HLV, thêm học viên bằng thẻ QR vĩnh viễn.
+import crypto from 'node:crypto';
 import { test, expect, fakeCamera } from '../helpers/fixtures.mjs';
-import { state } from '../helpers/data.mjs';
+import { state, basicPlan, session, TODAY } from '../helpers/data.mjs';
 
 const seedHlv = app => app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0 }] }, states: { p1: state() } });
 /* mã QR HLV như trong ảnh thẻ: GAH1 + JSON {s, k} mã base64url */
@@ -10,6 +11,13 @@ async function registerHlv(app, hub) {
   await fakeCamera(app.page, hubQR(hub));
   await app.click('hub-reg');
   await expect(app.toast()).toContainText('Đã đăng ký làm HLV');
+}
+/* thẻ học viên như HLV tạo trong app: k = HMAC-SHA256(khoá HLV, "gadn-hv:<mã>:0") cắt 32 ký tự; máy chủ chỉ giữ băm của k */
+async function makeCard(hub, id, ten) {
+  const k = crypto.createHmac('sha256', hub.hk).update(`gadn-hv:${id}:0`).digest('base64url').slice(0, 32);
+  const r = await hub.req('/s/tv/them', 'POST', { id, ten, kieu: 'hv', skh: crypto.createHash('sha256').update(k).digest('base64url') }, hub.auth);
+  if (r.s !== 200) throw new Error('them ' + r.s);
+  return { k, code: 'GAV1.' + Buffer.from(JSON.stringify({ s: hub.url, i: id, k })).toString('base64url') };
 }
 /* đọc mã thẻ học viên đang hiện trong bảng và trả về {i, k} */
 async function thẻCode(app) {
@@ -71,4 +79,31 @@ test('BR-24.2 · hai học viên trùng tên → hai thẻ khác mã', async ({ 
   const b = await thẻCode(app);
   expect(a.i).not.toBe(b.i);
   expect(a.k).not.toBe(b.k);
+});
+
+test('BR-24.3 · học viên quét thẻ của HLV → nối máy; máy chủ ghi nhận thêm một máy', async ({ app, hub }) => {
+  const { code } = await makeCard(hub, 'lan-7k3f', 'Lan');
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Lan', color: 0 }] }, states: { p1: state() } });
+  await app.more('drive');
+  await fakeCamera(app.page, code);
+  await app.click('hub-reg');
+  await expect(app.toast()).toContainText('Đã nối với HLV · Lan');
+  expect((await app.state()).settings.sync).toMatchObject({ i: 'lan-7k3f', ten: 'Lan' });
+  const list = await hub.req('/s/tv', 'GET', null, hub.auth);
+  expect(list.j.hv.find(x => x.id === 'lan-7k3f').tb).toHaveLength(1);
+});
+
+test('BR-24.6 · buổi đã tập tự gửi lên máy chủ; buổi đang tập dở không gửi', async ({ app, hub }) => {
+  const { k } = await makeCard(hub, 'lan-7k3f', 'Lan');
+  const dk = (await hub.req('/s/noi', 'POST', { i: 'lan-7k3f', k, tb: 'Máy thử' })).j.dk;
+  const d = basicPlan().days[0];
+  const done = session(d, TODAY, [[d.exercises[0], [[40, 8]]]]);
+  const dang = { ...session(d, TODAY, [[d.exercises[0], [[42, 8]]]]), finishedAt: null };
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Lan', color: 0 }] },
+    states: { p1: state({ days: [d], sessions: [done], active: dang, settings: { sync: { s: hub.url, i: 'lan-7k3f', dk, ten: 'Lan' } } }) } });
+  const doi = () => hub.req('/s/doi?hv=lan-7k3f&since=0', 'GET', null, `Bearer v.lan-7k3f.${dk}`);
+  await expect.poll(async () => (await doi()).j.recs.map(r => r.id), { timeout: 15000 }).toEqual([done.id]);
+  const rec = (await doi()).j.recs[0];
+  expect(JSON.parse(rec.d)).toMatchObject({ id: done.id, dayName: done.dayName });
+  expect(rec).toMatchObject({ k: 'buoi:' + done.id, vai: 'hv' });
 });

@@ -278,8 +278,10 @@ Test: `tests/app/share.spec.mjs`, `tests/app/session.spec.mjs`, `tests/app/progr
 - **BR-23.12 Chưa làm**: chia sẻ ảnh học viên chụp; gửi tự động; chia sẻ nhiều ngày một link; đồng bộ ngược từ PT sang học viên; bật/tắt "Đừng hỏi lại" trong Cài đặt (hiện chỉ đặt từ bảng gợi ý).
 
 ## BR-24 Máy chủ đồng bộ mới (PA-34, đang làm theo bước)
-> Trạng thái: **bước 1 (PA-34.1)** — HLV đăng ký và thêm học viên. Các bước còn lại ghi trong [epics/2026-10-22.md](epics/2026-10-22.md), hạng mục 4.
+> Trạng thái: **bước 1 (PA-34.1)** HLV đăng ký và thêm học viên; **bước 2 (PA-34.2)** học viên nối máy bằng thẻ và buổi tập tự gửi. Các bước còn lại ghi trong [epics/2026-10-22.md](epics/2026-10-22.md), hạng mục 4.
 - **BR-24.1** HLV đăng ký bằng mã QR HLV (`GAH1`): quét bằng camera, dán mã hoặc chọn ảnh. Mã sai hoặc máy chủ không nhận thì báo "Mã HLV không đúng" và không lưu khoá. Khoá chỉ nằm trên máy này. *Test:* `tests/app/hub.spec.mjs`.
 - **BR-24.2** HLV thêm học viên: nhập tên → hiện thẻ QR (`GAV1`) có mã học viên và khoá riêng, cùng ô mã để sao chép. Thẻ dùng được lâu dài; hai học viên trùng tên có hai mã khác nhau. *Test:* `tests/app/hub.spec.mjs`.
+- **BR-24.3** Học viên nối máy: quét thẻ `GAV1` của HLV (camera, dán mã, hoặc ảnh) → máy chủ cấp khoá riêng cho máy này, app ghi nhận và báo "Đã nối với HLV · <tên>". Tối đa 5 máy mỗi học viên (máy thứ 6 đẩy máy cũ nhất). *Test:* `tests/app/hub.spec.mjs`.
+- **BR-24.6** Buổi đã tập tự gửi lên máy chủ sau khoảng 1,5 giây kể từ lúc lưu, và gửi lại khi mở app hoặc có mạng. Buổi đã gửi không gửi lại; buổi đang tập dở không gửi. *Test:* `tests/app/hub.spec.mjs`.
 - Ngắt đăng ký trên máy này chỉ xoá khoá trên máy, không xoá dữ liệu trên máy chủ.
 
