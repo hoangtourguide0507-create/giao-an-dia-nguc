@@ -90,7 +90,8 @@ test('chip gợi ý trong buổi: tuần giảm tải, đang đau; thẻ bài ch
   const dips = ex('Xà kép (Dips)', { currentKg: 0 }), cable = ex('Ép cáp (Cable fly)', { type: 'iso', currentKg: null });
   P.chest.exercises.push(dips, cable);
   const hist = session(P.chest, addDays(TODAY, -8), [[P.bench, [[40, 10], [40, 10], [40, 10]]], [P.push, [[20, 10], [20, 10], [20, 10]]]]);
-  await app.seed({ state: state({ days: P.days, sessions: [hist], settings: { cycleStart: addDays(TODAY, -50) },
+  /* -45 ngày: đang ở tuần deload (tuần 7). Quá 1 tuần deload thì app tự sang chu kỳ mới (PA-28, VD-03) */
+  await app.seed({ state: state({ days: P.days, sessions: [hist], settings: { cycleStart: addDays(TODAY, -45) },
     pains: [{ id: 'p', area: 'Khuỷu tay', level: 1, since: addDays(TODAY, -1), resolvedAt: null }] }) });
   await app.view().locator(`[data-act="pick-day"][data-id="${P.chest.id}"]`).click();
   await app.view().locator('.hero [data-act="start-day"]').click();

@@ -1715,6 +1715,8 @@ const globalsOf = st => { const g = {}; GLOBAL_KEYS.forEach(k => { if (st.settin
 let profT = null;
 function saveProfiles() { clearTimeout(profT); LDB.put('kv', 'profiles', clone(profiles)); if (Cloud.ok && Cloud.meta) Cloud.enqueue(() => Cloud.meta.set({ ...clone(profiles), updatedAt: Date.now() })); }
 async function profState(pid) { if (pid === profiles.active) return state; const x = await LDB.get('kv', stateKey(pid)); return x && Array.isArray(x.days) ? x : null; }
+/* PA-28: video riêng của bài (khoá vid:*) nằm cùng kho photos nhưng không đi theo đồng bộ/sao lưu ảnh nên tách riêng */
+const vidIdsOf = st => (st.days || []).flatMap(d => d.exercises.flatMap(e => [e, ...(e.alts || [])].map(x => x.vid).filter(Boolean)));
 const photoIdsOf = st => [...(st.days || []).flatMap(d => d.exercises.flatMap(e => [...(e.photos || []), ...(e.alts || []).flatMap(a => a.photos || [])])), ...(st.bodyPhotos || []).map(b => b.photoId)];
 function loadState(s) {
   state = { ...freshState(), ...s, settings: { ...freshState().settings, ...(s.settings || {}) } };
@@ -1780,7 +1782,13 @@ function baseKg(ex) { const H = workHistory(ex); if (!H.length || manualOverride
 
 /* ---------- chu kỳ & deload ---------- */
 function cycleInfo() {
-  const st = state.settings.cycleStart; if (!st) return null;
+  let st = state.settings.cycleStart; if (!st) return null;
+  /* PA-28: sau đúng 1 tuần deload mà không bấm "Xong deload" thì tự sang chu kỳ mới: thứ Hai đầu tiên sau tuần deload */
+  const ev = state.settings.deloadEvery || 6;
+  if (daysBetween(st, ymd()) >= (ev + 1) * 7) {
+    while (daysBetween(st, ymd()) >= (ev + 1) * 7) { const d = parseYmd(addDays(st, (ev + 1) * 7)); st = addDays(ymd(d), (7 - ((d.getDay() + 6) % 7)) % 7); }
+    state.settings.cycleStart = st; save();
+  }
   return { week: Math.floor(daysBetween(st, ymd()) / 7) + 1, every: state.settings.deloadEvery || 6 };
 }
 const weekKey = () => weekDaysOf(0)[0];
@@ -4072,6 +4080,8 @@ function profRenameSheet() {
   openSheet(`<h3 class="sh-title">Đổi tên</h3><label class="f full" style="margin-top:12px">Tên<input class="inp" id="f-prename" maxlength="30" value="${esc(curProf().name)}"></label>
     <div class="sh-actions"><button class="btn gold big" data-act="prof-rename-go">Lưu</button><button class="btn ghost" data-act="profiles">Quay lại</button></div>`);
 }
+/* PA-28: video riêng (vid:*) cũng chép thành khoá mới, để xoá bản chép không làm mất video của bản gốc */
+async function cloneVid(key) { if (!key) return null; const b = await LDB.get('photos', key); if (!b) return null; const nk = 'vid:' + uid(); await LDB.put('photos', nk, b); return nk; }
 async function clonePlan(days) {
   const out = [];
   for (const d of days || []) {
@@ -4080,8 +4090,8 @@ async function clonePlan(days) {
       const photos = [];
       for (const pid of e.photos || []) { const v = await DB.get('photos', pid); if (v) { const nid = uid(); await LDB.put('photos', nid, v); photoCache.set(nid, v); photos.push(nid); } }
       const alts = [];
-      for (const a of e.alts || []) { const ph = []; for (const pid of a.photos || []) { const v = await DB.get('photos', pid); if (v) { const nid = uid(); await LDB.put('photos', nid, v); photoCache.set(nid, v); ph.push(nid); } } alts.push({ ...clone(a), id: uid(), photos: ph, currentKg: null, kgSetAt: null, targetKg: null }); }
-      exs.push({ ...clone(e), id: uid(), photos, alts, mainSince: ymd(), currentKg: null, kgSetAt: null, targetKg: null });
+      for (const a of e.alts || []) { const ph = []; for (const pid of a.photos || []) { const v = await DB.get('photos', pid); if (v) { const nid = uid(); await LDB.put('photos', nid, v); photoCache.set(nid, v); ph.push(nid); } } alts.push({ ...clone(a), id: uid(), photos: ph, vid: await cloneVid(a.vid), currentKg: null, kgSetAt: null, targetKg: null }); }
+      exs.push({ ...clone(e), id: uid(), photos, alts, vid: await cloneVid(e.vid), mainSince: ymd(), currentKg: null, kgSetAt: null, targetKg: null });
     }
     out.push({ id: uid(), name: d.name, exercises: exs });
   }
@@ -4793,7 +4803,7 @@ const handlers = {
   'prof-copy-go': async t => {
     const src = await profState($('#f-cfrom').value); if (!src) return;
     const days = await clonePlan(src.days);
-    if (t.dataset.m === 'replace') { state.days.forEach(d => d.exercises.forEach(ex => ex.photos.forEach(id => DB.del('photos', id)))); state.days = days; } else state.days.push(...days);
+    if (t.dataset.m === 'replace') { state.days.forEach(d => d.exercises.forEach(ex => { ex.photos.forEach(id => DB.del('photos', id)); vidIdsOf({ days: [{ exercises: [ex] }] }).forEach(id => LDB.del('photos', id)); })); state.days = days; } else state.days.push(...days);
     if (Cloud.ok) for (const d of days) for (const e of d.exercises) for (const pid of e.photos) { const v = photoCache.get(pid); if (v) Cloud.enqueue(() => Cloud.col('photos').doc(pid).set({ d: v })); }
     save(); closeSheet(); ui.tab = 'plan'; ui.openDay = days[0] && days[0].id; render(); toast(`Đã chép ${days.length} ngày tập. Bấm từng bài để điền mức tạ.`);
   },
@@ -4804,6 +4814,7 @@ const handlers = {
         const st = clone(state), target = profiles.list.find(p => p.id !== victim.id).id;
         await switchProfile(target);
         for (const id of photoIdsOf(st)) { LDB.del('photos', id); photoCache.delete(id); }
+        vidIdsOf(st).forEach(id => LDB.del('photos', id));
         LDB.del('kv', stateKey(victim.id));
         profiles.list = profiles.list.filter(p => p.id !== victim.id); saveProfiles(); render(true); toast(`Đã xoá hồ sơ ${victim.name}`);
       } });
@@ -4883,7 +4894,7 @@ const handlers = {
     save(); closeSheet(); render(true);
   },
   'del-day': t => { const d = findDay(t.dataset.id); confirmSheet({ title: `Xoá ngày “${esc(d.name)}”?`, text: 'Các bài tập và ảnh trong ngày này sẽ bị xoá. Lịch sử các buổi đã tập vẫn được giữ.', ok: 'Xoá ngày tập', danger: true,
-    onOk: () => { d.exercises.forEach(ex => [ex, ...(ex.alts || [])].forEach(e2 => { markDelEx(e2); e2.photos.forEach(id => DB.del('photos', id)); })); state.days = state.days.filter(x => x !== d); save(); render(true); } }); },
+    onOk: () => { d.exercises.forEach(ex => [ex, ...(ex.alts || [])].forEach(e2 => { markDelEx(e2); e2.photos.forEach(id => DB.del('photos', id)); if (e2.vid) LDB.del('photos', e2.vid); })); state.days = state.days.filter(x => x !== d); save(); render(true); } }); },
   'move-day': t => { const i = state.days.findIndex(d => d.id === t.dataset.id), j = i + +t.dataset.d; if (j < 0 || j >= state.days.length) return; [state.days[i], state.days[j]] = [state.days[j], state.days[i]]; save(); render(true); },
   'toggle-day': t => { ui.openDay = ui.openDay === t.dataset.id ? null : t.dataset.id; ui.justOpen = ui.openDay; render(true); },
   'db-setup': () => dbSheet(),
@@ -4962,11 +4973,13 @@ const handlers = {
   },
   'del-ex': () => { const d = ui.draft, cur = findEx(d.id), hasAlts = !d.altOf && cur && (cur.alts || []).length;
     confirmSheet({ title: `Xoá “${esc(d.name)}”?`, text: hasAlts ? `Bài thay thế “${esc(shortName(cur.alts[0].name))}” sẽ lên làm bài chính của ô này. Lịch sử đã tập vẫn được giữ.` : 'Bài tập và ảnh máy sẽ bị xoá khỏi giáo án. Lịch sử đã tập vẫn được giữ.', ok: 'Xoá bài tập', danger: true,
-    onOk: () => { const day = findDay(d.dayId); markDelEx(findEx(d.id));
+    onOk: () => { const day = findDay(d.dayId); const gone = findEx(d.id); markDelEx(gone);
       if (d.altOf) { const m = findEx(d.altOf); m.alts = (m.alts || []).filter(a => a.id !== d.id); }
       else if (hasAlts) { const nm = swapMain(cur, cur.alts[0].id); nm.alts = nm.alts.filter(a => a.id !== d.id); }
       else day.exercises = day.exercises.filter(e => e.id !== d.id);
-      [...d.orig, ...d.added].forEach(id => DB.del('photos', id)); ui.draft = null; syncActive(); save(); render(true); } }); },
+      [...d.orig, ...d.added].forEach(id => DB.del('photos', id));
+      if (gone && gone.vid && !(findEx(d.id) && findEx(d.id).vid === gone.vid)) LDB.del('photos', gone.vid);
+      ui.draft = null; syncActive(); save(); render(true); } }); },
   'pmode': t => { ui.pmode = t.dataset.k; render(true); },
   'period': t => { if (ui.pmode === 'month') ui.monthOff = Math.min(0, (ui.monthOff || 0) + +t.dataset.d); else ui.weekOff = Math.min(0, ui.weekOff + +t.dataset.d); render(true); },
   'allex': () => allExSheet(''),
@@ -5193,7 +5206,10 @@ const handlers = {
     onOk: async () => {
       const ids = [], g = globalsOf(state);
       for (const p of profiles.list) { const st = await profState(p.id); if (st) ids.push(...photoIdsOf(st)); if (p.id !== 'p1') LDB.del('kv', stateKey(p.id)); }
-      await DB.clear('photos', profiles.active === 'p1' ? ids : []); photoCache.clear();
+      /* PA-28: giữ thư viện hình offline (exdb:*) cho khớp khoá exdbPack; xoá phần còn lại (ảnh, video) */
+      for (const k of await LDB.keys('photos')) if (!String(k).startsWith('exdb:')) await LDB.del('photos', k);
+      if (profiles.active === 'p1') ids.forEach(k => Cloud.enqueue(() => Cloud.col('photos').doc(k).delete()));
+      photoCache.clear();
       const wasP1 = profiles.active === 'p1';
       profiles = { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] };
       if (Cloud.ok && !wasP1) Cloud.setProfile('p1');
