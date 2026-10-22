@@ -163,3 +163,15 @@ test('xoá toàn bộ dữ liệu: mọi hồ sơ, ảnh; giữ cài đặt giao
   expect(await app.idb('kv', 'state:p2')).toBeUndefined();
   await expect(app.view()).toContainText('Cuốn sổ tạ trong túi bạn');
 });
+
+test('PA-29 (VD-18): dữ liệu cũ có tốc độ “Thận trọng” / “Tăng theo rep” được chuyển về mặc định đúng một lần', async ({ app }) => {
+  const P = basicPlan();
+  await app.seed({ state: state({ days: P.days, settings: { pace: 'slow', progMode: 'double' } }) });
+  expect((await app.state()).settings).toMatchObject({ pace: 'std', progMode: 'linear', mig29: 1 });
+  /* đã chuyển rồi (có cờ) thì không đụng nữa */
+  await app.seed({ state: state({ days: P.days, settings: { pace: 'slow', progMode: 'double', mig29: 1 } }) });
+  expect((await app.state()).settings).toMatchObject({ pace: 'slow', progMode: 'double' });
+  /* gói đồng bộ cũ không có cờ thì cũng được chuyển */
+  await app.seed({ state: state({ days: P.days, settings: { pace: 'std', progMode: 'linear' } }) });
+  expect((await app.state()).settings).toMatchObject({ pace: 'std', progMode: 'linear', mig29: 1 });
+});

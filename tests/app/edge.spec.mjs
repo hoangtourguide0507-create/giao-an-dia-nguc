@@ -99,8 +99,8 @@ test('chip gợi ý trong buổi: tuần giảm tải, đang đau; thẻ bài ch
   await expect(app.view().locator('article.ex', { hasText: 'Xà kép' })).toContainText('3×10 · tự trọng');
   await expect(app.view().locator('article.ex', { hasText: 'Ép cáp' })).toContainText('chưa có mức tạ');
   await app.page.locator('#exnav [data-i="2"]').click();
-  /* đau nhẹ khuỷu tay: giảm 20% tính trên mức deload (20 → 17,5 → 12,5 kg) */
-  await expect(app.view().locator('article.ex.focus .sugchip')).toHaveText('↓ Gợi ý 12,5kg · đang đau');
+  /* PA-29 (VD-16): deload + đau nhẹ lấy mức giảm thấp hơn (80% của 20 kg = 16 → 15 kg), không nhân dồn (trước đây 12,5 kg) */
+  await expect(app.view().locator('article.ex.focus .sugchip')).toHaveText('↓ Gợi ý 15kg · đang đau');
   /* bài chưa có mức tạ: khởi động nhờ nhập kg */
   await app.page.locator('#exnav [data-i="4"]').click();
   await expect(app.view().locator('#warm-4')).toContainText('Nhập số kg ở một set bên dưới');

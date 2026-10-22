@@ -92,9 +92,9 @@ Lịch sử dùng để gợi ý = các buổi **không deload** của bài. "M�
   4. 3 buổi liền ở W không đạt và không tiến bộ rep → **GIẢM** ~10%.
   5. 2 buổi liền ở W có set dưới rep tối thiểu → **GIẢM** 1 nấc.
   6. Còn lại → **GIỮ** W, mục tiêu mỗi set +1 rep (tối đa rep mục tiêu).
-- **BR-05.3 Tăng theo rep (double progression)** (chỉ còn với dữ liệu cũ đã chọn chế độ này): đạt rep tối đa mọi set 2 buổi liền → tăng 1 nấc (rep về tối thiểu); 1 buổi → SẮP TĂNG; 3 buổi không tăng rep → giảm ~10%; 2 buổi dưới tối thiểu → giảm 1 nấc; còn lại giữ, +1 rep/set.
-- **BR-05.4 Tuần deload** → **DELOAD** ~90% W (làm tròn theo nấc).
-- **BR-05.5 Đau** (BR-08): đau nhẹ → giảm ~20% (làm tròn xuống theo nấc); đau vừa/nặng → **NÊN BỎ**; mới hết đau (≤ 21 ngày, chưa tập lại bài đó) → **QUAY LẠI** ~80%.
+- **BR-05.3 Tăng theo rep (double progression)** (mã vẫn còn nhưng giao diện không có chỗ chọn; dữ liệu cũ đã chọn chế độ này được chuyển về "Tăng theo tuần" một lần — BR-20.1, PA-29): đạt rep tối đa mọi set 2 buổi liền → tăng 1 nấc (rep về tối thiểu); 1 buổi → SẮP TĂNG; 3 buổi không tăng rep → giảm ~10%; 2 buổi dưới tối thiểu → giảm 1 nấc; còn lại giữ, +1 rep/set.
+- **BR-05.4 Tuần deload** → **DELOAD** ~90% W (làm tròn theo nấc), giữ nguyên số set.
+- **BR-05.5 Đau** (BR-08): đau nhẹ → giảm ~20% (làm tròn xuống theo nấc); gặp tuần deload thì lấy mức giảm **thấp hơn** (80% của mức gốc W, nhỏ hơn 90%), không nhân dồn (PA-29, VD-16); đau vừa/nặng → **NÊN BỎ**; mới hết đau (≤ 21 ngày, chưa tập lại bài đó) → **QUAY LẠI** ~80%.
 - **BR-05.6 Kế hoạch tuần đã duyệt** (BR-07) ghi đè mức tạ: nhãn "ĐÃ DUYỆT" / "TĂNG TẠ", ghi rõ "bạn chọn giữ mức cũ" hoặc "bạn tự chỉnh".
 - **BR-05.7** Bài tạ đơn ghi "kg/tay" trong lời gợi ý.
 - **BR-05.8 Lộ trình**: giả định tuần nào cũng đạt; tăng mỗi `need` tuần (Chuẩn 1, Thận trọng 2) 1 nấc; mỗi 6 tuần có 1 tuần deload (90%), tuần sau quay lại; dự kiến tuần đạt mục tiêu (tối đa 156 tuần).
@@ -118,7 +118,7 @@ Test: `tests/app/weekplan.spec.mjs`, `tests/app/profiles.spec.mjs`, `tests/app/e
 - **BR-07.1** Tuần tính từ Thứ Hai. Đầu tuần (đã có giáo án và ≥ 1 buổi, chưa duyệt, chưa "Để sau") app **tự mở** bảng kế hoạch tuần.
 - **BR-07.2 Bước 1 · Tuần trước**: số buổi, set, tấn tạ; số bài đã lên tạ; bài đang chững; nhóm cơ còn thiếu set (< mục tiêu 10 set/tuần).
 - **BR-07.3 Bước 2 · Trọng tâm**: **Cân bằng** · **Ưu tiên** 1 nhóm (Ngực/Lưng/Vai/Chân/Tay có trong giáo án) · **Deload**. Đủ 6 tuần thì gợi ý Deload (mặc định chọn Deload).
-  - Ưu tiên: trong buổi có bài nhóm ưu tiên, các bài nhóm ưu tiên **lên đầu buổi**; ngày có 1–2 bài nhóm ưu tiên thì **thêm 1 bài** cùng nhóm lâu chưa tập (từ bài thay thế hoặc ngày khác). *(Chữ hướng dẫn còn hứa ±1 set — xem VD-05.)*
+  - Ưu tiên: trong buổi có bài nhóm ưu tiên, các bài nhóm ưu tiên **lên đầu buổi**; ngày có 1–2 bài nhóm ưu tiên thì **thêm 1 bài** cùng nhóm lâu chưa tập (từ bài thay thế hoặc ngày khác). Số set của mọi bài luôn giữ nguyên như giáo án (PA-10); chữ hướng dẫn nói đúng như vậy (PA-29, VD-05).
 - **BR-07.4 Bước 3 · Duyệt mức tạ**: liệt kê bài có mức tạ thay đổi (theo gợi ý BR-05) theo ngày; mỗi bài: "✓ Theo" · "Giữ <mức cũ>" · tự chỉnh −/+ theo nấc. Danh sách bài giữ nguyên thu gọn.
 - **BR-07.5 Duyệt**: lưu kế hoạch của tuần (giữ tối đa 12 tuần gần nhất); buổi tập trong tuần dùng mức tạ đã duyệt; thẻ trên Trang chủ "Tuần … · đã duyệt · n bài lên tạ" có "Xem / sửa kế hoạch". "Để sau" hoặc đóng bảng: không tự mở lại trong tuần, banner vẫn mở được.
 
@@ -146,10 +146,10 @@ Test: `tests/app/body.spec.mjs`, `tests/app/home.spec.mjs`
 
 - **BR-10.1** Chọn giới tính (để so mức chuẩn), đổi được.
 - **BR-10.2 Nhập số đo** theo ngày (không chọn ngày tương lai): cân nặng, % mỡ, khối cơ xương, vòng eo, mỡ nội tạng — ít nhất 1 chỉ số. Mỗi ngày tối đa 1 lần đo (trùng ngày thì gộp). Sửa, xoá (bấm 2 lần).
-- **BR-10.3 Lần đo gần nhất**: 4 ô chỉ số + so với lần đo cuối của tháng trước (hoặc lần đầu), đánh giá mức chuẩn: mỡ nam 10–20% / nữ 18–28%; eo nam < 90 / nữ < 80 cm (chuẩn châu Á); mỡ nội tạng < 10.
+- **BR-10.3 Lần đo gần nhất**: 4 ô chỉ số + so với lần đo cuối của tháng trước (hoặc lần đầu), đánh giá mức chuẩn: mỡ nam 10–20% / nữ 18–28%; eo nam < 90 / nữ < 80 cm (chuẩn châu Á); mỡ nội tạng < 10. Dòng **BMI** = cân nặng gần nhất ÷ chiều cao² (chiều cao ở Tài khoản → Chỉ số cơ thể), phân loại theo ngưỡng châu Á: < 18,5 thiếu cân · 18,5–22,9 bình thường · 23–24,9 tiền thừa cân · ≥ 25 thừa cân; chưa có chiều cao hoặc cân nặng thì hiện lời nhắc nhập (PA-29, VD-06).
 - **BR-10.4 Đánh giá thành phần cơ thể** giữa 2 mốc (cần cân nặng + % mỡ): dùng khối cơ xương nếu có, không thì khối nạc; chênh < 0,3 kg coi như không đổi. 9 kết luận: Tăng cơ giảm mỡ · Tăng cơ mỡ giữ · Tăng cả hai (mỡ nhanh hơn / có kiểm soát) · Giảm mỡ giữ cơ · Giảm mỡ mất cơ · Đang mất cơ · Đang tăng mỡ · Ổn định — kèm lời khuyên.
 - **BR-10.5 Biểu đồ**: Cơ & mỡ (2 đường, cần ≥ 2 lần đo có mỡ) · Cân nặng · % mỡ · Vòng eo. Danh sách lần đo (5 gần nhất, "Xem tất cả").
-- **BR-10.6 Ảnh trước/sau**: 3 tư thế (Trước · Nghiêng · Sau); thêm nhiều ảnh (tối đa 24), **tự đọc ngày chụp EXIF** (hoặc ngày sửa file), sửa ngày/tư thế từng ảnh, đặt cùng ngày cho tất cả. Lưới theo tháng × tư thế, ô trống bấm để thêm đúng tháng. So sánh 2 ảnh cùng tư thế bằng thanh kéo, chọn ảnh Trước/Sau, kèm số đo gần ngày chụp (±21 ngày). Xem ảnh: đặt làm Trước/Sau, đổi ngày/tư thế, xoá (bấm 2 lần). ≥ 28 ngày chưa chụp → nhắc.
+- **BR-10.6 Ảnh trước/sau**: 3 tư thế (Trước · Nghiêng · Sau); thêm nhiều ảnh (tối đa 24), **tự đọc ngày chụp EXIF** (hoặc ngày sửa file), sửa ngày/tư thế từng ảnh, đặt cùng ngày cho tất cả. Lưới theo tháng × tư thế, ô trống bấm để thêm đúng tháng. So sánh 2 ảnh cùng tư thế bằng thanh kéo, chọn ảnh Trước/Sau, kèm số đo gần ngày chụp (±21 ngày). Xem ảnh: đặt làm Trước/Sau, đổi ngày/tư thế, xoá (bấm 2 lần). ≥ 28 ngày chưa chụp → nhắc. Ghi chú trên màn hình nói rõ: ảnh body lưu trên máy; khi chạy trong claude.ai mọi ảnh (gồm ảnh body) được đẩy lên tài khoản Claude (PA-29, VD-12).
 
 ## BR-11 Tài khoản & cài đặt cá nhân
 Test: `tests/app/settings.spec.mjs`, `tests/app/misc.spec.mjs`, `tests/app/backup.spec.mjs`
@@ -163,7 +163,7 @@ Test: `tests/app/settings.spec.mjs`, `tests/app/misc.spec.mjs`, `tests/app/backu
 - **BR-11.2 Hiệu ứng** Bật/Tắt (dập ✓, dấu XONG, KỶ LỤC MỚI, chớp viền); tôn trọng "Giảm chuyển động" của hệ điều hành. Âm thanh hiệu ứng, rung phản hồi, chấm độ khó — bật/tắt riêng.
 - **BR-11.3 Nhịp tập**: thời gian mỗi rep Nhanh 2s / **Chuẩn 3s** / Chậm 4s; nhịp nghỉ Nhanh / **Chuẩn** / Nặng (BR-04.1). Ảnh hưởng thời gian dự kiến.
 - **BR-11.4 Lưu ý form** theo từng hồ sơ: **Đầy đủ** (thẻ 3 điểm form đầu bài, thu gọn sau set đầu, mở lại được) · Gọn (1 dòng, bấm mở hướng dẫn) · Tắt.
-- **BR-11.5** Chiều cao (cm) theo hồ sơ. *(Ghi chú nói dùng tính BMI nhưng BMI không hiển thị — VD-06.)*
+- **BR-11.5** Chiều cao (cm) theo hồ sơ, dùng tính BMI ở Tiến độ → Cơ thể (BR-10.3; PA-29, VD-06).
 - **BR-11.6** Thẻ trạng thái lưu trữ khi chạy trong claude.ai (BR-18.4).
 - **BR-11.7 Xoá toàn bộ dữ liệu** (xác nhận): xoá mọi hồ sơ, giáo án, lịch sử, số đo, ảnh; giữ cài đặt dùng chung (giao diện, âm thanh…), về màn chào mừng.
 
@@ -236,7 +236,7 @@ Test: `tests/sw/sw.test.mjs`
 ## BR-20 Tương thích dữ liệu cũ
 Test: `tests/app/misc.spec.mjs`, `tests/app/backup.spec.mjs`, `tests/app/syncfile.spec.mjs`
 
-- **BR-20.1** Mở dữ liệu bản cũ không mất dữ liệu: bổ sung trường thiếu của bài (rep tối thiểu/tối đa/mục tiêu, ảnh, khởi động, mức tạ), chuyển nghỉ mặc định cũ sang "Tự động", đưa mọi bài về 3 set (một lần, PA-10), bật khởi động mọi bài (một lần, PA-11), cách báo cũ (Phím tắt iPhone) → thông báo của app, giao diện cũ → Hổ Phách (một lần, PA-22), sửa trường hỏng (ảnh body, kế hoạch tuần, lịch), suy ra vùng cơ / nhóm cơ / hình minh hoạ từ tên bài, ngày bắt đầu giữ bài chính từ buổi đầu tiên.
+- **BR-20.1** Mở dữ liệu bản cũ không mất dữ liệu: bổ sung trường thiếu của bài (rep tối thiểu/tối đa/mục tiêu, ảnh, khởi động, mức tạ), chuyển nghỉ mặc định cũ sang "Tự động", đưa mọi bài về 3 set (một lần, PA-10), bật khởi động mọi bài (một lần, PA-11), cách báo cũ (Phím tắt iPhone) → thông báo của app, giao diện cũ → Hổ Phách (một lần, PA-22), tốc độ "Thận trọng" / chế độ "Tăng theo rep" → mặc định (một lần, cờ `mig29`, PA-29), sửa trường hỏng (ảnh body, kế hoạch tuần, lịch), suy ra vùng cơ / nhóm cơ / hình minh hoạ từ tên bài, ngày bắt đầu giữ bài chính từ buổi đầu tiên.
 - **BR-20.2** Đọc được mọi định dạng file sao lưu cũ (BR-15.2); mọi định dạng mã gửi cũ được nhận diện và báo rõ là không còn dùng (BR-13.2).
 
 ## BR-21 Tài khoản đăng nhập (HLV và học viên)

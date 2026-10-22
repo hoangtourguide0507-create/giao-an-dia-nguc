@@ -67,7 +67,7 @@ test('giữ mức cũ hoặc tự chỉnh từng bài, đổi chế độ deload
   const a = (await app.state()).active;
   expect(a.focus).toBe('Lưng');
   expect(a.entries.map(e => e.exId)).toEqual([P.lat.id, P.row.id, pull.id, P.curl.id]);
-  /* chữ hướng dẫn hứa +1 set cho nhóm ưu tiên nhưng từ PA-10 số set luôn giữ nguyên (xem điểm chưa ổn) */
+  /* PA-29 (VD-05): số set luôn giữ nguyên, và chữ hướng dẫn nói đúng như vậy */
   expect(a.entries.map(e => e.sets.length)).toEqual([3, 3, 3, 3]);
   /* mở lại kế hoạch đã duyệt để sửa */
   await app.click('cancel-session'); await app.click('confirm-ok');
@@ -132,4 +132,32 @@ test('tổng kết tuần trước ghi số bài đã lên tạ và bài đang c
   await expect(app.sheet()).toContainText('Kế hoạch tuần', { timeout: 3000 });
   await expect(app.sheet().locator('.wpnote').first()).toContainText('1 bài');
   await expect(app.sheet().locator('.wpnote').first()).toContainText('đã lên tạ');
+});
+
+test('PA-29 (VD-05): chữ kế hoạch tuần khớp hành vi — mọi bài giữ nguyên số set, kể cả Ưu tiên và Deload', async ({ app }) => {
+  const { P, st } = setup();
+  await app.seed({ state: st });
+  await expect(app.sheet()).toContainText('Kế hoạch tuần', { timeout: 3000 });
+  await app.sheet().locator('[data-act="wp-mode"][data-k="focus"]').click();
+  await app.sheet().locator('[data-act="wp-focus"][data-k="Lưng"]').click();
+  const f = await app.sheet().locator('.wpfocus + .wpnote').textContent();
+  expect(f).not.toMatch(/\+1 set|−1 set/);
+  expect(f).toContain('giữ nguyên số set');
+  await app.sheet().locator('[data-act="wp-mode"][data-k="deload"]').click();
+  const d = await app.sheet().locator('.wpmode ~ .wpnote').first().textContent();
+  expect(d).not.toContain('giảm một nửa');
+  expect(d).toContain('giữ nguyên số set');
+  /* bảng duyệt: mỗi dòng hiện đủ 3×10, không còn 2×10 */
+  const why = await app.sheet().locator('.wprow .why').allTextContents();
+  expect(why.length).toBeGreaterThan(0);
+  for (const w of why) expect(w).toMatch(/^3×10/);
+  expect(P.bench.sets).toBe(3);
+});
+
+test('PA-29 (VD-05): gợi ý và banner tuần deload không hứa giảm nửa số set', async ({ app }) => {
+  const { st } = setup({ settings: { cycleStart: addDays(TODAY, -50) }, wpSkip: MONDAY });
+  await app.seed({ state: st });
+  await app.tab('home');
+  await expect(app.view()).toContainText('Tuần deload');
+  expect(await app.view().textContent()).not.toContain('một nửa số set');
 });

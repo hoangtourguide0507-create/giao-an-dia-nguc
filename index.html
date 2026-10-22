@@ -871,6 +871,10 @@ li.slot>.exr{border-top:0}
 .btile.empty .tv{color:var(--muted)}
 .bvis{margin-top:10px;font-size:13.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .bvis .badge{padding:2px 7px;font-size:10.5px}
+/* ===== PA-29: dòng BMI trong Tiến độ → Cơ thể ===== */
+.bmi{margin-top:10px;font-size:13.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.bmi .badge{padding:2px 7px;font-size:10.5px}
+.bmi .link{color:var(--gold)}
 .bverd{margin-top:12px;padding:12px 14px;border-radius:calc(var(--r) - 4px);border:1px solid var(--line);background:var(--surface-2)}
 .bverd .vt{font-size:13px;color:var(--fg-2)} .bverd .vt b{color:var(--fg);font-size:15px}
 .bverd .vl{font-size:14px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
@@ -1724,7 +1728,7 @@ function loadState(s) {
   if (!Array.isArray(state.pains)) state.pains = [];
   if (!state.weekPlans || typeof state.weekPlans !== 'object') state.weekPlans = {};
   if (!state.settings.schedule || typeof state.settings.schedule !== 'object') state.settings.schedule = {};
-  sets3(state); warmAll(state);
+  sets3(state); warmAll(state); mig29(state);
   if (state.settings.alertMethod !== 'push') state.settings.alertMethod = 'push';
   /* PA-22: chỉ còn Hổ Phách và Đen Tuyền; lần đầu chuyển mọi người sang Hổ Phách */
   if (!state.settings.skin22 || !SKINS.some(k => k.id === state.settings.skin)) { state.settings.skin = 'amber'; state.settings.skin22 = 1; }
@@ -1800,8 +1804,8 @@ function suggestBase(ex) {
       text: `Chọn mức tạ làm được <strong>${tgt} rep</strong> mà vẫn còn dư 2–3 rep, hoặc điền “Mức tạ đang tập” trong Giáo án.` };
   }
   const W = wt(H[0]);
-  if (isDeload()) { const kg = roundStep(W * 0.9, ex.step); return { kind: 'deload', label: 'DELOAD', kg, reps: fill(tgt),
-    text: `Tuần deload: <strong>${fmt(kg)} kg</strong>, chỉ tập khoảng một nửa số set. Tuần sau quay lại ${fmt(W)} kg.` }; }
+  if (isDeload()) { const kg = roundStep(W * 0.9, ex.step); return { kind: 'deload', label: 'DELOAD', kg, base: W, reps: fill(tgt),
+    text: `Tuần deload: <strong>${fmt(kg)} kg</strong>, vẫn giữ nguyên số set. Tuần sau quay lại ${fmt(W)} kg.` }; }
   return state.settings.progMode === 'double' ? suggestDouble(ex, H, W) : suggestLinear(ex, H, W);
 }
 function suggestRaw(ex) { const g = suggestP(ex); return ex && ex.each ? { ...g, text: String(g.text).replace(/ kg\b(?!\/)/g, ' kg/tay') } : g; }
@@ -1813,7 +1817,7 @@ function suggest(ex) {
 }
 function suggestP(ex) {
   const sg = suggestBase(ex), pi = painOf(ex); if (!pi) return sg;
-  const p = pi.p, area = esc(p.area.toLowerCase()), st = ex.step > 0 ? ex.step : 1, low = sg.kg > 0 ? Math.max(0, r2(Math.floor(sg.kg * 0.8 / st + 1e-9) * st)) : sg.kg;
+  const p = pi.p, area = esc(p.area.toLowerCase()), st = ex.step > 0 ? ex.step : 1, ref = sg.kind === 'deload' && sg.base > 0 ? sg.base : sg.kg, low = ref > 0 ? Math.max(0, r2(Math.floor(ref * 0.8 / st + 1e-9) * st)) : sg.kg; /* PA-29: deload + đau lấy mức giảm thấp hơn = min(90%, 80%) của mức gốc = 80% mức gốc, không nhân dồn 0,9×0,8 */
   if (pi.kind === 'return') return { ...sg, kind: 'pain', label: 'QUAY LẠI', kg: low, pain: p,
     text: `Mới hết đau ${area}: buổi đầu quay lại tập khoảng 80%${low > 0 ? ` còn <strong>${fmt(low)} kg</strong>` : ''}, sau đó tăng dần như bình thường. Đau lại thì dừng bài.` };
   if (p.level >= 2) return { ...sg, kind: 'pain', label: 'NÊN BỎ', skip: true, pain: p,
@@ -2004,7 +2008,7 @@ function renderHeader() {
 function deloadBanner() {
   if (!isDeload()) return '';
   const c = cycleInfo();
-  return `<div class="banner"><span class="bi">${ICON.bolt}</span><div><b>Tuần deload</b><p>Bạn đã tập ${c.every} tuần liên tục. Tuần này app gợi ý giảm ~10% tạ và chỉ tập khoảng một nửa số set để cơ phục hồi rồi tăng tiếp.</p>
+  return `<div class="banner"><span class="bi">${ICON.bolt}</span><div><b>Tuần deload</b><p>Bạn đã tập ${c.every} tuần liên tục. Tuần này app gợi ý giảm ~10% tạ (số set giữ nguyên) để cơ phục hồi rồi tăng tiếp.</p>
     <button class="btn sm" data-act="deload-done">Xong deload, bắt đầu chu kỳ mới</button></div></div>`;
 }
 function recoveryHint() {
@@ -3540,6 +3544,14 @@ function bodyVerdict(B) {
   const sg = x => (x > 0 ? '+' : x < 0 ? '−' : '±') + fmt(Math.abs(x), 1);
   return { t: v[0], cls: v[1], tip: v[2], from: ref.date, to: cur.date, dF, dM, useSmm, line: `${useSmm ? 'Cơ xương' : 'Khối nạc'} ${sg(dM)} kg · Mỡ ${sg(dF)} kg` };
 }
+/* PA-29 (VD-06): BMI = cân nặng gần nhất / chiều cao² ; ngưỡng châu Á–Thái Bình Dương (WHO 2004): <18,5 · 18,5–22,9 · 23–24,9 · ≥25 */
+function bmiLine(B) {
+  const hc = +state.settings.height, w = [...B].reverse().find(e => e.weight != null);
+  if (!(hc >= 100 && hc <= 250)) return `<div class="bmi small muted">BMI: <button type="button" class="link" data-act="more-sec" data-k="height">Nhập chiều cao</button> để app tính.</div>`;
+  if (!w) return `<div class="bmi small muted">BMI: Nhập cân nặng ở một lần đo để app tính.</div>`;
+  const v = w.weight / ((hc / 100) ** 2), r = v < 18.5 ? ['Thiếu cân', 'almost'] : v < 23 ? ['Bình thường', 'up'] : v < 25 ? ['Tiền thừa cân', 'almost'] : ['Thừa cân', 'down'];
+  return `<div class="bmi">BMI <b>${fmt(v, 1)}</b> <span class="badge ${r[1]}">${r[0]}</span> <span class="muted small">· ${fmt(w.weight)} kg, cao ${fmt(hc, 0)} cm</span></div>`;
+}
 function viewBody() {
   const B = bodySorted();
   let h = `<section class="sec"><div class="sec-head"><h2 class="h1">Tiến độ</h2><button class="btn sm gold" data-act="body-add">+ Số đo</button></div>${progTabs()}`;
@@ -3563,6 +3575,7 @@ function viewBody() {
   h += `</div>`;
   const vis = B.filter(e => e.visceral != null).pop();
   if (vis) { const rg = bRange('visceral', vis.visceral); h += `<div class="bvis">Mỡ nội tạng <b>${fmt(vis.visceral, 0)}</b> <span class="badge ${rg[1]}">${rg[0]}</span> <span class="muted small">· nên dưới 10</span></div>`; }
+  h += bmiLine(B);
   const V = bodyVerdict(B);
   if (V) h += `<div class="bverd ${V.cls}"><div class="vt">${monLbl(V.from)} → ${monLbl(V.to)} · <b>${V.t}</b></div><div class="vl">${V.line}</div><div class="vp">${V.tip}</div></div>`;
   else h += `<p class="note-line">Nhập cân nặng và tỉ lệ mỡ ở 2 lần đo trở lên để app đánh giá tăng cơ hay tăng mỡ.</p>`;
@@ -3592,7 +3605,7 @@ function viewBodyPhotos() {
   const last = all.length ? all[all.length - 1].date : null, gap = last ? daysBetween(last, ymd()) : null;
   let h = `<section class="sec"><div class="sec-head"><h2 class="h">Ảnh trước / sau</h2><label class="btn sm gold" for="bp-in">${ICON.cam} Thêm ảnh</label></div>
     <input type="file" id="bp-in" accept="image/*" multiple hidden>`;
-  if (!all.length) return h + `<div class="empty">Mỗi tháng chụp 3 tư thế (trước, nghiêng, sau), cùng chỗ đứng, cùng ánh sáng, buổi sáng trước khi ăn.<br><br>Ảnh cũ từ năm trước: bấm “Thêm ảnh”, chọn nhiều ảnh một lúc, app tự đọc ngày chụp và cho bạn sửa lại tháng.</div><p class="note-line">Ảnh body chỉ lưu trên máy này, không gửi kèm khi chia sẻ giáo án.</p></section>`;
+  if (!all.length) return h + `<div class="empty">Mỗi tháng chụp 3 tư thế (trước, nghiêng, sau), cùng chỗ đứng, cùng ánh sáng, buổi sáng trước khi ăn.<br><br>Ảnh cũ từ năm trước: bấm “Thêm ảnh”, chọn nhiều ảnh một lúc, app tự đọc ngày chụp và cho bạn sửa lại tháng.</div><p class="note-line">Ảnh body lưu trên máy này. Khi chạy trong claude.ai, mọi ảnh (gồm ảnh body) được đẩy lên tài khoản Claude của bạn.</p></section>`;
   if (gap != null && gap >= 28) h += `<div class="banner"><span class="bi">${ICON.cal}</span><div><b>Đã ${gap} ngày chưa chụp</b><p>Chụp ảnh tháng ${+ymd().slice(5, 7)} để so với tháng trước.</p></div></div>`;
   // so sánh
   h += `<div class="card bcmp"><div class="chips" role="group" aria-label="Tư thế" style="margin-bottom:10px">${POSES.map(p => `<button type="button" data-act="pose" data-k="${p}" aria-pressed="${ui.pose === p}">${p} · ${all.filter(x => x.pose === p).length}</button>`).join('')}</div>`;
@@ -3625,7 +3638,7 @@ function viewBodyPhotos() {
     }
     h += `</div>`;
   }
-  h += `</div><p class="note-line">Bấm ô trống để thêm ảnh cho đúng tháng. Bấm ảnh để xem, đặt làm ảnh so sánh, đổi ngày hoặc xoá. Ảnh body chỉ lưu trên máy này.</p></section>`;
+  h += `</div><p class="note-line">Bấm ô trống để thêm ảnh cho đúng tháng. Bấm ảnh để xem, đặt làm ảnh so sánh, đổi ngày hoặc xoá. Ảnh body lưu trên máy này; khi chạy trong claude.ai, ảnh được đẩy lên tài khoản Claude của bạn.</p></section>`;
   return h;
 }
 function setCompare(v) {
@@ -3822,7 +3835,8 @@ function withState(st, fn) { const keep = state; state = st; try { return fn(); 
 /* PA-10: đổi mọi bài về 3 set (1 lần cho mỗi hồ sơ) */
 function sets3(st) { if (!st || !st.settings || st.settings.sets3) return st; for (const d of st.days || []) for (const e of d.exercises || []) { e.sets = 3; for (const a2 of e.alts || []) a2.sets = 3; } st.settings.sets3 = 1; return st; }
 function warmAll(st) { if (!st || !st.settings || st.settings.warmAll) return st; for (const d of st.days || []) for (const e of d.exercises || []) { e.warmup = true; for (const a2 of e.alts || []) a2.warmup = true; } st.settings.warmAll = 1; return st; }
-function normState(raw) { return raw ? warmAll(sets3({ ...freshState(), ...raw, pains: raw.pains || [], settings: { ...freshState().settings, ...(raw.settings || {}) } })) : null; }
+function mig29(st) { if (!st || !st.settings || st.settings.mig29) return st; if (st.settings.pace === 'slow') st.settings.pace = 'std'; if (st.settings.progMode === 'double') st.settings.progMode = 'linear'; st.settings.mig29 = 1; return st; } /* PA-29: giao diện không còn chỗ chọn Thận trọng / Tăng theo rep → dữ liệu cũ về mặc định, một lần */
+function normState(raw) { return raw ? mig29(warmAll(sets3({ ...freshState(), ...raw, pains: raw.pains || [], settings: { ...freshState().settings, ...(raw.settings || {}) } }))) : null; }
 function coachData(st) {
   return withState(st, () => {
     const today = ymd(), S = state.sessions, from7 = addDays(today, -6), mon = today.slice(0, 7);
@@ -3935,7 +3949,7 @@ function wpBuild() {
   const D = ui.wpDraft, out = [];
   for (const d of state.days) for (const ex of d.exercises) {
     const g = suggestRaw(ex), b = baseKg(ex);
-    out.push({ d, ex, g, b, sets: g.kind === 'deload' ? Math.max(1, Math.ceil(ex.sets / 2)) : setsFor(ex), need: b != null && g.kg != null && g.kg !== b });
+    out.push({ d, ex, g, b, sets: setsFor(ex), need: b != null && g.kg != null && g.kg !== b });
   }
   return out;
 }
@@ -3955,8 +3969,8 @@ function weekPlanSheet() {
     <div class="wpstep"><i>2</i>Trọng tâm tuần này</div>
     <div class="wpmode">${[['balanced', 'Cân bằng', 'như giáo án'], ['focus', 'Ưu tiên', 'dồn 1 nhóm cơ'], ['deload', 'Deload', 'giảm tạ, hồi phục']].map(([k, l, sub]) => `<button type="button" data-act="wp-mode" data-k="${k}" aria-pressed="${D.mode === k}">${l}<span>${sub}</span></button>`).join('')}</div>
     ${D.mode === 'focus' ? `<div class="qpick wpfocus">${fgs.map(f => `<button type="button" data-act="wp-focus" data-k="${f}" aria-pressed="${D.focus === f}">${f}</button>`).join('')}</div>
-      <div class="wpnote">Kiểu ưu tiên dân thể hình thi đấu hay dùng cho nhóm cơ yếu, chỉ áp dụng tuần này:<br>• Bài <b>${esc(D.focus)}</b> +1 set mỗi bài và luôn tập <b>đầu buổi</b>, lúc còn khỏe.<br>• Ngày nào có dưới 3 bài ${esc(D.focus.toLowerCase())}, app thêm 1 bài lâu chưa tập từ kho để đổi góc.<br>• Nhóm cơ khác −1 set (mức duy trì) để đủ sức hồi phục.<br>${fdays.length ? `Áp dụng cho: <b>${fdays.map(d => esc(d.name)).join(', ')}</b>.` : `<span style="color:var(--down)">Giáo án chưa có bài ${esc(D.focus.toLowerCase())} nào.</span>`}</div>`
-    : D.mode === 'deload' ? `<div class="wpnote">Tuần nhẹ: tạ ~90%, số set giảm một nửa. Cơ, khớp và hệ thần kinh hồi phục để các tuần sau tăng tạ tiếp.${isDeloadCycle() ? ' <b>Đã đủ 6 tuần, nên deload tuần này.</b>' : ''}</div>`
+      <div class="wpnote">Kiểu ưu tiên dân thể hình thi đấu hay dùng cho nhóm cơ yếu, chỉ áp dụng tuần này:<br>• Bài <b>${esc(D.focus)}</b> luôn tập <b>đầu buổi</b>, lúc còn khỏe.<br>• Ngày nào có dưới 3 bài ${esc(D.focus.toLowerCase())}, app thêm 1 bài lâu chưa tập từ kho để đổi góc.<br>• Mọi bài giữ nguyên số set như giáo án (không thêm hay bớt set).<br>${fdays.length ? `Áp dụng cho: <b>${fdays.map(d => esc(d.name)).join(', ')}</b>.` : `<span style="color:var(--down)">Giáo án chưa có bài ${esc(D.focus.toLowerCase())} nào.</span>`}</div>`
+    : D.mode === 'deload' ? `<div class="wpnote">Tuần nhẹ: tạ ~90%, giữ nguyên số set. Cơ, khớp và hệ thần kinh hồi phục để các tuần sau tăng tạ tiếp.${isDeloadCycle() ? ' <b>Đã đủ 6 tuần, nên deload tuần này.</b>' : ''}</div>`
     : `<div class="wpnote">Tập đều theo giáo án, tạ tăng theo tiến độ từng bài.${isDeloadCycle() ? ' <b style="color:var(--gold)">Gợi ý: đã đủ 6 tuần, nên chọn Deload.</b>' : ''}</div>`}
     <div class="wpstep"><i>3</i>Duyệt mức tạ · ${need.length} bài thay đổi</div>`;
   if (!need.length) h += `<div class="wpnote">Tuần này không bài nào đổi mức tạ, cứ giữ và cố tập đủ rep.</div>`;
