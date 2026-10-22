@@ -107,3 +107,31 @@ test('BR-24.6 · buổi đã tập tự gửi lên máy chủ; buổi đang tậ
   expect(JSON.parse(rec.d)).toMatchObject({ id: done.id, dayName: done.dayName });
   expect(rec).toMatchObject({ k: 'buoi:' + done.id, vai: 'hv' });
 });
+
+test('BR-24.4 · HLV thêm học viên → học viên nối máy và tập xong → máy HLV kéo buổi về đúng hồ sơ học viên', async ({ app, hub, device }) => {
+  await seedHlv(app);
+  await registerHlv(app, hub);
+  await app.click('hub-add');
+  await app.page.fill('#hub-ten', 'Lan');
+  await app.click('hub-add-go');
+  const code = await app.page.locator('#hub-code').inputValue();
+  await app.page.keyboard.press('Escape');
+  await app.flushed();
+  const pid = (await app.profiles()).list.find(p => p.name === 'Lan').id;
+
+  const hv = await device();
+  const d = basicPlan().days[0];
+  const done = session(d, TODAY, [[d.exercises[0], [[40, 8]]]]);
+  done.entries[0].name = 'x'.repeat(200);   // máy học viên gửi tên quá dài: máy HLV phải cắt bớt khi nhận
+  await hv.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Lan', color: 0 }] }, states: { p1: state({ days: [d], sessions: [done] }) } });
+  await hv.more('drive');
+  await fakeCamera(hv.page, code);
+  await hv.click('hub-reg');
+  await expect(hv.toast()).toContainText('Đã nối với HLV · Lan');
+
+  await app.page.reload();
+  await expect.poll(async () => (await app.idb('kv', 'state:' + pid))?.sessions?.map(x => x.id), { timeout: 45000 }).toEqual([done.id]);
+  const rec = (await app.idb('kv', 'state:' + pid)).sessions[0];
+  expect(rec).toMatchObject({ dayName: done.dayName, date: TODAY });
+  expect(rec.entries[0].name).toHaveLength(80);
+});

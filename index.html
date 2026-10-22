@@ -4959,7 +4959,44 @@ async function hubAddGo() {
   const skh = b64u(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(k))));
   const r = await hubCall('/s/tv/them', { id, ten, kieu: 'hv', skh });
   if (r.s !== 200) { toast(r.j.loi || 'Không tạo được học viên'); return; }
+  await hubLinkProfile(id, ten);
   hubCardSheet(id, ten, k);
+}
+/* PA-34.3: mỗi học viên trên máy chủ có một hồ sơ trên máy HLV; settings.sync.map = { mã học viên: mã hồ sơ } */
+async function hubLinkProfile(hvId, ten) {
+  const sy = state.settings.sync; sy.map = sy.map || {};
+  if (sy.map[hvId] && profiles.list.some(x => x.id === sy.map[hvId])) return sy.map[hvId];
+  const pid = uid(), st = freshState();
+  st.settings.name = ten;
+  profiles.list.push({ id: pid, name: ten, color: profiles.list.length % PCOLORS.length });
+  await LDB.put('kv', stateKey(pid), clone(st)); saveProfiles();
+  sy.map[hvId] = pid; save(); render(true);
+  return pid;
+}
+/* kéo buổi tập mới của học viên về máy HLV (bản ghi buoi:<mã>, theo số thứ tự seq) và ghi vào đúng hồ sơ */
+let hubPulling = false;
+async function hubPull() {
+  if (hubRole() !== 'hlv' || hubPulling || !navigator.onLine) return;
+  const sy = state.settings.sync; hubPulling = true;
+  try {
+    const r = await hubCall('/s/doi?since=' + (sy.seq || 0), null, 'GET');
+    if (r.s !== 200) return;
+    for (const rec of r.j.recs) if (rec.k.startsWith('buoi:') && sy.map && sy.map[rec.hv]) await hubApplySession(sy.map[rec.hv], rec);
+    if (r.j.seq > (sy.seq || 0)) { sy.seq = r.j.seq; save(); }
+  } catch (e) { /* mất mạng: lần sau kéo tiếp */ } finally { hubPulling = false; }
+}
+/* chỉ nhận bản mới hơn bản đã có; buổi của hồ sơ đang mở được ghi qua state để không bị ghi đè */
+async function hubApplySession(pid, rec) {
+  /* dữ liệu từ máy khác: làm sạch như gói đồng bộ Drive (cleanPkg) trước khi ghi */
+  let s = null; try { s = cleanPkg({ app: 'gadn-sync', role: 'student', sessions: [JSON.parse(rec.d)] }).sessions[0]; } catch (e) {}
+  if (!s) return;
+  const st = pid === profiles.active ? state : await profState(pid); if (!st) return;
+  st.sessions = st.sessions || [];
+  const i = st.sessions.findIndex(x => x.id === s.id);
+  if (i >= 0 && hubRev(st.sessions[i]) >= rec.t) return;
+  if (i >= 0) st.sessions[i] = s; else st.sessions.push(s);
+  if (pid === profiles.active) { save(); render(true); return; }
+  st.updatedAt = Date.now(); await LDB.put('kv', stateKey(pid), clone(st));
 }
 function hubCardSheet(id, ten, k) {
   const code = 'GAV1.' + b64u(new TextEncoder().encode(JSON.stringify({ s: state.settings.sync.s, i: id, k })));
@@ -5658,7 +5695,7 @@ document.addEventListener('change', async e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('#viewer').hidden) handlers['viewer-close'](); else if (!$('#sheet').hidden) handlers['close-sheet'](); } });
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'hidden') { if (saveT) flush(true); else Cloud.sync(true); return; }
-  setTimeout(() => drvAuto(), 800); hubFlushSoon();
+  setTimeout(() => drvAuto(), 800); hubFlushSoon(); hubPull();
   if (state.active && ui.tab === 'today') requestWake();
   if (rest.pending || (!rest.fired && rest.end && Date.now() >= rest.end)) { rest.pending = false; if (!rest.fired) tickRest(); else { initAudio(); beep(); showAlarm(); } }
   if (inArtifact && !Cloud.ok && syncStatus === 'retry') { connectCloud(state); return; }
@@ -5686,7 +5723,8 @@ setInterval(() => { const el = $('#elapsed'); if (el && state.active) { el.textC
   window.addEventListener('hashchange', shareHash);
   shareHash();
   setTimeout(() => drvAuto(), 1500);
-  setTimeout(() => hubFlush(), 1600); window.addEventListener('online', () => hubFlush());
+  setTimeout(() => { hubFlush(); hubPull(); }, 1600); window.addEventListener('online', () => { hubFlush(); hubPull(); });
+  setInterval(() => { if (document.visibilityState === 'visible') hubPull(); }, 20000);
   setTimeout(() => pushRegister(), 3000);
   if (state.settings.notify) currentPushSub().then(async sub => {
     /* PA-23: đã cho phép thông báo mà máy chưa nối máy chủ thì tự nối, không cần dán địa chỉ */

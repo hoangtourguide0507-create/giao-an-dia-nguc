@@ -245,6 +245,7 @@ stateDiagram-v2
 - Gọi máy chủ: `hubCall(path, body, method)` với `Authorization: Bearer h.<hk>`.
 - Kiểm thử: `tests/app/hub.spec.mjs` dùng máy chủ thật `tests/hub_server.mjs` (chạy `push-server/src/index.js`), nối qua fixture `hub`.
 - **PA-34.2**: `hubRole()` = `hlv` (có `settings.sync.hk`) hoặc `hv` (có `settings.sync.dk`, `i`, `ten`). Học viên quét `GAV1` → `hubPair` gọi `POST /s/noi` và lưu `settings.sync`. `hubCall` dùng `Bearer v.<mã>.<khoá máy>` cho học viên.
+- **PA-34.3** (máy HLV): `hubLinkProfile(mã, tên)` tạo hồ sơ cho học viên và ghi `settings.sync.map[mã] = mã hồ sơ`. `hubPull` gọi `GET /s/doi?since=<seq>` (chỉ HV, không `sl:`), đọc `buoi:` có `hv` trong `map`, rồi `hubApplySession` ghi buổi vào hồ sơ (bản mới hơn theo `hubRev`). Hồ sơ đang mở ghi qua `state`, các hồ sơ khác qua `LDB`. `settings.sync.seq` là số thứ tự đã kéo. Kéo khi mở app, khi có mạng, khi quay lại app, và mỗi 20 giây khi app hiện. Buổi nhận về được làm sạch bằng `cleanPkg` trước khi ghi. **Chưa làm**: thông báo đẩy cho HLV (bước 3b).
 - Gửi buổi: `hubFlush` lấy các buổi có `finishedAt` mà `state.sync.sent[id] !== hubRev(buổi)` (`hubRev = finishedAt || startedAt`), gửi tối đa 20 buổi bằng `POST /s/ghi` (`k = buoi:<id>`, `d` là JSON của buổi), rồi đánh dấu đã gửi. Chạy khi `save()` (debounce 1,5 s), khi mở app (1,6 s), khi hiện lại app và khi có mạng (`online`). Lỗi mạng thì giữ nguyên để lần sau thử lại.
 
 ## 8. File sao lưu
