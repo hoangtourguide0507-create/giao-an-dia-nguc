@@ -238,6 +238,13 @@ stateDiagram-v2
 - Chưa có WebSocket theo quyết định của anh (dùng Web Push và hỏi `/s/doi` định kỳ).
 - Kiểm thử: `tests/test_hub_sync.mjs` (49 kiểm tra, PA-33) và `tests/test_hub_pa33b.mjs` (34 kiểm tra: passkey gồm chữ ký thật do khoá P-256 giả lập ký theo DER, ảnh, hạn mức), đều chạy đúng `push-server/src/index.js` với SQLite thật (`node:sqlite`), được gọi trong `bash tests/chay.sh`.
 
+### 7.8 Máy chủ đồng bộ mới trong app (PA-34.1)
+- Mục *Tài khoản & đồng bộ* có thêm thẻ *Máy chủ đồng bộ mới* (`hubCardHtml`). Khoá HLV lưu ở `settings.sync = { s, hk }` (`sync` thuộc `GLOBAL_KEYS`).
+- `hubCode` nhận `GAH1` (đăng ký HLV) từ camera (`qrScanSheet`), ô dán (`handleCodeText`) và ảnh (`receiveQrImage`); `GAV1` trên máy HLV chỉ báo chưa dùng ở đây.
+- Khoá học viên: `k = base64url(HMAC-SHA256(hk, "gadn-hv:<mã>:<epoch>"))[0:32]`, `skh = base64url(SHA-256(k))` gửi lên `/s/tv/them`. `epoch` hiện luôn 0; đổi mã (PA sau) sẽ tăng `epoch`.
+- Gọi máy chủ: `hubCall(path, body, method)` với `Authorization: Bearer h.<hk>`.
+- Kiểm thử: `tests/app/hub.spec.mjs` dùng máy chủ thật `tests/hub_server.mjs` (chạy `push-server/src/index.js`), nối qua fixture `hub`.
+
 ## 8. File sao lưu
 ```js
 // cả máy

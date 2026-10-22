@@ -2,7 +2,7 @@
 import { test as base, expect, devices } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, randomBytes } from 'node:crypto';
 import { saveRaw, instrumentedHtml } from './coverage.mjs';
 import { JPEG_B64, TODAY } from './data.mjs';
 
@@ -89,7 +89,7 @@ class App {
 async function prep(page) {
   if (COVER) await page.route(/\/index\.html$/, route => route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: instrumentedHtml() }));
   await page.clock.install({ time: NOW });
-  await page.route(/^https?:\/\/(?!localhost|script\.google\.com)/, route => {
+  await page.route(/^https?:\/\/(?!localhost|script\.google\.com|gadn-push\.test)/, route => {
     const u = route.request().url();
     if (/fonts\.(googleapis|gstatic)\.com/.test(u)) return route.fulfill({ status: 200, contentType: 'text/css', body: '' });
     if (/raw\.githubusercontent\.com\/.*\.jpg$/.test(u)) return route.fulfill({ status: 200, contentType: 'image/jpeg', body: Buffer.from(JPEG_B64, 'base64') });
@@ -104,14 +104,26 @@ async function prep(page) {
       await route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: await r.text() });
     } catch (e) { await route.abort().catch(() => {}); }
   });
+  /* máy chủ đồng bộ giả (fixture hub): chuyển yêu cầu tới tests/hub_server.mjs đang chạy */
+  await page.route('https://gadn-push.test/**', async route => {
+    if (!currentHub) return route.abort();
+    const rq = route.request(), u = new URL(rq.url());
+    if (rq.method() === 'OPTIONS') return route.fulfill({ status: 204, headers: CORS_HUB });
+    try {
+      const h = rq.headers(), r = await fetch(`http://localhost:${currentHub}${u.pathname}${u.search}`, { method: rq.method(), headers: { 'Content-Type': h['content-type'] || 'application/json', ...(h.authorization ? { Authorization: h.authorization } : {}) }, body: ['GET', 'HEAD'].includes(rq.method()) ? undefined : rq.postDataBuffer() });
+      await route.fulfill({ status: r.status, headers: { ...CORS_HUB, 'Content-Type': r.headers.get('content-type') || 'application/json' }, body: Buffer.from(await r.arrayBuffer()) });
+    } catch (e) { await route.abort().catch(() => {}); }
+  });
   page.on('pageerror', e => { page.__errors = [...(page.__errors || []), e]; });
 }
+const CORS_HUB = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'Content-Type, Authorization', 'access-control-allow-methods': 'GET,POST,PUT,OPTIONS' };
 let currentGas = 0;
 async function finish(page, info) {
   await covSnap(page);
   if ((page.__errors || []).length && info.status === 'passed') throw new Error('Lỗi JS trong trang: ' + page.__errors.map(e => e.message).join(' | '));
 }
 const GAS_URL = 'https://script.google.com/macros/s/AKtest/exec';
+let currentHub = 0;
 
 export const test = base.extend({
   page: async ({ page }, use, info) => { await prep(page); await use(page); await finish(page, info); },
@@ -125,6 +137,16 @@ export const test = base.extend({
     currentGas = port;
     await use({ url: GAS_URL, ma, port, post, props: async () => (await fetch(`http://localhost:${port}/__props`)).json() });
     currentGas = 0; proc.kill();
+  },
+  /* máy chủ đồng bộ giả: chạy tests/hub_server.mjs với một khoá HLV ngẫu nhiên; mỗi test một máy chủ riêng */
+  hub: async ({}, use) => {
+    const port = 21000 + Math.floor(Math.random() * 20000), hk = randomBytes(32).toString('base64url');
+    const proc = spawn(process.execPath, [fileURLToPath(new URL('../hub_server.mjs', import.meta.url)), String(port)], { stdio: ['ignore', 'pipe', 'inherit'], env: { ...process.env, HK: hk } });
+    await new Promise((res, rej) => { proc.stdout.once('data', res); proc.once('error', rej); });
+    currentHub = port;
+    const req = async (path, method = 'GET', body, auth) => { const r = await fetch(`http://localhost:${port}${path}`, { method, headers: { 'Content-Type': 'application/json', ...(auth ? { Authorization: auth } : {}) }, body: body ? JSON.stringify(body) : undefined }); return { s: r.status, j: await r.json().catch(() => ({})) }; };
+    await use({ url: 'https://gadn-push.test', hk, port, req, auth: 'Bearer h.' + hk });
+    currentHub = 0; proc.kill();
   },
   /* thêm một thiết bị (ngữ cảnh trình duyệt riêng, dữ liệu riêng) nối vào máy chủ Drive giả: máy HLV, máy học viên… */
   device: async ({ browser, gas }, use, info) => {

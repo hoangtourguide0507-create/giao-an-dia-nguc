@@ -276,3 +276,10 @@ Test: `tests/app/share.spec.mjs`, `tests/app/session.spec.mjs`, `tests/app/progr
 - **BR-23.10 Chọn ngày trong lịch**: ở Tiến độ → lịch **tháng**, chạm ngày có buổi tập → bảng ngày liệt kê các buổi và nút **Chia sẻ cả ngày này với PT**. Chi tiết buổi cũng có nút **Chia sẻ với PT** (chỉ buổi đó). Lịch tuần không có chạm ngày.
 - **BR-23.11 Gợi ý sau buổi tập** (học viên, chưa bật chế độ HLV): sau "Lưu buổi tập" hiện bảng **Chia sẻ với PT** / **Xong** và ô **Đừng hỏi lại** (lưu theo hồ sơ). Toast lưu buổi không còn nút Hoàn tác ở máy học viên.
 - **BR-23.12 Chưa làm**: chia sẻ ảnh học viên chụp; gửi tự động; chia sẻ nhiều ngày một link; đồng bộ ngược từ PT sang học viên; bật/tắt "Đừng hỏi lại" trong Cài đặt (hiện chỉ đặt từ bảng gợi ý).
+
+## BR-24 Máy chủ đồng bộ mới (PA-34, đang làm theo bước)
+> Trạng thái: **bước 1 (PA-34.1)** — HLV đăng ký và thêm học viên. Các bước còn lại ghi trong [epics/2026-10-22.md](epics/2026-10-22.md), hạng mục 4.
+- **BR-24.1** HLV đăng ký bằng mã QR HLV (`GAH1`): quét bằng camera, dán mã hoặc chọn ảnh. Mã sai hoặc máy chủ không nhận thì báo "Mã HLV không đúng" và không lưu khoá. Khoá chỉ nằm trên máy này. *Test:* `tests/app/hub.spec.mjs`.
+- **BR-24.2** HLV thêm học viên: nhập tên → hiện thẻ QR (`GAV1`) có mã học viên và khoá riêng, cùng ô mã để sao chép. Thẻ dùng được lâu dài; hai học viên trùng tên có hai mã khác nhau. *Test:* `tests/app/hub.spec.mjs`.
+- Ngắt đăng ký trên máy này chỉ xoá khoá trên máy, không xoá dữ liệu trên máy chủ.
+

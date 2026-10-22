@@ -1708,7 +1708,7 @@ const freshState = () => ({ v: 3, days: [], sessions: [], body: [], bodyPhotos: 
 let state = freshState();
 let profiles = { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] };
 const PCOLORS = ['#d9b45b', '#6ea8ff', '#ff86b4', '#5fdc9b', '#c79bff', '#ffa45c'];
-const GLOBAL_KEYS = ['skin', 'notify', 'alertMethod', 'ntfyTopic', 'pushServer', 'pushKey', 'restAlert', 'shortcutName', 'alertV17', 'sfx', 'haptics', 'eff', 'drvUrl', 'drvKey', 'drvSv', 'acc', 'nRemind', 'nDays', 'nTime', 'nWeekly', 'nDrive', 'fxOff', 'animOff', 'lastBackupAt', 'lastBackupSess', 'backupSkipAt'];
+const GLOBAL_KEYS = ['skin', 'notify', 'alertMethod', 'ntfyTopic', 'pushServer', 'pushKey', 'restAlert', 'shortcutName', 'alertV17', 'sfx', 'haptics', 'eff', 'drvUrl', 'drvKey', 'drvSv', 'acc', 'sync', 'nRemind', 'nDays', 'nTime', 'nWeekly', 'nDrive', 'fxOff', 'animOff', 'lastBackupAt', 'lastBackupSess', 'backupSkipAt'];
 const stateKey = pid => pid === 'p1' ? 'state' : 'state:' + pid;
 const curProf = () => profiles.list.find(p => p.id === profiles.active) || profiles.list[0];
 const multi = () => profiles.list.length > 1;
@@ -3766,7 +3766,7 @@ function viewMore() {
   const co = coach();
   /* mỗi mục cài đặt là một trang con; trang Tài khoản chỉ còn danh mục */
   const SEC = {
-    drive: ['Tài khoản & đồng bộ', () => accCardHtml() + syncCardHtml()],
+    drive: ['Tài khoản & đồng bộ', () => hubCardHtml() + accCardHtml() + syncCardHtml()],
     pack: ['Thư viện hình hướng dẫn', () => packCard()],
     backup: ['Sao lưu & khôi phục', () => `<div class="card set-card"><h3>Sao lưu dữ liệu</h3><p>${multi() ? 'Tải file dữ liệu của <b>một người</b> (để gửi riêng cho người đó) hoặc của cả máy.' : 'Tải dữ liệu (gồm ảnh máy tập và ảnh body) thành một file để cất giữ, hoặc chuyển sang máy khác.'}</p>
     <div class="row"><button class="btn" data-act="backup">${multi() ? 'Tải file của 1 người' : 'Tải file sao lưu'}</button><label class="btn" for="restore-file">Khôi phục từ file</label><input type="file" id="restore-file" hidden></div></div>`],
@@ -4028,6 +4028,7 @@ async function qrScanSheet(mode) {
         const vw = v.videoWidth, vh = v.videoHeight, side = Math.round(Math.min(vw, vh) * 0.85), sx = (vw - side) / 2, sy = (vh - side) / 2;
         pass = !pass; const w = Math.min(side, pass ? 960 : 480), h = w; cv.width = w; cv.height = h; g.drawImage(v, sx, sy, side, side, 0, 0, w, h);
         const r = jsQR(g.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' });
+        if (r && /GA(H1|V1)\./.test(r.data)) { qrStop(); hubCode(r.data); return; }
         if (r && r.data.includes('#cs=')) { qrStop(); shareReceive(r.data.slice(r.data.indexOf('#cs=') + 4)); return; }
         if (r && /^GA[QSPL][12]\./.test(r.data)) { const [kind, id, i, n, body] = r.data.split('.'); if (id !== msg) { kindIn = kind; msg = id; for (const k in got) delete got[k]; need = +n; } got[i] = body;
           const have = Object.keys(got).length; $('#qr-st').textContent = need > 1 ? `Đã nhận ${have}/${need} trang…` : 'Đã nhận';
@@ -4880,10 +4881,68 @@ function joinQrParts(texts) {
 }
 /* chia sẻ ảnh: ưu tiên bảng chia sẻ của máy (chọn Zalo); không được thì hiện ảnh để bấm giữ → Lưu ảnh */
 const slugName = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^A-Za-z0-9]+/g, '-').toLowerCase() || 'hoc-vien';
+/* ---------- PA-34.1 · máy chủ đồng bộ mới: HLV đăng ký bằng QR HLV, thêm học viên bằng thẻ QR vĩnh viễn ----------
+   Mã QR HLV (GAH1) chứa địa chỉ máy chủ và khoá HLV; khoá chỉ lưu trên máy này (settings.sync.hk). Thẻ học viên (GAV1)
+   có khoá k = HMAC-SHA256(khoá HLV, "gadn-hv:<mã>:<epoch>"), nên HLV tính lại được bất cứ lúc nào, không cần lưu. */
+const hubOn = () => !!(state.settings.sync && state.settings.sync.hk);
+async function hubCall(path, body, method) {
+  const sy = state.settings.sync || {};
+  const r = await fetch(sy.s + path, { method: method || 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer h.' + sy.hk }, body: method === 'GET' ? undefined : JSON.stringify(body || {}) });
+  return { s: r.status, j: await r.json().catch(() => ({})) };
+}
+async function hubKey(id, epoch) {
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(state.settings.sync.hk), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return b64u(new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`gadn-hv:${id}:${epoch}`)))).slice(0, 32);
+}
+async function hubRegister(body) {
+  let J = null; try { J = JSON.parse(new TextDecoder().decode(unb64u(body))); } catch (e) {}
+  if (!J || !/^https:\/\//.test(J.s || '') || !J.k) { toast('Mã HLV không đúng'); return false; }
+  state.settings.sync = { s: J.s, hk: J.k };
+  const r = await hubCall('/s/tv', null, 'GET');
+  if (r.s !== 200) { state.settings.sync = {}; save(); toast('Mã HLV không đúng hoặc máy chủ chưa sẵn sàng'); return false; }
+  save(); closeSheet(); render(true); toast('Đã đăng ký làm HLV'); return true;
+}
+/* đọc mã từ camera, ô dán, hoặc ảnh: trả true nếu là mã của máy chủ mới */
+async function hubCode(text) {
+  const m = /GA(H1|V1)\.([A-Za-z0-9_-]+)/.exec(String(text || '')); if (!m) return false;
+  if (m[1] === 'H1') { await hubRegister(m[2]); return true; }
+  toast('Thẻ này dành cho máy của học viên. Bước nối máy học viên sẽ có ở bản sau.'); return true;
+}
+function hubCardHtml() {
+  if (!hubOn()) return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đăng ký làm HLV bằng mã QR HLV. Chỉ cần làm một lần.</p>
+    <div class="row"><button class="btn gold" data-act="hub-reg">Quét mã QR HLV</button></div></div>`;
+  return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã đăng ký làm HLV. Thêm học viên bằng thẻ QR; thẻ dùng được lâu dài.</p>
+    <div class="row"><button class="btn gold" data-act="hub-add">Thêm học viên</button><button class="btn" data-act="hub-reg">Quét mã</button><button class="btn ghost" data-act="hub-unlink">Ngắt đăng ký trên máy này</button></div></div>`;
+}
+function hubAddSheet() {
+  openSheet(`<h3 class="sh-title">Thêm học viên</h3><p class="sh-text">Tạo thẻ QR cho học viên. Thẻ không hết hạn và dùng lại được, nên hãy cất giữ cẩn thận.</p>
+    <label class="f full">Tên học viên<input class="inp" id="hub-ten" maxlength="30" placeholder="Ví dụ: Lan"></label>
+    <div class="sh-actions"><button class="btn gold big" data-act="hub-add-go">Tạo thẻ QR</button><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
+  setTimeout(() => { const i = $('#hub-ten'); if (i) i.focus(); }, 50);
+}
+async function hubAddGo() {
+  const ten = ($('#hub-ten').value || '').trim(); if (!ten) { toast('Nhập tên học viên'); return; }
+  const base = slugName(ten).replace(/[^a-z0-9-]/g, '').replace(/^-+|-+$/g, '').slice(0, 24) || 'hoc-vien';
+  const suffix = [...crypto.getRandomValues(new Uint8Array(4))].map(b => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 30]).join('');
+  const id = `${base}-${suffix}`, k = await hubKey(id, 0);
+  const skh = b64u(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(k))));
+  const r = await hubCall('/s/tv/them', { id, ten, kieu: 'hv', skh });
+  if (r.s !== 200) { toast(r.j.loi || 'Không tạo được học viên'); return; }
+  hubCardSheet(id, ten, k);
+}
+function hubCardSheet(id, ten, k) {
+  const code = 'GAV1.' + b64u(new TextEncoder().encode(JSON.stringify({ s: state.settings.sync.s, i: id, k })));
+  openSheet(`<h3 class="sh-title">Thẻ QR của ${esc(ten)}</h3><p class="sh-text">Cho học viên quét thẻ này bằng app để nối máy của họ.</p>
+    <div class="hub-card"><canvas id="hub-qr"></canvas></div>
+    <textarea class="inp" id="hub-code" rows="2" readonly style="font-family:ui-monospace,Menlo,monospace;font-size:11px">${esc(code)}</textarea>
+    <div class="sh-actions"><button class="btn gold" data-act="copy" data-t="hub-code">Sao chép mã</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`);
+  drawQR($('#hub-qr'), code);
+}
 /* nhận ảnh mã ở mục Nhập giáo án hoặc Đồng bộ */
 async function receiveQrImage(files) {
   files = [].concat(files); toast(files.length > 1 ? `Đang đọc ${files.length} ảnh…` : 'Đang đọc ảnh mã…');
   let texts = []; for (const f of files) { try { texts.push(...await decodeQrImage(f)); } catch (e) {} }
+  for (const t of texts) if (await hubCode(t)) return;
   const cs = texts.find(t => t.includes('#cs='));
   if (cs) { await shareReceive(cs.slice(cs.indexOf('#cs=') + 4)); return; }
   const J = joinQrParts(texts);
@@ -4911,6 +4970,7 @@ async function handleCodeText(raw) {
   const txt = String(raw || '').trim();
   if (!txt) { toast('Bộ nhớ tạm đang trống · hãy copy tin nhắn chứa mã trước'); return false; }
   qrStop(); clearInterval(ui.qrT);
+  if (await hubCode(txt)) return true;
   if (txt.includes('#cs=')) { await shareReceive(txt.slice(txt.indexOf('#cs=') + 4)); return true; }
   const parts = txt.match(/GA[QSPL][12]\.[a-z0-9]+\.\d+\.\d+\.[A-Za-z0-9_-]+/g);
   if (parts && parts.length) {
@@ -5294,6 +5354,10 @@ const handlers = {
     const go = async () => { try { await drvCall(state.settings.drvUrl, { a: khoa ? 'tv.tat' : 'tv.bat', ma: state.settings.drvKey, id: T.id }); toast(khoa ? `Đã khoá ${T.ten}` : `Đã mở khoá ${T.ten}`); } catch (e) { toast(String(e && e.message || e)); } await accTvSheet(); };
     if (khoa) confirmSheet({ title: `Khoá tài khoản ${esc(T.ten)}?`, text: 'Học viên không đăng nhập và không đồng bộ được nữa. Dữ liệu vẫn giữ nguyên, mở khoá là dùng lại.', ok: 'Khoá', danger: true, onOk: go }); else go(); },
   'acc-copy': () => copyOrShareCode(ui.accCred, 'Tài khoản Giáo Án Địa Ngục'),
+  'hub-reg': () => qrScanSheet('hub'),
+  'hub-add': () => hubAddSheet(),
+  'hub-add-go': () => hubAddGo(),
+  'hub-unlink': () => confirmSheet({ title: 'Ngắt đăng ký trên máy này?', text: 'Chỉ xoá khoá HLV trên máy này. Dữ liệu trên máy chủ và các thẻ học viên đã cấp vẫn giữ nguyên.', ok: 'Ngắt', danger: true, onOk: () => { state.settings.sync = {}; save(); render(true); toast('Đã ngắt đăng ký trên máy này'); } }),
   'drv-hv': t => drvHvSheet(t.dataset.id),
   'coach-share': t => drvHvSheet(t.dataset.id),
   'drv-save': async t => { const u = ($('#drv-url').value || '').trim(), k = ($('#drv-key').value || '').trim();
