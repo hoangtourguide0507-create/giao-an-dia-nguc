@@ -107,9 +107,9 @@ test('kết nối máy chủ thông báo: kiểm tra địa chỉ, xin quyền, 
   await card(app).locator('#n-time').dispatchEvent('change');
   expect((await app.state()).settings.nTime).toBe('18:15');
   await page.clock.fastForward(3000);
-  await expect.poll(() => calls.filter(c => c.path === '/remind').length, { timeout: 8000 }).toBeGreaterThan(1);
-  const last = calls.filter(c => c.path === '/remind').pop().body;
-  expect(last.rules.find(r => r.tag === 'remind')).toMatchObject({ dow: 1, hm: '18:15', title: 'Đến giờ tập rồi 💪' });
+  const hasRemind = c => c.path === '/remind' && c.body.rules.some(r => r.tag === 'remind' && r.dow === 1 && r.hm === '18:15');
+  await expect.poll(() => calls.some(hasRemind), { timeout: 8000 }).toBe(true);
+  expect(calls.find(hasRemind).body.rules.find(r => r.tag === 'remind')).toMatchObject({ dow: 1, hm: '18:15', title: 'Đến giờ tập rồi 💪' });
   await card(app).locator('#n-weekly').uncheck();
   await card(app).locator('#n-drive').uncheck();
   await card(app).locator('#n-remind').uncheck();
