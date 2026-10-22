@@ -4573,16 +4573,17 @@ async function drvSyncOne(pid) {
   /* PA-21: HLV đăng nhập trên máy mới → lấy lại giáo án + buổi tập của hồ sơ từ phía HLV đã lưu trên Drive.
      Cũng dùng khi HLV dùng 2 máy: máy kia vừa gửi bản mới hơn → gộp về trước khi gửi, không ghi đè lẫn nhau. */
   let srvH = '';
-  if (co && (D.restore || (K.hlv && K.hlv.goi && K.hlv.rev > (D.hlvRev || 0)))) {
+  if (co && (D.restore || D.gop || (K.hlv && K.hlv.goi && K.hlv.rev > (D.hlvRev || 0)))) {
     if (K.hlv && K.hlv.goi) {
-      const g = clone(K.hlv.goi); g.at = 0; srvH = strHash(JSON.stringify(g));
+      const g = clone(K.hlv.goi); g.at = 0; srvH = D.gop ? '' : strHash(JSON.stringify(g));
       const P = cleanPkg(K.hlv.goi); await drvPullPhotos(cr, D.id, P, st);
-      const res = await syncMerge(st, { ...P, role: 'coach' }, {});
+      const res = await syncMerge(st, { ...P, role: D.gop ? 'student' : 'coach' }, {});
       for (const [nid, v, h] of res.newPhotos) { await DB.put('photos', nid, v); photoCache.set(nid, v); photoHashCache.set(nid, h); }
       st = res.st; delete st.coachLink; out.got = res.R;
     }
-    D = { ...D, restore: false, hlvRev: K.hlv ? K.hlv.rev : 0 }; st.drv = D;
+    D = { ...D, restore: false, gop: false, hlvRev: K.hlv ? K.hlv.rev : 0 }; st.drv = D;
   }
+  if (co && D.ax && Object.keys(D.ax).length) { const r2 = await drvKeoPhu(cr, st, D, out); st = r2.st; D = { ...D, ax: r2.ax }; st.drv = D; }
   if (them && them.goi && them.rev > (D[seenK] || 0)) {
     const P = cleanPkg(them.goi);
     if (P.role === (co ? 'coach' : 'student')) throw new Error('Dữ liệu trên Drive cùng vai với máy này');
@@ -4605,6 +4606,7 @@ async function drvSyncOne(pid) {
     if (!co && D.nS != null && nS > D.nS && last) pushNotify(await drvTopic(D, 'hlv'), `${D.n || pkg.name || 'Học viên'} vừa tập xong ${last.dayName || ''}`.trim(), `${last.entries.reduce((a, en) => a + en.sets.length, 0)} set · ${dm(last.date)}. Mở Phòng HLV để xem.`);
     await drvSetDrv(pid, { sentH: h, [co ? 'hlvRev' : 'hvRev']: r.rev, at: Date.now(), ...(co ? (pkg.plan ? { nP: planH } : {}) : { nS }) }); out.sent = true;
   }
+  if (co && D.ax && Object.keys(D.ax).length) { pkg.at = Date.now(); await drvDayPhu(cr, pid, D, pkg, h); }
   return out;
 }
 /* PA-18: máy HLV tự đưa MỌI hồ sơ lên Drive, không cần bấm từng người */
@@ -4626,10 +4628,10 @@ function drvSoon() { clearTimeout(DRV.t); DRV.t = setTimeout(() => drvAuto(), 20
 async function drvAuto(force) {
   if (DRV.busy || !navigator.onLine) return; if (!force && Date.now() - DRV.last < 15000) return;
   if (!force && document.querySelector('.sheet:not([hidden])')) { drvSoon(); return; }
-  const pids = coach() ? profiles.list.map(x => x.id) : [profiles.active];
   DRV.busy = true; DRV.last = Date.now(); DRV.st = 'busy'; drvPaint(); const got = [];
   try {
-    if (coach()) await drvEnsureAll();
+    if (coach()) { await accGopTrung(); await drvEnsureAll(); }
+    const pids = coach() ? profiles.list.map(x => x.id) : [profiles.active];
     for (const pid of pids) { const r = await drvSyncOne(pid); if (r && r.got && (r.got.newS || r.got.updS || r.got.kg || r.got.newEx || r.got.updEx || r.got.dropEx)) got.push(r); }
     DRV.st = 'ok'; DRV.err = ''; DRV.at = Date.now();
   } catch (e) { DRV.st = 'err'; DRV.err = String(e && e.message || e); }
@@ -4724,13 +4726,13 @@ async function accApply(url, r) {
   /* tìm hồ sơ đã gắn với tài khoản này; không có thì dùng hồ sơ đang mở (nếu chưa gắn ai), hoặc tạo hồ sơ mới */
   let pid = null;
   for (const x of profiles.list) { const st = await profState(x.id); if (st && st.drv && st.drv.id === r.id) { pid = x.id; break; } }
-  if (!pid && state.drv && state.drv.id) {
+  if (!pid && state.drv && state.drv.id && accTen(curProf().name) !== accTen(r.ten) && accTen(state.drv.n) !== accTen(r.ten)) {
     pid = 'p' + uid(); const ns = freshState(); ns.settings.name = r.ten; ns.updatedAt = Date.now(); await LDB.put('kv', stateKey(pid), ns);
     const used = profiles.list.map(p => p.color); let color = 0; while (used.includes(color) && color < PCOLORS.length - 1) color++;
     profiles.list.push({ id: pid, name: String(r.ten || 'Tôi').slice(0, 30), color }); saveProfiles();
   }
   if (pid && pid !== profiles.active) await switchProfile(pid);
-  const old = state.drv && state.drv.id === r.id ? state.drv : { hlvSeen: 0, hvRev: 0, sentH: '' };
+  const old = state.drv && state.drv.id === r.id ? state.drv : { hlvSeen: 0, hvRev: 0, sentH: '' }; /* chỗ lưu mới: gửi lại toàn bộ buổi tập */
   state.drv = { ...old, u: url, id: r.id, m: r.ma, n: String(r.ten || '').slice(0, 40) };
   state.settings.acc = { vai: 'hv', u: r.u, ten: r.ten || '', hlv: r.hlv || '' };
   DRV.self = true; save(); DRV.self = false; DRV.st = ''; DRV.err = ''; render(true); pushRegSoon();
@@ -4740,14 +4742,22 @@ async function accApply(url, r) {
 async function accRoster(login) {
   if (!drvCo()) return [];
   const { ds } = await drvCall(state.settings.drvUrl, { a: 'tv.ds', ma: state.settings.drvKey, gon: true });
-  const have = new Map(), empty = [];
-  for (const x of profiles.list) { const st = await profState(x.id); if (st && st.drv && st.drv.id) have.set(st.drv.id, x.id); else if (!st || (!(st.days || []).length && !(st.sessions || []).length && !(st.body || []).length && !st.active)) empty.push(x.id); }
-  let made = [];
+  await accGopTrung();
+  const have = new Map(), empty = [], byName = new Map();
+  for (const x of profiles.list) { const st = await profState(x.id);
+    if (st && st.drv && st.drv.id) { have.set(st.drv.id, x.id); for (const a of Object.keys(st.drv.ax || {})) have.set(a, x.id); }
+    else if (!st || (!(st.days || []).length && !(st.sessions || []).length && !(st.body || []).length && !st.active)) { empty.push(x.id); continue; }
+    if (!byName.has(accTen(x.name))) byName.set(accTen(x.name), x.id); }
+  let made = [], gop = 0;
   for (const t of ds) {
     if (have.has(t.id)) continue;
+    /* PA-24: đã có hồ sơ cùng tên trên máy → nối chỗ lưu Drive đó vào hồ sơ ấy, không tạo hồ sơ trùng */
+    const same = byName.get(accTen(t.ten));
+    if (same) { await accNoiDrive(same, t.id); have.set(t.id, same); gop++; continue; }
     const id = 'p' + uid(), ns = freshState(); ns.settings.name = t.ten; ns.drv = { id: t.id, hvSeen: 0, hlvRev: 0, sentH: '', restore: true }; ns.updatedAt = Date.now();
-    await LDB.put('kv', stateKey(id), ns); profiles.list.push({ id, name: String(t.ten || 'Học viên').slice(0, 30), color: profiles.list.length % PCOLORS.length }); have.set(t.id, id); made.push(id);
+    await LDB.put('kv', stateKey(id), ns); profiles.list.push({ id, name: String(t.ten || 'Học viên').slice(0, 30), color: profiles.list.length % PCOLORS.length }); have.set(t.id, id); made.push(id); byName.set(accTen(t.ten), id);
   }
+  if (gop) DRV.last = 0;
   if (made.length) {
     saveProfiles();
     /* máy mới: bỏ hồ sơ trống mặc định, chuyển sang hồ sơ của chính HLV */
@@ -4759,6 +4769,77 @@ async function accRoster(login) {
     }
   }
   return ds.map(t => ({ ...t, pid: have.get(t.id) || null }));
+}
+/* ===== PA-24: gộp hồ sơ trùng =====
+   Một người có thể có nhiều chỗ lưu trên Drive (mã cũ, máy cũ tạo lại…). Hồ sơ giữ 1 chỗ lưu chính (drv.id)
+   và các chỗ lưu phụ (drv.ax): máy HLV kéo buổi tập học viên gửi lên ở mọi chỗ lưu, gửi giáo án xuống mọi chỗ lưu,
+   nên học viên dù đang dùng mã nào cũng đồng bộ đúng một hồ sơ. */
+const accTen = n => String(n || '').normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
+/* nối thêm chỗ lưu Drive `id` vào hồ sơ pid */
+async function accNoiDrive(pid, id) {
+  const st = await profState(pid); if (!st) return;
+  if (st.drv && st.drv.id) { if (st.drv.id === id) return; st.drv = { ...st.drv, ax: { ...(st.drv.ax || {}), [id]: { hvSeen: 0, hlvRev: 0, sentH: '', moi: true } } }; }
+  else st.drv = { id, hvSeen: 0, hlvRev: 0, sentH: '', gop: true };
+  await drvStore(pid, pid === profiles.active ? st : clone(st));
+}
+/* máy HLV: các hồ sơ trùng tên đều đã nối Drive → gộp làm một, không mất buổi tập nào */
+async function accGopTrung() {
+  if (!coach() || state.active) return [];
+  const groups = new Map();
+  for (const x of profiles.list) { const st = await profState(x.id); if (!st || !st.drv || !st.drv.id || st.active) continue; const k = accTen(x.name); if (!groups.has(k)) groups.set(k, []); groups.get(k).push({ x, st }); }
+  const done = [];
+  for (const g of groups.values()) {
+    if (g.length < 2) continue;
+    const score = o => (o.st.sessions || []).length * 1000 + (o.st.body || []).length * 10 + (o.st.days || []).reduce((a, d) => a + d.exercises.length, 0);
+    const keep = g.reduce((a, b) => score(b) > score(a) ? b : a);
+    for (const o of g) {
+      if (o === keep) continue;
+      let K = await syncStateOf(keep.x.id);
+      const { pkg } = await syncPack(o.x.id, { full: true, withPhotos: true });
+      const res = await syncMerge(K, { ...cleanPkg(pkg), role: 'student' }, {});
+      for (const [nid, v, h] of res.newPhotos) { await DB.put('photos', nid, v); photoCache.set(nid, v); photoHashCache.set(nid, h); }
+      K = res.st;
+      const seen = new Set((K.body || []).map(b => b.id || b.date)); K.body = [...(K.body || []), ...(o.st.body || []).filter(b => !seen.has(b.id || b.date))].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      const O = o.st.drv, ax = { ...(K.drv.ax || {}), ...(O.ax || {}), [O.id]: { hvSeen: O.hvSeen || 0, hlvRev: O.hlvRev || 0, sentH: '' } }; delete ax[K.drv.id];
+      K.drv = { ...K.drv, ax, sentH: '' };
+      await drvStore(keep.x.id, keep.x.id === profiles.active ? K : clone(K));
+      if (profiles.active === o.x.id) await switchProfile(keep.x.id);
+      await LDB.del('kv', stateKey(o.x.id)); profiles.list = profiles.list.filter(p => p.id !== o.x.id); saveProfiles();
+      done.push(keep.x.name);
+    }
+  }
+  if (done.length) { ui.coachData = null; render(true); toast('Đã gộp hồ sơ trùng: ' + [...new Set(done)].join(', ')); }
+  return done;
+}
+/* máy HLV: đồng bộ các chỗ lưu phụ của 1 hồ sơ — kéo buổi tập học viên gửi lên (và lần đầu cả dữ liệu cũ phía HLV) */
+async function drvKeoPhu(cr, st, D, out) {
+  const ax = { ...(D.ax || {}) };
+  for (const [aid, A0] of Object.entries(ax)) {
+    const A = { ...A0 };
+    try {
+      const K = await drvCall(cr.url, { a: 'keo', ma: cr.ma, id: aid, biet: { hv: A.hvSeen || 0, hlv: A.moi ? 0 : 9e15 } });
+      for (const side of [A.moi && K.hlv, K.hv && K.hv.rev > (A.hvSeen || 0) && K.hv]) {
+        if (!side || !side.goi) continue;
+        const P = cleanPkg(side.goi); await drvPullPhotos(cr, aid, P, st);
+        const res = await syncMerge(st, { ...P, role: 'student' }, {});
+        for (const [nid, v, h] of res.newPhotos) { await DB.put('photos', nid, v); photoCache.set(nid, v); photoHashCache.set(nid, h); }
+        st = res.st; if (res.R.newS || res.R.updS || res.R.kg) out.got = { ...(out.got || {}), newS: ((out.got || {}).newS || 0) + res.R.newS, updS: ((out.got || {}).updS || 0) + res.R.updS, kg: ((out.got || {}).kg || 0) + res.R.kg };
+      }
+      ax[aid] = { ...A, moi: false, hvSeen: K.hv ? K.hv.rev : (A.hvSeen || 0), hlvRev: K.hlv ? K.hlv.rev : 0 };
+    } catch (e) { if (/Không có học viên này/.test(String(e && e.message || e))) delete ax[aid]; else throw e; }
+  }
+  return { st, ax };
+}
+/* máy HLV: gửi giáo án xuống các chỗ lưu phụ (học viên còn dùng mã cũ vẫn nhận được) */
+async function drvDayPhu(cr, pid, D, pkg, h) {
+  const ax = { ...(D.ax || {}) }; let ch = false;
+  for (const [aid, A] of Object.entries(ax)) {
+    if (A.sentH === h) continue;
+    let r = await drvCall(cr.url, { a: 'day', ma: cr.ma, id: aid, vai: 'hlv', rev: A.hlvRev || 0, goi: pkg });
+    if (r.xungDot) r = await drvCall(cr.url, { a: 'day', ma: cr.ma, id: aid, vai: 'hlv', rev: r.rev, goi: pkg });
+    if (r.ok) { ax[aid] = { ...A, sentH: h, hlvRev: r.rev }; ch = true; }
+  }
+  if (ch) await drvSetDrv(pid, { ax });
 }
 async function accTvSheet() {
   if (!drvCo()) { toast('Đăng nhập tài khoản HLV trước'); return; }
