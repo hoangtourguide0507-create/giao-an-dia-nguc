@@ -93,7 +93,7 @@ Lịch sử dùng để gợi ý = các buổi **không deload** của bài. "M�
   5. 2 buổi liền ở W có set dưới rep tối thiểu → **GIẢM** 1 nấc.
   6. Còn lại → **GIỮ** W, mục tiêu mỗi set +1 rep (tối đa rep mục tiêu).
 - **BR-05.3 Tăng theo rep (double progression)** (chỉ còn với dữ liệu cũ đã chọn chế độ này): đạt rep tối đa mọi set 2 buổi liền → tăng 1 nấc (rep về tối thiểu); 1 buổi → SẮP TĂNG; 3 buổi không tăng rep → giảm ~10%; 2 buổi dưới tối thiểu → giảm 1 nấc; còn lại giữ, +1 rep/set.
-- **BR-05.4 Tuần deload** → **DELOAD** ~90% W (làm tròn theo nấc).
+- **BR-05.4 Tuần deload** → **DELOAD** ~90% W (làm tròn theo nấc). Tuần deload là tuần thứ 7 của chu kỳ; hết 1 tuần mà chưa bấm "Xong deload" thì app **tự sang chu kỳ mới** (ngày bắt đầu mới = thứ Hai đầu tiên sau tuần deload) (PA-28).
 - **BR-05.5 Đau** (BR-08): đau nhẹ → giảm ~20% (làm tròn xuống theo nấc); đau vừa/nặng → **NÊN BỎ**; mới hết đau (≤ 21 ngày, chưa tập lại bài đó) → **QUAY LẠI** ~80%.
 - **BR-05.6 Kế hoạch tuần đã duyệt** (BR-07) ghi đè mức tạ: nhãn "ĐÃ DUYỆT" / "TĂNG TẠ", ghi rõ "bạn chọn giữ mức cũ" hoặc "bạn tự chỉnh".
 - **BR-05.7** Bài tạ đơn ghi "kg/tay" trong lời gợi ý.
@@ -165,7 +165,7 @@ Test: `tests/app/settings.spec.mjs`, `tests/app/misc.spec.mjs`, `tests/app/backu
 - **BR-11.4 Lưu ý form** theo từng hồ sơ: **Đầy đủ** (thẻ 3 điểm form đầu bài, thu gọn sau set đầu, mở lại được) · Gọn (1 dòng, bấm mở hướng dẫn) · Tắt.
 - **BR-11.5** Chiều cao (cm) theo hồ sơ. *(Ghi chú nói dùng tính BMI nhưng BMI không hiển thị — VD-06.)*
 - **BR-11.6** Thẻ trạng thái lưu trữ khi chạy trong claude.ai (BR-18.4).
-- **BR-11.7 Xoá toàn bộ dữ liệu** (xác nhận): xoá mọi hồ sơ, giáo án, lịch sử, số đo, ảnh; giữ cài đặt dùng chung (giao diện, âm thanh…), về màn chào mừng.
+- **BR-11.7 Xoá toàn bộ dữ liệu** (xác nhận): xoá mọi hồ sơ, giáo án, lịch sử, số đo, ảnh, video của tôi; giữ cài đặt dùng chung (giao diện, âm thanh…) và **thư viện hình offline đã tải** (thẻ "Đã tải N hình" vẫn đúng), về màn chào mừng. Xoá hồ sơ / ngày tập / bài cũng xoá video riêng của chúng (PA-28).
 
 ## BR-12 Nhiều người tập & chế độ HLV
 Test: `tests/app/profiles.spec.mjs`, `tests/app/edge.spec.mjs`

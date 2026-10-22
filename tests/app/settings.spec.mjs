@@ -147,7 +147,8 @@ test('xoá toàn bộ dữ liệu: mọi hồ sơ, ảnh; giữ cài đặt giao
   await app.seed({
     profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'Vợ', color: 1 }] },
     states: { p1: state({ days: P.days, sessions: [session(P.chest, addDays(TODAY, -1), [[P.bench, [[40, 10]]]])], settings: { skin: 'gold', skin22: 1 } }), p2: state({ days: [] }) },
-    photos: { ph1: PHOTO }
+    photos: { ph1: PHOTO, 'exdb:A:0': PHOTO, 'vid:x1': 'blob-gia' },
+    kv: { exdbPack: { n: 1, at: Date.now() } }
   });
   await app.more('wipe');
   await app.click('wipe');
@@ -158,7 +159,9 @@ test('xoá toàn bộ dữ liệu: mọi hồ sơ, ảnh; giữ cài đặt giao
   expect(st.days).toHaveLength(0); expect(st.sessions).toHaveLength(0);
   expect(st.settings.skin).toBe('gold');
   expect(await app.profiles()).toMatchObject({ active: 'p1', list: [{ id: 'p1', name: 'Tôi' }] });
-  expect(await app.idb('photos')).toEqual([]);
+  /* VD-04: ảnh người dùng và video bị xoá, thư viện hình offline giữ nguyên cùng khoá exdbPack */
+  expect(await app.idb('photos')).toEqual(['exdb:A:0']);
+  expect(await app.idb('kv', 'exdbPack')).toMatchObject({ n: 1 });
   await app.flushed();
   expect(await app.idb('kv', 'state:p2')).toBeUndefined();
   await expect(app.view()).toContainText('Cuốn sổ tạ trong túi bạn');

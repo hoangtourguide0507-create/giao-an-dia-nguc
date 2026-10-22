@@ -172,3 +172,16 @@ test('tuần deload (đủ 6 tuần): thẻ việc cần làm báo, “Xong delo
   await expect(page.locator('#cycle')).toHaveText('Tuần 1/6');
   await expect(app.view().locator('#todos .tdi', { hasText: 'Tuần deload' })).toHaveCount(0);
 });
+
+test('VD-03: sau 1 tuần deload mà không bấm “Xong deload” thì tự sang chu kỳ mới (cycleStart = thứ Hai)', async ({ app, page }) => {
+  const P = basicPlan();
+  await app.seed({ state: state({ days: P.days, settings: { cycleStart: addDays(TODAY, -60), packSkip: TODAY }, wpSkip: MONDAY }) });
+  /* TODAY 21/10: -60 ngày = 22/8 (thứ Bảy); tuần deload 3–9/10; tuần 8 bắt đầu 10/10 (thứ Bảy); thứ Hai đầu tiên sau đó là 12/10 */
+  await expect(page.locator('#cycle')).toHaveText('Tuần 2/6');
+  await expect(app.view().locator('#todos .tdi', { hasText: 'Tuần deload' })).toHaveCount(0);
+  await expect.poll(async () => (await app.state()).settings.cycleStart).toBe('2026-10-12');
+  /* đang trong tuần deload (tuần 7) thì giữ nguyên */
+  await app.seed({ state: state({ days: P.days, settings: { cycleStart: addDays(TODAY, -45), packSkip: TODAY }, wpSkip: MONDAY }) });
+  await expect(page.locator('#cycle')).toHaveText('Tuần deload');
+  expect((await app.state()).settings.cycleStart).toBe(addDays(TODAY, -45));
+});
