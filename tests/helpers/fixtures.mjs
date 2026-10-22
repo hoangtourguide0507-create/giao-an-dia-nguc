@@ -97,8 +97,11 @@ async function prep(page) {
   /* máy chủ Drive giả (nếu test dùng fixture gas): chuyển yêu cầu tới script.google.com sang máy chủ cục bộ */
   await page.route('https://script.google.com/**', async route => {
     if (!currentGas) return route.abort();
-    const rq = route.request(), r = await fetch(`http://localhost:${currentGas}/`, { method: rq.method() === 'POST' ? 'POST' : 'GET', body: rq.method() === 'POST' ? rq.postData() || '' : undefined });
-    await route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: await r.text() });
+    /* máy chủ giả có thể vừa bị tắt (hết test, trang vẫn đang gửi) hoặc đứt kết nối: coi như mất mạng, đừng làm hỏng test */
+    try {
+      const rq = route.request(), r = await fetch(`http://localhost:${currentGas}/`, { method: rq.method() === 'POST' ? 'POST' : 'GET', body: rq.method() === 'POST' ? rq.postData() || '' : undefined });
+      await route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: await r.text() });
+    } catch (e) { await route.abort().catch(() => {}); }
   });
   page.on('pageerror', e => { page.__errors = [...(page.__errors || []), e]; });
 }

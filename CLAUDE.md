@@ -20,6 +20,7 @@
 
 ## Kiểm thử
 - `bash tests/chay.sh`: dựng bản thử `tests/site/` (chèn móc `window.__ev`), kiểm cú pháp, chạy các kiểm thử Playwright và kiểm thử 2 máy chủ. Phải xanh trước khi đẩy nhánh và trước khi gộp.
+- `npm run test:fast`: chạy Playwright không đo coverage (nhanh hơn ~2 lần) để dùng khi đang code; `npm test` đầy đủ chỉ cần chạy trước khi đẩy/gộp.
 - Tính năng mới: thêm `tests/test_pa<số>.py` và đưa vào danh sách mặc định trong `tests/chay.sh`.
 
 ## Agent của dự án (`.claude/agents/`)
