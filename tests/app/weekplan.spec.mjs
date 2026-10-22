@@ -155,7 +155,7 @@ test('PA-29 (VD-05): chữ kế hoạch tuần khớp hành vi — mọi bài gi
 });
 
 test('PA-29 (VD-05): gợi ý và banner tuần deload không hứa giảm nửa số set', async ({ app }) => {
-  const { st } = setup({ settings: { cycleStart: addDays(TODAY, -50) }, wpSkip: MONDAY });
+  const { st } = setup({ settings: { cycleStart: addDays(TODAY, -45) }, wpSkip: MONDAY });
   await app.seed({ state: st });
   await app.tab('home');
   await expect(app.view()).toContainText('Tuần deload');
