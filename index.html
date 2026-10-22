@@ -1727,7 +1727,11 @@ function loadState(s) {
   sets3(state); warmAll(state);
   if (state.settings.alertMethod !== 'push') state.settings.alertMethod = 'push';
   /* PA-22: chỉ còn Hổ Phách và Đen Tuyền; lần đầu chuyển mọi người sang Hổ Phách */
-  if (!state.settings.skin22 || !SKINS.some(k => k.id === state.settings.skin)) { state.settings.skin = 'amber'; state.settings.skin22 = 1; }
+  /* VD-32: hồ sơ trống (người mới) giữ nguyên lựa chọn; chỉ dữ liệu cũ có sẵn mới bị chuyển */
+  const fresh22 = !(s.settings && s.settings.skin22) && !state.days.length && !state.sessions.length;
+  if (!SKINS.some(k => k.id === state.settings.skin)) state.settings.skin = 'amber';
+  else if (!state.settings.skin22 && !fresh22) state.settings.skin = 'amber';
+  state.settings.skin22 = 1;
 }
 let saveT = null;
 function save() { state.updatedAt = Date.now(); clearTimeout(saveT); saveT = setTimeout(flush, 300); if (!DRV.self) drvSoon(); }
@@ -2004,7 +2008,7 @@ function renderHeader() {
 function deloadBanner() {
   if (!isDeload()) return '';
   const c = cycleInfo();
-  return `<div class="banner"><span class="bi">${ICON.bolt}</span><div><b>Tuần deload</b><p>Bạn đã tập ${c.every} tuần liên tục. Tuần này app gợi ý giảm ~10% tạ và chỉ tập khoảng một nửa số set để cơ phục hồi rồi tăng tiếp.</p>
+  return `<div class="banner"><span class="bi">${ICON.bolt}</span><div><b>Tuần deload</b><p>Bạn đã tập ${c ? c.every : (state.settings.deloadEvery || 6)} tuần liên tục. Tuần này app gợi ý giảm ~10% tạ và chỉ tập khoảng một nửa số set để cơ phục hồi rồi tăng tiếp.</p>
     <button class="btn sm" data-act="deload-done">Xong deload, bắt đầu chu kỳ mới</button></div></div>`;
 }
 function recoveryHint() {

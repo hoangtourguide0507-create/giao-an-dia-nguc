@@ -127,7 +127,7 @@ Script chính là một IIFE, chia thành các khối (tiêu đề `/* ---------
 - **Entry** `{ exId, name, muscle, note, each, sets: [{ kg, reps, dr?: 1..3, ef?: 'e'|'m'|'h'|'f' }], drop: {kg, reps}|null /* kiểu cũ */ }`. Trong buổi đang tập set còn có `done`, `m` (set drop đã tự sửa) và `entry.warm[]`, `entry.manual`.
 
 ### 3.3 Chuyển đổi dữ liệu cũ (`loadState`, `migrateEx`, `index.html:1798`)
-Gộp với `freshState()`; bổ sung trường thiếu; `rest === OLD_REST[type]` → 0; `sets3` (mọi bài 3 set, 1 lần), `warmAll` (bật khởi động, 1 lần); `alertV17`/`alertMethod` cũ → thông báo của app (bỏ Phím tắt); giao diện: nếu chưa có cờ `skin22` hoặc skin lạ → `amber` rồi đặt `skin22` (nguồn gốc VD-32); mảng/đối tượng hỏng → rỗng; `mainSince` = ngày buổi đầu có bài; sau mỗi `render` còn `fillZones` (đoán vùng cơ, sửa nhóm "Khác") và `fillGids` (đoán hình minh hoạ). Test: `tests/app/misc.spec.mjs`.
+Gộp với `freshState()`; bổ sung trường thiếu; `rest === OLD_REST[type]` → 0; `sets3` (mọi bài 3 set, 1 lần), `warmAll` (bật khởi động, 1 lần); `alertV17`/`alertMethod` cũ → thông báo của app (bỏ Phím tắt); giao diện: skin lạ → `amber`; chưa có cờ `skin22` và hồ sơ đã có giáo án/buổi tập (dữ liệu cũ) → `amber`; hồ sơ trống giữ lựa chọn; luôn đặt `skin22` (VD-32 đã sửa, PA-26). `deloadBanner` chịu được `cycleInfo()` null (VD-31, PA-26); mảng/đối tượng hỏng → rỗng; `mainSince` = ngày buổi đầu có bài; sau mỗi `render` còn `fillZones` (đoán vùng cơ, sửa nhóm "Khác") và `fillGids` (đoán hình minh hoạ). Test: `tests/app/misc.spec.mjs`.
 
 ## 4. Thuật toán
 
@@ -281,6 +281,7 @@ scripts/
 - **Coverage**: chụp `window.__coverage__` trước mỗi lần tải lại trang và khi test kết thúc → `coverage/raw/*.json` → `globalTeardown` gộp, in tóm tắt, tạo `coverage/report/` (HTML, lcov, json-summary) và `coverage/summary.txt`, **ném lỗi nếu dưới ngưỡng** (lines/statements/functions 90%, branches 80%).
 - **Chống coverage farm**: không `istanbul ignore`; mã chết bị xoá (đã dọn hai đợt) thay vì phủ; test đi qua nút/luồng người dùng thật và khẳng định kết quả (dữ liệu trong IndexedDB, chữ trên màn hình, thông báo), không gọi hàm chỉ để chạy dòng.
 - **Lỗi đã biết**: 3 `test.fixme` — VD-02 (nút "Gửi giáo án"), VD-31 (duyệt kế hoạch tuần Deload lỗi vẽ lại), VD-32 (giao diện Đen Tuyền không nhớ). Cổng thử đọc từ biến môi trường `PORT` (mặc định 4173) để chạy song song nhiều bản sao repo.
+- **Lỗi đã biết**: 2 `test.fixme` — VD-02 (nút "Gửi giáo án"), VD-33 (ảnh máy tập qua Drive). VD-31, VD-32 đã sửa ở PA-26.
 
 ### 12.2 Bộ Python/Playwright của dự án (`bash tests/chay.sh`) — hồi quy theo PA
 Các file `tests/test_<pa>.py` (`sync form focus pa10 pa11 pa14 pa16 pa18 pa19 pa20 pa21 pa22`) cộng `tests/test_push_server.mjs` và `tests/test_drive_gas.js`. `chuan_bi.py` chép `index.html` sang `tests/site/` và chèn `window.__ev = eval` để các test chạy lệnh trong phạm vi IIFE. Chạy được bằng Python Playwright (`pip install playwright && playwright install chromium`). Bộ này **không đo coverage**; vai trò là giữ nguyên các hành vi PA trước đã chốt. Test của tính năng đã bỏ (báo cáo tháng, Phím tắt, gửi giáo án bằng mã) đã được cắt khỏi các file này khi gộp PA-15 với PA-22.

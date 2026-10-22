@@ -113,7 +113,7 @@ Test: `tests/app/home.spec.mjs`, `tests/app/edge.spec.mjs`
 - **BR-06.9** Giáo án mẫu/ngày tập chưa có: Trang chủ hiện màn khởi đầu (BR-01) cùng các việc cần làm.
 
 ## BR-07 Kế hoạch tuần
-Test: `tests/app/weekplan.spec.mjs`, `tests/app/profiles.spec.mjs`, `tests/app/edge.spec.mjs` (lỗi đã biết: VD-31)
+Test: `tests/app/weekplan.spec.mjs`, `tests/app/profiles.spec.mjs`, `tests/app/edge.spec.mjs` (VD-31 đã sửa ở PA-26: duyệt Deload khi chưa có ngày bắt đầu chu kỳ không còn lỗi)
 
 - **BR-07.1** Tuần tính từ Thứ Hai. Đầu tuần (đã có giáo án và ≥ 1 buổi, chưa duyệt, chưa "Để sau") app **tự mở** bảng kế hoạch tuần.
 - **BR-07.2 Bước 1 · Tuần trước**: số buổi, set, tấn tạ; số bài đã lên tạ; bài đang chững; nhóm cơ còn thiếu set (< mục tiêu 10 set/tuần).
@@ -159,7 +159,7 @@ Test: `tests/app/settings.spec.mjs`, `tests/app/misc.spec.mjs`, `tests/app/backu
   - *Tập luyện*: Nhịp nghỉ & nhịp rep (BR-11.3) · Lưu ý form khi tập (BR-11.4) · Chỉ số cơ thể (BR-11.5) · Thông báo (BR-22).
   - *Giao diện*: Giao diện & hiệu ứng (BR-11.1/11.2) · Cài lên màn hình (BR-19.1; ẩn khi đã chạy toàn màn hình hoặc trong claude.ai).
   - *Khác*: Xoá dữ liệu (BR-11.7).
-- **BR-11.1 Giao diện**: 2 giao diện — **Hổ Phách** (mặc định) · **Đen Tuyền** (OLED); đổi màu thanh trạng thái; nhớ qua lần mở sau. Dữ liệu cũ có giao diện cũ (Đen Vàng, Lửa Địa Ngục, Băng Ngục, Huyết Nguyệt, Trắng Tinh, Neon) tự chuyển về Hổ Phách một lần. *(Lỗi đã biết: người dùng mới chọn Đen Tuyền thì lần mở sau bị trả về Hổ Phách — VD-32.)*
+- **BR-11.1 Giao diện**: 2 giao diện — **Hổ Phách** (mặc định) · **Đen Tuyền** (OLED); đổi màu thanh trạng thái; nhớ qua lần mở sau. Dữ liệu cũ có giao diện cũ (Đen Vàng, Lửa Địa Ngục, Băng Ngục, Huyết Nguyệt, Trắng Tinh, Neon) tự chuyển về Hổ Phách một lần. Người mới (hồ sơ chưa có giáo án/buổi tập) chọn Đen Tuyền thì lần mở sau vẫn giữ Đen Tuyền (VD-32, PA-26); chỉ dữ liệu cũ có sẵn mới bị chuyển về Hổ Phách một lần.
 - **BR-11.2 Hiệu ứng** Bật/Tắt (dập ✓, dấu XONG, KỶ LỤC MỚI, chớp viền); tôn trọng "Giảm chuyển động" của hệ điều hành. Âm thanh hiệu ứng, rung phản hồi, chấm độ khó — bật/tắt riêng.
 - **BR-11.3 Nhịp tập**: thời gian mỗi rep Nhanh 2s / **Chuẩn 3s** / Chậm 4s; nhịp nghỉ Nhanh / **Chuẩn** / Nặng (BR-04.1). Ảnh hưởng thời gian dự kiến.
 - **BR-11.4 Lưu ý form** theo từng hồ sơ: **Đầy đủ** (thẻ 3 điểm form đầu bài, thu gọn sau set đầu, mở lại được) · Gọn (1 dòng, bấm mở hướng dẫn) · Tắt.
