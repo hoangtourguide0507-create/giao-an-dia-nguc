@@ -15,9 +15,12 @@
  *   POST /remind  { sub, rules, tzOff }  nhắc lặp hằng tuần: rules = [{ dow:0-6, hm:'17:30', title, body, tag }]
  *   POST /notify  { topic, title, body, tag, from }  gửi ngay tới mọi máy đăng ký chủ đề (trừ máy gửi)
  *   POST /test    { sub }                gửi thử ngay
+ *   /s/*                                 đồng bộ HLV ⇄ học viên (src/sync.js, PA-33)
  */
 
-const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Max-Age': '86400' };
+import { handle, schema } from './sync.js';
+
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Access-Control-Max-Age': '86400' };
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', ...CORS } });
 const MAX_SUBS = 3000, MAX_RULES = 20, MAX_TOPICS = 200;
 
@@ -90,7 +93,10 @@ const clip = (s, n) => String(s == null ? '' : s).slice(0, n);
 const msg = o => JSON.stringify({ title: clip(o.title || 'Giáo Án Địa Ngục', 80), body: clip(o.body, 240), tag: clip(o.tag || 'gadn', 40), url: './' });
 
 export class Hub {
-  constructor(state, env) { this.state = state; this.st = state.storage; this.env = env; }
+  constructor(state, env) {
+    this.state = state; this.st = state.storage; this.env = env; this.sql = state.storage.sql;
+    if (this.sql) state.blockConcurrencyWhile(async () => schema(this.sql));
+  }
 
   async vapid() { let V = await this.st.get('vapid'); if (!V) { V = await makeVapid(); await this.st.put('vapid', V); } return V; }
 
@@ -128,6 +134,11 @@ export class Hub {
     await this.arm();
   }
 
+  /* gửi một thông báo tới mọi máy có nhãn `who` ("hlv" hoặc "hv:<mã>") */
+  async notifyWho(who, ev) {
+    for (const [, rec] of await this.st.list({ prefix: 'sub:' })) if (rec.who === who) await this.send(rec.sub, msg(ev), 6 * 3600).catch(() => {});
+  }
+
   async saveSub(sub, extra) {
     const k = await sha(sub.endpoint), cur = await this.st.get('sub:' + k);
     if (!cur) { const n = (await this.st.list({ prefix: 'sub:', limit: MAX_SUBS + 1 })).size; if (n >= MAX_SUBS) throw new Error('Máy chủ đã đầy'); }
@@ -137,6 +148,7 @@ export class Hub {
   async fetch(req) {
     const u = new URL(req.url), p = u.pathname;
     try {
+      if (p.startsWith('/s/')) return await handle({ sql: this.sql, env: this.env, saveSub: (s, e) => this.saveSub(s, e), notify: (w, ev) => this.notifyWho(w, ev) }, req, p, u);
       if (p === '/vapid') return json({ publicKey: (await this.vapid()).pub });
       if (req.method !== 'POST') return json({ ok: false, loi: 'Sai phương thức' }, 405);
       const q = await req.json().catch(() => ({}));
