@@ -46,6 +46,7 @@ test('buổi cũ có drop set kiểu cũ: mở lại, kết thúc, tổng kết 
   await app.view().locator('.sess-actions [data-act="finish"]').click();
   await expect(app.sheet().locator('.kpi').nth(1)).toContainText('4');
   await app.click('save-session');
+  await app.closeSheet(); /* gợi ý chia sẻ cho PT (BR-23.11) hiện sau khi lưu; test này không kiểm tra nó */
   const st = await app.state();
   expect(st.sessions[0].entries[0].drop).toEqual({ kg: 30, reps: 12 });
   await app.tab('week');

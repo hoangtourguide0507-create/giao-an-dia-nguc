@@ -122,7 +122,7 @@ test('học viên đăng nhập: sai mật khẩu bị từ chối, đúng thì 
   await hv.tab('home');
   await hv.view().locator('.hero .tgo').click();
   await hv.view().locator('[data-act="set-done"][data-e="0"][data-s="0"]').click();
-  await hv.view().locator('.sess-actions [data-act="finish"]').click(); await hv.click('save-session');
+  await hv.view().locator('.sess-actions [data-act="finish"]').click(); await hv.click('save-session'); await hv.closeSheet(); /* gợi ý chia sẻ cho PT (BR-23.11) */
   await driveNow(hv);
   await driveNow(app);
   await expect.poll(async () => (await app.idb('kv', 'state:p2'))?.sessions?.length, { timeout: 15000 }).toBe(1);
