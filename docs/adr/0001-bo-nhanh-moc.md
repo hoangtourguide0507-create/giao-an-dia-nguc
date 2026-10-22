@@ -43,3 +43,4 @@ Mỗi lần chủ repo duyệt một PA, mốc được lưu bằng một nhánh
 | v17 | `faddb20` | 2026-10-22 | Duyệt PA-15: tài liệu BR/SA, bộ test, dọn mã chết |
 | v18 | `36654ec` | 2026-10-22 | Duyệt PA-32: chia sẻ kết quả buổi tập với PT bằng link và QR (gộp cùng nhánh `claude/share-workout-results-pt-dwu3x9`) |
 | v19 | `49252cf` | 2026-10-22 | Duyệt PA-33: máy chủ đồng bộ `/s/*` (push-server; app chưa dùng) |
+| v20 | `43d1531` | 2026-10-22 | Duyệt PA-33b: passkey khôi phục trên máy trống; ảnh máy tập `/s/anh/*` có hạn mức (push-server; app chưa dùng) |
