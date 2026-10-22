@@ -90,5 +90,6 @@ Nguyên tắc ưu tiên: **(1) đúng kết quả tập & không mất dữ li�
 
 ### Chỉ số theo dõi
 - `npm test` xanh trên mọi PA; coverage không giảm dưới ngưỡng (lines/statements/functions ≥ 90%, branches ≥ 80%).
+- Số `test.fixme` (lỗi đã biết) giảm dần về 0 (hiện 2: VD-02, VD-33).
 - Số `test.fixme` (lỗi đã biết) giảm dần về 0 (hiện 3: VD-31, VD-32, VD-33).
 - Kích thước `index.html` và số dòng > 300 ký tự giảm dần trong Giai đoạn 2.
