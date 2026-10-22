@@ -41,3 +41,4 @@ Mỗi lần chủ repo duyệt một PA, mốc được lưu bằng một nhánh
 | v15 | `f197c57` | 2026-10-21 | Duyệt PA-22: thiết kế lại theo clip mẫu (gộp cùng PA-21) |
 | v16 | `564486f` | 2026-10-22 | Duyệt PA-23: gắn sẵn máy chủ thông báo |
 | v17 | `faddb20` | 2026-10-22 | Duyệt PA-15: tài liệu BR/SA, bộ test, dọn mã chết |
+| v18 | `36654ec` | 2026-10-22 | Duyệt PA-32: chia sẻ kết quả buổi tập với PT bằng link và QR (gộp cùng nhánh `claude/share-workout-results-pt-dwu3x9`) |

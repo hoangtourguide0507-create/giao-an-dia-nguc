@@ -122,7 +122,7 @@ test('học viên đăng nhập: sai mật khẩu bị từ chối, đúng thì 
   await hv.tab('home');
   await hv.view().locator('.hero .tgo').click();
   await hv.view().locator('[data-act="set-done"][data-e="0"][data-s="0"]').click();
-  await hv.view().locator('.sess-actions [data-act="finish"]').click(); await hv.click('save-session');
+  await hv.view().locator('.sess-actions [data-act="finish"]').click(); await hv.click('save-session'); await hv.closeSheet(); /* gợi ý chia sẻ cho PT (BR-23.11) */
   await driveNow(hv);
   await driveNow(app);
   await expect.poll(async () => (await app.idb('kv', 'state:p2'))?.sessions?.length, { timeout: 15000 }).toBe(1);
@@ -227,4 +227,27 @@ test('đăng nhập: thiếu tên/mật khẩu, link máy chủ sai; học viên
   await hv.page.fill('#acc-sv', 'http://sai');
   await hv.click('acc-login');
   await expect(hv.toast()).toHaveText('Link máy chủ phải dạng https://script.google.com/macros/s/…/exec');
+});
+
+test('hai máy HLV cùng tài khoản: không gửi qua gửi lại vô hạn; sửa giáo án trên máy mới thì máy cũ và học viên đều nhận', async ({ app, device, gas }) => {
+  const lan = await setupTeam(app, device, gas);
+  await app.flushed(); await driveNow(app);
+  const hv = await device(); await hv.goto(); await login(hv, gas, 'lan', 'lan12345');
+  await expect.poll(async () => (await hv.state()).drv?.id, { timeout: 15000 }).toBe(lan.id);
+  const m2 = await device(); await m2.goto(); await login(m2, gas, 'hoang', 'matkhau1');
+  await expect.poll(async () => (await m2.profiles()).list.map(p => p.name).sort(), { timeout: 15000 }).toEqual(['Hoàng', 'Lan']);
+  await expect.poll(async () => (await m2.profiles()).list.length, { timeout: 15000 }).toBe(2);
+  const rev = async () => (await gas.post({ a: 'keo', ma: gas.ma, id: lan.id, biet: { hv: 0, hlv: 0 } })).hlv.rev;
+  const round = async () => { await driveNow(m2); await driveNow(app); };
+  await round(); await round();
+  const n1 = await rev();
+  await round(); await round();
+  expect(await rev()).toBe(n1);
+  /* HLV sửa giáo án của Lan trên máy mới */
+  const lanId = (await m2.profiles()).list.find(p => p.name === 'Lan').id;
+  await m2.page.evaluate(async id => { await window.__sota.switchProfile(id); window.__sota.state.days[0].exercises.push({ id: 'xrow', name: 'Chèo cáp ngồi (Seated cable row)', muscle: 'Lưng', sets: 3, repMin: 8, repMax: 12, currentKg: 30, alts: [], slot: '', kind: 'compound' }); }, lanId);
+  await driveNow(m2); await round();
+  await expect.poll(async () => (await app.idb('kv', 'state:p2'))?.days?.flatMap(d => d.exercises.map(e => e.name)), { timeout: 15000 }).toContain('Chèo cáp ngồi (Seated cable row)');
+  await driveNow(hv);
+  await expect.poll(async () => (await hv.state()).days.flatMap(d => d.exercises.map(e => e.name)), { timeout: 15000 }).toContain('Chèo cáp ngồi (Seated cable row)');
 });

@@ -3019,7 +3019,8 @@ function saveSession() {
   if (!a.deload) for (const en of a.entries) { const ex = findEx(en.exId); if (ex && en.sets.length) { ex.currentKg = Math.max(...en.sets.map(s => s.kg || 0)); ex.kgSetAt = null; } }
   state.active = null; ui.focusEx = null;
   if (!state.settings.cycleStart) state.settings.cycleStart = a.date;
-  save(); stopRest(); releaseWake(); closeSheet(); render(); toast('Đã lưu buổi tập', { act: 'reopen-session', id: a.id, label: 'Hoàn tác' });
+  save(); stopRest(); releaseWake(); closeSheet(); render(); toast('Đã lưu buổi tập');
+  if (!coach() && !state.settings.shareNoAsk) shareAskSheet(a);
 }
 const durOf = x => Math.max(0, (x.finishedAt || Date.now()) - x.startedAt - (x.paused || 0));
 const canReopen = x => !!x && !state.active && (x.date === ymd() || Date.now() - (x.finishedAt || 0) < 6 * 3600e3);
@@ -3374,7 +3375,7 @@ function viewWeek() {
     const lead = (parseYmd(P.days[0]).getDay() + 6) % 7;
     h += `<div class="mcal">${['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map(x => `<span class="mh">${x}</span>`).join('')}${'<span class="e"></span>'.repeat(lead)}${P.days.map(d => {
       const sx = S.ss.filter(x => x.date === d), l2 = sx[sx.length - 1], day = l2 && findDay(l2.dayId), di = day ? state.days.indexOf(day) : 6;
-      return `<button type="button" class="${l2 ? 'on' : ''} ${d === today ? 'td' : ''}" ${l2 ? `data-act="open-session" data-id="${l2.id}" style="--dc:${DAYC[di % DAYC.length]}"` : 'disabled'}>${parseYmd(d).getDate()}${l2 ? `<i>${esc(dayAbbr(l2.dayName))}</i>` : ''}</button>`; }).join('')}</div>`;
+      return `<button type="button" class="${l2 ? 'on' : ''} ${d === today ? 'td' : ''}" ${l2 ? `data-act="day-sheet" data-d="${d}" style="--dc:${DAYC[di % DAYC.length]}"` : 'disabled'}>${parseYmd(d).getDate()}${l2 ? `<i>${esc(dayAbbr(l2.dayName))}</i>` : ''}</button>`; }).join('')}</div>`;
   }
   const cmpL = mode === 'month' ? 'so với tháng trước' : 'so với tuần trước';
   h += `<div class="kpis k4"><div class="kpi"><div class="k">${S.ss.length}</div><div class="l">buổi</div>${dlt(S.ss.length, Q.ss.length)}</div><div class="kpi"><div class="k">${S.sets}</div><div class="l">set</div>${dlt(S.sets, Q.sets)}</div>
@@ -3472,7 +3473,7 @@ function sessionSheet(id) {
     <div class="kpis"><div class="kpi"><div class="k">${s.finishedAt ? fmtDur(durOf(s)) : '–'}</div><div class="l">thời gian</div></div><div class="kpi"><div class="k">${st.sets}</div><div class="l">set</div></div><div class="kpi"><div class="k">${fmt(st.vol / 1000, 2)}</div><div class="l">tấn tạ</div></div></div>
     <div class="cmpline">${pv ? `So với lần trước (${dm(pv.date)}): <b>${tons(pst.vol)}</b> → <b>${tons(st.vol)}</b> ${deltaHtml(st.vol, pst.vol)}` : 'Đây là lần đầu tập buổi này.'}</div><div class="tbl-wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>Bài</th><th>Các set</th></tr></thead><tbody>`;
   for (const en of s.entries) h += `<tr><td>${esc(shortName(en.name))}${en.note ? `<div class="small muted">${esc(en.note)}</div>` : ''}</td><td class="tn">${setsStr(en.sets)}${en.drop ? ` · D ${fmt(en.drop.kg)}×${en.drop.reps}` : ''}</td></tr>`;
-  h += `</tbody></table></div><div class="sh-actions">${canReopen(s) ? `<button class="btn" data-act="reopen-session" data-id="${s.id}">${ICON.play} Mở lại để tập tiếp</button>` : ''}<button class="btn ghost" data-act="close-sheet">Đóng</button><button class="btn ghost danger" data-act="del-session" data-id="${s.id}">Xoá buổi này</button></div>`;
+  h += `</tbody></table></div><div class="sh-actions">${canReopen(s) ? `<button class="btn" data-act="reopen-session" data-id="${s.id}">${ICON.play} Mở lại để tập tiếp</button>` : ''}${coach() ? '' : `<button class="btn" data-act="share-open" data-d="${s.date}" data-id="${s.id}">${ICON.share} Chia sẻ với PT</button>`}<button class="btn ghost" data-act="close-sheet">Đóng</button><button class="btn ghost danger" data-act="del-session" data-id="${s.id}">Xoá buổi này</button></div>`;
   openSheet(h);
 }
 
@@ -3911,7 +3912,7 @@ function coachRich(st) {
 }
 function viewCoach() {
   const co = coach(), D = ui.coachData;
-  let h = `<section class="sec"><div class="sec-head" style="margin-bottom:12px"><h2 class="h1">Phòng HLV</h2><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm" data-act="tab" data-tab="settings">⚙</button></div></div>`;
+  let h = `<section class="sec"><div class="sec-head" style="margin-bottom:12px"><h2 class="h1">Phòng HLV</h2><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm" data-act="qr-scan">⌗ Nhận kết quả</button><button class="btn sm" data-act="tab" data-tab="settings">⚙</button></div></div>`;
   if (!D) return h + '<div class="skel"></div><div class="skel"></div><div class="skel"></div></section>';
   const rows = D.rows.filter(r => r.c), col = p => PCOLORS[p.color % PCOLORS.length];
   const T = rows.reduce((a, r) => ({ n7: a.n7 + r.c.n7, vol7: a.vol7 + r.c.vol7, ups: a.ups + r.c.ups.length, warn: a.warn + ((r.c.gap == null || r.c.gap >= 4) || r.c.pains.length ? 1 : 0) }), { n7: 0, vol7: 0, ups: 0, warn: 0 });
@@ -4027,6 +4028,7 @@ async function qrScanSheet(mode) {
         const vw = v.videoWidth, vh = v.videoHeight, side = Math.round(Math.min(vw, vh) * 0.85), sx = (vw - side) / 2, sy = (vh - side) / 2;
         pass = !pass; const w = Math.min(side, pass ? 960 : 480), h = w; cv.width = w; cv.height = h; g.drawImage(v, sx, sy, side, side, 0, 0, w, h);
         const r = jsQR(g.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: 'dontInvert' });
+        if (r && r.data.includes('#cs=')) { qrStop(); shareReceive(r.data.slice(r.data.indexOf('#cs=') + 4)); return; }
         if (r && /^GA[QSPL][12]\./.test(r.data)) { const [kind, id, i, n, body] = r.data.split('.'); if (id !== msg) { kindIn = kind; msg = id; for (const k in got) delete got[k]; need = +n; } got[i] = body;
           const have = Object.keys(got).length; $('#qr-st').textContent = need > 1 ? `Đã nhận ${have}/${need} trang…` : 'Đã nhận';
           if (have >= need) { const body2 = Array.from({ length: need }, (_, k) => got[k + 1]).join(''); qrStop(); if (kindIn === 'GAL1') drvLinkReceive(body2); else oldCode(); return; } } }
@@ -4493,6 +4495,211 @@ async function drvLinkReceive(body) {
   openSheet(`<h3 class="sh-title">Liên kết Google Drive</h3><p class="sh-text">Liên kết hồ sơ <b>${esc(curProf().name)}</b> trên máy này với dữ liệu <b>${esc(L.n || 'học viên')}</b>${L.c ? ` của HLV <b>${esc(L.c)}</b>` : ''}. Giáo án sẽ theo bản của HLV, lịch sử tập trên máy này được giữ nguyên và gửi lên cho HLV.</p>
     <div class="sh-actions"><button class="btn gold big" data-act="drv-link">Liên kết & đồng bộ</button><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
 }
+/* ===== PA-32: chia sẻ kết quả buổi tập với PT (BR-23) =====
+   Link #cs=<mã> chỉ chứa các bài đã tập của MỘT ngày. Gói nhị phân: byte đầu = phiên bản (1) + 128 nếu đã nén deflate-raw. */
+const SH_VER = 1, SH_EF = ['e', 'm', 'h', 'f'], SH_EPOCH = Date.UTC(2020, 0, 1) / 864e5, SH_MAX_LINK = 700;
+let shIn = null; /* gói đang xem trước ở máy PT: { d, pid, nOld } */
+const shDays = s => { const [y, m, d] = s.split('-').map(Number); return Math.round(Date.UTC(y, m - 1, d) / 864e5 - SH_EPOCH); };
+const shYmd = n => { const d = new Date((n + SH_EPOCH) * 864e5); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`; };
+function shW() {
+  const a = [];
+  return { u8: v => { a.push(v & 255); }, vi(v) { v = Math.round(v); do { let b = v % 128; v = Math.floor(v / 128); if (v) b |= 128; a.push(b); } while (v); },
+    str(s) { const b = new TextEncoder().encode(String(s)); this.vi(b.length); for (const x of b) a.push(x); }, out: () => Uint8Array.from(a) };
+}
+function shR(b) {
+  let i = 0;
+  const take = n => { if (i + n > b.length) throw new Error('hết dữ liệu'); const x = b.subarray(i, i + n); i += n; return x; };
+  const r = { u8: () => take(1)[0], vi() { let v = 0, m = 1, c; do { c = take(1)[0]; v += (c & 127) * m; m *= 128; } while (c & 128); return v; }, str() { return new TextDecoder().decode(take(r.vi())); } };
+  return r;
+}
+async function shZip(bytes, dir) {
+  const S = dir === 'c' ? CompressionStream : DecompressionStream, s = new S('deflate-raw'), w = s.writable.getWriter();
+  w.write(bytes); w.close(); return new Uint8Array(await new Response(s.readable).arrayBuffer());
+}
+/* gói của một ngày: mọi bài có set đã tập; bài trong kho bài gửi chỉ số kho (1 byte), bài tự đặt tên gửi tên */
+function shPack(sessions, who, date) {
+  const w = shW();
+  w.str(who.uid); w.str(who.name); w.vi(shDays(date)); w.vi(sessions.length);
+  for (const s of sessions) {
+    const t = new Date(s.startedAt);
+    w.vi(t.getHours() * 60 + t.getMinutes()); w.vi(Math.round(durOf(s) / 60000)); w.u8(s.deload ? 1 : 0); w.str(s.dayName);
+    const ens = s.entries.filter(en => en.sets.length || en.drop);
+    w.vi(ens.length);
+    for (const en of ens) {
+      const ex = findEx(en.exId), li = LIB2.findIndex(x => x[0] === en.name);
+      w.u8(li < 0 ? 255 : li); if (li < 0) w.str(en.name);
+      w.str(ex ? canonKey(ex) : shKey(en.exId)); w.str(en.note || '');
+      const sets = en.sets.map(z => ({ kg: z.kg || 0, reps: z.reps, dr: z.dr || 0, ef: z.ef ? SH_EF.indexOf(z.ef) + 1 : 0, drop: 0 }));
+      if (en.drop && en.drop.reps > 0) sets.push({ kg: en.drop.kg || 0, reps: en.drop.reps, dr: 0, ef: 0, drop: 1 });
+      const groups = [];
+      for (const z of sets) { const g = groups[groups.length - 1]; if (g && g.kg === z.kg && g.reps === z.reps && g.dr === z.dr && g.ef === z.ef && g.drop === z.drop) g.n++; else groups.push({ ...z, n: 1 }); }
+      w.vi(groups.length);
+      for (const g of groups) { w.vi(g.n); w.vi(Math.round(g.kg * 10)); w.vi(g.reps); w.u8(g.dr | (g.ef << 2) | (g.drop << 5)); }
+    }
+  }
+  return w.out();
+}
+async function shEncode(sessions, who, date) {
+  const raw = shPack(sessions, who, date); let body = raw, head = SH_VER;
+  if (typeof CompressionStream === 'function') { const z = await shZip(raw, 'c'); if (z.length < raw.length) { body = z; head |= 128; } }
+  const out = new Uint8Array(body.length + 1); out[0] = head; out.set(body, 1);
+  return b64u(out);
+}
+async function shDecode(tok) {
+  const b = unb64u(tok); if (!b.length || (b[0] & 127) !== SH_VER) throw new Error('phiên bản');
+  const r = shR(b[0] & 128 ? await shZip(b.subarray(1), 'd') : b.subarray(1));
+  const uid = r.str(), name = r.str(), date = shYmd(r.vi()), sessions = [], ns = r.vi();
+  if (!uid || ns > 6) throw new Error('gói không hợp lệ');
+  for (let k = 0; k < ns; k++) {
+    const min = r.vi(), dur = r.vi(), deload = !!r.u8(), dayName = r.str(), ne = r.vi(); if (ne > 40) throw new Error('nhiều bài');
+    const entries = [];
+    for (let j = 0; j < ne; j++) {
+      const li = r.u8(), lib = li !== 255; if (lib && !LIB2[li]) throw new Error('bài không có trong kho');
+      const en = { lib, name: lib ? LIB2[li][0] : r.str(), key: r.str(), note: r.str(), sets: [], drop: null }, ng = r.vi();
+      for (let g = 0; g < ng; g++) {
+        const n = r.vi(), kg = r.vi() / 10, reps = r.vi(), fl = r.u8(); if (n > 40) throw new Error('nhiều set');
+        for (let q = 0; q < n; q++) {
+          if (fl & 32) { en.drop = { kg, reps }; continue; }
+          const z = { kg, reps }; if (fl & 3) z.dr = fl & 3; const ef = (fl >> 2) & 7; if (ef) z.ef = SH_EF[ef - 1]; en.sets.push(z);
+        }
+      }
+      entries.push(en);
+    }
+    sessions.push({ min, dur, deload, dayName, entries });
+  }
+  return { uid, name, date, sessions };
+}
+function shLink(tok) { return location.origin + location.pathname + '#cs=' + tok; }
+/* link mở app (lúc khởi động hoặc khi app đã mở sẵn): nhận gói rồi bỏ phần #cs= khỏi địa chỉ */
+function shareHash() {
+  if (!location.hash.startsWith('#cs=')) return;
+  const tok = location.hash.slice(4);
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+  shareReceive(tok);
+}
+/* chia sẻ (học viên): xem trước, nút gửi link / gửi ảnh QR / lưu ảnh QR */
+async function shareSheet(date, sid) {
+  await ensureUids();
+  const sessions = state.sessions.filter(s => s.date === date && (!sid || s.id === sid));
+  if (!sessions.length) { toast('Ngày này chưa có buổi tập'); return; }
+  const p = curProf();
+  ui.shareLink = shLink(await shEncode(sessions, { uid: p.uid, name: p.name }, date));
+  openSheet(`<h3 class="sh-title">Chia sẻ với PT · ${dm(date)}</h3>
+    <p class="sh-text">Gửi <b>các bài đã tập</b> trong ${sessions.length > 1 ? 'ngày' : 'buổi'} này: tên bài, kg, số set và rep, ghi chú. <b>Không gửi</b> giáo án, số đo, đau, cài đặt và ảnh bạn chụp.</p>
+    <div class="qrbox"><canvas id="share-qr"></canvas></div>
+    ${ui.shareLink.length > SH_MAX_LINK ? `<div class="warnbox">Buổi này dài quá; hãy chia sẻ từng buổi (mở buổi tập → Chia sẻ với PT).</div>` : ''}
+    <div class="sh-actions"><button class="btn gold" data-act="share-link">${ICON.share} Gửi link</button><button class="btn" data-act="share-img">Gửi ảnh QR</button><button class="btn ghost" data-act="share-qr-save">Lưu ảnh QR</button></div>
+    <p class="small muted" style="margin:8px 0 0">Zalo cắt link dài thì gửi ảnh QR. PT mở app → Phòng HLV → <b>Nhận kết quả từ QR</b>.</p>`);
+  drawQR($('#share-qr'), ui.shareLink);
+}
+async function shareImage() {
+  const c = $('#share-qr'); if (!c) return;
+  const blob = await new Promise(r => c.toBlob(r, 'image/png')), f = new File([blob], 'ket-qua-buoi-tap.png', { type: 'image/png' });
+  if (navigator.canShare && navigator.canShare({ files: [f] })) { try { await navigator.share({ files: [f], title: 'Kết quả buổi tập' }); return; } catch (e) { if (e && e.name === 'AbortError') return; } }
+  shareSave(c); toast('Đã lưu ảnh QR · gửi ảnh đó qua Zalo');
+}
+function shareSave(c) { const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = 'ket-qua-buoi-tap.png'; document.body.appendChild(a); a.click(); a.remove(); }
+/* sau khi lưu buổi tập (học viên): gợi ý gửi cho PT, trừ khi đã chọn “Đừng hỏi lại” */
+function shareAskSheet(a) {
+  openSheet(`<h3 class="sh-title">Đã lưu buổi tập</h3><p class="sh-text">Gửi kết quả <b>${esc(a.dayName)}</b> cho PT của bạn? Chỉ các bài đã tập, kg, set, rep và ghi chú.</p>
+    <div class="sh-actions"><button class="btn gold big" data-act="share-open" data-d="${a.date}" data-id="${a.id}">${ICON.share} Chia sẻ với PT</button><button class="btn ghost" data-act="close-sheet">Xong</button></div>
+    <label class="toggle" style="margin-top:12px"><span>Đừng hỏi lại</span><input type="checkbox" id="share-noask"></label>`);
+}
+/* lịch: chạm một ngày có buổi tập → danh sách buổi của ngày và nút chia sẻ cả ngày */
+function daySheet(date) {
+  const S = state.sessions.filter(x => x.date === date);
+  openSheet(`<h3 class="sh-title">${DOW[parseYmd(date).getDay()]} ${dm(date)}</h3><div class="list">${S.map(x => `<button type="button" class="li" data-act="open-session" data-id="${x.id}"><span class="lt">${esc(x.dayName)}</span><span class="ls">${sessStats(x).sets} set</span></button>`).join('')}</div>
+    <div class="sh-actions"><button class="btn gold" data-act="share-open" data-d="${date}">${ICON.share} Chia sẻ cả ngày này với PT</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`);
+}
+/* userid: mã Drive của học viên nếu có; hồ sơ khác p1 dùng mã hồ sơ; p1 hoặc hồ sơ chưa có gì thì sinh mã mới */
+async function ensureUids() {
+  let ch = false;
+  for (const p of profiles.list) {
+    if (p.uid) continue;
+    const st = await profState(p.id);
+    p.uid = (st && st.drv && st.drv.id) || (p.id !== 'p1' ? p.id : uid()); ch = true;
+  }
+  if (ch) saveProfiles();
+}
+/* PT nhận gói: tự bật chế độ HLV, khớp học viên theo userid, mở xem trước */
+async function shareReceive(tok) {
+  let d; try { d = await shDecode(tok); if (!d.sessions.length) throw new Error('trống'); } catch (e) { toast('Không đọc được kết quả chia sẻ'); return; }
+  if (!coach()) { profiles.coach = { ...(profiles.coach || {}), name: (profiles.coach || {}).name || 'HLV', on: true, dismiss: true }; saveProfiles(); render(true); }
+  await ensureUids();
+  const hit = profiles.list.find(p => p.uid === d.uid), pid = hit ? hit.id : null, cur = pid ? await profState(pid) : null;
+  shIn = { d, pid, nOld: cur ? cur.sessions.filter(s => s.date === d.date).length : 0 };
+  shareReceiveSheet();
+}
+function shareReceiveSheet() {
+  const { d, pid, nOld } = shIn, target = pid && profiles.list.find(p => p.id === pid);
+  const nEx = new Set(d.sessions.flatMap(s => s.entries.map(e => e.key || e.name))).size;
+  const nSet = d.sessions.reduce((a, s) => a + s.entries.reduce((b, e) => b + e.sets.length + (e.drop ? 1 : 0), 0), 0);
+  const vol = d.sessions.reduce((a, s) => a + s.entries.reduce((b, e) => b + e.sets.reduce((c, z) => c + z.kg * z.reps, 0) + (e.drop ? e.drop.kg * e.drop.reps : 0), 0), 0);
+  const head = `<h3 class="sh-title">Kết quả của ${esc(d.name)} ngày ${dm(d.date)}</h3><p class="sh-text">${d.sessions.length} buổi · ${nEx} bài · ${nSet} set · ${tons(vol)}. ${nOld ? `Sẽ thay ${nOld} buổi đã có của ngày này trên máy này.` : 'Ngày này chưa có buổi nào trên máy này.'}</p>`;
+  if (target) { openSheet(head + `<div class="sh-actions"><button class="btn gold big" data-act="share-apply">Cập nhật vào ${esc(target.name)}</button><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`); return; }
+  openSheet(head + `<div class="eyebrow" style="margin:14px 0 8px">Học viên có sẵn trên máy này</div><div class="list">${profiles.list.map(p => `<button type="button" class="li" data-act="share-into" data-id="${p.id}"><span class="lt">Gộp vào ${esc(p.name)}</span></button>`).join('')}</div>
+    <div class="sh-actions"><button class="btn gold" data-act="share-new">Tạo học viên mới “${esc(d.name)}”</button><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
+}
+function shFind(ns, en) {
+  const all = ns.days.flatMap(d => d.exercises.flatMap(e => [e, ...(e.alts || [])]));
+  return (en.key && all.find(x => exKeys(x).has(en.key))) || all.find(x => x.name === en.name) || null;
+}
+function shAddPlan(ns, name, dayName, date) {
+  let day = ns.days.find(d => d.name === dayName); if (!day) { day = { id: uid(), name: dayName, exercises: [] }; ns.days.push(day); }
+  const ex = { ...newEx(name), alts: [], slot: '', mainSince: date }; day.exercises.push(ex); return ex;
+}
+function shSession(ns, s, date) {
+  const base = parseYmd(date); base.setHours(Math.floor(s.min / 60), s.min % 60, 0, 0);
+  const entries = s.entries.map(en => {
+    let ex = shFind(ns, en); if (!ex && en.lib) ex = shAddPlan(ns, en.name, s.dayName, date);
+    return { exId: ex ? ex.id : 'sh' + uid(), name: en.name, muscle: ex ? ex.muscle : 'Khác', note: en.note, each: !!(ex && ex.each), sets: en.sets, drop: en.drop };
+  });
+  const startedAt = base.getTime();
+  return { id: 'sh' + uid(), dayId: 'custom', dayName: s.dayName, date, startedAt, finishedAt: startedAt + s.dur * 60000, deload: s.deload, est: 0, entries, fromShare: 1 };
+}
+/* ghi đè đúng ngày: xoá buổi cũ của ngày đó (có ghi dấu xoá), thêm buổi nhận; mức tạ theo buổi mới nhất */
+function shMerge(ns, d) {
+  const del = syncDelOf(ns), now = Date.now();
+  for (const s of ns.sessions) if (s.date === d.date) del.s[s.id] = now;
+  ns.sessions = ns.sessions.filter(s => s.date !== d.date);
+  const fresh = d.sessions.map(s => shSession(ns, s, d.date));
+  ns.sessions.push(...fresh);
+  const exOf = id => ns.days.flatMap(x => x.exercises.flatMap(e => [e, ...(e.alts || [])])).find(e => e.id === id);
+  for (const s of fresh) for (const en of s.entries) {
+    const ex = exOf(en.exId), later = ns.sessions.some(x => x.date > d.date && x.entries.some(e => e.exId === en.exId));
+    if (!ex || s.deload || !en.sets.length || later) continue;
+    ex.currentKg = Math.max(...en.sets.map(z => z.kg || 0)); ex.kgSetAt = null;
+  }
+  ns.updatedAt = Date.now();
+}
+async function shareApply() {
+  if (!shIn || !shIn.pid) return;
+  const { d, pid } = shIn, p = profiles.list.find(x => x.id === pid), cur = await profState(pid);
+  if (!p || !cur) { toast('Không mở được hồ sơ này'); return; }
+  if (pid === profiles.active ? state.active : cur.active) { toast('Đang tập dở: kết thúc buổi rồi nhận kết quả'); return; }
+  const prev = clone(cur), ns = clone(cur), prevUid = p.uid;
+  shMerge(ns, d);
+  p.uid = d.uid; saveProfiles();
+  if (pid === profiles.active) { state = ns; save(); } else await LDB.put('kv', stateKey(pid), ns);
+  ui.shareUndo = { pid, prev, prevUid };
+  shIn = null; closeSheet(); render(true);
+  toast(`Đã nhận ${d.sessions.length} buổi của ${d.name}`, { act: 'share-undo', label: 'Hoàn tác' });
+}
+async function shareUndo() {
+  const u = ui.shareUndo; if (!u) return; ui.shareUndo = null;
+  const p = profiles.list.find(x => x.id === u.pid); if (p) { p.uid = u.prevUid; saveProfiles(); }
+  if (u.pid === profiles.active) { state = u.prev; save(); render(true); } else await LDB.put('kv', stateKey(u.pid), u.prev);
+  toast('Đã hoàn tác');
+}
+async function shareCreate() {
+  if (profiles.list.length >= 8) { toast('Tối đa 8 người trên một máy'); return; }
+  const id = 'p' + uid(), used = profiles.list.map(p => p.color); let color = 0; while (used.includes(color) && color < PCOLORS.length - 1) color++;
+  const ns = freshState(); ns.settings.name = shIn.d.name; ns.updatedAt = Date.now();
+  await LDB.put('kv', stateKey(id), ns);
+  profiles.list.push({ id, name: shIn.d.name, color, uid: shIn.d.uid }); saveProfiles();
+  shIn.pid = id; await shareApply();
+}
+
 /* ===== PA-21: tài khoản đăng nhập (tên + mật khẩu) =====
    HLV và học viên đăng nhập bằng tài khoản trên máy chủ Apps Script; mỗi máy nhận một "phiên" dùng thay mã liên kết.
    HLV: phiên nằm ở settings.drvKey (như MÃ HLV). Học viên: phiên nằm ở state.drv.m (như mã liên kết). */
@@ -4773,6 +4980,8 @@ const slugName = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace
 async function receiveQrImage(files) {
   files = [].concat(files); toast(files.length > 1 ? `Đang đọc ${files.length} ảnh…` : 'Đang đọc ảnh mã…');
   let texts = []; for (const f of files) { try { texts.push(...await decodeQrImage(f)); } catch (e) {} }
+  const cs = texts.find(t => t.includes('#cs='));
+  if (cs) { await shareReceive(cs.slice(cs.indexOf('#cs=') + 4)); return; }
   const J = joinQrParts(texts);
   if (!J.kind) { toast('Không tìm thấy mã QR trong ảnh đã chọn'); return; }
   if (!J.ok) { toast(`Còn thiếu trang ${J.missing.slice(0, 8).join(', ')}${J.missing.length > 8 ? '…' : ''} trên tổng ${J.n}. Chụp thêm các trang đó rồi chọn lại tất cả ảnh.`); return; }
@@ -4798,6 +5007,7 @@ async function handleCodeText(raw) {
   const txt = String(raw || '').trim();
   if (!txt) { toast('Bộ nhớ tạm đang trống · hãy copy tin nhắn chứa mã trước'); return false; }
   qrStop(); clearInterval(ui.qrT);
+  if (txt.includes('#cs=')) { await shareReceive(txt.slice(txt.indexOf('#cs=') + 4)); return true; }
   const parts = txt.match(/GA[QSPL][12]\.[a-z0-9]+\.\d+\.\d+\.[A-Za-z0-9_-]+/g);
   if (parts && parts.length) {
     const J = joinQrParts(parts);
@@ -5118,6 +5328,15 @@ const handlers = {
   'wp-later': () => { state.wpSkip = weekKey(); ui.wpDraft = null; save(); closeSheet(); render(true); },
   'coach-plan': async t => { await switchProfile(t.dataset.id); ui.tab = 'today'; render(); ui.wpDraft = null; weekPlanSheet(); },
   'qr-scan': () => qrScanSheet(),
+  'share-open': t => shareSheet(t.dataset.d, t.dataset.id),
+  'day-sheet': t => daySheet(t.dataset.d),
+  'share-link': () => copyOrShareCode(ui.shareLink, 'Kết quả buổi tập'),
+  'share-img': () => shareImage(),
+  'share-qr-save': () => shareSave($('#share-qr')),
+  'share-into': async t => { shIn.pid = t.dataset.id; const cur = await profState(shIn.pid); shIn.nOld = cur ? cur.sessions.filter(s => s.date === shIn.d.date).length : 0; shareReceiveSheet(); },
+  'share-apply': () => shareApply(),
+  'share-new': () => shareCreate(),
+  'share-undo': () => shareUndo(),
   'qr-paste': async () => {
     try { const txt = await navigator.clipboard.readText(); if (txt && txt.trim()) { await handleCodeText(txt); return; } } catch (e) {}
     if ($('#paste-in')) { const det = $('#paste-in').closest('details'); if (det) det.open = true; $('#paste-in').focus(); toast('Chạm giữ vào ô chữ bên dưới → chọn Dán'); }
@@ -5364,6 +5583,7 @@ document.addEventListener('change', async e => {
   const t = e.target;
   if (t.id === 'sfx-t') { state.settings.sfx = t.checked; if (t.checked) sfx('check'); save(); return; }
   if (t.id === 'eff-t') { state.settings.eff = t.checked; save(); return; }
+  if (t.id === 'share-noask') { state.settings.shareNoAsk = t.checked; save(); return; }
   if (t.id === 'haptics-t') { state.settings.haptics = t.checked; if (t.checked) vibe(20); save(); return; }
   if (t.id === 'f-name' && ui.draft && ui.draft.isNew) {
     const lib = LIB.find(l => l[0] === t.value.trim());
@@ -5464,6 +5684,8 @@ setInterval(() => { const el = $('#elapsed'); if (el && state.active) { el.textC
   LDB.get('kv', 'exdbPack').then(p => { ui.pack = p || false; if (ui.tab === 'today' || ui.tab === 'more') render(true); }).catch(() => { ui.pack = false; });
   connectCloud(saved && Array.isArray(saved.days) ? saved : null);
   if (!location.hash.startsWith('#nhap=')) maybeWeekPlan();
+  window.addEventListener('hashchange', shareHash);
+  shareHash();
   setTimeout(() => drvAuto(), 1500);
   setTimeout(() => pushRegister(), 3000);
   if (state.settings.notify) currentPushSub().then(async sub => {
@@ -5475,7 +5697,7 @@ setInterval(() => { const el = $('#elapsed'); if (el && state.active) { el.textC
   if (h.startsWith('#nhap=')) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} oldCode(); }
   if ('serviceWorker' in navigator && location.protocol === 'https:' && document.documentElement.dataset.pwa === '1') { navigator.serviceWorker.register('sw.js').catch(() => {}); }
 })();
-window.__sota = { suggest, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
+window.__sota = { share: { decode: shDecode }, suggest, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
 })();
 </script>
 </body>
