@@ -1,9 +1,12 @@
 // Fixture chung: đồng hồ cố định, chặn mạng ngoài, đo coverage cho mọi test, và lớp App để thao tác app.
-import { test as base, expect } from '@playwright/test';
+import { test as base, expect, devices } from '@playwright/test';
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { saveRaw, instrumentedHtml } from './coverage.mjs';
 import { JPEG_B64, TODAY } from './data.mjs';
 
+export const GAS_URL_TEST = 'https://script.google.com/macros/s/AKtest/exec';
 export const NOW = new Date(`${TODAY}T09:00:00+07:00`);
 export { expect };
 
@@ -47,7 +50,23 @@ class App {
   }
   act(name, extra = '') { return this.page.locator(`[data-act="${name}"]${extra}`); }
   async click(name, extra = '') { await this.act(name, extra).first().click(); }
-  async tab(name) { await this.page.locator(`#nav-bar [data-tab="${name}"]`).click(); }
+  /* thanh dưới: home · plan · (nút Tập) · week · more. 'today' = nút giữa khi đang tập, không thì Trang chủ.
+     'body' và 'photos' nằm trong Tiến độ; 'settings' là Cài đặt khi bật HLV. */
+  async tab(name) {
+    const nav = n => this.page.locator(`#nav-bar [data-tab="${n}"]`).first().click();
+    if (name === 'body' || name === 'photos') { await nav('week'); await this.page.locator(`.ptabs [data-tab="${name}"]`).click(); return; }
+    if (name === 'today') { const active = await this.page.evaluate(() => !!window.__sota.state.active); await nav(active ? 'today' : 'home'); return; }
+    if (name === 'settings') { await nav('more'); return; }
+    await nav(name);
+  }
+  /* mở một trang con trong Tài khoản: drive · backup · pack · pace · form · height · notif · skin · install · wipe */
+  async more(key) {
+    await this.tab('more');
+    /* khi bật chế độ HLV, tab này là Phòng HLV: vào Cài đặt bằng nút ⚙ */
+    const gear = this.page.locator('#view [data-act="tab"][data-tab="settings"]'); if (await gear.count()) await gear.first().click();
+    await this.page.locator(`[data-act="more-sec"][data-k="${key}"]`).first().click();
+  }
+  async startPick() { await this.page.locator('#nav-bar .fab').click(); }
   sheet() { return this.page.locator('#sheet-body'); }
   view() { return this.page.locator('#view'); }
   async closeSheet() { await this.page.evaluate(() => document.querySelector('.sheet-bg').click()); }
@@ -65,22 +84,55 @@ class App {
   async flushed() { await this.page.waitForTimeout(400); }
 }
 
+/* chuẩn bị một trang: phục vụ index.html có bộ đếm coverage, đồng hồ giả, chặn mạng ngoài (trừ máy chủ Drive giả) */
+async function prep(page) {
+  if (COVER) await page.route(/\/index\.html$/, route => route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: instrumentedHtml() }));
+  await page.clock.install({ time: NOW });
+  await page.route(/^https?:\/\/(?!localhost|script\.google\.com)/, route => {
+    const u = route.request().url();
+    if (/fonts\.(googleapis|gstatic)\.com/.test(u)) return route.fulfill({ status: 200, contentType: 'text/css', body: '' });
+    if (/raw\.githubusercontent\.com\/.*\.jpg$/.test(u)) return route.fulfill({ status: 200, contentType: 'image/jpeg', body: Buffer.from(JPEG_B64, 'base64') });
+    return route.abort();
+  });
+  /* máy chủ Drive giả (nếu test dùng fixture gas): chuyển yêu cầu tới script.google.com sang máy chủ cục bộ */
+  await page.route('https://script.google.com/**', async route => {
+    if (!currentGas) return route.abort();
+    const rq = route.request(), r = await fetch(`http://localhost:${currentGas}/`, { method: rq.method() === 'POST' ? 'POST' : 'GET', body: rq.method() === 'POST' ? rq.postData() || '' : undefined });
+    await route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: await r.text() });
+  });
+  page.on('pageerror', e => { page.__errors = [...(page.__errors || []), e]; });
+}
+let currentGas = 0;
+async function finish(page, info) {
+  await covSnap(page);
+  if ((page.__errors || []).length && info.status === 'passed') throw new Error('Lỗi JS trong trang: ' + page.__errors.map(e => e.message).join(' | '));
+}
+const GAS_URL = 'https://script.google.com/macros/s/AKtest/exec';
+
 export const test = base.extend({
-  page: async ({ page }, use, info) => {
-    if (COVER) await page.route(/\/index\.html$/, route => route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: instrumentedHtml() }));
-    await page.clock.install({ time: NOW });
-    await page.route(/^https?:\/\/(?!localhost)/, route => {
-      const u = route.request().url();
-      if (/fonts\.(googleapis|gstatic)\.com/.test(u)) return route.fulfill({ status: 200, contentType: 'text/css', body: '' });
-      if (/raw\.githubusercontent\.com\/.*\.jpg$/.test(u)) return route.fulfill({ status: 200, contentType: 'image/jpeg', body: Buffer.from(JPEG_B64, 'base64') });
-      return route.abort();
-    });
-    page.on('pageerror', e => { page.__errors = [...(page.__errors || []), e]; });
-    await use(page);
-    await covSnap(page);
-    if ((page.__errors || []).length && info.status === 'passed') throw new Error('Lỗi JS trong trang: ' + page.__errors.map(e => e.message).join(' | '));
+  page: async ({ page }, use, info) => { await prep(page); await use(page); await finish(page, info); },
+  app: async ({ page }, use) => { await use(new App(page)); },
+  /* máy chủ Drive giả: chạy đúng drive/Code.gs (tests/gas_server.js); mỗi test một máy chủ riêng */
+  gas: async ({}, use) => {
+    const port = 21000 + Math.floor(Math.random() * 20000);
+    const proc = spawn(process.execPath, [fileURLToPath(new URL('../gas_server.js', import.meta.url)), String(port)], { stdio: ['ignore', 'pipe', 'inherit'] });
+    const ma = await new Promise((res, rej) => { proc.stdout.once('data', d => res(String(d).trim().split('\n')[0])); proc.once('error', rej); });
+    const post = async q => (await fetch(`http://localhost:${port}/`, { method: 'POST', body: JSON.stringify(q) })).json();
+    currentGas = port;
+    await use({ url: GAS_URL, ma, port, post, props: async () => (await fetch(`http://localhost:${port}/__props`)).json() });
+    currentGas = 0; proc.kill();
   },
-  app: async ({ page }, use) => { await use(new App(page)); }
+  /* thêm một thiết bị (ngữ cảnh trình duyệt riêng, dữ liệu riêng) nối vào máy chủ Drive giả: máy HLV, máy học viên… */
+  device: async ({ browser, gas }, use, info) => {
+    const opened = [];
+    await use(async () => {
+      const { defaultBrowserType, ...dev } = devices['iPhone 13'];
+      const ctx = await browser.newContext({ ...dev, baseURL: 'http://localhost:4173', locale: 'vi-VN', timezoneId: 'Asia/Ho_Chi_Minh', permissions: ['clipboard-read', 'clipboard-write'] });
+      const page = await ctx.newPage(); await prep(page); opened.push(page);
+      return new App(page);
+    });
+    for (const pg of opened) await finish(pg, info);
+  }
 });
 
 /* giả camera sau: phát hình một mã QR (vẽ bằng thư viện qrcode có sẵn trong app) */
@@ -94,7 +146,7 @@ export async function fakeCamera(page, text) {
     };
   }, text);
 }
-/* lấy ảnh đang hiện trong bảng (ảnh mã QR, ảnh báo cáo) thành Buffer để chọn lại như ảnh trong thư viện */
+/* lấy ảnh đang hiện trong bảng (ảnh mã QR) thành Buffer để chọn lại như ảnh trong thư viện */
 export async function sheetImage(page) {
   const b64 = await page.evaluate(async () => { const src = document.querySelector('#sheet-body img').src; const b = await (await fetch(src)).blob();
     return await new Promise(r => { const fr = new FileReader(); fr.onload = () => r(String(fr.result).split(',')[1]); fr.readAsDataURL(b); }); });

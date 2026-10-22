@@ -104,7 +104,7 @@ test('tải thư viện hình offline: 2 gói, báo tiến độ, ghi nhớ đã
   expect(await app.idb('photos', 'exdb:A:1')).toMatch(/^data:image\/webp;base64,/);
   expect(await app.idb('kv', 'exdbPack')).toMatchObject({ n: 3 });
   await app.closeSheet();
-  await app.tab('more');
+  await app.more('pack');
   await expect(app.view()).toContainText('Đã tải 3 hình');
   await app.view().locator('[data-act="pack-load"]').click();
   await expect(page.locator('#pack-st')).toContainText('Xong: 3 hình');
@@ -114,7 +114,7 @@ test('tải thư viện hình lỗi mạng: báo rõ, tải được một phầ
   await page.route('**/exdb-1.bin', r => r.fulfill({ status: 200, body: pack(['A:0']) }));
   await page.route('**/exdb-2.bin', r => r.fulfill({ status: 404, body: '' }));
   await app.goto();
-  await app.tab('more');
+  await app.more('pack');
   await app.view().locator('[data-act="pack-load"]').click();
   await expect(page.locator('#pack-st')).toHaveText('Tải được 1 hình, còn 1 gói lỗi. Thử lại khi mạng ổn định.');
   await page.unroute('**/exdb-1.bin');

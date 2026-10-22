@@ -63,29 +63,3 @@ test('nhịp nghỉ Nặng và nghỉ riêng của bài; bài cô lập nghỉ n
   await expect(page.locator('#rest-t')).toHaveText(/^1:(30|29)$/);
 });
 
-test('bật báo qua Phím tắt iPhone: mỗi lần nghỉ app gọi shortcuts:// với số giây nghỉ', async ({ app, page }) => {
-  const P = basicPlan();
-  await app.seed({ state: state({ days: P.days }) });
-  await app.tab('more');
-  await expect(app.act('push-test')).toBeDisabled();
-  await page.locator('#notify-t').check();
-  await expect(app.toast()).toContainText('Đã bật. Bấm “Chạy thử 10 giây”');
-  expect((await app.state()).settings.notify).toBe(true);
-  const urls = await app.navSpy();
-  await app.tap(app.act('push-test'));
-  await expect.poll(() => urls).toEqual(['shortcuts://run-shortcut?name=Ngh%E1%BB%89%20gi%E1%BB%AFa%20set&input=text&text=10']);
-  /* đổi tên phím tắt, rồi vào tập: mỗi lần bấm ✓ gọi phím tắt với đúng số giây nghỉ */
-  await page.locator('input[data-k="shortcutName"]').fill('Nghỉ');
-  await app.tab('today');
-  await app.view().locator(`[data-act="pick-day"][data-id="${P.chest.id}"]`).click();
-  await app.view().locator('.hero [data-act="start-day"]').click();
-  await app.tap(app.view().locator('[data-act="set-done"][data-e="0"][data-s="0"]'));
-  await expect(page.locator('#rest')).toBeVisible();
-  await expect.poll(() => urls.length).toBe(2);
-  expect(urls[1]).toBe('shortcuts://run-shortcut?name=Ngh%E1%BB%89&input=text&text=90');
-  /* tắt lại: nút Chạy thử bị khoá */
-  await app.tab('more');
-  await page.locator('#notify-t').uncheck();
-  expect((await app.state()).settings.notify).toBe(false);
-  await expect(app.act('push-test')).toBeDisabled();
-});

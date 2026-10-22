@@ -99,7 +99,7 @@ test('chỉ có 1 lần đo có % mỡ: biểu đồ cơ & mỡ báo cần 2 l�
 
 test('ảnh body: thêm nhiều ảnh, tự đọc ngày chụp trong ảnh, sửa tư thế, lưu theo tháng', async ({ app, page }) => {
   await app.goto();
-  await app.tab('body');
+  await app.tab('photos');
   await expect(app.view()).toContainText('Mỗi tháng chụp 3 tư thế');
   await page.setInputFiles('#bp-in', [
     { name: 'truoc.jpg', mimeType: 'image/jpeg', buffer: jpegWithExif('2026:09:05 07:30:00') },
@@ -134,7 +134,7 @@ test('xem ảnh: đặt làm ảnh Trước/Sau, đổi ngày/tư thế, xoá; �
   const bp = (id, date, pose) => ({ id, date, t: 1, pose, photoId: 'x' + id });
   await app.seed({ state: state({ bodyPhotos: [bp('a', '2026-08-03', 'Trước'), bp('b', '2026-09-03', 'Trước'), bp('c', '2026-10-03', 'Trước')],
     body: [B('2026-08-04', { weight: 70, bodyFat: 20 }), B('2026-10-02', { weight: 72, bodyFat: 18 })] }), photos: { xa: PHOTO, xb: PHOTO, xc: PHOTO } });
-  await app.tab('body');
+  await app.tab('photos');
   await expect(app.view().locator('.cmpnum')).toContainText('Tỉ lệ mỡ 20 → 18');
   await app.view().locator('[data-act="bp-view"][data-id="b"]').click();
   await expect(page.locator('#viewer')).toBeVisible();
@@ -168,7 +168,7 @@ test('xem ảnh: đặt làm ảnh Trước/Sau, đổi ngày/tư thế, xoá; �
 
 test('ảnh body cũ hơn 28 ngày: nhắc chụp tháng này; đặt cùng 1 ngày cho tất cả ảnh mới', async ({ app, page }) => {
   await app.seed({ state: state({ bodyPhotos: [{ id: 'a', date: '2026-09-01', t: 1, pose: 'Trước', photoId: 'xa' }] }), photos: { xa: PHOTO } });
-  await app.tab('body');
+  await app.tab('photos');
   await expect(app.view()).toContainText('Đã 50 ngày chưa chụp');
   const f = { mimeType: 'image/jpeg', buffer: Buffer.from(JPEG_B64, 'base64') };
   await page.setInputFiles('#bp-in', [{ name: '1.jpg', ...f }, { name: '2.jpg', ...f }]);

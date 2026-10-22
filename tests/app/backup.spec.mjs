@@ -15,7 +15,7 @@ test('1 người: tải file sao lưu gồm giáo án, buổi tập, ảnh; ghi 
   const P = basicPlan();
   P.bench.photos = ['ph1'];
   await app.seed({ state: state({ days: P.days, sessions: [session(P.chest, addDays(TODAY, -1), [[P.bench, [[40, 10]]]])], bodyPhotos: [{ id: 'bp', date: TODAY, t: 1, pose: 'Trước', photoId: 'ph2' }] }), photos: { ph1: PHOTO, ph2: PHOTO } });
-  await app.tab('more');
+  await app.more('backup');
   await app.click('backup');
   await expect(app.sheet()).toContainText('1 người tập · 1 buổi tập · 2 ảnh');
   const f = await download(app, page);
@@ -33,7 +33,7 @@ test('nhiều người: chọn tải file của 1 người hoặc cả máy; fil
   P.bench.photos = ['mat'];
   const Q = basicPlan();
   await app.seed({ profiles: twoProfiles(), states: { p1: state({ days: P.days }), p2: state({ days: Q.days.slice(0, 1), sessions: [session(Q.chest, TODAY, [[Q.bench, [[30, 10]]]])] }) } });
-  await app.tab('more');
+  await app.more('backup');
   await app.click('backup');
   await expect(app.sheet()).toContainText('Tải file của ai?');
   await app.sheet().locator('[data-act="backup-one"][data-id="p2"]').click();
@@ -52,7 +52,7 @@ test('khôi phục file cả máy: thay toàn bộ người tập và ảnh', as
   P.bench.photos = ['ph1'];
   const file = { app: 'so-ta', v: 3, exportedAt: '2026-10-01T00:00:00Z', profiles: twoProfiles(), states: { p1: state({ days: P.days }), p2: state({ days: [] }) }, state: state(), photos: { ph1: PHOTO } };
   await app.seed({ state: state({ days: [], bodyPhotos: [{ id: 'b', date: TODAY, t: 1, pose: 'Trước', photoId: 'cu' }] }), photos: { cu: PHOTO } });
-  await app.tab('more');
+  await app.more('backup');
   await page.setInputFiles('#restore-file', { name: 'sl.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(file)) });
   await expect(app.sheet()).toContainText('2 người tập (Tôi, Vợ)');
   await app.click('confirm-ok');
@@ -67,7 +67,7 @@ test('khôi phục file kiểu cũ (1 trạng thái) và file thiếu ảnh', as
   P.bench.photos = ['khong-co'];
   const file = { app: 'so-ta', v: 2, state: state({ days: P.days, sessions: [session(P.chest, TODAY, [[P.bench, [[40, 10]]]])] }), photos: {} };
   await app.goto();
-  await app.tab('more');
+  await app.more('backup');
   await page.setInputFiles('#restore-file', { name: 'cu.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(file)) });
   await expect(app.sheet()).toContainText('2 ngày tập và 1 buổi đã tập');
   await app.click('confirm-ok');
@@ -79,7 +79,7 @@ test('file của 1 người: thêm thành hồ sơ mới, hoặc thay hồ sơ c
   const P = basicPlan();
   const one = { app: 'so-ta', v: 3, one: true, exportedAt: '2026-10-10T00:00:00Z', person: { id: 'p2', name: 'Vợ', color: 1 }, state: state({ days: P.days, active: { id: 'x' } }), photos: { ph9: PHOTO, bad: 'javascript:alert(1)' } };
   await app.seed({ profiles: twoProfiles(), states: { p1: state(), p2: state({ days: [] }) } });
-  await app.tab('more');
+  await app.more('backup');
   const buf = Buffer.from(JSON.stringify(one));
   await page.setInputFiles('#restore-file', { name: 'vo.json', mimeType: 'application/json', buffer: buf });
   await expect(app.sheet()).toContainText('File của Vợ');
@@ -118,9 +118,20 @@ test('file của 1 người: thêm thành hồ sơ mới, hoặc thay hồ sơ c
 
 test('file không phải sao lưu của app thì báo lỗi', async ({ app, page }) => {
   await app.goto();
-  await app.tab('more');
+  await app.more('backup');
   await page.setInputFiles('#restore-file', { name: 'x.json', mimeType: 'application/json', buffer: Buffer.from('{"hello":1}') });
   await expect(app.toast()).toHaveText('File không phải bản sao lưu của Giáo Án Địa Ngục');
   await page.setInputFiles('#restore-file', { name: 'x.txt', mimeType: 'text/plain', buffer: Buffer.from('không phải json') });
   await expect(app.toast()).toHaveText('File không phải bản sao lưu của Giáo Án Địa Ngục');
+});
+
+test('lưu file sao lưu qua bảng chia sẻ của điện thoại (Lưu vào Tệp / iCloud)', async ({ app, page }) => {
+  const P = basicPlan();
+  await app.seed({ state: state({ days: P.days }) });
+  await page.evaluate(() => { window.__shared = []; navigator.canShare = () => true; navigator.share = async d => { window.__shared.push(d.files.map(f => f.name)); }; });
+  await app.more('backup');
+  await app.click('backup');
+  await app.click('backup-save');
+  await expect(app.toast()).toHaveText('Đã lưu file sao lưu');
+  expect(await page.evaluate(() => window.__shared)).toEqual([[`giao-an-dia-nguc-sao-luu-${TODAY}.json`]]);
 });

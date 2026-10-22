@@ -11,85 +11,23 @@ test('mở dữ liệu bản cũ: tự chuyển đổi skin, cách báo, nghỉ 
   await page.evaluate(() => localStorage.setItem('gadn-skin', 'light'));
   await app.seed({ state: legacy });
   const st = await app.state();
-  expect(st.settings).toMatchObject({ skin: 'gold', alertMethod: 'shortcut', notify: false, sets3: 1, warmAll: 1, schedule: {} });
+  expect(st.settings).toMatchObject({ skin: 'amber', skin22: 1, alertMethod: 'push', notify: true, sets3: 1, warmAll: 1, schedule: {} });
   expect(st.bodyPhotos).toEqual([]); expect(st.weekPlans).toEqual({}); expect(st.pains).toEqual([]);
   const [sq, fp] = st.days[0].exercises;
   expect(sq).toMatchObject({ repMin: 8, repMax: 12, repTarget: 10, sets: 3, warmup: true, rest: 0, restV: 2, alts: [], slot: '', mainSince: '2026-08-01', zone: 'Đùi trước', muscle: 'Đùi trước', gid: 'Barbell_Full_Squat' });
   expect(fp).toMatchObject({ rest: 0, warmup: true, zone: 'Vai sau', muscle: 'Vai' });
   expect((await app.profiles()).list[0].name).toBe('Minh');
   await expect(page.locator('#hello')).toContainText('Chào Minh');
-  await expect(page.locator('html')).toHaveAttribute('data-skin', 'gold');
-});
-
-test('chia sẻ qua bảng chia sẻ của điện thoại (Zalo…): mã chữ, ảnh mã, file sao lưu, ảnh báo cáo', async ({ app, page }) => {
-  const P = basicPlan();
-  await app.seed({ state: state({ days: P.days, sessions: [session(P.chest, addDays(TODAY, -2), [[P.bench, [[40, 10]]]])] }) });
-  await page.evaluate(() => { window.__shared = []; navigator.canShare = () => true; navigator.share = async d => { window.__shared.push(d.files ? d.files.map(f => f.name) : d.text.slice(0, 7)); }; });
-  await app.tab('more');
-  await app.click('share');
-  await app.click('plan-copy');
-  await app.click('plan-img');
-  await expect(app.toast()).toHaveText('Đã mở chia sẻ ảnh mã');
-  await app.click('qr-close');
-  await app.click('backup');
-  await app.click('backup-save');
-  await expect(app.toast()).toHaveText('Đã lưu file sao lưu');
-  await app.tab('week');
-  await app.click('report');
-  await app.click('rep-img');
-  await app.click('rep-share');
-  await expect.poll(() => page.evaluate(() => window.__shared.length)).toBe(4);
-  const sh = await page.evaluate(() => window.__shared);
-  expect(sh[0]).toBe('SOTA2z.');
-  expect(sh[1]).toEqual(['giao-an-toi.png']);
-  expect(sh[2][0]).toMatch(/^giao-an-dia-nguc-sao-luu-/);
-  expect(sh[3]).toEqual(['bao-cao-Tôi-10-2026.png']);
-});
-
-test('người dùng huỷ bảng chia sẻ: mã vẫn đã được sao chép; không sao chép được thì hiện ô để tự sao chép', async ({ app, page }) => {
-  const P = basicPlan();
-  await app.seed({ state: state({ days: P.days }) });
-  await page.evaluate(() => { navigator.share = async () => { throw Object.assign(new Error('x'), { name: 'AbortError' }); }; });
-  await app.tab('more');
-  await app.click('share');
-  await app.click('plan-copy');
-  await expect(app.toast()).toHaveText('Đã sao chép mã vào bộ nhớ tạm · dán vào Zalo để gửi');
-  await app.click('qr-close');
-  /* bộ nhớ tạm bị chặn */
-  await page.evaluate(() => { navigator.share = undefined; navigator.clipboard.writeText = async () => { throw new Error('denied'); }; });
-  await app.click('share');
-  await app.click('plan-copy');
-  await expect(app.sheet()).toContainText('Bấm giữ vào ô bên dưới');
-  await expect(page.locator('#manual-copy-box')).toHaveValue(/^SOTA2z\./);
-  await app.click('copy');
-  await expect(app.toast()).toHaveText('Đã chọn sẵn, bấm giữ để sao chép');
-  await page.evaluate(() => { navigator.clipboard.writeText = async () => {}; });
-  await app.click('copy');
-  await expect(app.toast()).toHaveText('Đã sao chép');
-  /* sao chép tên phím tắt khi bộ nhớ tạm bị chặn */
-  await page.evaluate(() => { navigator.clipboard.writeText = async () => { throw new Error('denied'); }; });
-  await app.closeSheet();
-  await app.click('copy-sc');
-  await expect(app.toast()).toHaveText('Tên phím tắt: Nghỉ giữa set');
-});
-
-test('chia sẻ ảnh/báo cáo không có bảng chia sẻ: nhắc nhấn giữ ảnh để lưu', async ({ app, page }) => {
-  const P = basicPlan();
-  await app.seed({ state: state({ days: P.days, sessions: [session(P.chest, addDays(TODAY, -2), [[P.bench, [[40, 10]]]])] }) });
-  await page.evaluate(() => { navigator.canShare = () => false; });
-  await app.tab('week');
-  await app.click('report');
-  await app.click('rep-img');
-  await app.click('rep-share');
-  await expect(app.toast()).toHaveText('Nhấn giữ ảnh để lưu hoặc chia sẻ');
+  await expect(page.locator('html')).toHaveAttribute('data-skin', 'amber');
 });
 
 test('phím Esc đóng bảng và trình xem ảnh; toast có nút hành động tự ẩn chậm hơn', async ({ app, page }) => {
   await app.seed({ state: state({ bodyPhotos: [{ id: 'a', date: TODAY, t: 1, pose: 'Trước', photoId: 'x' }] }), photos: { x: PHOTO } });
-  await app.tab('body');
+  await app.tab('photos');
   await app.view().locator('[data-act="bp-view"]').click();
   await page.keyboard.press('Escape');
   await expect(page.locator('#viewer')).toBeHidden();
+  await app.tab('body');
   await app.click('body-add');
   await page.keyboard.press('Escape');
   await expect(page.locator('#sheet')).toBeHidden();

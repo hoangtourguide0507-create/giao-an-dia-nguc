@@ -24,15 +24,17 @@ test('đầu tuần tự mở kế hoạch tuần; duyệt theo gợi ý thì bu
   await expect(app.toast()).toHaveText('Đã duyệt kế hoạch tuần');
   const plan = (await app.state()).weekPlans[MONDAY];
   expect(plan).toMatchObject({ mode: 'balanced', kg: { [P.bench.id]: 42.5, [P.lat.id]: 47.5, [P.fly.id]: 30 } });
+  await app.tab('plan');
   await expect(app.view().locator('.restcard')).toContainText('Tuần cân bằng · đã duyệt');
   await expect(app.view().locator('.restcard')).toContainText('2 bài lên tạ tuần này');
+  await app.tab('home');
   await app.view().locator(`[data-act="pick-day"][data-id="${P.chest.id}"]`).click();
   await app.view().locator('.hero [data-act="start-day"]').click();
   await expect(app.view().locator('.target')).toContainText('Lần trước · 14/10');
 });
 
 test('giữ mức cũ hoặc tự chỉnh từng bài, đổi chế độ deload/ưu tiên rồi duyệt', async ({ app }) => {
-  const { P, st } = setup();
+  const { P, st } = setup({ settings: { cycleStart: addDays(MONDAY, -14) } });
   const pull = ex('Hít xà (Pull-up)', { muscle: 'Lưng', currentKg: 0 });
   st.days[0].exercises.push(pull);
   await app.seed({ state: st });
@@ -56,7 +58,9 @@ test('giữ mức cũ hoặc tự chỉnh từng bài, đổi chế độ deload
   await expect(app.toast()).toHaveText('Đã duyệt · tuần ưu tiên Lưng');
   const plan = (await app.state()).weekPlans[MONDAY];
   expect(plan).toMatchObject({ mode: 'focus', focus: 'Lưng', dec: { [P.bench.id]: 'ok', [P.lat.id]: 'custom' }, kg: { [P.lat.id]: 52.5 } });
+  await app.tab('plan');
   await expect(app.view().locator('.restcard')).toContainText('Tuần ưu tiên Lưng · đã duyệt');
+  await app.tab('home');
   /* buổi Lưng trong tuần ưu tiên Lưng: dưới 3 bài lưng nên thêm 1 bài lưng từ ngày khác, bài lưng lên đầu */
   await app.view().locator(`[data-act="pick-day"][data-id="${P.back.id}"]`).click();
   await app.view().locator('.hero [data-act="start-day"]').click();
@@ -67,11 +71,14 @@ test('giữ mức cũ hoặc tự chỉnh từng bài, đổi chế độ deload
   expect(a.entries.map(e => e.sets.length)).toEqual([3, 3, 3, 3]);
   /* mở lại kế hoạch đã duyệt để sửa */
   await app.click('cancel-session'); await app.click('confirm-ok');
+  await app.toastGone();
+  await app.tab('plan');
   await app.click('wp-open');
   await expect(app.sheet().locator('[data-act="wp-mode"][data-k="focus"]')).toHaveAttribute('aria-pressed', 'true');
   await app.click('wp-mode', '[data-k="deload"]');
   await app.click('wp-approve');
   await expect(app.toast()).toHaveText('Đã duyệt · tuần deload');
+  await app.tab('plan');
   await expect(app.view().locator('.restcard')).toContainText('Tuần deload · đã duyệt');
 });
 
@@ -103,4 +110,26 @@ test('đủ 6 tuần: kế hoạch tuần gợi ý deload; giáo án chưa có b
   await page.waitForTimeout(900);
   await expect(page.locator('#sheet')).toBeHidden();
   await expect(page.locator('#cycle')).toHaveText('Tuần 2/6');
+});
+
+test.fixme('VD-31: duyệt kế hoạch tuần Deload khi hồ sơ chưa có ngày bắt đầu chu kỳ làm lỗi vẽ lại màn hình', async ({ app, page }) => {
+  const { st } = setup();
+  await app.seed({ state: st });
+  await expect(app.sheet()).toContainText('Kế hoạch tuần', { timeout: 3000 });
+  await app.sheet().locator('[data-act="wp-mode"][data-k="deload"]').click();
+  await app.click('wp-approve');
+  await expect(app.toast()).toHaveText('Đã duyệt · tuần deload');
+  expect(page.__errors || []).toEqual([]);
+});
+
+test('tổng kết tuần trước ghi số bài đã lên tạ và bài đang chững', async ({ app }) => {
+  const P = basicPlan();
+  const prev = addDays(MONDAY, -6), older = addDays(MONDAY, -13);
+  const ss = [session(P.chest, older, [[P.bench, [[37.5, 10], [37.5, 10], [37.5, 10]]], [P.fly, [[30, 10], [30, 9], [30, 8]]]]),
+    session(P.chest, addDays(older, 1), [[P.fly, [[30, 9], [30, 8], [30, 7]]]]),
+    session(P.chest, prev, [[P.bench, [[40, 10], [40, 10], [40, 10]]], [P.fly, [[30, 8], [30, 7], [30, 6]]]])];
+  await app.seed({ state: state({ days: P.days, sessions: ss, wpSkip: null }) });
+  await expect(app.sheet()).toContainText('Kế hoạch tuần', { timeout: 3000 });
+  await expect(app.sheet().locator('.wpnote').first()).toContainText('1 bài');
+  await expect(app.sheet().locator('.wpnote').first()).toContainText('đã lên tạ');
 });

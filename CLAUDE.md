@@ -15,3 +15,15 @@
 - Mỗi lần đổi `index.html` thì tăng `CACHE` trong `sw.js` để điện thoại nhận bản mới.
 - Kiểm tra cú pháp bằng `npm run check` và chạy `npm test` (Playwright + coverage, ngưỡng lines/statements/functions 90%, branches 80%) trước khi commit.
 - Giao diện và nội dung viết bằng tiếng Việt.
+
+## Kiểm thử
+- `bash tests/chay.sh`: dựng bản thử `tests/site/` (chèn móc `window.__ev`), kiểm cú pháp, chạy các kiểm thử Playwright và kiểm thử 2 máy chủ. Phải xanh trước khi đẩy nhánh và trước khi gộp.
+- Tính năng mới: thêm `tests/test_pa<số>.py` và đưa vào danh sách mặc định trong `tests/chay.sh`.
+
+## Agent của dự án (`.claude/agents/`)
+- `trien-khai-pa`: làm một yêu cầu thay đổi thành nhánh PA, kiểm thử, đẩy, trả link xem thử.
+- `duyet-pa`: "Duyệt PA-x", "Duyệt lại vX", theo dõi bản dựng GitHub Pages.
+- `kiem-thu`: kiểm tra độc lập một nhánh trước khi duyệt, tái hiện lỗi chủ repo báo.
+- `kiem-chung-y-khoa`: đối chiếu số liệu tập luyện / dinh dưỡng / chấn thương với nguồn chuyên môn trước khi đưa vào app.
+- `may-chu`: máy chủ đồng bộ Apps Script (`drive/`) và máy chủ thông báo Cloudflare (`push-server/`).
+- `ux-ui`: giao diện, màu sắc, hiệu ứng; phân tích ảnh/clip mẫu và làm theo.

@@ -7,7 +7,7 @@ test.describe('ngày tập', () => {
     const P = basicPlan();
     await app.seed({ state: state({ days: P.days }) });
     await app.tab('plan');
-    await expect(app.view()).toContainText('Giáo án của Tôi');
+    await expect(app.view()).toContainText('Tôi · 2 ngày tập · 6 bài');
     await expect(app.view().locator('.pday')).toHaveCount(2);
     /* thêm ngày, bỏ trống tên thì báo lỗi */
     await app.click('add-day');
@@ -55,6 +55,16 @@ test.describe('ngày tập', () => {
     await app.view().locator('[data-act="onb-sample"]').click();
     expect((await app.state()).days).toHaveLength(4);
   });
+});
+
+test('thẻ bài trong giáo án có biểu đồ nhỏ khi bài đã tập từ 2 buổi', async ({ app }) => {
+  const P = basicPlan();
+  const ss = [[14, 37.5], [7, 40], [1, 42.5]].map(([ago, kg]) => session(P.chest, addDays(TODAY, -ago), [[P.bench, [[kg, 10], [kg, 10], [kg, 10]]]]));
+  await app.seed({ state: state({ days: P.days, sessions: ss }) });
+  await app.tab('plan');
+  await app.click('toggle-day');
+  await expect(app.view().locator('.exr', { hasText: 'Bench press' }).locator('svg.spk')).toHaveCount(1);
+  await expect(app.view().locator('.exr', { hasText: 'Pec deck' }).locator('svg.spk')).toHaveCount(0);
 });
 
 test.describe('bài tập', () => {

@@ -144,3 +144,21 @@ test('xem lại buổi đã tập, xoá buổi (có xác nhận, ghi dấu xoá 
   expect(Object.keys(s2.syncDel.s)).toHaveLength(1);
   await expect(app.view()).toContainText('Buổi đã tập · 1');
 });
+
+test('Tiến độ → từng bài: nhãn gợi ý (lên tạ, đang đau, tuần deload, giữ mức)', async ({ app }) => {
+  const P = basicPlan();
+  const mk = (e, kg) => session(P.chest, addDays(TODAY, -8), [[e, [[kg, 10], [kg, 10], [kg, 10]]]]);
+  const ss = [mk(P.bench, 40), mk(P.push, 20)];
+  await app.seed({ state: state({ days: P.days, sessions: ss, pains: [{ id: 'p', area: 'Ngực', level: 1, since: addDays(TODAY, -1), resolvedAt: null }], weekPlans: {} }) });
+  await app.tab('week');
+  await app.click('allex');
+  await app.sheet().locator('details.grp summary', { hasText: 'Ngực' }).click();
+  await expect(app.sheet().locator(`[data-act="prog"][data-id="${P.bench.id}"]`)).toContainText('đau nhẹ');
+  await app.sheet().locator('details.grp summary', { hasText: 'Tay sau' }).click();
+  await expect(app.sheet().locator(`[data-act="prog"][data-id="${P.push.id}"]`)).toContainText('Lên 22,5 kg buổi tới');
+  await app.closeSheet();
+  await app.seed({ state: state({ days: P.days, sessions: ss, settings: { cycleStart: addDays(TODAY, -45) } }) });
+  await app.tab('week'); await app.click('allex');
+  await app.sheet().locator('details.grp summary', { hasText: 'Tay sau' }).click();
+  await expect(app.sheet().locator(`[data-act="prog"][data-id="${P.push.id}"]`)).toContainText('Tuần deload');
+});

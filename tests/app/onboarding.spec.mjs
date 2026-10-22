@@ -23,7 +23,7 @@ test('dùng giáo án mẫu 4 ngày: tạo đủ ngày và bài, chuyển sang t
   /* bài tạ đơn tự ghi kg mỗi tay, bước 2 kg */
   const db = st.days[0].exercises.find(e => /Dumbbell row/.test(e.name));
   expect(db).toMatchObject({ each: true, step: 2 });
-  await expect(app.view()).toContainText('Giáo án của Tôi');
+  await expect(app.view()).toContainText('Tôi · 4 ngày tập · 20 bài');
   await app.flushed();
   expect((await app.idb('kv', 'state')).days).toHaveLength(4);
 });
@@ -44,7 +44,7 @@ test('tạo ngày tập đầu tiên từ màn chào mừng', async ({ app }) =>
 test('nút quét mã ở màn chào mừng mở màn quét / dán mã', async ({ app }) => {
   await app.goto();
   await app.click('qr-scan');
-  await expect(app.sheet()).toContainText('Quét hoặc dán mã');
+  await expect(app.sheet()).toContainText('Quét mã liên kết');
   await app.click('qr-close');
   await expect(app.page.locator('#sheet')).toBeHidden();
 });

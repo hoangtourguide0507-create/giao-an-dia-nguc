@@ -68,14 +68,18 @@ npm test
 - Báo cáo coverage chi tiết: `coverage/report/index.html` (số dòng khớp `index.html`).
 - `NO_COVERAGE=1 npx playwright test <tên-file>` để chạy nhanh một nhóm khi đang viết test.
 
+**Bộ thứ hai — hồi quy theo PA (Python):** `bash tests/chay.sh` (cần `pip install playwright && playwright install chromium`) chạy `tests/test_<pa>.py`, `tests/test_push_server.mjs` và `tests/test_drive_gas.js` (chạy thẳng `drive/Code.gs`). Bộ này không đo coverage nhưng giữ các hành vi PA trước đã chốt; chạy một vài file: `bash tests/chay.sh pa22 sync`. Cả hai bộ phải xanh trước khi commit.
+
+Máy chủ Drive trong bộ Node là **chính `drive/Code.gs`** chạy trong `tests/gas_server.js` (fixture `gas` và `device`), không phải bản mô phỏng viết lại — xem [SA.md §12](SA.md#12-kiến-trúc-kiểm-thử).
+
 ### Ngưỡng coverage (bắt buộc, áp cho script chính trong `index.html`)
 
-| Chỉ số | Ngưỡng | Hiện tại (21/10/2026) |
+| Chỉ số | Ngưỡng | Hiện tại (22/10/2026) |
 |---|---|---|
 | Lines | ≥ 90% | 98,99% |
-| Statements | ≥ 90% | 93,16% |
-| Functions | ≥ 90% | 95,73% |
-| Branches | ≥ 80% | 80,27% |
+| Statements | ≥ 90% | 92,49% |
+| Functions | ≥ 90% | 95,61% |
+| Branches | ≥ 80% | 80,41% |
 
 Coverage đo bằng **Istanbul** (cách Jest/nyc dùng): khi test, trang được phục vụ với script đã gắn bộ đếm, nên nhánh và hàm *chưa từng chạy* vẫn được đếm. Thư viện QR nhúng sẵn (`qrcode-generator`, `jsQR`) không tính.
 
@@ -94,14 +98,14 @@ Một test chỉ được tính là hợp lệ khi:
 
 - App là một file `index.html` (toàn bộ JS trong một IIFE), `sw.js` là service worker.
 - Mỗi lần đổi `index.html` thì **tăng `CACHE` trong `sw.js`** để điện thoại nhận bản mới.
-- Trước khi commit: `npm run check` và `npm test` phải xanh.
+- Trước khi commit: `npm run check`, `npm test` và `bash tests/chay.sh` phải xanh.
 - Giao diện, nội dung, tài liệu và tên test viết bằng **tiếng Việt**.
 - Dữ liệu người dùng phải **tương thích ngược**: mọi thay đổi định dạng dữ liệu cần bước chuyển đổi trong `loadState` / `migrateEx` và có test "mở dữ liệu bản cũ".
 
 ## 6. Danh sách kiểm tra khi xong một PA (Definition of Done)
 
 - [ ] Epic ngày có đủ BR, SA, kế hoạch test; anh đã xác nhận trước khi code.
-- [ ] Test mới đã từng đỏ, giờ xanh; `npm test` xanh; coverage ≥ ngưỡng.
+- [ ] Test mới đã từng đỏ, giờ xanh; `npm test` và `bash tests/chay.sh` xanh; coverage ≥ ngưỡng.
 - [ ] `BR.md`, `SA.md` phản ánh đúng hành vi mới; `VAN-DE-VA-CHIEN-LUOC.md` cập nhật nếu có.
 - [ ] `CACHE` trong `sw.js` đã tăng (nếu đổi `index.html`).
 - [ ] Nhánh `pa-<số>-<tên>` đã đẩy, có link xem thử raw.githack; chờ "Duyệt PA-x".

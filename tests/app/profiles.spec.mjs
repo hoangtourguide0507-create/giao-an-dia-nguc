@@ -138,7 +138,7 @@ test('bật chế độ HLV: hồ sơ “Tôi” đổi tên theo HLV hoặc b�
   await app.closeSheet();
   await app.click('coach-off');
   await expect(app.toast()).toHaveText('Đã tắt chế độ HLV');
-  await expect(page.locator('#nav-bar [data-tab="more"]')).toContainText('Tôi');
+  await expect(page.locator('#nav-bar [data-tab="more"]')).toContainText('Tài khoản');
 });
 
 test('Phòng HLV: bảng xếp hạng khi có từ 4 học viên, nhắc học viên nghỉ lâu, mở hồ sơ học viên để ghi buổi', async ({ app, page }) => {

@@ -303,3 +303,15 @@ test('đang có buổi dở thì không mở lại buổi khác; buổi đang t�
   await app.page.evaluate(() => { const b = document.createElement('button'); b.dataset.act = 'reopen-session'; b.dataset.id = 'x'; document.body.appendChild(b); b.click(); });
   await expect(app.toast()).toContainText('Đang có buổi tập dở');
 });
+
+test('đổi bài sang bài khác cùng nhóm cơ ở ngày khác (không đặt làm bài chính)', async ({ app }) => {
+  const P = basicPlan();
+  const only = day('Ngực', [P.bench]), other = day('Ngực 2', [P.fly]);
+  await app.seed({ state: state({ days: [only, other] }) });
+  await app.view().locator(`.dchip[data-id="${only.id}"]`).click();
+  await app.view().locator('.hero [data-act="start-day"]').click();
+  await app.click('swap-open');
+  await expect(app.sheet()).toContainText('Bài khác cùng nhóm Ngực');
+  await app.sheet().locator(`[data-act="swap-do"][data-id="${P.fly.id}"]`).click();
+  expect((await app.state()).active.entries[0]).toMatchObject({ exId: P.fly.id, manual: true });
+});

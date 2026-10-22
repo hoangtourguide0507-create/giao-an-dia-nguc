@@ -13,3 +13,5 @@ npm install
 npx playwright install chromium
 npm test
 ```
+
+Bộ thứ hai (hồi quy theo PA, gồm máy chủ Drive `drive/Code.gs` và `push-server/`): `bash tests/chay.sh` — cần `pip install playwright`. Chi tiết: [docs/README.md](docs/README.md).
