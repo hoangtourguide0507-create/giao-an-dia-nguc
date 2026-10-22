@@ -18,6 +18,7 @@ done
 if [ $# -eq 0 ]; then
   node test_push_server.mjs | grep -q FAIL && { echo "✗ push-server"; FAIL=1; } || echo "✓ push-server"
   node test_hub_sync.mjs 2>/dev/null | grep -q FAIL && { echo "✗ hub-sync (máy chủ đồng bộ)"; FAIL=1; } || echo "✓ hub-sync (máy chủ đồng bộ)"
+  node test_hub_pa33b.mjs 2>/dev/null | grep -q FAIL && { echo "✗ hub-passkey-anh"; FAIL=1; } || echo "✓ hub-passkey-anh"
   node test_drive_gas.js | grep -q FAIL && { echo "✗ drive/Code.gs"; FAIL=1; } || echo "✓ drive/Code.gs"
 fi
 exit $FAIL

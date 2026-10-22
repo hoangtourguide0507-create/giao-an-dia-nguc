@@ -12,11 +12,14 @@
 const enc = new TextEncoder();
 export const MAX_DEV = 5, MAX_RECS = 200, PAGE = 500, MAX_BUOI = 256 * 1024, MAX_PLAN = 1024 * 1024;
 const ID_RE = /^[a-z0-9-]{3,40}$/;
+const MAX_IMG = 1200000, MAX_PK = 5, CHAL_MS = 5 * 60000, IMG_RE = /^[A-Za-z0-9_-]{4,64}$/;
+const DEFAULT_IMG_HV = 400 * 1024 * 1024, DEFAULT_IMG_ROOM = 4 * 1024 * 1024 * 1024;
 
 const b64u = buf => { let s = ''; for (const x of new Uint8Array(buf)) s += String.fromCharCode(x); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
 export const sha = async s => b64u(await crypto.subtle.digest('SHA-256', enc.encode(s)));
 const rnd = n => b64u(crypto.getRandomValues(new Uint8Array(n)));
 const same = (a, b) => { if (a.length !== b.length) return false; let x = 0; for (let i = 0; i < a.length; i++) x |= a.charCodeAt(i) ^ b.charCodeAt(i); return x === 0; };
+const unb = s => { let t = String(s || '').replace(/-/g, '+').replace(/_/g, '/'); while (t.length % 4) t += '='; return Uint8Array.from(atob(t), c => c.charCodeAt(0)); };
 const clip = (s, n) => String(s == null ? '' : s).slice(0, n);
 const json = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
 const fail = (s, loi) => json({ ok: false, loi }, s);
@@ -31,6 +34,9 @@ export function schema(sql) {
   sql.exec('CREATE INDEX IF NOT EXISTS rec_hv_seq ON rec(hv, seq)');
   sql.exec('CREATE INDEX IF NOT EXISTS rec_seq ON rec(seq)');
   sql.exec('CREATE TABLE IF NOT EXISTS meta(k TEXT PRIMARY KEY, v INTEGER NOT NULL)');
+  sql.exec('CREATE TABLE IF NOT EXISTS chal(c TEXT PRIMARY KEY, exp INTEGER NOT NULL)');
+  sql.exec('CREATE TABLE IF NOT EXISTS pk(hv TEXT NOT NULL, cred TEXT PRIMARY KEY, pub TEXT NOT NULL, cuoi INTEGER NOT NULL)');
+  sql.exec('CREATE TABLE IF NOT EXISTS img(hv TEXT NOT NULL, h TEXT NOT NULL, n INTEGER NOT NULL, d TEXT NOT NULL, at INTEGER NOT NULL, PRIMARY KEY(hv, h))');
 }
 
 export function seqNow(sql) { const r = one(sql, "SELECT v FROM meta WHERE k = 'seq'"); return r ? r.v : 0; }
@@ -98,16 +104,21 @@ function thu(sql, q) {
   return json({ ok: true });
 }
 
+/* cấp khoá cho một máy mới của học viên; máy thứ 6 đẩy máy cũ nhất ra */
+async function issueDevice(sql, hv, tenMay) {
+  const n = one(sql, 'SELECT COUNT(*) AS n FROM tb WHERE hv = ?', hv).n;
+  if (n >= MAX_DEV) sql.exec('DELETE FROM tb WHERE hv = ? AND dkh IN (SELECT dkh FROM tb WHERE hv = ? ORDER BY cuoi, rowid LIMIT ?)', hv, hv, n - MAX_DEV + 1);
+  const dk = rnd(32);
+  sql.exec('INSERT INTO tb(hv, dkh, ten, cuoi) VALUES(?, ?, ?, ?)', hv, await sha(dk), clip(tenMay, 40) || 'Thiết bị', Date.now());
+  return dk;
+}
+
 /* ---------- Nối máy bằng QR học viên (không cần đăng nhập) ---------- */
 async function noi(sql, q) {
   const i = String(q.i || ''), k = String(q.k || '');
   const t = one(sql, "SELECT id, ten, skh, khoa FROM tv WHERE id = ? AND kieu = 'hv'", i);
   if (!t || t.khoa || !same(await sha(k), t.skh)) return fail(403, 'Mã học viên hoặc mã QR không đúng');
-  const n = one(sql, 'SELECT COUNT(*) AS n FROM tb WHERE hv = ?', i).n;
-  if (n >= MAX_DEV) sql.exec('DELETE FROM tb WHERE hv = ? AND dkh IN (SELECT dkh FROM tb WHERE hv = ? ORDER BY cuoi, rowid LIMIT ?)', i, i, n - MAX_DEV + 1);
-  const dk = rnd(32);
-  sql.exec('INSERT INTO tb(hv, dkh, ten, cuoi) VALUES(?, ?, ?, ?)', i, await sha(dk), clip(q.tb, 40) || 'Thiết bị', Date.now());
-  return json({ ok: true, id: i, ten: t.ten, dk });
+  return json({ ok: true, id: i, ten: t.ten, dk: await issueDevice(sql, i, q.tb) });
 }
 
 /* ---------- Bản ghi ---------- */
@@ -167,10 +178,124 @@ async function dkSub(ctx, q, auth) {
   return json({ ok: true });
 }
 
+/* ---------- Passkey (WebAuthn) · khôi phục trên máy trống ---------- */
+const rpOf = env => ({ id: env.RP_ID || 'gym.fiddle.vn', origin: env.RP_ORIGIN || 'https://gym.fiddle.vn' });
+
+function thach(sql) {
+  const c = rnd(32);
+  sql.exec('DELETE FROM chal WHERE exp < ?', Date.now());
+  sql.exec('INSERT INTO chal(c, exp) VALUES(?, ?)', c, Date.now() + CHAL_MS);
+  return json({ ok: true, chal: c });
+}
+
+/* thách thức chỉ dùng một lần: xoá ngay khi kiểm tra, dù đúng hay sai */
+function useChal(sql, c) {
+  const r = one(sql, 'SELECT exp FROM chal WHERE c = ?', String(c || ''));
+  if (!r) return false;
+  sql.exec('DELETE FROM chal WHERE c = ?', String(c));
+  return r.exp > Date.now();
+}
+
+function clientOk(cdj, type, chal, origin) {
+  try {
+    const c = JSON.parse(new TextDecoder().decode(unb(cdj)));
+    return c.type === type && c.challenge === chal && c.origin === origin;
+  } catch { return false; }
+}
+
+/* chữ ký WebAuthn là DER; WebCrypto cần dạng r||s 64 byte (P-256) */
+function derToRaw(der) {
+  if (der[0] !== 0x30 || der[1] > 0x7f) throw new Error('DER');
+  let i = 2; const out = new Uint8Array(64);
+  for (const half of [0, 1]) {
+    if (der[i] !== 0x02) throw new Error('DER');
+    let len = der[i + 1], x = der.slice(i + 2, i + 2 + len); i += 2 + len;
+    while (x.length > 32 && x[0] === 0) x = x.slice(1);
+    if (x.length > 32) throw new Error('DER');
+    out.set(x, half * 32 + 32 - x.length);
+  }
+  return out;
+}
+
+async function pkDky(sql, env, q, auth) {
+  if (auth.role !== 'v') return fail(403, 'Chỉ máy học viên đăng ký khoá');
+  const { origin } = rpOf(env), cred = String(q.cred || '');
+  if (!cred || cred.length > 200) return fail(400, 'Khoá không hợp lệ');
+  if (!useChal(sql, q.chal)) return fail(400, 'Thách thức không hợp lệ hoặc đã hết hạn');
+  if (!clientOk(q.cdj, 'webauthn.create', String(q.chal), origin)) return fail(400, 'Dữ liệu xác thực không đúng');
+  try { await crypto.subtle.importKey('spki', unb(q.pub), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']); }
+  catch { return fail(400, 'Khoá công khai không hợp lệ'); }
+  const n = one(sql, 'SELECT COUNT(*) AS n FROM pk WHERE hv = ?', auth.hv).n;
+  if (n >= MAX_PK) sql.exec('DELETE FROM pk WHERE hv = ? AND cred IN (SELECT cred FROM pk WHERE hv = ? ORDER BY cuoi LIMIT ?)', auth.hv, auth.hv, n - MAX_PK + 1);
+  sql.exec('INSERT INTO pk(hv, cred, pub, cuoi) VALUES(?, ?, ?, ?) ON CONFLICT(cred) DO UPDATE SET hv = excluded.hv, pub = excluded.pub, cuoi = excluded.cuoi', auth.hv, cred, String(q.pub), Date.now());
+  return json({ ok: true });
+}
+
+/* khôi phục: máy trống gửi chữ ký passkey; máy chủ kiểm rồi cấp khoá máy mới */
+async function pkVao(sql, env, q) {
+  const { id, origin } = rpOf(env), chal = String(q.chal || ''), cred = String(q.cred || '');
+  if (!useChal(sql, chal)) return fail(400, 'Thách thức không hợp lệ hoặc đã hết hạn');
+  const p = one(sql, 'SELECT hv, pub FROM pk WHERE cred = ?', cred);
+  if (!p) return fail(403, 'Không xác minh được khoá');
+  if (!clientOk(q.cdj, 'webauthn.get', chal, origin)) return fail(403, 'Không xác minh được khoá');
+  try {
+    const ad = unb(q.ad), cdj = unb(q.cdj);
+    const rp = new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode(id)));
+    const flags = ad[32];
+    if (ad.length < 37 || !rp.every((x, i) => x === ad[i]) || !(flags & 0x01) || !(flags & 0x04)) return fail(403, 'Không xác minh được khoá');
+    const h = new Uint8Array(await crypto.subtle.digest('SHA-256', cdj));
+    const data = new Uint8Array(ad.length + 32); data.set(ad); data.set(h, ad.length);
+    const key = await crypto.subtle.importKey('spki', unb(p.pub), { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']);
+    const good = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, key, derToRaw(unb(q.sig)), data);
+    if (!good) return fail(403, 'Không xác minh được khoá');
+  } catch { return fail(403, 'Không xác minh được khoá'); }
+  const t = one(sql, 'SELECT ten, khoa FROM tv WHERE id = ?', p.hv);
+  if (!t || t.khoa) return fail(403, 'Không xác minh được khoá');
+  sql.exec('UPDATE pk SET cuoi = ? WHERE cred = ?', Date.now(), cred);
+  return json({ ok: true, id: p.hv, ten: t.ten, dk: await issueDevice(sql, p.hv, 'Khôi phục bằng passkey') });
+}
+
+/* ---------- Ảnh máy tập ---------- */
+const quotaHv = env => Number(env.IMG_QUOTA_HV) || DEFAULT_IMG_HV;
+const quotaRoom = env => Number(env.IMG_QUOTA_ROOM) || DEFAULT_IMG_ROOM;
+
+function anhCo(sql, q, auth) {
+  const hv = String(q.hv || ''), hs = Array.isArray(q.hs) ? q.hs : [];
+  if (auth.role !== 'h' && hv !== auth.hv) return fail(403, 'Chỉ được xem ảnh của chính mình');
+  if (hs.length > MAX_RECS) return fail(413, 'Quá nhiều ảnh trong một lần hỏi');
+  return json({ ok: true, thieu: hs.filter(h => !one(sql, 'SELECT 1 AS x FROM img WHERE hv = ? AND h = ?', hv, String(h))) });
+}
+
+async function anhPut(ctx, req, u, auth, h) {
+  const { sql, env } = ctx, hv = u.searchParams.get('hv') || '';
+  if (!IMG_RE.test(h)) return fail(400, 'Tên ảnh không hợp lệ');
+  if (auth.role !== 'h' && hv !== auth.hv) return fail(403, 'Chỉ được ghi ảnh của chính mình');
+  if (!one(sql, 'SELECT 1 AS x FROM tv WHERE id = ?', hv)) return fail(404, 'Không có học viên này');
+  const bytes = new Uint8Array(await req.arrayBuffer());
+  if (bytes.length === 0) return fail(400, 'Ảnh rỗng');
+  if (bytes.length > MAX_IMG) return fail(413, 'Ảnh quá lớn (tối đa 1,2 MB)');
+  const old = one(sql, 'SELECT n FROM img WHERE hv = ? AND h = ?', hv, h), cu = old ? old.n : 0;
+  const usedHv = one(sql, 'SELECT COALESCE(SUM(n), 0) AS n FROM img WHERE hv = ?', hv).n - cu;
+  const usedRoom = one(sql, 'SELECT COALESCE(SUM(n), 0) AS n FROM img').n - cu;
+  if (usedHv + bytes.length > quotaHv(env) || usedRoom + bytes.length > quotaRoom(env)) return fail(507, 'Hết dung lượng ảnh, ảnh mới không được lưu');
+  sql.exec('INSERT INTO img(hv, h, n, d, at) VALUES(?, ?, ?, ?, ?) ON CONFLICT(hv, h) DO UPDATE SET n = excluded.n, d = excluded.d, at = excluded.at', hv, h, bytes.length, b64u(bytes), Date.now());
+  return json({ ok: true, n: bytes.length });
+}
+
+function anhGet(sql, u, auth, h) {
+  const hv = u.searchParams.get('hv') || '';
+  if (auth.role !== 'h' && hv !== auth.hv) return fail(403, 'Chỉ được xem ảnh của chính mình');
+  const r = one(sql, 'SELECT d FROM img WHERE hv = ? AND h = ?', hv, h);
+  if (!r) return fail(404, 'Không có ảnh này');
+  return new Response(unb(r.d), { status: 200, headers: { 'Content-Type': 'image/jpeg', 'Access-Control-Allow-Origin': '*' } });
+}
+
 /* ---------- Điều hướng ---------- */
 export async function handle(ctx, req, p, u) {
   const { sql, env } = ctx, m = req.method;
   if (p === '/s/noi' && m === 'POST') return noi(sql, await req.json().catch(() => ({})));
+  if (p === '/s/pk/thach' && m === 'POST') return thach(sql);
+  if (p === '/s/pk/vao' && m === 'POST') return pkVao(sql, env, await req.json().catch(() => ({})));
 
   const auth = await whoIs(sql, env, req.headers.get('Authorization'));
   if (!auth) return fail(401, 'Chưa đăng nhập hoặc máy đã bị thu hồi');
@@ -179,6 +304,13 @@ export async function handle(ctx, req, p, u) {
   if (key === 'GET /s/doi') return doi(ctx, u, auth);
   if (key === 'POST /s/ghi') return ghi(ctx, await req.json().catch(() => ({})), auth);
   if (key === 'POST /s/dk') return dkSub(ctx, await req.json().catch(() => ({})), auth);
+  if (key === 'POST /s/pk/dky') return pkDky(sql, env, await req.json().catch(() => ({})), auth);
+  if (key === 'POST /s/anh/co') return anhCo(sql, await req.json().catch(() => ({})), auth);
+  if (p.startsWith('/s/anh/') && (m === 'PUT' || m === 'GET')) {
+    const h = decodeURIComponent(p.slice(7));
+    if (m === 'PUT') return anhPut(ctx, req, u, auth, h);
+    return IMG_RE.test(h) ? anhGet(sql, u, auth, h) : fail(400, 'Tên ảnh không hợp lệ');
+  }
 
   if (auth.role !== 'h') return fail(403, 'Chỉ HLV được dùng chức năng này');
   const q = m === 'POST' ? await req.json().catch(() => ({})) : {};
