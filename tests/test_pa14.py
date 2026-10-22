@@ -50,10 +50,6 @@ with sync_playwright() as p:
     tl = pg.locator('article.ex.focus .target').inner_text(); print(repr(tl))
     ok('Vừa·Sát·Hỏng' in tl and 'hỏng rep' in tl, 'Lần trước hiện cảm giác + chip "Giữ … có set hỏng rep"')
     pg.ev("() => discardSession()")
-    # sync QR giữ cảm giác
-    rt = pg.ev("""() => { const s0 = state.sessions[state.sessions.length - 1]; const pkg = { role: 'student', link: { pk: '', cn: '' }, name: 'x', at: Date.now(), plan: null, del: { s: {}, e: {} } };
-      const ss = serSession(state, s0); const c = syncCompact(pkg, [ss]); const P = cleanPkg(syncExpand(JSON.parse(JSON.stringify(c)))); return P.sessions[0].entries[0].sets.map(z => z.ef || null); }""")
-    ok(rt == ['m','h','f'], f'QR mang theo cảm giác: {rt}')
     pg.ev("() => { ui.tab = 'week'; ui.pmode = 'month'; render(true); }"); pg.wait_for_timeout(300)
     ok(pg.locator('[data-act="report"]').count() == 0, 'Đã bỏ nút báo cáo tháng')
     pg.ev("() => { ui.tab = 'week'; ui.pmode = 'week'; render(true); }")

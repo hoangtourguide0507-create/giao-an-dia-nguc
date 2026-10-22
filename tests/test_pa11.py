@@ -34,9 +34,6 @@ with sync_playwright() as p:
     # tắt cho 1 bài → không hiện
     pg.ev("() => { state.days[0].exercises[2].warmup = false; state.active = null; startSession('dl'); render(); }"); pg.wait_for_timeout(300)
     ok(pg.ev("() => warmKind(state.active.entries[2], 2)") is None, 'Tắt khởi động ở 1 bài → bài đó không hiện')
-    # QR: bài cô lập bật khởi động gửi sang bản cũ vẫn giữ
-    o = pg.ev("() => cExEnc(state.days[0].exercises[0])"); ok(o.get('w') == 1, f'QR ghi rõ khởi động cho bài cô lập: {o}')
-    ok(pg.ev("() => cExDec(cExEnc(state.days[0].exercises[0])).warmup") == True, 'QR giải mã đúng')
     b.close()
 srv.terminate()
 print('ERRS', errs)

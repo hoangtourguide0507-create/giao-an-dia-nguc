@@ -19,8 +19,9 @@ const ctx = { console, Logger: { log() {} },
     base64Decode: s => Buffer.from(s, 'base64'), base64Encode: b => Buffer.from(b).toString('base64'), newBlob: (bytes, mime, name) => ({ bytes, mime, name }), formatDate: () => '2026-10-22' },
   ContentService: { MimeType: { JSON: 1 }, createTextOutput: s => ({ setMimeType: () => ({ s }) }) } };
 vm.createContext(ctx); vm.runInContext(fs.readFileSync(__dirname + '/../drive/Code.gs', 'utf8'), ctx);
-ctx.caiDat(); console.log(props.MA_HLV);
+ctx.caiDat();
+/* in MÃ HLV sau khi đã mở cổng: bên gọi đọc dòng này rồi gửi yêu cầu ngay */
 http.createServer((rq, rs) => { let b = ''; rq.on('data', c => b += c); rq.on('end', () => {
   const out = rq.method === 'POST' ? ctx.doPost({ postData: { contents: b } }).s : ctx.doGet().s;
   if (rq.url === '/__props') { rs.end(JSON.stringify(props)); return; }
-  rs.writeHead(200, { 'Content-Type': 'application/json' }); rs.end(out); }); }).listen(Number(process.argv[2] || 8799));
+  rs.writeHead(200, { 'Content-Type': 'application/json' }); rs.end(out); }); }).listen(Number(process.argv[2] || 8799), () => console.log(props.MA_HLV));
