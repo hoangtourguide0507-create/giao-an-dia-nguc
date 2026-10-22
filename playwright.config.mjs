@@ -10,7 +10,7 @@ export default defineConfig({
   globalSetup: './tests/helpers/global-setup.mjs',
   globalTeardown: './tests/helpers/global-teardown.mjs',
   use: {
-    baseURL: 'http://localhost:4173',
+    baseURL: `http://localhost:${process.env.PORT || 4173}`,
     ...devices['iPhone 13'],
     browserName: 'chromium',
     defaultBrowserType: 'chromium',
@@ -19,5 +19,5 @@ export default defineConfig({
     permissions: ['clipboard-read', 'clipboard-write'],
     trace: 'retain-on-failure'
   },
-  webServer: { command: 'node scripts/serve.mjs', url: 'http://localhost:4173/index.html', reuseExistingServer: !process.env.CI }
+  webServer: { command: 'node scripts/serve.mjs', url: `http://localhost:${process.env.PORT || 4173}/index.html`, reuseExistingServer: !process.env.CI }
 });

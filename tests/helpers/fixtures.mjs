@@ -127,7 +127,7 @@ export const test = base.extend({
     const opened = [];
     await use(async () => {
       const { defaultBrowserType, ...dev } = devices['iPhone 13'];
-      const ctx = await browser.newContext({ ...dev, baseURL: 'http://localhost:4173', locale: 'vi-VN', timezoneId: 'Asia/Ho_Chi_Minh', permissions: ['clipboard-read', 'clipboard-write'] });
+      const ctx = await browser.newContext({ ...dev, baseURL: `http://localhost:${process.env.PORT || 4173}`, locale: 'vi-VN', timezoneId: 'Asia/Ho_Chi_Minh', permissions: ['clipboard-read', 'clipboard-write'] });
       const page = await ctx.newPage(); await prep(page); opened.push(page);
       return new App(page);
     });
