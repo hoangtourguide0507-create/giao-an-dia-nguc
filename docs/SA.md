@@ -222,6 +222,7 @@ stateDiagram-v2
 ### 7.6 Thông báo
 - **Cục bộ**: `notifyRestEnd` khi hết giờ nghỉ mà trang ẩn: `serviceWorker.getRegistration().showNotification` (dự phòng `new Notification`), `tag:'rest'`. Xin quyền ở `notif-allow`.
 - **Web Push qua `push-server/`** (Cloudflare Worker + Durable Object `Hub`, SQLite): khoá VAPID tự sinh lần chạy đầu. API JSON: `GET /vapid`; `POST /sub {sub, topics, tzOff}`, `/schedule {sub, at, title, body, tag}`, `/cancel {sub, tag}`, `/remind {sub, rules[{dow, hm, title, body, tag}], tzOff}`, `/notify {topic, title, body, tag, from}`, `/test {sub}`. Giới hạn 3.000 máy, 20 luật nhắc, 200 chủ đề mỗi máy.
+- Địa chỉ máy chủ: `pushBase() = settings.pushServer || PUSH_SERVER` (`PUSH_SERVER` dựng sẵn từ PA-23). Khi khởi động, nếu đã bật `notify`, chưa có đăng ký đẩy, có máy chủ và quyền = granted thì `enablePush()` tự nối; `notif-allow` cũng gọi `enablePush()` ngay sau khi được cấp quyền.
 - App: `pushRegister` (đăng ký `PushManager` bằng khoá VAPID, gửi `/sub` + `/remind`; băm `pushRegH` tránh lặp; gọi lại sau khi đổi cài đặt/đăng nhập) · `schedulePush/cancelPush` (giờ nghỉ) · `pushNotify` khi giáo án HLV đổi hoặc học viên tập xong · **chủ đề** `drvTopic = SHA-256(mã:id:phía)[:32]` nên chỉ hai máy cùng liên kết nhận được tin của nhau.
 - `sw.js` hiện thông báo trong sự kiện `push` và mở/focus app ở `notificationclick`.
 
@@ -235,7 +236,7 @@ stateDiagram-v2
 Khôi phục cả máy xoá ảnh cũ không còn dùng, ghi ảnh trong file, ghi trạng thái từng hồ sơ; khôi phục 1 người chỉ đụng một hồ sơ, lọc ảnh bằng `okPhoto`, lưu `syncUndo`. Lưu file: `navigator.share({files})` nếu được (không áp dụng trong claude.ai), không thì `saveFile` (`window.claude.use('downloads')` hoặc thẻ `<a download>`).
 
 ## 9. Offline & tài nguyên ngoài
-- `sw.js` (`CACHE = 'gadn-v52'`): `install` thêm `SHELL` (bỏ qua file lỗi) + `skipWaiting`; `activate` xoá cache khác tên + `clients.claim`; `fetch`: GET cùng nguồn — bỏ qua `.bin`; điều hướng = network-first, lưu `./index.html`, lỗi mạng trả bản lưu; còn lại cache-first rồi lưu. Font Google: trả bản lưu ngay + làm mới ngầm. `notificationclick`, `push` (hiện thông báo từ máy chủ thông báo). Service worker chỉ đăng ký khi `https:` và `<html data-pwa="1">`.
+- `sw.js` (`CACHE = 'gadn-v53'`): `install` thêm `SHELL` (bỏ qua file lỗi) + `skipWaiting`; `activate` xoá cache khác tên + `clients.claim`; `fetch`: GET cùng nguồn — bỏ qua `.bin`; điều hướng = network-first, lưu `./index.html`, lỗi mạng trả bản lưu; còn lại cache-first rồi lưu. Font Google: trả bản lưu ngay + làm mới ngầm. `notificationclick`, `push` (hiện thông báo từ máy chủ thông báo). Service worker chỉ đăng ký khi `https:` và `<html data-pwa="1">`.
 - **Gói hình GAP1** (`exdb-1.bin`, `exdb-2.bin`): `"GAP1"` + `uint32 LE` độ dài chỉ mục + chỉ mục JSON `[[key, offset, length]]` + dữ liệu WebP. Tải từ cùng nguồn, dự phòng `https://hoangtourguide0507-create.github.io/giao-an-dia-nguc/`, đọc luồng để báo tiến độ, ghi từng hình `exdb:<key>` vào IndexedDB, xin `navigator.storage.persist()`.
 - Hình lẻ: `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/<gid>/<0|1>.jpg` → nén → lưu IndexedDB.
 - Video YouTube: chỉ mở trang tìm kiếm (`<tên tiếng Anh> exercise proper form`), không nhúng.
@@ -289,8 +290,8 @@ Các file `tests/test_<pa>.py` (`sync form focus pa10 pa11 pa14 pa16 pa18 pa19 p
 
 ### 12.4 Kết quả (22/10/2026)
 - `npm test`: **177 test app xanh + 4 `fixme`**, 7 test `sw.js` xanh (script `check` cú pháp OK).
-- Coverage script chính `index.html`: **lines 98,99% · statements 92,49% · functions 95,61% · branches 80,41%**; `sw.js` 100% dòng.
-- `bash tests/chay.sh`: 11 file Python + push-server + Code.gs đều đạt.
+- Coverage script chính `index.html`: **lines 98,99% · statements 92,54% · functions 95,54% · branches 80,39%**; `sw.js` 100% dòng.
+- `bash tests/chay.sh`: 12 file Python (gồm `pa23`) + push-server + Code.gs đều đạt.
 
 ### Bản đồ BR → test
 

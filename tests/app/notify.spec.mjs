@@ -1,6 +1,6 @@
 // BR-23 Thông báo: Notification API không cần máy chủ, báo hết giờ nghỉ, máy chủ thông báo (Web Push), nhắc lịch tập, tin từ Drive.
 import { test, expect, NOW } from '../helpers/fixtures.mjs';
-import { mockNotifications, mockPushServer, PUSH_URL } from '../helpers/notify.mjs';
+import { mockNotifications, mockPushServer, PUSH_URL, DEFAULT_PUSH } from '../helpers/notify.mjs';
 import { state, basicPlan } from '../helpers/data.mjs';
 
 const card = app => app.view().locator('.ncard');
@@ -26,14 +26,17 @@ test('quyền thông báo: đã chặn → hướng dẫn bật lại; chưa h�
 
 test('xin quyền → bật báo hết giờ nghỉ → thử thông báo (qua service worker hoặc Notification trực tiếp)', async ({ app, page }) => {
   await mockNotifications(page, { perm: 'default' });
+  const pc = await mockPushServer(page);
   await app.goto();
   await app.tab('more');
   await expect(app.view().locator('.grow', { hasText: 'Thông báo' })).toContainText('Chưa bật');
   await app.more('notif');
   await app.click('notif-allow');
   await expect(app.toast()).toHaveText('🔔 Đã bật thông báo');
-  expect(await page.evaluate(() => window.__asked)).toBe(1);
+  expect(await page.evaluate(() => window.__asked)).toBeGreaterThanOrEqual(1);
   expect((await app.state()).settings.notify).toBe(true);
+  /* PA-23: cho phép xong là tự nối máy chủ thông báo dựng sẵn */
+  await expect.poll(() => pc.map(c => c.path)).toEqual(expect.arrayContaining(['/vapid', '/sub']));
   /* từ chối quyền */
   await app.more('notif');
   await expect(card(app).locator('#notify-t')).toBeChecked();
@@ -78,10 +81,12 @@ test('kết nối máy chủ thông báo: kiểm tra địa chỉ, xin quyền, 
   const calls = await mockPushServer(page);
   const P = basicPlan();
   await app.seed({ state: state({ days: P.days, settings: { notify: true } }) });
+  /* PA-23: đã cho phép thông báo + có máy chủ dựng sẵn → tự nối khi mở app, không cần dán địa chỉ */
   await app.more('notif');
-  await card(app).locator('details summary').click();
-  await app.click('push-on');
-  await expect(app.toast()).toHaveText('Chưa có địa chỉ máy chủ thông báo. Dán địa chỉ vào ô bên dưới trước.');
+  await expect(card(app)).toContainText('Máy này nhận được thông báo đẩy');
+  await expect.poll(() => calls.map(c => c.path)).toEqual(expect.arrayContaining(['/vapid', '/sub']));
+  await expect(card(app).locator('input[data-k="pushServer"]')).toHaveAttribute('placeholder', DEFAULT_PUSH);
+  /* đổi sang máy chủ riêng (có dấu / thừa) rồi đăng ký lại */
   await page.fill('input[data-k="pushServer"]', PUSH_URL + '/');
   await app.click('push-on');
   await expect(app.toast()).toHaveText('🔔 Đã bật thông báo trên máy này');

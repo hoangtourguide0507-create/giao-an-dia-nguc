@@ -77,9 +77,9 @@ Máy chủ Drive trong bộ Node là **chính `drive/Code.gs`** chạy trong `te
 | Chỉ số | Ngưỡng | Hiện tại (22/10/2026) |
 |---|---|---|
 | Lines | ≥ 90% | 98,99% |
-| Statements | ≥ 90% | 92,49% |
-| Functions | ≥ 90% | 95,61% |
-| Branches | ≥ 80% | 80,41% |
+| Statements | ≥ 90% | 92,54% |
+| Functions | ≥ 90% | 95,54% |
+| Branches | ≥ 80% | 80,39% |
 
 Coverage đo bằng **Istanbul** (cách Jest/nyc dùng): khi test, trang được phục vụ với script đã gắn bộ đếm, nên nhánh và hàm *chưa từng chạy* vẫn được đếm. Thư viện QR nhúng sẵn (`qrcode-generator`, `jsQR`) không tính.
 

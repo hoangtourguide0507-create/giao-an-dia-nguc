@@ -1,5 +1,7 @@
 // Giả lập Notification API, service worker + PushManager và máy chủ thông báo (Cloudflare Worker) cho test.
 export const PUSH_URL = 'https://push.test';
+/* địa chỉ máy chủ thông báo dựng sẵn trong app (PA-23) */
+export const DEFAULT_PUSH = 'https://gadn-push.hoangtourguide0507.workers.dev';
 
 /* perm: 'default' | 'granted' | 'denied' | 'none' (không có Notification) · reg: có đăng ký service worker không */
 export async function mockNotifications(page, { perm = 'default', reg = true, subscribed = false } = {}) {
@@ -21,13 +23,15 @@ export async function mockNotifications(page, { perm = 'default', reg = true, su
 /* máy chủ thông báo giả: ghi lại mọi lời gọi; fail = { '/vapid': 500 } để mô phỏng lỗi */
 export async function mockPushServer(page, { fail = {}, vapid = 'BAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE' } = {}) {
   const calls = [];
-  await page.route(PUSH_URL + '/**', async route => {
+  const handle = async route => {
     const rq = route.request(), path = new URL(rq.url()).pathname;
     let body = null; try { body = JSON.parse(rq.postData() || 'null'); } catch (e) { /* không phải JSON */ }
     calls.push({ path, body });
     if (fail[path]) return route.fulfill({ status: fail[path], headers: { 'access-control-allow-origin': '*' }, body: '{}' });
     const out = path === '/vapid' ? { publicKey: vapid } : { ok: true, r: 'ok' };
     await route.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' }, body: JSON.stringify(out) });
-  });
+  };
+  await page.route(PUSH_URL + '/**', handle);
+  await page.route(DEFAULT_PUSH + '/**', handle);
   return calls;
 }
