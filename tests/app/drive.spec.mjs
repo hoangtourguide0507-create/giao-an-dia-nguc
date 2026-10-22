@@ -170,7 +170,7 @@ test('dùng MÃ HLV kiểu cũ (không đăng nhập): kiểm tra link và mã, 
   await expect(app.sheet()).toContainText('Lan · Google Drive');
 });
 
-test.fixme('VD-33: đồng bộ ảnh máy tập qua Drive thật — mã băm ảnh có dấu “.” bị máy chủ Apps Script từ chối', async ({ app, device, gas }) => {
+test('VD-33: đồng bộ ảnh máy tập qua Drive thật — mã băm ảnh có dấu “.” bị máy chủ Apps Script từ chối', async ({ app, device, gas }) => {
   const P = basicPlan(); P.bench.photos = ['ph1'];
   await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) }, photos: { ph1: PHOTO } });
   await hlvLogin(app, gas);
@@ -189,6 +189,18 @@ test.fixme('VD-33: đồng bộ ảnh máy tập qua Drive thật — mã băm �
   await expect.poll(async () => (await hv.state()).days[0]?.exercises[0]?.photos?.length, { timeout: 20000 }).toBe(1);
   const pid = (await hv.state()).days[0].exercises[0].photos[0];
   expect(await hv.idb('photos', pid)).toMatch(/^data:image\/jpeg/);
+});
+
+/* PA-25: mã băm ảnh cũ (có dấu “.”) được đổi sang mã mới (dấu “_”) ở mọi chỗ còn lưu */
+test('VD-33: mã băm ảnh cũ có dấu “.” trong danh sách đã gửi được chuyển sang mã mới', async ({ app, gas }) => {
+  const P = basicPlan(); P.bench.photos = ['ph1'];
+  const hashOf = s => { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return [(h >>> 0).toString(36), s.length.toString(36)]; };
+  const [a, b] = hashOf(PHOTO), oldH = a + '.' + b, newH = a + '_' + b;
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) }, photos: { ph1: PHOTO }, kv: { ['drvUp:' + gas.url]: [oldH, 'zz.9'] } });
+  await hlvLogin(app, gas);
+  await expect.poll(async () => (await app.idb('kv', 'state:p2'))?.drv?.id, { timeout: 15000 }).toBeTruthy();
+  await driveNow(app);
+  await expect.poll(async () => { const u = await app.idb('kv', 'drvUp:' + gas.url); return u && u.includes(newH) && u.includes('zz_9') && !u.some(h => h.includes('.')); }, { timeout: 15000 }).toBe(true);
 });
 
 test('lỗi mạng khi đồng bộ: báo trạng thái lỗi, thử lại được', async ({ app, device, gas }) => {

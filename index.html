@@ -4094,7 +4094,9 @@ function unb64u(str) { str = str.replace(/-/g, '+').replace(/_/g, '/'); while (s
    cấu trúc giáo án theo HLV, ảnh cộng dồn, xoá có ghi dấu để máy kia xoá theo. */
 const SYNC_STRUCT = ['name', 'muscle', 'zone', 'type', 'sets', 'repTarget', 'repMin', 'repMax', 'dropSet', 'step', 'rest', 'restV', 'setup', 'each', 'warmup', 'targetKg'];
 const sRev = s => s.finishedAt || s.startedAt || 0;
-function strHash(s) { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(36) + '.' + s.length.toString(36); }
+function strHash(s) { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(36) + '_' + s.length.toString(36); }
+/* PA-25: mã băm cũ có dấu “.” (máy chủ Drive từ chối) → đổi sang “_”; cùng nội dung thì cùng mã mới */
+const normHash = h => String(h == null ? '' : h).replace('.', '_');
 const photoHashCache = new Map();
 async function photoHash(id) { if (photoHashCache.has(id)) return photoHashCache.get(id); const v = await DB.get('photos', id); const h = v ? strHash(v) : null; if (h) photoHashCache.set(id, h); return h; }
 const okPhoto = v => typeof v === 'string' && v.length < 1500000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v);
@@ -4154,7 +4156,7 @@ function cleanEx(x) {
     sets: cNum(x.sets, 1, 10, 3), repTarget: cNum(x.repTarget, repMin, 50, Math.min(repMax, 10)), repMin, repMax, dropSet: !!x.dropSet, step: cNum(x.step, 0.25, 50, TYPES[type].step),
     rest: cNum(x.rest, 0, 600, 0), restV: 2, setup: cStr(x.setup, 1000), each: !!x.each, warmup: x.warmup == null ? true : !!x.warmup, targetKg: x.targetKg == null ? null : cNum(x.targetKg, 0, 1000, null),
     currentKg: x.currentKg == null ? null : cNum(x.currentKg, 0, 1000, null), kgSetAt: x.kgSetAt ? cNum(x.kgSetAt, 0, 9e15, 0) : 0, fs: !!x.fs,
-    ph: (Array.isArray(x.ph) ? x.ph : []).map(v => cStr(v, 30)).slice(0, 12), o: cStr(x.o, 40), ms: /^\d{4}-\d\d-\d\d$/.test(x.ms || '') ? x.ms : '', l: Array.isArray(x.l) ? x.l.slice(0, 20).map(cleanEx) : [] };
+    ph: (Array.isArray(x.ph) ? x.ph : []).map(v => cStr(normHash(v), 30)).slice(0, 12), o: cStr(x.o, 40), ms: /^\d{4}-\d\d-\d\d$/.test(x.ms || '') ? x.ms : '', l: Array.isArray(x.l) ? x.l.slice(0, 20).map(cleanEx) : [] };
 }
 function cleanPkg(raw) {
   if (!raw || raw.app !== 'gadn-sync' || !['coach', 'student'].includes(raw.role)) throw new Error('bad');
@@ -4165,7 +4167,7 @@ function cleanPkg(raw) {
     entries: (Array.isArray(s.entries) ? s.entries : []).slice(0, 60).map(en => ({ k: (Array.isArray(en.k) ? en.k : []).map(v => cStr(v, 40)).filter(Boolean).slice(0, 12), name: cStr(en.name || 'Bài tập', 80), muscle: MUSCLES.includes(en.muscle) ? en.muscle : 'Khác',
       note: cStr(en.note, 300), each: !!en.each, sets: sets(en.sets), drop: en.drop ? { kg: cNum(en.drop.kg, 0, 1000, 0), reps: cNum(en.drop.reps, 0, 500, 0) } : null })) })).filter(s => s.id);
   const del = { s: {}, e: {} }; for (const k of ['s', 'e']) for (const [id, t] of Object.entries((raw.del || {})[k] || {}).slice(0, 5000)) { const key = k === 'e' ? shKey(cStr(id, 40)) : cStr(id, 40); del[k][key] = cNum(t, 0, 9e15, 0); }
-  const photos = {}; for (const [h, v] of Object.entries(raw.photos || {}).slice(0, 300)) if (okPhoto(v)) photos[cStr(h, 30)] = v;
+  const photos = {}; for (const [h, v] of Object.entries(raw.photos || {}).slice(0, 300)) if (okPhoto(v)) photos[cStr(normHash(h), 30)] = v;
   return { role: raw.role, link: { pk: cStr((raw.link || {}).pk, 40), cn: cStr((raw.link || {}).cn, 40) }, name: cStr(raw.name || 'Người tập', 30), at: cNum(raw.at, 0, 9e15, 0),
     plan: Array.isArray(raw.plan) ? raw.plan.slice(0, 20).map(d => ({ n: cStr(d.n || 'Ngày tập', 40), e: (Array.isArray(d.e) ? d.e : []).slice(0, 40).map(cleanEx) })) : null, sessions: sess, del, photos };
 }
@@ -4326,7 +4328,9 @@ async function drvLocalPhotos(st) { const m = new Map(); for (const d of st.days
 const drvPlanHashes = plan => { const out = new Set(); for (const d of plan || []) for (const o of d.e || []) for (const x of [o, ...(o.l || [])]) for (const h of x.ph || []) out.add(h); return out; };
 async function drvPushPhotos(cr, id, pkg, st) {
   const need = [...drvPlanHashes(pkg.plan)]; if (!need.length) return;
-  const key = 'drvUp:' + cr.url, up = new Set((await LDB.get('kv', key)) || []), ask = need.filter(h => !up.has(h)); if (!ask.length) return;
+  const key = 'drvUp:' + cr.url, old = (await LDB.get('kv', key)) || [], up = new Set(old.map(normHash));
+  if (old.some(h => h !== normHash(h))) await LDB.put('kv', key, [...up]); /* PA-25: đổi mã cũ đã lưu */
+  const ask = need.filter(h => !up.has(h)); if (!ask.length) return;
   const { thieu } = await drvCall(cr.url, { a: 'anh.co', ma: cr.ma, id, ds: ask }); const loc = await drvLocalPhotos(st);
   let batch = {}, size = 0;
   const send = async () => { if (!size) return; await drvCall(cr.url, { a: 'anh.day', ma: cr.ma, id, anh: batch }); batch = {}; size = 0; };

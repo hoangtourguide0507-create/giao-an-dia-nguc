@@ -24,7 +24,7 @@
 | VD-18 | 🟠 | Tốc độ “Thận trọng” và chế độ “Tăng theo rep” không còn chỗ chọn trên giao diện (Nhịp nghỉ & nhịp rep chỉ có nhịp rep và nhịp nghỉ), nhưng dữ liệu cũ đã chọn vẫn chạy theo → người dùng không đổi lại được. | `PACE`, `progMode`; không có handler `pace`/`mode` | Hiện lại lựa chọn hoặc chuyển đổi dữ liệu cũ về mặc định |
 | VD-31 | 🟠 | **Duyệt kế hoạch tuần *Deload* khi hồ sơ chưa có ngày bắt đầu chu kỳ** làm lỗi JS khi vẽ lại màn hình (`Cannot read properties of null`): kế hoạch không lưu được/giao diện đứng. Gặp ở người mới chưa tập buổi nào mà chọn Deload. | `weekplan.spec.mjs` › `test.fixme` *VD-31* (khẳng định không có `pageerror`) | Chặn `cycleInfo()` null trong đường vẽ thẻ deload; hoặc đặt `cycleStart` khi chọn Deload lần đầu |
 | VD-32 | 🟠 | **Người dùng mới chọn Đen Tuyền thì lần mở sau bị trả về Hổ Phách.** Bước chuyển giao diện PA-22 trong `loadState` chạy khi chưa có cờ `skin22` và đặt lại `skin = 'amber'`; cờ chưa kịp lưu nên lựa chọn bị mất. | `settings.spec.mjs` › `test.fixme` *VD-32* | Đặt `skin22` ngay khi áp dụng/khi người dùng chọn giao diện; hoặc chỉ chuyển giao diện cho dữ liệu có skin cũ |
-| VD-33 | 🟠 | **Ảnh máy tập không đồng bộ qua Drive thật.** Mã băm ảnh (`strHash` = `<base36>.<độ dài>`) có dấu `.` mà máy chủ `Code.gs` từ chối tên ảnh có dấu chấm → `anh.day` lỗi, học viên không nhận ảnh HLV chụp (kiểm bằng `gas_server.js` chạy đúng `Code.gs`). | `drive.spec.mjs` › `test.fixme` *VD-33* | Đổi định dạng mã băm (bỏ `.`) hoặc cho phép dấu chấm trong `Code.gs`; kèm chuyển đổi mã ảnh đã lưu |
+| VD-33 | ✅ PA-25 | ~~Ảnh máy tập không đồng bộ qua Drive thật.~~ Đã đổi mã băm ảnh (`<base36>_<độ dài>`, bỏ dấu `.`), mã cũ tự chuyển; không sửa `Code.gs`. | `drive.spec.mjs` › VD-33 (2 test) | — |
 
 ## 2. Dữ liệu, riêng tư, đồng bộ
 
@@ -64,7 +64,7 @@ Mã VD-24 để trống (giữ chỗ). Vấn đề mới đánh số tiếp từ
 Nguyên tắc ưu tiên: **(1) đúng kết quả tập & không mất dữ liệu → (2) tính năng chính chạy đúng như hướng dẫn → (3) nền móng để sửa nhanh, an toàn → (4) tính năng mới.** Mọi bước đi theo quy trình BR → BA → anh xác nhận → test → code ([docs/README.md](README.md)).
 
 ### Giai đoạn 1 — Sửa lỗi nặng (1–2 tuần, mỗi mục 1 PA nhỏ)
-1. **VD-33** ảnh máy tập qua Drive: đổi định dạng mã băm hoặc sửa `Code.gs`. Bỏ `fixme` trong `drive.spec.mjs`. *(Học viên không nhận ảnh HLV chụp — làm trước.)*
+1. ~~**VD-33** ảnh máy tập qua Drive~~ — xong ở PA-25.
 2. **VD-31** duyệt Deload khi chưa có `cycleStart` lỗi JS; **VD-32** giao diện Đen Tuyền không nhớ. Bỏ `fixme` trong `weekplan.spec.mjs`, `settings.spec.mjs`.
 3. **VD-02** nút “Gửi giáo án” ở Phòng HLV — nay nên mở “Mã liên kết”/Quản lý học viên cho đúng học viên. Bỏ `fixme` trong `profiles.spec.mjs`.
 4. **VD-03** tuần deload tự sang chu kỳ mới; **VD-04** xoá dữ liệu giữ thư viện hình; **VD-11** dọn video.
@@ -90,5 +90,5 @@ Nguyên tắc ưu tiên: **(1) đúng kết quả tập & không mất dữ li�
 
 ### Chỉ số theo dõi
 - `npm test` xanh trên mọi PA; coverage không giảm dưới ngưỡng (lines/statements/functions ≥ 90%, branches ≥ 80%).
-- Số `test.fixme` (lỗi đã biết) giảm dần về 0 (hiện 4: VD-02, VD-31, VD-32, VD-33).
+- Số `test.fixme` (lỗi đã biết) giảm dần về 0 (hiện 3: VD-02, VD-31, VD-32).
 - Kích thước `index.html` và số dòng > 300 ký tự giảm dần trong Giai đoạn 2.
