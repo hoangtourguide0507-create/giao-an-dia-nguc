@@ -3903,7 +3903,7 @@ function viewCoach() {
   const todo = [];
   for (const r of rows) { const c = r.c, nm = esc(r.p.name);
     if (c.active) todo.push(['up', '▶', `${nm} đang tập`, 'Mở để ghi set cùng học viên', r.p.id]);
-    if (c.gap == null && c.nDays) todo.push(['gold', '!', `${nm} chưa tập buổi nào`, 'Gửi giáo án để học viên bắt đầu', r.p.id, 'share']);
+    if (c.gap == null && c.nDays) todo.push(['gold', '!', `${nm} chưa tập buổi nào`, 'Gửi mã liên kết Drive để học viên nhận giáo án', r.p.id, 'share']);
     else if (c.gap >= 4) todo.push(['red', c.gap, `Nhắc ${nm}: ${c.gap} ngày chưa tập`, c.last ? `Lần cuối ${esc(c.last.dayName)} · ${dm(c.last.date)}` : '', r.p.id]);
     if (c.pains.length) todo.push(['red', '⚠', `${nm} đang đau ${c.pains.map(x => esc(x.area.toLowerCase())).join(', ')}`, 'App đã tự giảm tạ / bỏ bài liên quan', r.p.id]);
     if (c.rot) todo.push(['gold', '⟳', `${nm}: ${c.rot} ô bài nên đổi`, 'Đã giữ bài chính hơn 6 tuần', r.p.id]);
@@ -5049,6 +5049,7 @@ const handlers = {
     if (khoa) confirmSheet({ title: `Khoá tài khoản ${esc(T.ten)}?`, text: 'Học viên không đăng nhập và không đồng bộ được nữa. Dữ liệu vẫn giữ nguyên, mở khoá là dùng lại.', ok: 'Khoá', danger: true, onOk: go }); else go(); },
   'acc-copy': () => copyOrShareCode(ui.accCred, 'Tài khoản Giáo Án Địa Ngục'),
   'drv-hv': t => drvHvSheet(t.dataset.id),
+  'coach-share': t => drvHvSheet(t.dataset.id),
   'drv-save': async t => { const u = ($('#drv-url').value || '').trim(), k = ($('#drv-key').value || '').trim();
     if (!drvOkUrl(u)) { toast('Link phải dạng https://script.google.com/macros/s/…/exec'); return; } if (k.length < 16) { toast('MÃ HLV chưa đúng'); return; }
     t.disabled = true; try { const r = await drvCall(u, { a: 'ping', ma: k }); if (r.vai !== 'hlv') throw new Error('MÃ HLV không đúng'); state.settings.drvUrl = u; state.settings.drvKey = k; save(); render(true); toast('☁ Đã kết nối · đang đưa mọi hồ sơ lên Drive…'); DRV.last = 0; await drvAuto(true); render(true); }

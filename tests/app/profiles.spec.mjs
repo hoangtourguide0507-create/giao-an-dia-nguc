@@ -166,10 +166,12 @@ test('Phòng HLV: bảng xếp hạng khi có từ 4 học viên, nhắc học v
   await expect(page.locator('#alarm-t')).toHaveText('Hết giờ nghỉ · B');
 });
 
-test.fixme('Phòng HLV: “Gửi giáo án” cho học viên chưa tập buổi nào (nút chưa có hàm xử lý — lỗi đã biết)', async ({ app }) => {
+test('VD-02: Phòng HLV — thẻ “chưa tập buổi nào” mở Mã liên kết Google Drive của đúng học viên', async ({ app }) => {
   const P = basicPlan();
   await app.seed({ profiles: prof([['p1', 'A'], ['p2', 'B', 1]], 'p1', { on: true, name: 'H' }), states: { p1: state({ days: P.days }), p2: state({ days: P.days }) } });
   await app.tab('more');
   await app.view().locator('.todo[data-act="coach-share"]').first().click();
-  await expect(app.sheet()).toContainText('Gửi giáo án');
+  await expect(app.sheet()).toContainText('Google Drive');
+  await expect(app.sheet()).not.toContainText('QR');
+  await expect(app.sheet()).not.toContainText('Zalo');
 });

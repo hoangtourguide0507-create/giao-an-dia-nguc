@@ -170,6 +170,17 @@ test('dùng MÃ HLV kiểu cũ (không đăng nhập): kiểm tra link và mã, 
   await expect(app.sheet()).toContainText('Lan · Google Drive');
 });
 
+test('VD-02: thẻ “chưa tập buổi nào” trong Việc cần làm mở đúng mã liên kết của học viên', async ({ app, gas }) => {
+  const P = basicPlan();
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) } });
+  await hlvLogin(app, gas);
+  await expect.poll(async () => (await app.idb('kv', 'state:p2'))?.drv?.id, { timeout: 15000 }).toBeTruthy();
+  await app.tab('more');
+  await app.view().locator('.todo[data-act="coach-share"]').first().click();
+  await expect(app.sheet()).toContainText('Lan · Google Drive');
+  expect(await app.page.locator('#qr-c').evaluate(c => c.width)).toBeGreaterThan(100);
+});
+
 test('VD-33: đồng bộ ảnh máy tập qua Drive thật — mã băm ảnh có dấu “.” bị máy chủ Apps Script từ chối', async ({ app, device, gas }) => {
   const P = basicPlan(); P.bench.photos = ['ph1'];
   await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) }, photos: { ph1: PHOTO } });
