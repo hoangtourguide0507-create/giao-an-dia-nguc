@@ -179,3 +179,35 @@ test('ảnh body cũ hơn 28 ngày: nhắc chụp tháng này; đặt cùng 1 ng
   await expect(app.toast()).toHaveText('Đã lưu 2 ảnh');
   expect((await app.state()).bodyPhotos.slice(1).map(x => x.date)).toEqual(['2026-10-19', '2026-10-19']);
 });
+
+test('PA-29 (VD-06): BMI từ chiều cao và cân nặng gần nhất; thiếu dữ liệu thì nhắc gọn', async ({ app }) => {
+  await app.seed({ state: state({ body: [B('2026-09-10', { weight: 80 }), B('2026-10-01', { weight: 72.5, bodyFat: 20 })], settings: { sex: 'm', height: 170 } }) });
+  await app.tab('body');
+  /* 72,5 / 1,70² = 25,1 */
+  await expect(app.view().locator('.bmi')).toContainText('BMI');
+  await expect(app.view().locator('.bmi')).toContainText('25,1');
+  await expect(app.view().locator('.bmi')).toContainText('Thừa cân');
+  /* thiếu chiều cao: gợi ý nhập, bấm mở trang Chỉ số cơ thể */
+  await app.seed({ state: state({ body: [B('2026-10-01', { weight: 72.5 })], settings: { sex: 'm' } }) });
+  await app.tab('body');
+  await expect(app.view().locator('.bmi')).toContainText('Nhập chiều cao');
+  await app.view().locator('.bmi [data-act="more-sec"]').click();
+  await expect(app.view().locator('.subhead h2')).toHaveText('Chỉ số cơ thể');
+  /* thiếu cân nặng: không hiện BMI sai */
+  await app.seed({ state: state({ body: [B('2026-10-01', { waist: 88 })], settings: { sex: 'm', height: 170 } }) });
+  await app.tab('body');
+  await expect(app.view().locator('.bmi')).toContainText('Nhập cân nặng');
+});
+
+test('PA-29 (VD-12): chữ ảnh body nói đúng việc ảnh được đẩy lên tài khoản Claude khi chạy trong claude.ai', async ({ app }) => {
+  await app.goto();
+  await app.tab('photos');
+  const t0 = await app.view().textContent();
+  expect(t0).not.toContain('chỉ lưu trên máy này');
+  expect(t0).toContain('tài khoản Claude');
+  await app.seed({ state: state({ bodyPhotos: [{ id: 'a', date: '2026-09-01', t: 1, pose: 'Trước', photoId: 'xa' }] }), photos: { xa: PHOTO } });
+  await app.tab('photos');
+  const t1 = await app.view().textContent();
+  expect(t1).not.toContain('chỉ lưu trên máy này');
+  expect(t1).toContain('tài khoản Claude');
+});
