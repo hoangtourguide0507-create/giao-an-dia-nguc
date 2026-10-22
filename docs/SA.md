@@ -323,6 +323,6 @@ Các file `tests/test_<pa>.py` (`sync form focus pa10 pa11 pa14 pa16 pa18 pa19 p
 ## 13. Phát hành
 1. Làm trên nhánh `pa-<số>-<tên>`; `npm run check` + `npm test` xanh; tăng `CACHE` trong `sw.js`.
 2. Gửi link raw.githack để xem thử; chờ "Duyệt PA-x".
-3. `git merge --no-ff` vào `main` → GitHub Pages tự dựng → tạo nhánh mốc `moc/v<số>`.
+3. `git merge --no-ff` vào `main` → GitHub Pages tự dựng → thêm dòng mốc `vN` (SHA trên `main`) vào [ADR 0001](adr/0001-bo-nhanh-moc.md).
 4. Máy chủ Drive/thông báo do HLV tự triển khai (`drive/HUONG-DAN-TRIEN-KHAI.md`, `push-server/HUONG-DAN.md`): sửa `Code.gs` thì dán lại và *Triển khai → Phiên bản mới* (URL giữ nguyên).
 5. Số phiên bản hiển thị trong app cập nhật thủ công, không gắn với `CACHE` (VD-26).

@@ -1,6 +1,6 @@
 # Tài liệu & quy trình làm việc — Giáo Án Địa Ngục
 
-Áp dụng **từ 21/10/2026** cho mọi thay đổi trong repo. Quy trình duyệt nhánh (cây phương án `pa-<số>-<tên>`, "Duyệt PA-x", mốc `moc/v<số>`) trong [`CLAUDE.md`](../CLAUDE.md) vẫn giữ nguyên; tài liệu này bổ sung phần **yêu cầu → thiết kế → kiểm thử** cho từng thay đổi.
+Áp dụng **từ 21/10/2026** cho mọi thay đổi trong repo. Quy trình duyệt nhánh (cây phương án `pa-<số>-<tên>`, "Duyệt PA-x", mốc `vN` trong [ADR 0001](adr/0001-bo-nhanh-moc.md)) trong [`CLAUDE.md`](../CLAUDE.md) vẫn giữ nguyên; tài liệu này bổ sung phần **yêu cầu → thiết kế → kiểm thử** cho từng thay đổi.
 
 ## 1. Bản đồ tài liệu
 
