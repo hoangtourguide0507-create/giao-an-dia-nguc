@@ -1348,7 +1348,6 @@ const parseYmd = s => { const [y, m, d] = s.split('-').map(Number); return new D
 const addDays = (s, n) => { const d = parseYmd(s); d.setDate(d.getDate() + n); return ymd(d); };
 const dm = s => { const d = parseYmd(s); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`; };
 const DOW = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
-const dmY = s => { const d = parseYmd(s); return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`; };
 const DOWL = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 const num = v => { if (v === '' || v == null) return null; const n = parseFloat(String(v).replace(',', '.')); return isFinite(n) ? n : null; };
 const r2 = v => Math.round(v * 100) / 100;
@@ -1443,7 +1442,6 @@ const TEMPOS = {
 const tempo = () => TEMPOS[state.settings.tempo] ? +state.settings.tempo : 3;
 const setSec = reps => Math.round((+reps || 10) * tempo() + 5);
 const SWITCH_SEC = 60, WARM_SEC = 170, FEEL_SEC = 60;
-const hasWarm = ex => !!ex.warmup && ex.type !== 'iso';
 const warmSec = ex => !ex.warmup ? 0 : ex.type === 'iso' ? FEEL_SEC : WARM_SEC;
 function exEst(ex) {
   const n = ex.sets || 3, r = ex.repTarget || 10;
@@ -1522,13 +1520,6 @@ const METRICS = [
   { k: 'waist', label: 'Vòng eo', unit: 'cm', dec: 1, good: -1 },
   { k: 'visceral', label: 'Mỡ nội tạng', unit: 'mức', dec: 0, good: -1 }
 ];
-const DERIVED = [
-  { k: 'lean', label: 'Khối nạc ước tính', unit: 'kg', dec: 1, good: 1, calc: e => e.weight && e.bodyFat != null ? e.weight * (1 - e.bodyFat / 100) : null },
-  { k: 'bmi', label: 'BMI', unit: '', dec: 1, good: 0, calc: e => e.weight && state.settings.height ? e.weight / Math.pow(state.settings.height / 100, 2) : null }
-];
-const ALLM = [...METRICS.slice(0, 3), DERIVED[0], ...METRICS.slice(3), DERIVED[1]];
-const mval = (e, m) => m.calc ? m.calc(e) : (e[m.k] ?? null);
-
 function newEx(name) {
   const lib = LIB.find(l => l[0] === name);
   const type = lib ? lib[2] : 'upper';
@@ -2073,9 +2064,8 @@ function recommend() {
     for (const m of ms) { rd += readiness(m, last).r * per[m]; need += Math.max(0, lo - (wk[m] || 0)) / lo * per[m]; }
     rd /= tot; need /= tot;
     const l = lastSessionOfDay(d.id), stale = l ? Math.min(1, daysBetween(l.date, today) / 7) : 1;
-    const sb = sched()[new Date().getDay()] === d.id ? 0.15 : 0;
     const pf = d.exercises.filter(e => { const pi = painOf(e); return pi && pi.kind === 'active' && pi.p.level >= 2; }).reduce((a, e) => a + e.sets, 0) / tot;
-    return { d, ms, rd, need, pf, score: rd * 0.6 + need * 0.25 + stale * 0.15 + sb - (rd < 0.66 ? 0.5 : 0) - pf * 0.6 };
+    return { d, ms, rd, need, pf, score: rd * 0.6 + need * 0.25 + stale * 0.15 - (rd < 0.66 ? 0.5 : 0) - pf * 0.6 };
   }).sort((a, b) => b.score - a.score);
   return { list, best: list[0] || null, last };
 }
@@ -2097,28 +2087,10 @@ function autoName(exs) { const ms = [...new Set(exs.map(e => e.muscle))]; return
 
 /* ---------- TAB: TẬP ---------- */
 function lastSessionOfDay(id) { let best = null; for (const s of state.sessions) if (s.dayId === id && (!best || s.startedAt > best.startedAt)) best = s; return best; }
-function nextDayId() {
-  let id = null, oldest = Infinity;
-  for (const d of state.days) { const l = lastSessionOfDay(d.id); const t = l ? l.startedAt : -1; if (t < oldest) { oldest = t; id = d.id; } }
-  return id;
-}
-const sched = () => ({});
-const hasSchedule = () => Object.values(sched()).some(v => v && findDay(v));
-function schedNext() {
-  if (!hasSchedule()) return null;
-  const today = ymd();
-  for (let k = 0; k < 8; k++) {
-    const date = addDays(today, k), id = sched()[parseYmd(date).getDay()];
-    if (!id || !findDay(id)) continue;
-    if (k === 0 && state.sessions.some(s => s.date === today && s.dayId === id)) continue;
-    return { dayId: id, date, k };
-  }
-  return null;
-}
 function dotsHtml(days, ws) {
   const today = ymd();
-  return `<div class="dots">${days.map(d => { const dt = parseYmd(d), on = ws.some(s => s.date === d), plan = !on && d >= today && sched()[dt.getDay()] && findDay(sched()[dt.getDay()]);
-    return `<div class="${on ? 'on' : ''} ${plan ? 'plan' : ''} ${d === today ? 'today' : ''}">${DOW[dt.getDay()]}<i>${dt.getDate()}</i></div>`; }).join('')}</div>`;
+  return `<div class="dots">${days.map(d => { const dt = parseYmd(d), on = ws.some(s => s.date === d);
+    return `<div class="${on ? 'on' : ''} ${d === today ? 'today' : ''}">${DOW[dt.getDay()]}<i>${dt.getDate()}</i></div>`; }).join('')}</div>`;
 }
 function bodyPhotoBanner() {
   const P = state.bodyPhotos; if (!P.length) return '';
@@ -2186,33 +2158,27 @@ function viewHome() {
   const items = todoItems();
   let h = '';
   if (!state.days.length) return items.join('') + onboarding();
-  const today = ymd(), si = schedNext(), tm = state.settings.remindTime || '';
+  const today = ymd();
   const rc = recommend();
   if (ui.pick && !findDay(ui.pick)) ui.pick = null;
   const doneToday = state.sessions.filter(s => s.date === today);
-  const schedToday = si && si.k === 0 ? si.dayId : null;
   let nid, eyebrow;
   if (ui.pick) { nid = ui.pick; eyebrow = rc.best && rc.best.d.id === nid ? 'Bạn chọn · đúng gợi ý' : 'Bạn chọn'; }
-  else if (schedToday) { nid = schedToday; eyebrow = `Hôm nay theo lịch${tm ? ' · ' + tm : ''}`; }
   else if (rc.best) { nid = rc.best.d.id; eyebrow = doneToday.length ? 'Gợi ý buổi tiếp theo' : 'Gợi ý hôm nay'; }
   else nid = state.days[0].id;
   if (doneToday.length) { const lastS = doneToday.reduce((a2, b2) => (b2.finishedAt || 0) > (a2.finishedAt || 0) ? b2 : a2), ls2 = sessStats(lastS);
     h += `<div class="restcard"><span class="bi">${ICON.check}</span><div><b>Hôm nay đã tập ${esc(doneToday.map(s => s.dayName).join(', '))}</b>${ls2.sets} set · ${fmtDur(durOf(lastS))}. Bấm nhầm “Kết thúc” hoặc muốn tập thêm thì mở lại buổi này — các set đã ghi vẫn giữ nguyên.
       <div class="row"><button class="btn sm" data-act="reopen-session" data-id="${lastS.id}">${ICON.play} Tập tiếp</button><button class="btn sm" data-act="open-session" data-id="${lastS.id}">Xem lại</button></div></div></div>`; }
-  else if (si && si.k > 0 && !ui.pick) h += `<div class="restcard"><span class="bi">${ICON.moon}</span><div><b>Hôm nay nghỉ theo lịch</b>Buổi tới: ${esc(findDay(si.dayId).name)} ${DOW[parseYmd(si.date).getDay()]} ${dm(si.date)}. Muốn tập thêm thì chọn buổi phù hợp bên dưới.</div></div>`;
   const nd = findDay(nid), l = lastSessionOfDay(nid), ent = rc.list.find(x => x.d.id === nid);
   const nsets = nd.exercises.reduce((a, e) => a + e.sets, 0);
   const pSkip = nd.exercises.filter(e => suggest(e).skip), pLow = nd.exercises.filter(e => { const g = suggest(e); return g.kind === 'pain' && !g.skip; });
   const pRet = pLow.filter(e => suggest(e).label === 'QUAY LẠI'), pCut = pLow.filter(e => !pRet.includes(e));
   const painLine = pSkip.length || pLow.length ? `<div class="meta painl">⚠ ${[pSkip.length ? pSkip.length + ' bài bỏ do đang đau' : '', pCut.length ? pCut.length + ' bài giảm 20% do đau nhẹ' : '', pRet.length ? pRet.length + ' bài mới hết đau, tập lại ~80%' : ''].filter(Boolean).join(' · ')}</div>` : '';
   const runEx = nd.exercises.filter(e => !pSkip.includes(e));
-  const y = addDays(today, -1), yId = sched()[parseYmd(y).getDay()];
-  const started = state.settings.cycleStart && state.settings.cycleStart <= y;
-  const missed = started && yId && findDay(yId) && !state.sessions.some(s => s.date === y) ? `<div class="meta miss">Hôm qua lỡ buổi ${esc(findDay(yId).name)}</div>` : '';
   const alt = ent && rc.best && rc.best.d.id !== nid && ent.rd < 0.66 && rc.best.rd >= 0.9
     ? `<div class="warnline">Nhóm cơ chính chưa phục hồi đủ.<button class="btn sm" data-act="pick-day" data-id="${rc.best.d.id}">Đổi sang ${esc(rc.best.d.name)}</button></div>` : '';
   h += `<section class="hero tix"><div class="eyebrow">${eyebrow || 'Buổi tập'}</div><div class="h1">${esc(nd.name)}</div>
-    <div class="meta">${pSkip.length ? runEx.length + '/' : ''}${nd.exercises.length} bài · ${runEx.reduce((x, e) => x + e.sets, 0)} set · <span class="etm">${minTxt(dayEst(runEx))}</span> · ${l ? 'lần cuối ' + ago(l.date) : 'chưa tập lần nào'}</div>${painLine}${missed}
+    <div class="meta">${pSkip.length ? runEx.length + '/' : ''}${nd.exercises.length} bài · ${runEx.reduce((x, e) => x + e.sets, 0)} set · <span class="etm">${minTxt(dayEst(runEx))}</span> · ${l ? 'lần cuối ' + ago(l.date) : 'chưa tập lần nào'}</div>${painLine}
     ${alt}<ul>`;
   nd.exercises.slice(0, 4).forEach(ex => { const sg = suggest(ex);
     h += `<li><span>${esc(shortName(ex.name))}</span><b class="${sg.kind === 'up' ? 'up' : ''}">${sg.skip ? 'Bỏ · đau' : kgTxt(sg.kg, ex) + (sg.kind === 'up' ? ' ▲' : sg.kind === 'pain' ? ' ⚠' : '')}</b></li>`; });
@@ -2619,12 +2585,6 @@ function switchFocusEx(exId) {
   ui.justDone = null; ui.arriveEx = null;
 }
 /* xong bài đang tập: chờ một nhịp rồi thu gọn và mở bài kế tiếp chưa xong */
-function autoNext(i) {
-  clearTimeout(ui.nextT);
-  ui.nextT = setTimeout(() => { const a = state.active; if (!a || ui.tab !== 'today' || !$('#sheet').hidden) return; const cur = a.entries[i]; if (!cur || !entryDone(cur) || focusIdx() !== i) return;
-    const order = [...a.entries.keys()].filter(k => k > i).concat([...a.entries.keys()].filter(k => k < i)), k = order.find(k2 => !entryDone(a.entries[k2]));
-    switchFocusEx(k == null ? null : a.entries[k].exId); if (k != null) scrollFocus(); else toast('Xong hết các bài · bấm “Kết thúc buổi tập”'); }, 900);
-}
 function scrollFocus() { requestAnimationFrame(() => { const el = document.querySelector('article.ex.focus'); if (el) el.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' }); }); }
 const entryDone = en => en.sets.length > 0 && en.sets.every(x => x.done) && (!en.drop || en.drop.done);
 const untouched = en => !en.sets.some(x => x.done) && !(en.drop && en.drop.done);
@@ -2819,7 +2779,6 @@ function refreshWarm(i) { const box = $('#warm-' + i); if (box && state.active) 
 function getSet(i, j) { const en = state.active.entries[i]; return j === 'drop' ? en.drop : en.sets[+j]; }
 
 /* ---------- đồng hồ nghỉ ---------- */
-const APP_VERSION = '2026.10.22 · bản 30';
 const PUSH_SERVER = 'https://gadn-push.hoangtourguide0507.workers.dev'; /* PA-23: máy chủ thông báo dựng sẵn cho cả nhóm */
 const isIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const isStandalone = () => !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
@@ -2857,34 +2816,16 @@ async function pushCall(path, extra) {
   if (!r.ok) throw new Error('http_' + r.status);
   return r.json();
 }
-const NTFY = 'https://ntfy.sh';
-const alertMethod = () => 'push'; /* PA-19: chỉ dùng thông báo của app (Notification API, kèm máy chủ nếu có); đã bỏ Phím tắt iPhone */
-const scName = () => (state.settings.shortcutName || 'Nghỉ giữa set').trim() || 'Nghỉ giữa set';
-function runShortcut(sec) {
-  const url = `shortcuts://run-shortcut?name=${encodeURIComponent(scName())}&input=text&text=${Math.max(1, Math.round(sec))}`;
-  try { window.location.href = url; } catch (e) {}
-}
-const DEPLOY_URL = 'https://deploy.workers.cloudflare.com/?url=https://github.com/hoangtourguide0507-create/giao-an-dia-nguc/tree/main/push-server';
 const PUSH_GUIDE = 'https://github.com/hoangtourguide0507-create/giao-an-dia-nguc/blob/main/push-server/HUONG-DAN.md';
-function ntfyTopic() {
-  if (!state.settings.ntfyTopic) { const a = 'abcdefghijkmnpqrstuvwxyz23456789'; let t = 'gadn-'; const r = crypto.getRandomValues(new Uint8Array(16)); for (const x of r) t += a[x % a.length]; state.settings.ntfyTopic = t; save(); }
-  return state.settings.ntfyTopic;
-}
-function ntfySend(seq, sec, title, body) {
-  const q = `in=${Math.max(10, Math.round(sec))}s&title=${encodeURIComponent(title)}&priority=high&tags=alarm_clock`;
-  return fetch(`${NTFY}/${ntfyTopic()}/${seq}?${q}`, { method: 'POST', body, keepalive: true });
-}
 function schedulePush(at, body, fromStart) {
   if (!state.settings.notify || inArtifact) return;
 
-  if (alertMethod() === 'ntfy') { rest.pushed = true; ntfySend('rest', (at - Date.now()) / 1000, restTitle(), body).catch(() => { rest.pushed = false; }); return; }
   if (!pushBase() || !pushSupported() || !pushSub) return;
   rest.pushed = true;
   pushCall('/schedule', { at, title: restTitle(), body, tag: 'rest' }).catch(() => { rest.pushed = false; });
 }
 function cancelPush() {
   if (!rest.pushed) return; rest.pushed = false;
-  if (alertMethod() === 'ntfy') { fetch(`${NTFY}/${ntfyTopic()}/rest/delete`, { keepalive: true }).catch(() => {}); return; }
   pushCall('/cancel', {}).catch(() => {});
 }
 const rest = { end: 0, total: 0, iv: null, hideT: null, fired: true, lastTick: 0 };
@@ -3100,7 +3041,7 @@ function spark(ex) {
   return `<svg class="spk" viewBox="0 0 52 16" aria-hidden="true"><polyline pathLength="100" points="${P.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}"/><circle cx="${L[0].toFixed(1)}" cy="${L[1].toFixed(1)}" r="2"/></svg>`;
 }
 function viewPlan() {
-  const rc = recommend(), today = ymd(), dow = new Date().getDay(), c = cycleInfo();
+  const rc = recommend();
   const dbPending = allExFull().filter(x => isDb(x.ex) && x.ex.each == null);
   const nm = curProf().name;
   const nAll = allExFull().length, dueN = state.days.reduce((a, d) => a + d.exercises.filter(rotDue).length, 0);
@@ -3110,8 +3051,6 @@ function viewPlan() {
   const allX = allEx(), nSets = state.days.reduce((a, d) => a + d.exercises.reduce((b, e) => b + e.sets, 0), 0);
   const ups = allX.filter(x => suggest(x.ex).kind === 'up').length;
   const ws = weekDaysOf(0);
-  const planned = sched();
-  const wkSets = Object.values(planned).filter(id => id && findDay(id)).reduce((a, id) => a + findDay(id).exercises.reduce((b, e) => b + e.sets, 0), 0);
   const wsS = state.sessions.filter(x => x.date >= ws[0] && x.date <= ws[6]);
   h += `<div class="card wkcard"><div class="wkc-h"><b>Tuần ${dm(ws[0])} – ${dm(ws[6])}</b><span class="badge ${wsS.length ? 'up' : 'new'}">${wsS.length} buổi</span></div>${dotsHtml(ws, wsS)}
     <p class="note-line">${esc(nm)} · ${state.days.length} ngày tập · ${allX.length} bài · ${nSets} set mỗi vòng${allExFull().length - allX.length ? ` · ${allExFull().length - allX.length} bài thay thế` : ''}</p></div>` + wpBanner();
@@ -3123,14 +3062,14 @@ function viewPlan() {
     const open = ui.openDay === d.id, dc = DAYC[i % DAYC.length], ent = rc.list.find(x => x.d.id === d.id);
     const st = dayRd(d, rc.last);
     const ls = lastSessionOfDay(d.id), sgs = d.exercises.map(e => suggest(e)), nUp = sgs.filter(g => g.kind === 'up').length;
-    const isToday = planned[dow] === d.id, isBest = rc.best && rc.best.d.id === d.id;
+    const isBest = rc.best && rc.best.d.id === d.id;
     const ms = [...new Set(d.exercises.map(e => e.muscle))];
     const anim = ui.justOpen === d.id;
-    h += `<article class="pday ${open ? 'open' : ''} ${isToday || (isBest && !Object.keys(planned).length) ? 'glow' : ''}" style="--dc:${dc}"><button type="button" class="pday-h" data-act="toggle-day" data-id="${d.id}" aria-expanded="${open}">
+    h += `<article class="pday ${open ? 'open' : ''} ${isBest ? 'glow' : ''}" style="--dc:${dc}"><button type="button" class="pday-h" data-act="toggle-day" data-id="${d.id}" aria-expanded="${open}">
       <span class="pnum">${String(i + 1).padStart(2, '0')}</span>
       <span class="t"><b>${esc(d.name)}</b><span class="pmeta">${d.exercises.length} bài · ${d.exercises.reduce((a, e) => a + e.sets + (e.dropSet ? 3 : 0), 0)} set · ${minTxt(dayEst(d.exercises))}</span>
         ${ms.length ? `<span class="pmus">${ms.slice(0, 4).map(m => `<i>${esc(m)}</i>`).join('')}</span>` : ''}</span>
-      <span class="pside">${isToday ? '<span class="ptag">Hôm nay</span>' : isBest ? '<span class="ptag">Gợi ý</span>' : ''}${st ? `<span class="rs ${st.k}">${st.t}</span>` : ''}${nUp ? `<span class="upb">▲ ${nUp} lên tạ</span>` : ''}<span class="last">${ls ? ago(ls.date) : 'Chưa tập'}</span></span>${ICON.chev}</button>`;
+      <span class="pside">${isBest ? '<span class="ptag">Gợi ý</span>' : ''}${st ? `<span class="rs ${st.k}">${st.t}</span>` : ''}${nUp ? `<span class="upb">▲ ${nUp} lên tạ</span>` : ''}<span class="last">${ls ? ago(ls.date) : 'Chưa tập'}</span></span>${ICON.chev}</button>`;
     if (!open && d.exercises.length) h += `<div class="segbar" aria-hidden="true">${sgs.map((g, j) => `<i class="${g.kind}" style="--j:${j}"></i>`).join('')}</div>`;
     if (open) {
       h += `<ol class="exl">`;
@@ -3868,43 +3807,16 @@ function viewMore() {
   <div class="gh">Khác</div><div class="card grp">${row('wipe', 'trash', 'Xoá dữ liệu', 'Xoá toàn bộ dữ liệu trên máy này', 'bad')}</div>
   <p class="small muted" style="margin-top:18px">Giáo Án Địa Ngục chỉ đưa ra gợi ý dựa trên số liệu bạn ghi, không thay thế huấn luyện viên hay bác sĩ. Đau khớp hoặc đau nhói thì dừng bài đó.</p></section>`;
 }
-function diagRows() {
-  const np = 'Notification' in window ? Notification.permission : 'none';
-  const rows = [
-    ['Mở từ icon màn hình chính', isStandalone() ? ['Có', 'ok'] : ['Không', 'no']],
-    ...(alertMethod() === 'push' ? [['Quyền thông báo', np === 'granted' ? ['Đã cho phép', 'ok'] : np === 'denied' ? ['Đã chặn', 'no'] : np === 'none' ? ['Không hỗ trợ', 'no'] : ['Chưa bật', 'no']]] : []),
-    ...(alertMethod() === 'shortcut' ? [['Cách báo', ['Phím tắt iPhone → Đồng hồ', 'ok']], ['Tên phím tắt', [esc(scName()), 'ok']], ['Thông báo', state.settings.notify ? ['Đang bật', 'ok'] : ['Đang tắt', 'no']]] : []),
-    ...(alertMethod() === 'ntfy' ? [['Cách gửi', ['App ntfy', 'ok']], ['Thông báo', state.settings.notify ? ['Đang bật', 'ok'] : ['Đang tắt', 'no']]] : alertMethod() === 'shortcut' ? [] :
-      [['Đăng ký nhận thông báo', pushSub ? ['Đã đăng ký', 'ok'] : ['Chưa', 'no']], ['Máy chủ thông báo', pushBase() ? ['Đã cài', 'ok'] : ['Chưa có', 'no']]]),
-    ['Phiên bản app', [APP_VERSION, '']]
-  ];
-  return rows.map(([l, [v, c]]) => `<div><span>${l}</span><b class="${c}">${esc(v)}</b></div>`).join('');
-}
-function rulesHtml() {
-  return `<div class="rules"><p>Dựa trên khuyến nghị tập kháng lực của ACSM (Hiệp hội Y học Thể thao Hoa Kỳ): khi làm vượt số rep mục tiêu thì tăng tạ 2–10%.</p>
-  <h4>Theo tuần (mặc định)</h4><ul><li>Đạt đủ số set × rep mục tiêu (vd 3×10) → tuần sau <span class="badge up">TĂNG TẠ</span>.</li><li>Chưa đủ → <span class="badge hold">GIỮ</span> mức tạ, cố thêm rep.</li>
-  <li>3 buổi không tiến bộ, hoặc 2 buổi liền dưới rep tối thiểu → <span class="badge down">GIẢM</span>.</li></ul>
-  <h4>Mức tăng mỗi tuần</h4><div class="tbl-wrap"><table class="tbl"><thead><tr><th>Tốc độ</th><th>Bài lớn</th><th>Bài cô lập</th></tr></thead><tbody>
-  <tr><td>Thận trọng</td><td>~2,5%, sau 2 tuần đạt</td><td>~2%</td></tr><tr><td>Chuẩn</td><td>~5%</td><td>~2,5%</td></tr><tr><td>Nhanh</td><td>~7,5%</td><td>~5%</td></tr></tbody></table></div>
-  <p class="small" style="margin-top:6px">Luôn làm tròn theo bước tăng của máy, tối thiểu 1 bước. Ví dụ bench 40 kg, tốc độ Chuẩn, bước 2,5 kg (bánh 1,25 kg mỗi bên): 40 → 42,5 → 45 kg.</p>
-  <h4>Khác</h4><ul><li>10–20 set nặng mỗi nhóm cơ mỗi tuần, mỗi set còn dư khoảng 1–3 rep.</li><li>Nghỉ 2–3 phút với bài lớn, 1–2 phút với bài cô lập.</li><li>Khởi động trước bài lớn đầu tiên của mỗi nhóm cơ: ~50% × 10, ~70% × 5, ~85% × 2.</li><li>Deload mỗi 6–8 tuần: giảm ~10% tạ và khoảng một nửa số set.</li>
-  <li>Kỷ lục tính bằng 1RM ước tính theo công thức Epley: kg × (1 + rep/30).</li></ul>
-  <h4>Gợi ý nhóm cơ hôm nay</h4><ul><li>ACSM khuyến nghị nghỉ ít nhất 48 giờ trước khi tập lại cùng một nhóm cơ. App dùng 72 giờ cho nhóm lớn (ngực, lưng, đùi, mông) và 48 giờ cho nhóm nhỏ.</li>
-  <li>Phân tích tổng hợp của Schoenfeld và cộng sự (2016) cho thấy tập mỗi nhóm cơ 2 lần/tuần giúp tăng cơ tốt hơn 1 lần/tuần, nên app ưu tiên buổi có nhóm cơ đã hồi phục và còn thiếu set trong tuần.</li>
-  <li>Buổi gợi ý = nhóm cơ đã hồi phục (60%) + số set còn thiếu trong tuần (25%) + buổi lâu chưa tập (15%), cộng thêm nếu trùng lịch tập.</li></ul></div>`;
-}
-
 /* ---------- người tập ---------- */
 function profStats(st) {
-  if (!st) return { wk: 0, planned: 0, sets: 0, last: null, w: null, dw: null, active: false };
+  if (!st) return { wk: 0, sets: 0, last: null, w: null, dw: null, active: false };
   const days = weekDaysOf(0), S = st.sessions || [];
   const ws = S.filter(x => x.date >= days[0] && x.date <= days[6]);
   const sets = ws.reduce((a, x) => a + x.entries.reduce((b, e) => b + e.sets.length + (e.drop ? 1 : 0), 0), 0);
   const last = S.reduce((a, b) => !a || b.startedAt > a.startedAt ? b : a, null);
   const B = [...(st.body || [])].filter(e => e.weight != null).sort((a, b) => a.date.localeCompare(b.date));
   const cur = B[B.length - 1], ref = cur ? [...B].reverse().find(e => daysBetween(e.date, cur.date) >= 28) : null;
-  const planned = Object.values((st.settings || {}).schedule || {}).filter(v => v && (st.days || []).some(d => d.id === v)).length;
-  return { wk: ws.length, planned, sets, last, w: cur ? cur.weight : null, dw: cur && ref ? cur.weight - ref.weight : null, active: !!st.active };
+  return { wk: ws.length, sets, last, w: cur ? cur.weight : null, dw: cur && ref ? cur.weight - ref.weight : null, active: !!st.active };
 }
 function withState(st, fn) { const keep = state; state = st; try { return fn(); } finally { state = keep; } }
 /* PA-10: đổi mọi bài về 3 set (1 lần cho mỗi hồ sơ) */
@@ -4018,12 +3930,6 @@ function viewCoach() {
   }
   return h + `</section>`;
 }
-function impPreviewHtml(days) {
-  return `<div class="eyebrow" style="margin-bottom:6px">${days.length} ngày tập${ui.importFrom ? ' · từ HLV ' + esc(ui.importFrom) : ''}</div>` + days.map(d => `<div class="pr"><b>${esc(d.name)}</b><span class="small muted" style="text-align:right">${d.exercises.map(e => esc(shortName(e.name))).join(', ')}</span></div>`).join('') +
-    (state.days.length ? `<p class="note-line">Đã có giáo án? Chọn <b>Cập nhật</b>: bài trùng được chỉnh theo giáo án mới, lịch sử tập và mức tạ giữ nguyên.</p>
-    <div class="sh-actions"><button class="btn gold big" data-act="import-update">Cập nhật giáo án hiện tại</button><button class="btn" data-act="import-apply" data-m="add">Thêm thành các ngày mới</button></div>`
-    : `<div class="sh-actions"><button class="btn gold big" data-act="import-apply" data-m="add">Nhập giáo án</button></div>`);
-}
 function wpBuild() {
   // tính đề xuất thô (không áp kế hoạch cũ) cho mọi bài chính
   const D = ui.wpDraft, out = [];
@@ -4073,38 +3979,11 @@ function maybeWeekPlan() {
   setTimeout(() => { if ($('#sheet').hidden && !state.active) { ui.wpDraft = null; weekPlanSheet(); } }, 700);
 }
 /* ===== Đồng bộ kết quả bằng mã QR (không cần máy chủ) ===== */
-const sessQR = x => [x.id, x.date, x.startedAt, x.finishedAt || 0, x.paused || 0, String(x.dayName || '').slice(0, 40),
-  x.entries.map(en => { const ex = findEx(en.exId); return [(ex && ex.srcId) || '', String(en.name).slice(0, 60), en.muscle, en.each ? 1 : 0, en.sets.map(z => [z.kg ?? 0, z.reps]), en.drop ? [en.drop.kg ?? 0, en.drop.reps] : 0]; })];
-async function qrPayload() {
-  const sent = new Set(state.qrSent || []), L = state.sessions.filter(x => !sent.has(x.id)).sort((a, b) => a.startedAt - b.startedAt).slice(-12);
-  const data = { v: 1, k: (state.coachLink || {}).pk || '', n: curProf().name, s: L.map(sessQR) };
-  const bytes = new TextEncoder().encode(JSON.stringify(data));
-  let body = 'p' + b64u(bytes); if ('CompressionStream' in window) { try { body = 'z' + b64u(await pipeBytes(bytes, new CompressionStream('deflate-raw'))); } catch (e) {} }
-  return { ids: L.map(x => x.id), parts: qrChunks('GAQ1', body) };
-}
 /* chia dữ liệu thành nhiều mã QR nhỏ: ~320 ký tự/mã, mức sửa lỗi L để mã thưa, camera đọc được từ xa */
-const QR_CHUNK = 320;
-function qrChunks(prefix, body, size) { const C = size || QR_CHUNK, n = Math.max(1, Math.ceil(body.length / C)), id = Math.random().toString(36).slice(2, 6); return Array.from({ length: n }, (_, i) => `${prefix}.${id}.${i + 1}.${n}.${body.slice(i * C, (i + 1) * C)}`); }
 function drawQR(canvas, text) {
   const q = qrcode(0, 'L'); q.addData(text); q.make(); const n = q.getModuleCount(), sc = 6, pad = 4, W = (n + pad * 2) * sc;
   canvas.width = canvas.height = W; const g = canvas.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, W, W); g.fillStyle = '#000';
   for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) g.fillRect((c + pad) * sc, (r + pad) * sc, sc, sc);
-}
-async function qrSendSheet() {
-  const P = await qrPayload(); ui.qrOut = P; clearInterval(ui.qrT);
-  if (!P.ids.length) { openSheet(`<h3 class="sh-title">Gửi kết quả cho HLV</h3><p class="sh-text">Không có buổi tập mới cần gửi. Mọi buổi đã gửi hết.</p><div class="sh-actions"><button class="btn" data-act="qr-resend">Gửi lại 5 buổi gần nhất</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`); return; }
-  openSheet(`<h3 class="sh-title">Gửi kết quả cho HLV</h3><p class="sh-text">${P.ids.length} buổi tập${state.coachLink && state.coachLink.name ? ` · gửi HLV ${esc(state.coachLink.name)}` : ''}. HLV mở Phòng HLV → <b>Quét QR</b> rồi đưa camera vào mã này, hoặc bấm <b>Sao chép mã gửi qua Zalo</b>.${P.parts.length > 1 ? ' Mã tự đổi trang, giữ yên đến khi HLV báo xong.' : ''}</p>
-    <div class="qrbox"><canvas id="qr-c"></canvas><span class="pg" id="qr-pg"></span></div>
-    <div class="sh-actions"><button class="btn gold big" data-act="qr-done">HLV đã quét xong</button><button class="btn" data-act="qr-copy">Sao chép mã gửi qua Zalo</button><button class="btn ghost" data-act="qr-close">Để sau</button></div>`);
-  let i = 0; const show = () => { const c = $('#qr-c'); if (!c) { clearInterval(ui.qrT); return; } drawQR(c, P.parts[i]); $('#qr-pg').textContent = P.parts.length > 1 ? `Trang ${i + 1}/${P.parts.length}` : ''; i = (i + 1) % P.parts.length; };
-  show(); if (P.parts.length > 1) ui.qrT = setInterval(show, 900);
-}
-async function syncQrReceive(body) {
-  try { let bytes = unb64u(body.slice(1)); if (body[0] === 'z') bytes = await pipeBytes(bytes, new DecompressionStream('deflate-raw')); await syncReceive(JSON.parse(new TextDecoder().decode(bytes))); }
-  catch (e) { toast('Mã QR không đọc được, thử quét lại'); }
-}
-async function syncQrReceive2(body) {
-  try { await syncReceive(syncExpand(await inflateB64(body))); } catch (e) { toast('Mã QR không đọc được, thử quét lại'); }
 }
 async function qrScanSheet(mode) {
   openSheet(`<h3 class="sh-title">Quét mã liên kết</h3><p class="sh-text">Đưa camera vào mã QR HLV gửi, chọn ảnh chụp mã, hoặc dán mã nhận qua Zalo. Chỉ cần làm 1 lần.</p>` + `
@@ -4131,32 +4010,6 @@ async function qrScanSheet(mode) {
   } catch (e) { const st = $('#qr-st'); if (st) st.textContent = 'Không mở được camera. Bạn vẫn có thể bấm “Dán mã từ bộ nhớ tạm” hoặc “Chọn từ Ảnh”.'; }
 }
 function qrStop() { clearTimeout(ui.qrRaf); if (ui.qrStream) { ui.qrStream.getTracks().forEach(t => t.stop()); ui.qrStream = null; } }
-async function qrReceive(body) {
-  try {
-    let bytes = unb64u(body.slice(1)); if (body[0] === 'z') bytes = await pipeBytes(bytes, new DecompressionStream('deflate-raw'));
-    const data = JSON.parse(new TextDecoder().decode(bytes)); if (!data || !Array.isArray(data.s)) throw new Error();
-    ui.qrIn = data; const p = profiles.list.find(x => x.id === data.k);
-    if (p) { await qrImport(p.id); return; }
-    openSheet(`<h3 class="sh-title">Kết quả của ${esc(data.n || 'học viên')}</h3><p class="sh-text">${data.s.length} buổi tập. Lưu vào hồ sơ nào?</p>
-      <div class="list">${profiles.list.map(x => `<button type="button" class="li" data-act="qr-to" data-id="${x.id}"><span class="lt">${esc(x.name)}</span></button>`).join('')}</div>
-      <div class="sh-actions"><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
-  } catch (e) { toast('Mã QR không đọc được, thử quét lại'); }
-}
-async function qrImport(pid) {
-  const data = ui.qrIn; if (!data) return; const raw = await profState(pid); const st = pid === profiles.active ? state : normState(raw) || freshState();
-  let add = 0;
-  withState(st, () => {
-    const byName = n => { const x = allExFull().find(y => y.ex.name.toLowerCase() === String(n).toLowerCase()); return x ? x.ex.id : null; };
-    for (const q of data.s) { if (state.sessions.some(x => x.id === q[0])) continue;
-      state.sessions.push({ id: q[0], date: q[1], startedAt: q[2], finishedAt: q[3] || null, paused: q[4] || 0, dayName: q[5], dayId: 'qr', fromQR: true,
-        entries: q[6].map(e => ({ exId: (e[0] && findEx(e[0]) ? e[0] : byName(e[1])) || 'qr:' + e[1], name: e[1], muscle: e[2], each: !!e[3], note: '', sets: e[4].map(z => ({ kg: z[0], reps: z[1] })), drop: e[5] ? { kg: e[5][0], reps: e[5][1] } : null })) });
-      add++; }
-    state.sessions.sort((a, b) => a.startedAt - b.startedAt);
-  });
-  if (pid === profiles.active) save(); else { st.updatedAt = Date.now(); await LDB.put('kv', stateKey(pid), clone(st)); }
-  ui.qrIn = null; ui.coachData = null; closeSheet(); render(true);
-  const p = profiles.list.find(x => x.id === pid); toast(add ? `Đã nhận ${add} buổi tập của ${p ? p.name : 'học viên'}` : 'Các buổi này đã có sẵn, không có gì mới');
-}
 function coachSetupSheet() {
   const co = profiles.coach || {}, self = profiles.list.find(p => /^tôi$/i.test(p.name.trim()));
   openSheet(`<h3 class="sh-title">Chế độ huấn luyện viên</h3><p class="sh-text">Bạn là HLV. Mọi người trong danh sách là học viên, mỗi người dữ liệu riêng, tất cả nằm trên điện thoại này.</p>
@@ -4188,7 +4041,7 @@ async function profilesSheet() {
     <div class="list">${rows.map(({ p, st }) => `<button type="button" class="li prow ${p.id === profiles.active ? 'cur' : ''}" data-act="switch-profile" data-id="${p.id}">
       <span class="pav" style="--pc:${PCOLORS[p.color % PCOLORS.length]}">${esc(initials(p.name) || '?')}</span>
       <span class="pinfo"><span class="lt">${esc(p.name)}${p.id === profiles.active ? ' <span class="chip">Đang xem</span>' : ''}${st.active ? ' <span class="badge up">Đang tập</span>' : ''}</span>
-        <span class="pstats"><span><b>${st.wk}${st.planned ? '/' + st.planned : ''}</b> buổi tuần này</span><span><b>${st.sets}</b> set</span><span><b>${st.w != null ? fmt(st.w) : '–'}</b> kg${st.dw != null ? ` <span class="delta ${Math.abs(st.dw) < 0.05 ? 'flat' : 'other'}">${st.dw > 0 ? '▲' : st.dw < 0 ? '▼' : '='}${fmt(Math.abs(st.dw))}</span>` : ''}</span></span>
+        <span class="pstats"><span><b>${st.wk}</b> buổi tuần này</span><span><b>${st.sets}</b> set</span><span><b>${st.w != null ? fmt(st.w) : '–'}</b> kg${st.dw != null ? ` <span class="delta ${Math.abs(st.dw) < 0.05 ? 'flat' : 'other'}">${st.dw > 0 ? '▲' : st.dw < 0 ? '▼' : '='}${fmt(Math.abs(st.dw))}</span>` : ''}</span></span>
         <span class="ls">${st.last ? 'Lần cuối: ' + esc(st.last.dayName) + ' · ' + ago(st.last.date) : 'Chưa tập buổi nào'}</span></span></button>`).join('')}</div>
     <div class="sh-actions">${multi() || coach() ? `<button class="btn gold big" data-act="coach">${ICON.users} ${coach() ? 'Bảng HLV' : 'Tổng quan cả nhóm'}</button>` : ''}<button class="btn ${multi() ? '' : 'gold big'}" data-act="prof-add">${ICON.plus} Thêm người</button>
       <button class="btn" data-act="prof-rename">Đổi tên ${esc(curProf().name)}</button>
@@ -4234,47 +4087,8 @@ async function clonePlan(days) {
 /* ---------- chia sẻ ---------- */
 function b64u(bytes) { let s = ''; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
 function unb64u(str) { str = str.replace(/-/g, '+').replace(/_/g, '/'); while (str.length % 4) str += '='; const bin = atob(str); return Uint8Array.from(bin, c => c.charCodeAt(0)); }
-async function pipeBytes(bytes, stream) { return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer()); }
-async function encodePlan(days, kgMap, meta) {
-  const enc = x => ({ ...(kgMap && kgMap[x.id] != null ? { c: kgMap[x.id] } : {}), ...(meta ? { i: x.id } : {}), n: x.name, m: x.muscle, t: x.type, s: x.sets, g: x.repTarget, a: x.repMin, b: x.repMax, d: x.dropSet ? 1 : 0, k: x.step, r: x.rest, u: x.setup || '', h: x.each ? 1 : 0 });
-  const data = { v: 2, ...(meta ? { p: meta.pk, q: meta.cn } : {}), d: days.map(d => ({ n: d.name, e: d.exercises.map(x => ({ ...enc(x), o: x.slot || '', l: (x.alts || []).map(enc) })) })) };
-  const bytes = new TextEncoder().encode(JSON.stringify(data));
-  if ('CompressionStream' in window) { try { return 'SOTA1z.' + b64u(await pipeBytes(bytes, new CompressionStream('deflate-raw'))); } catch (e) {} }
-  return 'SOTA1.' + b64u(bytes);
-}
-async function decodePlan(text) {
-  const m = String(text).match(/SOTA[12]z?\.[A-Za-z0-9_-]+/); if (!m) throw new Error('Không tìm thấy mã giáo án.');
-  const [p, body] = m[0].split('.'); let bytes = unb64u(body);
-  if (p === 'SOTA1z' || p === 'SOTA2z') { if (!('DecompressionStream' in window)) throw new Error('Trình duyệt này quá cũ để đọc mã. Hãy cập nhật trình duyệt.'); bytes = await pipeBytes(bytes, new DecompressionStream('deflate-raw')); }
-  let data = JSON.parse(new TextDecoder().decode(bytes)); if (p.startsWith('SOTA2')) data = plan2ToV2(data);
-  const clamp = (v, a, b, def) => { v = Number(v); return isFinite(v) ? Math.min(b, Math.max(a, v)) : def; };
-  const dec = x => {
-    const type = TYPES[x.t] ? x.t : 'upper'; const repMin = clamp(x.a, 1, 50, 8); const repMax = Math.max(repMin, clamp(x.b, 1, 50, 12));
-    return migrateEx({ name: String(x.n || 'Bài tập').slice(0, 80), muscle: MUSCLES.includes(x.m) ? x.m : 'Khác', type, sets: clamp(x.s, 1, 10, 3), repTarget: clamp(x.g, repMin, 50, Math.min(repMax, 10)), repMin, repMax,
-      dropSet: !!x.d, step: clamp(x.k, 0.25, 50, TYPES[type].step), rest: +x.r > 0 ? clamp(x.r, 30, 600, 90) : 0, restV: 2, each: !!x.h, setup: String(x.u || '').slice(0, 1000), ...(x.i ? { srcId: String(x.i).slice(0, 40) } : {}), ...(x.c != null && isFinite(+x.c) ? { currentKg: clamp(x.c, 0, 1000, null), kgSetAt: Date.now() } : {}) }); };
-  const out = (data.d || []).slice(0, 14).map(d => ({ name: String(d.n || 'Ngày tập').slice(0, 40), exercises: (d.e || []).slice(0, 30).map(x => ({ ...dec(x), slot: String(x.o || '').slice(0, 40), alts: (x.l || []).slice(0, 20).map(dec) })) }));
-  out.meta = data.p ? { pk: String(data.p).slice(0, 40), cn: String(data.q || '').slice(0, 40) } : null; return out;
-}
 /* gửi giáo án bằng mã QR: máy kia quét trực tiếp, hoặc lưu ảnh mã vào Ảnh / sao chép mã gửi đi bằng bất cứ cách nào */
-async function planQrSheet() {
-  if (!state.days.length) { toast('Chưa có giáo án để gửi'); return; }
-  const code = await encodePlan2(state.days), one = 'GAP2.' + Math.random().toString(36).slice(2, 6) + '.1.1.' + code, parts = one.length <= QR_MAX ? [one] : qrChunks('GAP2', code, QR_MAX - 40), n = parts.length;
-  ui.planCode = code; clearInterval(ui.qrT);
-  openSheet(`<h3 class="sh-title">Gửi giáo án</h3><p class="sh-text">${state.days.length} ngày tập · ${state.days.reduce((a, d) => a + d.exercises.length, 0)} bài. Người nhận mở app → <b>Quét mã</b>, hoặc bấm <b>Dán mã</b> nếu bạn gửi mã qua tin nhắn.${n > 1 ? ` Giáo án dài nên chia ${n} mã QR.` : ''} Mức tạ, lịch sử và ảnh của bạn không được gửi đi.</p>
-    <div class="qrbox"><canvas id="qr-c"></canvas><span class="pg" id="qr-pg"></span></div>
-    <p class="small muted" style="margin:10px 0 0">Ở xa: bấm <b>Sao chép mã gửi qua Zalo</b> (nhanh nhất, chỉ 1 tin nhắn) hoặc <b>Lưu ảnh mã vào Ảnh</b>.</p>
-    <div class="sh-actions">${n > 1 ? '<button class="btn gold" id="qr-next">…</button>' : ''}<button class="btn ${n > 1 ? '' : 'gold'}" data-act="plan-copy">Sao chép mã gửi qua Zalo</button><button class="btn" data-act="plan-img">Lưu ảnh mã vào Ảnh</button><button class="btn ghost" data-act="qr-close">Đóng</button></div>`);
-  qrStatic(parts, 'qr-close', 'Xong');
-}
 /* giáo án nhận được (từ camera, ảnh, hoặc link cũ): xem trước rồi chọn Cập nhật / Thêm */
-async function planPreviewSheet(code) {
-  ui.importPhotos = null; ui.importFrom = '';
-  try {
-    const days = await decodePlan(code); if (!days.length) throw new Error('Giáo án trống.');
-    ui.importDays = days; ui.importMeta = days.meta || null; ui.importFrom = (days.meta && days.meta.cn) || '';
-    openSheet(`<h3 class="sh-title">Giáo án nhận được</h3>` + impPreviewHtml(days) + `<div class="sh-actions"><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
-  } catch (e) { openSheet(`<h3 class="sh-title">Không đọc được giáo án</h3><p class="sh-text">${esc(e.message || 'Mã bị thiếu hoặc hỏng. Quét lại hoặc chọn lại ảnh mã.')}</p><div class="sh-actions"><button class="btn gold" data-act="qr-scan">Quét lại</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`); }
-}
 /* ===== Đồng bộ hai chiều HLV ⇄ học viên (PA-1 + PA-2) =====
    Chỉ đụng tới đúng một hồ sơ. Buổi tập cộng dồn theo mã, mức tạ theo buổi mới nhất,
    cấu trúc giáo án theo HLV, ảnh cộng dồn, xoá có ghi dấu để máy kia xoá theo. */
@@ -4331,12 +4145,6 @@ async function syncPack(pid, { full = false, withPhotos = false } = {}) {
   if (withPhotos) pkg.photos = photos;
   return { pkg, mark: { sent: Object.fromEntries(S.map(s => [s.id, sRev(s)])), planH } };
 }
-async function syncMarkSent(pid, mark) {
-  const st = await syncStateOf(pid); if (!st) return;
-  const M = st.syncMark || {}; st.syncMark = { sent: { ...(M.sent || {}), ...mark.sent }, planH: mark.planH, at: Date.now() };
-  if (pid === profiles.active) save(); else { st.updatedAt = Date.now(); await LDB.put('kv', stateKey(pid), clone(st)); }
-}
-
 /* ---- làm sạch dữ liệu nhận từ máy khác ---- */
 const cNum = (v, a, b, def) => { v = Number(v); return isFinite(v) ? Math.min(b, Math.max(a, v)) : def; };
 const cStr = (v, n) => String(v == null ? '' : v).slice(0, n);
@@ -4455,41 +4263,7 @@ async function syncMerge(L0, P, choices) {
 }
 
 /* ---- giao diện ---- */
-function syncAgo(st) { const t = (st && st.syncMark && st.syncMark.at) || 0; return t ? 'Lần gửi gần nhất: ' + ago(ymd(new Date(t))) : 'Chưa đồng bộ lần nào'; }
-async function syncSheet(pid) {
-  pid = pid || profiles.active; const st = await syncStateOf(pid), p = profiles.list.find(x => x.id === pid); if (!st || !p) return;
-  ui.syncPid = pid; const co = coach(), other = co ? `học viên ${esc(p.name)}` : (st.coachLink && st.coachLink.name ? `HLV ${esc(st.coachLink.name)}` : 'HLV');
-  openSheet(`<h3 class="sh-title">Đồng bộ với ${other}</h3>
-    <p class="sh-text">Hai máy cùng ghi buổi tập${co ? ` của ${esc(p.name)}` : ''}: ${co ? 'học viên tự tập ghi trên máy họ, bạn hướng dẫn thì ghi trên máy này' : 'tự tập thì ghi trên máy bạn, có HLV thì HLV ghi trên máy HLV'}. Đồng bộ để hai máy có cùng lịch sử. Chỉ hồ sơ ${esc(p.name)} được cập nhật, dữ liệu khác trên hai máy giữ nguyên.</p>
-    <div class="eyebrow" style="margin:6px 0 8px">Ở xa (Zalo / Messenger — nhanh nhất)</div>
-    <div class="row"><button class="btn gold" data-act="sync-copy">${ICON.share} Sao chép mã gửi đi</button><button class="btn gold" data-act="qr-paste">${ICON.paste} Dán mã nhận được</button></div>
-    <p class="small muted" style="margin:8px 0 0">Bấm Sao chép mã rồi dán vào tin nhắn Zalo gửi cho máy kia. Khi nhận được tin nhắn, copy rồi bấm Dán mã nhận được.</p>
-    <div class="eyebrow" style="margin:18px 0 8px">Đang ở cạnh nhau (Quét QR)</div>
-    <div class="row"><button class="btn" data-act="sync-qr">Hiện mã QR</button><button class="btn" data-act="sync-scan">Quét mã máy kia</button></div>
-    <div class="eyebrow" style="margin:18px 0 8px">Hoặc gửi bằng ảnh QR</div>
-    <div class="row"><button class="btn" data-act="sync-img">Lưu ảnh mã vào Ảnh</button><label class="btn" for="img-in">Chọn từ Ảnh</label><input type="file" id="img-in" accept="image/*" multiple hidden></div>
-    <label class="toggle" style="margin-top:14px"><span>Gửi lại toàn bộ<br><span class="fhint">Mặc định chỉ gửi phần thay đổi từ lần trước</span></span><input type="checkbox" id="sync-full" ${ui.syncFull ? 'checked' : ''}></label>
-    <p class="small muted" style="margin:10px 0 0">${syncAgo(st)}</p>
-    <div class="sh-actions"><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`);
-}
 /* hiện mã đứng yên; nếu có nhiều mã thì bấm Mã tiếp theo (không tự lật) */
-function qrStatic(parts, doneAct, doneLabel) {
-  ui.qrParts = parts; ui.qrPage = 0; ui.qrDone = [doneAct, doneLabel]; qrStaticShow();
-}
-function qrStaticShow() {
-  const P = ui.qrParts || [], i = ui.qrPage || 0, n = P.length, c = $('#qr-c'); if (!c || !n) return;
-  drawQR(c, P[i]); $('#qr-pg').textContent = n > 1 ? `Mã ${i + 1}/${n}` : '';
-  const btn = $('#qr-next'); if (btn) { const last = i >= n - 1; btn.dataset.act = last ? ui.qrDone[0] : 'qr-next'; btn.textContent = last ? ui.qrDone[1] : `Máy kia đã quét · mã tiếp theo (${i + 2}/${n})`; }
-}
-async function syncQrSheet() {
-  const pid = ui.syncPid || profiles.active, Q = await syncPackQR(pid, { full: !!ui.syncFull }), n = Q.parts.length;
-  ui.syncOut = { pid, mark: Q.mark, left: Q.left }; clearInterval(ui.qrT);
-  openSheet(`<h3 class="sh-title">Mã đồng bộ</h3><p class="sh-text">${n > 1 ? 'Lượt này gửi <b>giáo án</b>' : `${Q.sent ? Q.sent + ' buổi tập' : 'Không có buổi tập mới'}${Q.pkg.plan ? ' · kèm giáo án' : ''}`}${Q.left ? ` · <b>còn ${Q.left} buổi gửi ở mã sau</b>` : ''}. Máy kia mở <b>Đồng bộ → Quét mã máy kia</b>, đưa camera lại gần để mã chiếm gần hết khung.</p>
-    ${n > 1 ? `<p class="note-line">Giáo án dài nên chia ${n} mã. Máy kia quét xong mã này thì bấm nút bên dưới để hiện mã tiếp theo.</p>` : ''}
-    <div class="qrbox"><canvas id="qr-c"></canvas><span class="pg" id="qr-pg"></span></div>
-    <div class="sh-actions"><button class="btn gold big" id="qr-next">…</button><button class="btn" data-act="sync-copy">Sao chép mã gửi qua Zalo</button><button class="btn ghost" data-act="qr-close">Để sau</button></div>`);
-  qrStatic(Q.parts, 'sync-qr-done', `Máy kia đã nhận xong${Q.left ? ' · gửi tiếp' : ''}`);
-}
 /* nhận gói: từ QR hoặc file */
 async function syncReceive(raw) {
   let P; try { P = cleanPkg(raw); } catch (e) { toast('Gói đồng bộ không đọc được'); return; }
@@ -4838,35 +4612,7 @@ async function syncUndo() {
 
 /* ===== Ảnh mã: gửi giáo án / gói đồng bộ qua Zalo bằng một tấm ảnh chứa các mã QR =====
    Zalo gửi ảnh ổn định hơn link dài (bị cắt, mở nhầm trình duyệt trong Zalo) và file .json (bị đổi đuôi). */
-const IMG_CHUNK = 900;
-function imgChunks(prefix, body) { const n = Math.max(1, Math.ceil(body.length / IMG_CHUNK)), id = Math.random().toString(36).slice(2, 6); return Array.from({ length: n }, (_, i) => `${prefix}.${id}.${i + 1}.${n}.${body.slice(i * IMG_CHUNK, (i + 1) * IMG_CHUNK)}`); }
-function wrapText(g, text, maxW) { const out = []; let line = ''; for (const w of String(text).split(/\s+/)) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > maxW && line) { out.push(line); line = w; } else line = t; } if (line) out.push(line); return out; }
 /* một cột mã lớn, cách nhau xa: mỗi mã đọc riêng được, không lẫn với mã bên cạnh */
-const IMG_W = 1200, IMG_PAD = 60, IMG_GAP = 360;
-async function qrImage({ title, sub, how, parts }) {
-  const W = IMG_W, pad = IMG_PAD, n = parts.length, q0 = W - pad * 2;
-  const font = (w, s) => `${w} ${s}px 'Be Vietnam Pro', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif`;
-  const meas = document.createElement('canvas').getContext('2d'); meas.font = font(500, 34);
-  const howLines = wrapText(meas, how, W - pad * 2), headH = 56 + 64 + 50 + howLines.length * 46 + 40;
-  const H = pad + headH + n * q0 + (n - 1) * IMG_GAP + 70 + pad;
-  const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d');
-  g.fillStyle = '#fff'; g.fillRect(0, 0, W, H);
-  let y = pad;
-  g.fillStyle = '#b8862f'; g.font = font(800, 30); g.fillText('GIÁO ÁN ĐỊA NGỤC', pad, y + 30); y += 56;
-  g.fillStyle = '#111'; g.font = font(800, 52); g.fillText(String(title).slice(0, 36), pad, y + 50); y += 64;
-  g.fillStyle = '#444'; g.font = font(600, 32); g.fillText(String(sub).slice(0, 64), pad, y + 34); y += 50;
-  g.fillStyle = '#333'; g.font = font(500, 34); for (const l of howLines) { g.fillText(l, pad, y + 36); y += 46; }
-  y += 40;
-  parts.forEach((t, i) => {
-    const q = qrcode(0, 'L'); q.addData(t); q.make(); const nm = q.getModuleCount(), ms = Math.floor(q0 / (nm + 8)), size = ms * (nm + 8);
-    const cx = pad + Math.floor((q0 - size) / 2), cy = y + i * (q0 + IMG_GAP);
-    g.fillStyle = '#000';
-    for (let r = 0; r < nm; r++) for (let k = 0; k < nm; k++) if (q.isDark(r, k)) g.fillRect(cx + (k + 4) * ms, cy + (r + 4) * ms, ms, ms);
-    if (n > 1) { g.fillStyle = '#888'; g.font = font(700, 30); g.textAlign = 'center'; g.fillText(`Mã ${i + 1}/${n}`, W / 2, cy + q0 + 56); g.textAlign = 'left';
-      if (i < n - 1) { g.strokeStyle = '#ddd'; g.lineWidth = 3; g.setLineDash([14, 12]); g.beginPath(); g.moveTo(pad, cy + q0 + IMG_GAP / 2 + 30); g.lineTo(W - pad, cy + q0 + IMG_GAP / 2 + 30); g.stroke(); g.setLineDash([]); } }
-  });
-  return await new Promise(res => c.toBlob(b => res(b), 'image/png'));
-}
 /* đọc ảnh mã: thử cả ảnh trước, rồi trượt một khung vuông bằng chiều ngang ảnh từ trên xuống để đọc từng mã */
 async function decodeQrImage(file) {
   const url = URL.createObjectURL(file);
@@ -4894,39 +4640,6 @@ function joinQrParts(texts) {
   return { ok: !missing.length, kind: G.kind, n: G.n, missing, body: missing.length ? '' : Array.from({ length: G.n }, (_, i) => G.got[i + 1]).join('') };
 }
 /* chia sẻ ảnh: ưu tiên bảng chia sẻ của máy (chọn Zalo); không được thì hiện ảnh để bấm giữ → Lưu ảnh */
-async function shareImage(blob, name, back) {
-  const file = new File([blob], name, { type: 'image/png' });
-  if (!inArtifact && navigator.canShare && navigator.canShare({ files: [file] })) {
-    try { await navigator.share({ files: [file] }); toast('Đã mở chia sẻ ảnh mã'); return; } catch (e) { if (e && e.name === 'AbortError') return; }
-  }
-  if (ui.imgUrl) URL.revokeObjectURL(ui.imgUrl); ui.imgUrl = URL.createObjectURL(blob); ui.imgBlob = blob; ui.imgName = name;
-  openSheet(`<h3 class="sh-title">Ảnh mã</h3><p class="sh-text">Bấm giữ vào ảnh → <b>Lưu vào Ảnh</b>. Sau đó gửi tấm ảnh này như ảnh bình thường.</p>
-    <img src="${ui.imgUrl}" alt="Ảnh mã giáo án" style="width:100%;border-radius:12px;margin-top:8px;background:#fff">
-    <div class="sh-actions"><button class="btn" data-act="img-save">Tải ảnh về máy</button>${back ? `<button class="btn ghost" data-act="${back}">Quay lại</button>` : '<button class="btn ghost" data-act="close-sheet">Đóng</button>'}</div>`);
-}
-async function planImageSend(pid) {
-  const co = false, p = pid ? profiles.list.find(x => x.id === pid) : curProf();
-  const raw = pid ? await profState(pid) : state, st = raw ? (!pid || pid === profiles.active ? state : normState(raw)) : null;
-  if (!st || !(st.days || []).length) { toast('Chưa có giáo án để gửi'); return; }
-  toast('Đang tạo ảnh mã…');
-  let code;
-  if (co) { const kgMap = withState(st, () => Object.fromEntries(allExFull().map(x => [x.ex.id, baseKg(x.ex)]))); code = await encodePlan(st.days, ui.shareKg !== false ? kgMap : null, { pk: pid, cn: coach().name }); }
-  else code = await encodePlan2(st.days);
-  const nEx = st.days.reduce((a, d) => a + d.exercises.length, 0), one = 'GAP2.' + Math.random().toString(36).slice(2, 6) + '.1.1.' + code, parts = one.length <= QR_MAX ? [one] : qrChunks('GAP2', code, QR_MAX - 40);
-  const blob = await qrImage({ title: co ? `Giáo án cho ${p.name}` : `Giáo án của ${p.name}`, sub: `${st.days.length} ngày tập · ${nEx} bài${co ? ' · HLV ' + coach().name : ''}`,
-    how: 'Mở app Giáo Án Địa Ngục → Quét mã → Chọn từ Ảnh, rồi chọn ảnh này.', parts });
-  await shareImage(blob, `giao-an-${slugName(p.name)}.png`, co ? null : null);
-}
-async function syncImageSend() {
-  const pid = ui.syncPid || profiles.active, p = profiles.list.find(x => x.id === pid) || curProf();
-  toast('Đang tạo ảnh mã…');
-  const Q = await syncPackQR(pid, { full: !!ui.syncFull }), parts = Q.parts;
-  const blob = await qrImage({ title: `Đồng bộ · ${p.name}`, sub: `${parts.length > 1 ? 'Giáo án' : Q.sent + ' buổi tập' + (Q.pkg.plan ? ' · kèm giáo án' : '')}${Q.left ? ` · còn ${Q.left} buổi ở ảnh sau` : ''}`,
-    how: 'Mở app Giáo Án Địa Ngục → Đồng bộ → Chọn từ Ảnh, rồi chọn ảnh này.', parts });
-  await syncMarkSent(pid, Q.mark);
-  await shareImage(blob, `dong-bo-${slugName(p.name)}-${ymd()}.png`);
-  if (Q.left) toast(`Còn ${Q.left} buổi cũ: bấm Lưu ảnh mã thêm lần nữa để gửi tiếp`);
-}
 const slugName = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^A-Za-z0-9]+/g, '-').toLowerCase() || 'hoc-vien';
 /* nhận ảnh mã ở mục Nhập giáo án hoặc Đồng bộ */
 async function receiveQrImage(files) {
@@ -4969,21 +4682,6 @@ async function handleCodeText(raw) {
   return false;
 }
 /* nhập giáo án dạng "cập nhật": khớp bài theo mã gốc hoặc tên, giữ mã bài cũ nên lịch sử tập và mức tạ không mất */
-function planAsPkg(days, meta) {
-  const ex = (x, extra) => ({ i: [x.srcId].filter(Boolean), name: x.name, muscle: x.muscle, zone: x.zone, type: x.type, sets: x.sets, repTarget: x.repTarget, repMin: x.repMin, repMax: x.repMax, dropSet: !!x.dropSet,
-    step: x.step, rest: x.rest, restV: 2, setup: x.setup || '', each: !!x.each, warmup: x.warmup, targetKg: x.targetKg ?? null, currentKg: x.currentKg ?? null, kgSetAt: x.currentKg != null ? Date.now() : 0, fs: false, ph: [], ...extra });
-  return { role: 'coach', link: { pk: (meta && meta.pk) || '', cn: (meta && meta.cn) || '' }, name: '', at: Date.now(), sessions: [], del: { s: {}, e: {} }, photos: {},
-    plan: days.map(d => ({ n: d.name, e: d.exercises.map(x => ex(x, { o: x.slot || '', ms: '', l: (x.alts || []).map(a => ex(a, { l: [] })) })) })) };
-}
-async function planUpdateApply(days, meta) {
-  if (state.active) { toast('Đang tập dở, kết thúc buổi rồi cập nhật giáo án'); return null; }
-  const keep = clone(state), P = planAsPkg(days, meta), { st, R: rep } = await syncMerge(state, P, {});
-  if (!meta || !meta.pk) { st.coachLink = keep.coachLink; }
-  await LDB.put('kv', 'syncUndo', { pid: profiles.active, prev: keep, photos: [], at: Date.now() });
-  const g = globalsOf(state); loadState(st); Object.assign(state.settings, g); save();
-  return rep;
-}
-
 /* khôi phục file của một người: không đụng tới hồ sơ khác */
 function restoreOneSheet(data) {
   ui.restoreOne = data; const P = data.person, st = data.state, same = profiles.list.find(x => x.id === P.id) || profiles.list.find(x => x.name.trim().toLowerCase() === String(P.name).trim().toLowerCase());
@@ -5008,85 +4706,15 @@ async function restoreOneApply(pid, isNew) {
 }
 /* ===== Đóng gói gọn: mỗi lần gửi chỉ 1 mã QR đứng yên =====
    Tên bài trong thư viện thay bằng mã ngắn, chỉ ghi thông số khác mặc định, khoá nhận diện bài rút còn 6 ký tự. */
-const QR_MAX = 900;
 function fnv(s) { let h = 0x811c9dc5; s = String(s); for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(36); }
 /* khoá nhận diện bài dùng chung giữa các máy: '~' + 5 ký tự băm của mã bài */
 const shKey = id => { id = String(id || ''); return !id ? '' : id[0] === '~' ? id : '~' + fnv(id).padStart(5, '0').slice(-5); };
 const exKeys = ex => new Set([ex.id, ex.srcId, ...(ex.alias || [])].filter(Boolean).map(shKey));
 const canonKey = ex => shKey(ex.srcId || ex.id);
-const LIBH = (() => { const m = new Map(), dup = new Set(); for (const [n] of LIB) { const h = fnv(n).slice(-4); if (m.has(h)) dup.add(h); m.set(h, n); } dup.forEach(h => m.delete(h)); return m; })();
-const libRef = name => { const h = fnv(name).slice(-4); return LIBH.get(h) === name ? h : null; };
-const libName = ref => typeof ref === 'string' && ref[0] === '#' ? LIBH.get(ref.slice(1)) || null : null;
-const CEX = [['s', 'sets'], ['g', 'repTarget'], ['a', 'repMin'], ['b', 'repMax'], ['k', 'step'], ['r', 'rest'], ['t', 'type'], ['m', 'muscle'], ['z', 'zone']];
-function cExEnc(x, sync) {
-  const d = newEx(x.name), lr = libRef(x.name), o = { n: lr ? '#' + lr : x.name };
-  for (const [k, f] of CEX) if (x[f] != null && x[f] !== d[f]) o[k] = x[f];
-  if (x.dropSet) o.d = 1; if (!!x.each !== !!d.each) o.h = x.each ? 1 : 0; if (x.warmup != null && (!!x.warmup !== !!d.warmup || !!x.warmup !== (d.type !== 'iso'))) o.w = x.warmup ? 1 : 0;
-  if (x.setup) o.u = x.setup; if (x.targetKg != null) o.x = x.targetKg;
-  if (sync) { o.i = canonKey(x); if (x.kgSetAt && x.currentKg != null) { o.c = x.currentKg; o.e = Math.round(x.kgSetAt / 1000); } if (x.fromStudent || (syncRole() === 'student' && !x.srcId)) o.f = 1; }
-  return o;
-}
-function cExDec(o) {
-  const name = libName(o.n) || (typeof o.n === 'string' && o.n[0] !== '#' ? o.n : 'Bài tập'), d = newEx(name), x = {};
-  for (const f of ['sets', 'repTarget', 'repMin', 'repMax', 'step', 'rest', 'type', 'muscle', 'zone', 'each', 'warmup']) x[f] = d[f];
-  for (const [k, f] of CEX) if (o[k] !== undefined) x[f] = o[k];
-  if (o.h !== undefined) x.each = !!o.h; if (o.w !== undefined) x.warmup = !!o.w;
-  return { ...x, name, dropSet: !!o.d, setup: o.u || '', targetKg: o.x ?? null, i: o.i ? [o.i] : [], currentKg: o.c ?? null, kgSetAt: o.e ? o.e * 1000 : 0, fs: !!o.f, ph: [] };
-}
-const deflateB64 = async obj => { const by = new TextEncoder().encode(JSON.stringify(obj)); if ('CompressionStream' in window) { try { return 'z' + b64u(await pipeBytes(by, new CompressionStream('deflate-raw'))); } catch (e) {} } return 'p' + b64u(by); };
-const inflateB64 = async body => { let by = unb64u(body.slice(1)); if (body[0] === 'z') by = await pipeBytes(by, new DecompressionStream('deflate-raw')); return JSON.parse(new TextDecoder().decode(by)); };
 /* giáo án gọn (chia sẻ cá nhân): SOTA2z.<…> */
-async function encodePlan2(days) {
-  const data = { v: 3, d: days.map(d => [d.name, d.exercises.map(x => { const o = cExEnc(x, false); if (x.slot) o.o = x.slot; if ((x.alts || []).length) o.l = x.alts.map(a => cExEnc(a, false)); return o; })]) };
-  const b = await deflateB64(data); return (b[0] === 'z' ? 'SOTA2z.' : 'SOTA2.') + b.slice(1);
-}
 /* đổi giáo án gọn về dạng cũ để dùng chung bước làm sạch của decodePlan */
-function plan2ToV2(data) {
-  const enc = x => ({ n: x.name, m: x.muscle, t: x.type, s: x.sets, g: x.repTarget, a: x.repMin, b: x.repMax, d: x.dropSet ? 1 : 0, k: x.step, r: x.rest, u: x.setup, h: x.each ? 1 : 0 });
-  return { v: 2, d: (data.d || []).map(([n, e]) => ({ n, e: (e || []).map(o => ({ ...enc(cExDec(o)), o: o.o || '', l: (o.l || []).map(a => enc(cExDec(a))) })) })) };
-}
 /* gói đồng bộ gọn GAS2 */
-function syncCompact(pkg, sessions) {
-  const ref = en => { const lr = libRef(en.name); return lr ? '#' + lr : en.name; };
-  return { r: pkg.role === 'coach' ? 'c' : 's', k: pkg.link.pk || '', q: pkg.link.cn || '', n: pkg.name, t: Math.round(pkg.at / 1000),
-    ...(pkg.plan ? { p: pkg.plan } : {}),
-    s: sessions.map(s => { const st = Math.round(s.startedAt / 1000);
-      return [s.id, s.date, st, s.finishedAt ? Math.round(s.finishedAt / 1000) - st : 0, s.dayName, s.deload ? 1 : 0, Math.round((s.paused || 0) / 1000),
-        s.entries.map(en => { const a = [en.k[0] || '', ref(en), en.sets.flatMap(z => [z.kg ?? 0, z.reps])], dr = en.sets.map((z, k) => z.dr ? k : -1).filter(k => k >= 0), ef = en.sets.some(z => z.ef) ? en.sets.map(z => z.ef || '-').join('') : '';
-          if (en.drop || en.note || en.each || dr.length || ef) a.push(en.drop ? [en.drop.kg ?? 0, en.drop.reps] : 0); if (en.note || en.each || dr.length || ef) a.push(en.note || ''); if (en.each || dr.length || ef) a.push(en.each ? 1 : 0); if (dr.length || ef) a.push(dr); if (ef) a.push(ef); return a; })]; }),
-    x: Object.keys(pkg.del.s), y: Object.keys(pkg.del.e) };
-}
-function syncExpand(c) {
-  const now = Date.now(), nm = r => libName(r) || (typeof r === 'string' && r[0] !== '#' ? r : 'Bài tập');
-  return { app: 'gadn-sync', v: 2, role: c.r === 'c' ? 'coach' : 'student', link: { pk: c.k || '', cn: c.q || '' }, name: c.n || '', at: (c.t || 0) * 1000,
-    plan: Array.isArray(c.p) ? c.p.map(([n, e]) => ({ n, e: (e || []).map(o => ({ ...cExDec(o), o: o.o || '', ms: '', l: (o.l || []).map(cExDec) })) })) : null,
-    sessions: (c.s || []).map(([id, date, st, dur, dayName, dl, ps, E]) => ({ id, date, startedAt: st * 1000, finishedAt: dur ? (st + dur) * 1000 : null, dayName, deload: !!dl, paused: (ps || 0) * 1000,
-      entries: (E || []).map(([k, r, flat, drop, note, each, dr, ef]) => { const name = nm(r), lib = LIB.find(l => l[0] === name), sets = [], D = new Set(Array.isArray(dr) ? dr : []), F = typeof ef === 'string' ? ef : ''; for (let i = 0; i + 1 < (flat || []).length; i += 2) sets.push({ kg: flat[i], reps: flat[i + 1], ...(D.has(i / 2) ? { dr: Math.min(3, [...D].filter(x => x <= i / 2).length) } : {}), ...(EFF[F[i / 2]] ? { ef: F[i / 2] } : {}) });
-        return { k: k ? [k] : [], name, muscle: lib ? lib[1] : 'Khác', note: note || '', each: !!each, sets, drop: Array.isArray(drop) ? { kg: drop[0], reps: drop[1] } : null }; }) })),
-    del: { s: Object.fromEntries((c.x || []).map(id => [id, now])), e: Object.fromEntries((c.y || []).map(id => [id, now])) }, photos: {} };
-}
 /* đóng gói đồng bộ vừa 1 mã: giáo án (nếu đổi) + các buổi mới nhất vừa đủ chỗ */
-async function syncPackQR(pid, { full = false } = {}) {
-  const { pkg, mark } = await syncPack(pid, { full }), st = await syncStateOf(pid);
-  if (pkg.plan) pkg.plan = pkg.plan.map(d => ({ n: d.n, e: d.e.map(o => o) }));
-  const exById = new Map(); for (const d of st.days) for (const e of d.exercises) { exById.set(e.id, e); for (const a of e.alts || []) exById.set(a.id, a); }
-  const coachSide = pkg.role === 'coach', mini = x => { const lr = libRef(x.name), o = { n: lr ? '#' + lr : x.name, i: canonKey(x) }; if (x.kgSetAt && x.currentKg != null) { o.c = x.currentKg; o.e = Math.round(x.kgSetAt / 1000); } return o; };
-  const own = x => !!(x.fromStudent || !x.srcId), need = x => own(x) || !!x.kgSetAt;
-  const planAll = coachSide
-    ? st.days.map(d => [d.name, d.exercises.map(x => { const o = cExEnc(x, true); if (x.slot) o.o = x.slot; if ((x.alts || []).length) o.l = x.alts.map(a => cExEnc(a, true)); return o; })])
-    : st.days.map(d => [d.name, d.exercises.filter(x => need(x) || (x.alts || []).some(need)).map(x => { const o = own(x) ? cExEnc(x, true) : mini(x); const L = (x.alts || []).filter(need).map(a => own(a) ? cExEnc(a, true) : mini(a)); if (L.length) o.l = L; return o; })]).filter(([, e]) => e.length);
-  const planH = 'c' + fnv(JSON.stringify(planAll)), M = st.syncMark || {}, plan = full || M.planH !== planH ? (coachSide || planAll.length ? planAll : null) : null;
-  pkg.plan = plan; mark.planH = planH;
-  const all = [...pkg.sessions].sort((a, b) => b.startedAt - a.startedAt);
-  const build = async n => { const P = { ...pkg, plan }; return 'GAS2.' + Math.random().toString(36).slice(2, 6) + '.1.1.' + await deflateB64(syncCompact(P, all.slice(0, n))); };
-  let lo = 0, hi = all.length, best = await build(0);
-  /* giáo án quá dài cho 1 mã: lượt này chỉ gửi giáo án, chia vài mã đứng yên bấm Tiếp; các buổi tập gửi ở lượt sau */
-  if (best.length > QR_MAX) return { parts: qrChunks('GAS2', best.split('.').slice(4).join('.'), QR_MAX - 40), mark: { sent: {}, planH: mark.planH }, sent: 0, left: all.length, total: all.length, pkg };
-  while (lo < hi) { const mid = Math.ceil((lo + hi) / 2), t = await build(mid); if (t.length <= QR_MAX) { lo = mid; best = t; } else hi = mid - 1; }
-  const inc = new Set(all.slice(0, lo).map(s => s.id));
-  return { parts: [best], mark: { sent: Object.fromEntries(Object.entries(mark.sent).filter(([id]) => inc.has(id))), planH: mark.planH }, sent: lo, left: all.length - lo, total: all.length, pkg };
-}
-
 /* ---------- file & lịch ---------- */
 async function saveFile(name, data, mime) {
   let dl = null;
@@ -5101,33 +4729,6 @@ async function saveFile(name, data, mime) {
   document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
   toast('Đang tải file');
 }
-const icsEsc = v => String(v).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
-function icsFold(line) {
-  const enc = new TextEncoder(); if (enc.encode(line).length <= 75) return line;
-  const parts = []; let cur = '', n = 0;
-  for (const ch of line) { const b = enc.encode(ch).length, lim = parts.length ? 74 : 75; if (n + b > lim) { parts.push(cur); cur = ''; n = 0; } cur += ch; n += b; }
-  parts.push(cur); return parts.join('\r\n ');
-}
-function buildICS() {
-  const [hh, mm] = (state.settings.remindTime || '18:00').split(':').map(Number);
-  const before = state.settings.remindBefore ?? 30;
-  const BYDAY = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'];
-  const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
-  const url = /^https?:/.test(location.href) ? location.href.split('#')[0] : '';
-  const L = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Giao An Dia Nguc//Lich tap//VI', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'X-WR-CALNAME:Giáo Án Địa Ngục'];
-  for (let dw = 0; dw < 7; dw++) {
-    const d = findDay(sched()[dw]); if (!d) continue;
-    let k = 0; while (parseYmd(addDays(ymd(), k)).getDay() !== dw) k++;
-    const date = addDays(ymd(), k).replace(/-/g, '');
-    const desc = `${d.exercises.length} bài: ${d.exercises.map(e => shortName(e.name)).join(', ')}\nMở Giáo Án Địa Ngục để xem mức tạ tuần này.${url ? '\n' + url : ''}`;
-    L.push('BEGIN:VEVENT', `UID:so-ta-${dw}@so-ta.app`, `DTSTAMP:${stamp}`, `DTSTART:${date}T${pad(hh || 0)}${pad(mm || 0)}00`, 'DURATION:PT1H15M',
-      `RRULE:FREQ=WEEKLY;BYDAY=${BYDAY[dw]}`, `SUMMARY:${icsEsc('Tập ' + d.name + ' · Giáo Án Địa Ngục')}`, `DESCRIPTION:${icsEsc(desc)}`,
-      'BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${icsEsc((before ? 'Còn ' + (before >= 60 ? before / 60 + ' tiếng' : before + ' phút') + ' nữa tập ' : 'Đến giờ tập ') + d.name)}`, `TRIGGER:${before ? '-PT' + before + 'M' : 'PT0M'}`, 'END:VALARM', 'END:VEVENT');
-  }
-  L.push('END:VCALENDAR');
-  return L.map(icsFold).join('\r\n') + '\r\n';
-}
-
 /* ---------- sheet, toast, viewer ---------- */
 function openSheet(html) { const fresh = $('#sheet').hidden; $('#sheet-body').innerHTML = '<div class="grab"></div>' + html; $('#sheet').hidden = false;
   if (fresh && !reduceMotion()) [...$('#sheet-body').children].slice(1, 12).forEach((el, i) => { el.classList.add('rv-now'); el.style.setProperty('--i', i); }); document.body.style.overflow = 'hidden'; $('#sheet-body').scrollTop = 0; }
@@ -5139,18 +4740,6 @@ function confirmSheet({ title, text, ok, danger, onOk }) {
 let toastT = null;
 function toast(msg, action) { const t = $('#toast'); t.textContent = msg; if (action) { const b = document.createElement('button'); b.type = 'button'; b.dataset.act = action.act; if (action.id) b.dataset.id = action.id; b.textContent = action.label; t.appendChild(b); }
   t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { t.hidden = true; }, action ? 7000 : 2600); }
-const viewer = { ex: null, i: 0 };
-async function showViewer() {
-  const ex = viewer.ex; if (!ex.photos.length) { handlers['viewer-close'](); return; }
-  viewer.i = Math.min(viewer.i, ex.photos.length - 1);
-  const id = ex.photos[viewer.i];
-  let src = photoCache.get(id); if (!src) { src = await DB.get('photos', id); if (src) photoCache.set(id, src); }
-  const v = $('#viewer'); v.hidden = false;
-  v.innerHTML = `<div class="vtop"><b>${esc(ex.name)}</b><button type="button" data-act="viewer-close">Đóng</button></div>
-    <div class="vimg">${src ? `<img src="${src}" alt="Ảnh máy tập ${esc(ex.name)}">` : ''}</div>${ex.setup ? `<div class="vcap">${esc(ex.setup)}</div>` : ''}
-    <div class="vnav">${ex.photos.length > 1 ? `<button type="button" data-act="viewer-nav" data-d="-1" aria-label="Ảnh trước">‹</button><span>${viewer.i + 1}/${ex.photos.length}</span><button type="button" data-act="viewer-nav" data-d="1" aria-label="Ảnh sau">›</button>` : '<span></span>'}
-    <label for="vcap-in">${ICON.cam} Chụp thêm</label><input type="file" id="vcap-in" accept="image/*" capture="environment" data-cap="${ex.id}" hidden></div>`;
-}
 async function copyText(id) {
   const el = $('#' + id); if (!el) return;
   try { await navigator.clipboard.writeText(el.value); toast('Đã sao chép'); }
@@ -5268,14 +4857,9 @@ const handlers = {
   'guide-back': () => guideSheet(ui.guideEx),
   'guide-set': t => { const ex = findEx(ui.guideEx); if (!ex) return; ex.gid = t.dataset.id; save(); guideSheet(ex.id); if (ui.tab !== 'today' || !state.active) render(true); },
   'guide-none': () => { const ex = findEx(ui.guideEx); if (!ex) return; ex.gid = null; save(); guideSheet(ex.id); },
-  'guide-all': async t => { t.disabled = true; let n = 0, ok = 0; const L = allExFull().map(x => x.ex);
-    for (const ex of L) { if (ex.gid === undefined) ex.gid = autoGid(ex); if (!ex.gid) continue; n++; t.textContent = `Đang tải ${n}…`; if (await exdbImg(ex.gid, 0) && await exdbImg(ex.gid, 1)) ok++; }
-    save(); t.textContent = `Đã tải ${ok}/${n} bài`; toast(ok ? `Đã lưu hình ${ok} bài, dùng được khi không có mạng` : 'Không tải được hình. Kiểm tra mạng.'); render(true); },
   'ex-focus': t => { const a = state.active; if (!a) return; const en = a.entries[+t.dataset.i]; if (!en) return; sfx('step'); vibe(8); switchFocusEx(en.exId); scrollFocus(); },
   'hero-ph': t => { const a = state.active; if (!a) return; const fi = focusIdx(), ex = exOrSnap(a.entries[fi]); const n = (ex.photos || []).length; if (n < 2) return; ui.heroPh = ((ui.heroPh || 0) + +t.dataset.d + n) % n; refreshExCard(fi); },
-  'view-photo': t => { const ex = findEx(t.dataset.ex); if (!ex || !ex.photos.length) return; viewer.ex = ex; viewer.i = 0; showViewer(); },
   'viewer-close': () => { $('#viewer').hidden = true; $('#viewer').innerHTML = ''; },
-  'viewer-nav': t => { const n = viewer.ex.photos.length; viewer.i = (viewer.i + +t.dataset.d + n) % n; showViewer(); },
   'onb-new': () => { ui.tab = 'plan'; render(); dayNameSheet(null); },
   'onb-sample': () => {
     state.days = SAMPLE.map(([n, list]) => ({ id: uid(), name: n, sample: true, exercises: list.map(newEx) }));
@@ -5375,10 +4959,8 @@ const handlers = {
       else if (hasAlts) { const nm = swapMain(cur, cur.alts[0].id); nm.alts = nm.alts.filter(a => a.id !== d.id); }
       else day.exercises = day.exercises.filter(e => e.id !== d.id);
       [...d.orig, ...d.added].forEach(id => DB.del('photos', id)); ui.draft = null; syncActive(); save(); render(true); } }); },
-  'week': t => { ui.weekOff = Math.min(0, ui.weekOff + +t.dataset.d); render(); },
   'pmode': t => { ui.pmode = t.dataset.k; render(true); },
   'period': t => { if (ui.pmode === 'month') ui.monthOff = Math.min(0, (ui.monthOff || 0) + +t.dataset.d); else ui.weekOff = Math.min(0, ui.weekOff + +t.dataset.d); render(true); },
-  'pf': t => { ui.pf = t.dataset.k; render(true); },
   'allex': () => allExSheet(''),
   'mus-toggle': t => { ui.musOpen = !t.parentElement.open; t.parentElement.open = ui.musOpen; },
   'open-session': t => sessionSheet(t.dataset.id),
@@ -5386,8 +4968,6 @@ const handlers = {
     onOk: () => { markDelSession(t.dataset.id); state.sessions = state.sessions.filter(s => s.id !== t.dataset.id); save(); render(true); } }),
   'prog': t => { ui.progEx = t.dataset.id; progressSheet(); },
   'pm': t => { ui.pm = t.dataset.k; const y = $('#sheet-body').scrollTop; progressSheet(); $('#sheet-body').scrollTop = y; },
-  'metric': t => { ui.metric = t.dataset.k; $$('[data-act="metric"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === ui.metric)); drawBodyChart(); },
-  'mode': t => { state.settings.progMode = t.dataset.k; save(); render(true); },
   'tempo': t => { state.settings.tempo = +t.dataset.k; save(); render(true); },
   'coach': () => { if (coach()) { closeSheet(); ui.tab = 'more'; render(); } else coachSheet(); },
   'wp-open': () => { ui.wpDraft = null; weekPlanSheet(); },
@@ -5406,17 +4986,7 @@ const handlers = {
   },
   'wp-later': () => { state.wpSkip = weekKey(); ui.wpDraft = null; save(); closeSheet(); render(true); },
   'coach-plan': async t => { await switchProfile(t.dataset.id); ui.tab = 'today'; render(); ui.wpDraft = null; weekPlanSheet(); },
-  'qr-send': () => qrSendSheet(),
   'qr-scan': () => qrScanSheet(),
-  'sync-open': t => syncSheet(t.dataset.id),
-  'sync-qr': () => syncQrSheet(),
-  'sync-scan': () => qrScanSheet('sync'),
-  'sync-img': () => syncImageSend(),
-  'plan-img': t => planImageSend(t.dataset.id || ''),
-  'img-save': () => { if (ui.imgBlob) saveFile(ui.imgName || 'giao-an.png', ui.imgBlob, 'image/png'); },
-  'plan-copy': async () => { const code = ui.planCode || await encodePlan2(state.days); await copyOrShareCode(code, 'Mã giáo án · Giáo Án Địa Ngục'); },
-  'sync-copy': async () => { const pid = ui.syncPid || profiles.active, Q = await syncPackQR(pid, { full: !!ui.syncFull }); await syncMarkSent(pid, Q.mark); await copyOrShareCode(Q.parts.join('\n'), 'Mã đồng bộ · Giáo Án Địa Ngục'); },
-  'qr-copy': async () => { const P = ui.qrOut || await qrPayload(); if (!P.parts.length) return; await copyOrShareCode(P.parts.join('\n'), 'Kết quả tập · Giáo Án Địa Ngục'); },
   'qr-paste': async () => {
     try { const txt = await navigator.clipboard.readText(); if (txt && txt.trim()) { await handleCodeText(txt); return; } } catch (e) {}
     if ($('#paste-in')) { const det = $('#paste-in').closest('details'); if (det) det.open = true; $('#paste-in').focus(); toast('Chạm giữ vào ô chữ bên dưới → chọn Dán'); }
@@ -5424,9 +4994,6 @@ const handlers = {
   },
   'paste-go': async () => { const el = $('#paste-in'); if (!el || !el.value.trim()) { toast('Dán mã vào ô chữ trước'); return; } await handleCodeText(el.value); },
   'backup-snooze': () => { state.settings.backupSkipAt = Date.now(); save(); render(true); toast('Sẽ nhắc lại sau 7 ngày'); },
-  'qr-next': () => { ui.qrPage = Math.min((ui.qrPage || 0) + 1, (ui.qrParts || []).length - 1); qrStaticShow(); },
-  'sync-qr-done': async () => { clearInterval(ui.qrT); const O = ui.syncOut; if (O) await syncMarkSent(O.pid, O.mark); ui.syncOut = null;
-    if (O && O.left) { toast(`Còn ${O.left} buổi, đây là mã tiếp theo`); await syncQrSheet(); return; } closeSheet(); toast('Đã đánh dấu đã gửi'); },
   'sync-to': t => syncPreview(t.dataset.id),
   'sync-pick': t => { ui.syncChoices = { ...(ui.syncChoices || {}), [t.dataset.id]: t.dataset.v }; syncPreview(ui.syncTo); },
   'sync-apply': () => syncApply(),
@@ -5494,9 +5061,6 @@ const handlers = {
   'restore-one-new': () => restoreOneApply(null, true),
   'restore-one-into': t => confirmSheet({ title: `Thay dữ liệu của ${esc((profiles.list.find(x => x.id === t.dataset.id) || {}).name || '')}?`, text: 'Giáo án, buổi tập, số đo của hồ sơ này sẽ được thay bằng dữ liệu trong file. Hồ sơ khác giữ nguyên. Có thể hoàn tác ngay sau đó.', ok: 'Thay dữ liệu', danger: true, onOk: () => restoreOneApply(t.dataset.id, false) }),
   'qr-close': () => { clearInterval(ui.qrT); qrStop(); closeSheet(); },
-  'qr-done': () => { clearInterval(ui.qrT); const P = ui.qrOut; if (P) { state.qrSent = [...new Set([...(state.qrSent || []), ...P.ids])].slice(-300); save(); } closeSheet(); toast('Đã đánh dấu đã gửi'); },
-  'qr-resend': () => { const L = [...state.sessions].sort((a, b) => b.startedAt - a.startedAt).slice(0, 5).map(x => x.id); state.qrSent = (state.qrSent || []).filter(id => !L.includes(id)); qrSendSheet(); },
-  'qr-to': t => qrImport(t.dataset.id),
   'lb': t => { ui.lb = t.dataset.k; render(true); },
   'goal': t => { const p = profiles.list.find(x => x.id === t.dataset.id); if (!p) return; p.goal = (p.goal || 5) >= 6 ? 3 : (p.goal || 5) + 1; saveProfiles(); render(true); toast(`Mục tiêu ${p.name}: ${p.goal} buổi mỗi tuần`); },
   'coach-setup': () => { ui.coachSelf = 'train'; coachSetupSheet(); },
@@ -5533,7 +5097,6 @@ const handlers = {
   'form-lv': t => { state.settings.formCues = t.dataset.k; save(); render(true); toast('Lưu ý form: ' + FORM_LV[formLv()].label); },
   'cue-open': t => { ui.cueOpen = t.dataset.k || null; if (state.active && ui.tab === 'today') refreshExCard(focusIdx()); else render(true); },
   'rest-mode': t => { state.settings.restMode = t.dataset.k; save(); render(true); toast('Nhịp nghỉ: ' + restMode().label); },
-  'pace': t => { state.settings.pace = t.dataset.k; save(); render(true); },
   'body-add': () => bodySheet(null),
   'b-all': () => { ui.bAll = true; render(true); },
   'sex': t => { state.settings.sex = t.dataset.k; save(); render(true); },
@@ -5558,7 +5121,6 @@ const handlers = {
     state.bodyPhotos = state.bodyPhotos.filter(x => x !== bp); DB.del('photos', bp.photoId); photoCache.delete(bp.photoId);
     save(); handlers['viewer-close'](); render(true); toast('Đã xoá ảnh');
   },
-  'ics': () => saveFile('lich-tap-giao-an-dia-nguc.ics', buildICS(), 'text/calendar'),
   'body-edit': t => bodySheet(state.body.find(e => e.id === t.dataset.id)),
   'body-save': t => {
     const date = $('#b-date').value || ymd(); const vals = {}, keys = [...BCORE, 'visceral'];
@@ -5574,24 +5136,7 @@ const handlers = {
     save(); closeSheet(); render(true); toast('Đã lưu số đo');
   },
   'body-del': t => { if (!t.dataset.armed) { t.dataset.armed = '1'; t.textContent = 'Bấm lần nữa để xoá'; setTimeout(() => { if (t.isConnected) { delete t.dataset.armed; t.textContent = 'Xoá lần đo này'; } }, 3000); return; } state.body = state.body.filter(e => e.id !== t.dataset.id); save(); closeSheet(); render(true); },
-  'share': () => planQrSheet(),
   'copy': t => copyText(t.dataset.t),
-  'import-open': () => qrScanSheet(),
-  'import-update': async () => {
-    const days = ui.importDays; if (!days) return; const meta = ui.importMeta; ui.importMeta = null;
-    const rep = await planUpdateApply(days, meta); if (!rep) return;
-    ui.importDays = null; closeSheet(); ui.tab = 'plan'; render();
-    toast(`Đã cập nhật giáo án${rep.newEx ? ` · ${rep.newEx} bài mới` : ''}${rep.updEx ? ` · ${rep.updEx} bài chỉnh` : ''}${rep.dropEx ? ` · bỏ ${rep.dropEx} bài` : ''}. Lịch sử tập giữ nguyên.`, { act: 'sync-undo', label: 'Hoàn tác' });
-  },
-  'import-apply': t => {
-    const PH = ui.importPhotos || {}, mp = ids => (ids || []).map(o => { const v = PH[o]; if (!v) return null; const nid = uid(); DB.put('photos', nid, v); photoCache.set(nid, v); return nid; }).filter(Boolean);
-    const fix = x => { const y = migrateEx({ ...x, id: uid(), photos: mp(x.photos) }); if (y.currentKg != null) y.kgSetAt = Date.now(); return y; };
-    const days = (ui.importDays || []).map(d => ({ id: uid(), name: d.name, exercises: d.exercises.map(x => { const { alts, ...m } = x; return { ...fix(m), slot: x.slot || '', mainSince: ymd(), alts: (alts || []).map(a => { const z = fix(a); delete z.alts; return z; }) }; }) }));
-    const hasKg = days.some(d => d.exercises.some(e => e.currentKg != null));
-    if (ui.importMeta && ui.importMeta.pk) state.coachLink = { pk: ui.importMeta.pk, name: ui.importMeta.cn || '' }; ui.importMeta = null;
-    if (t.dataset.m === 'replace') { state.days.forEach(d => d.exercises.forEach(ex => ex.photos.forEach(id => DB.del('photos', id)))); state.days = days; } else state.days.push(...days);
-    ui.importDays = null; save(); closeSheet(); ui.tab = 'plan'; ui.openDay = days[0] && days[0].id; render(); toast(hasKg ? 'Đã nhập giáo án kèm mức tạ HLV đặt sẵn' : 'Đã nhập giáo án. Bấm từng bài để điền mức tạ của bạn.'); ui.importPhotos = null;
-  },
   'backup': () => {
     if (!multi()) { handlers['backup-all'](); return; }
     openSheet(`<h3 class="sh-title">Tải file của ai?</h3><p class="sh-text">File chỉ chứa dữ liệu của người được chọn: giáo án, buổi tập, số đo, ảnh máy và ảnh body. Dữ liệu người khác không nằm trong file.</p>
@@ -5649,25 +5194,11 @@ const handlers = {
   'step-pick': t => { const i = $('#f-step'); if (i) i.value = fmtIn(+t.dataset.v); $$('[data-act="step-pick"]').forEach(b => b.setAttribute('aria-pressed', b === t)); },
   'fx-lv': t => { const k = t.dataset.k; state.settings.fxOff = true; state.settings.animOff = k === 'off'; applySkin(state.settings.skin); save(); render(true); toast('Hiệu ứng: ' + FX_LV[fxLevel()].label); },
   'skin': t => { const k = t.dataset.k; if (k === state.settings.skin) return; state.settings.skin = k; applySkin(k); save(); render(true); },
-  'copy-sc': async () => { try { await navigator.clipboard.writeText(scName()); toast('Đã sao chép tên phím tắt'); } catch (e) { toast('Tên phím tắt: ' + scName()); } },
   'push-on': async t => { t.disabled = true; const m = await enablePush(); t.disabled = false; if (m) { toast(m); return; } render(true); toast('🔔 Đã bật thông báo trên máy này'); },
   'push-try': async t => { t.disabled = true; try { await pushTestNow(); toast('Đã gửi · thông báo sẽ hiện trong vài giây'); } catch (e) { toast('Gửi thử không được: ' + (e && e.message || e)); } t.disabled = false; },
   'notif-allow': async () => { try { const r = await Notification.requestPermission(); if (r === 'granted') { state.settings.notify = true; save(); if (pushBase()) await enablePush().catch(() => {}); toast('🔔 Đã bật thông báo'); } else toast('Chưa được phép · vào Cài đặt iPhone → Thông báo → Địa Ngục'); } catch (e) { toast('Máy này chưa hỗ trợ thông báo'); } render(true); },
   'notif-local-test': async () => { try { const reg = await navigator.serviceWorker.getRegistration(); const o = { body: 'Thông báo đã hoạt động 💪', tag: 'test', icon: 'icon-192.png', badge: 'icon-192.png' }; if (reg) await reg.showNotification('Giáo Án Địa Ngục', o); else new Notification('Giáo Án Địa Ngục', o); } catch (e) { toast('Không hiện được thông báo trên máy này'); } },
-  'rest-alert': t => { const k = t.dataset.k; if (k === 'off') { cancelPush(); state.settings.notify = false; } else { state.settings.alertMethod = k; state.settings.notify = true; } save(); render(true); },
   'n-day': t => { const d = +t.dataset.d, L = nDays(); state.settings.nDays = L.includes(d) ? L.filter(x => x !== d) : [...L, d].sort(); save(); render(true); pushRegSoon(); },
-  'push-test': async t => {
-    if (!state.settings.notify) { toast('Bật “Báo hết giờ nghỉ qua Phím tắt” trước đã'); return; }
-    if (alertMethod() === 'shortcut') { runShortcut(10); return; }
-    if (alertMethod() === 'ntfy') {
-      try { t.disabled = true; const r = await ntfySend('test', 10, 'Thông báo thử', 'Bạn thấy dòng này là thông báo hết giờ nghỉ đã sẵn sàng.'); if (!r.ok) throw new Error(); toast('Đã hẹn gửi sau 10 giây. Khoá màn hình để xem.'); }
-      catch (e) { toast('Gửi thử không được. Kiểm tra mạng rồi thử lại.'); } finally { t.disabled = false; }
-      return;
-    }
-    try { t.disabled = true; await pushCall('/schedule', { at: Date.now() + 10000, title: 'Thông báo thử', body: 'Bạn thấy dòng này là thông báo hết giờ nghỉ đã sẵn sàng.', tag: 'test' }); toast('Đã hẹn gửi sau 10 giây. Khoá màn hình hoặc mở app khác để xem.'); }
-    catch (e) { toast('Gửi thử không được. Kiểm tra mạng và địa chỉ máy chủ.'); }
-    finally { t.disabled = false; }
-  },
   'deload-done': () => { state.settings.cycleStart = ymd(); save(); render(true); toast('Bắt đầu chu kỳ mới'); },
   'confirm-cancel': () => { pendingConfirm = null; if (ui.draft) exSheet(); else closeSheet(); },
   'confirm-ok': () => { const f = pendingConfirm; pendingConfirm = null; closeSheet(); f && f(); },
@@ -5688,9 +5219,8 @@ document.addEventListener('input', e => {
   if (ui.draft && ['f-cur', 'f-tgt', 'f-step', 'f-sets', 'f-rtgt', 'f-rmin'].includes(t.id)) draftRoad();
   if (!b) return;
   if (b === 'set' && state.active) { const set = getSet(+t.dataset.e, t.dataset.s); if (set) { set[t.dataset.f] = num(t.value); if (t.dataset.f === 'kg') { refreshWarm(+t.dataset.e); const en2 = state.active.entries[+t.dataset.e]; if (isDrop(set)) set.m = 1; else if (syncDrops(en2)) en2.sets.forEach((d, k) => { if (d.dr) { const ip = $(`input[data-bind="set"][data-e="${t.dataset.e}"][data-s="${k}"][data-f="kg"]`); if (ip) ip.value = fmtIn(d.kg); } }); } save(); } }
-  else if (b === 'sched') { const v = t.value; state.settings.schedule = { ...sched(), [t.dataset.dow]: v || '' }; t.classList.toggle('on', !!v); save(); }
   else if (b === 'note' && state.active) { state.active.entries[+t.dataset.e].note = t.value; save(); }
-  else if (b === 'setting') { const k = t.dataset.k; state.settings[k] = ['name', 'remindTime', 'shortcutName', 'pushServer'].includes(k) ? t.value : num(t.value);
+  else if (b === 'setting') { const k = t.dataset.k; state.settings[k] = ['name', 'pushServer'].includes(k) ? t.value : num(t.value);
     if (k === 'name') { curProf().name = t.value.trim() || 'Người tập'; clearTimeout(profT); profT = setTimeout(saveProfiles, 600); }
     if (k === 'pushServer') pushRegSoon();
     save(); renderHeader(); }
@@ -5726,7 +5256,6 @@ document.addEventListener('change', async e => {
   if (t.dataset && t.dataset.cap) {
     const ex = findEx(t.dataset.cap); const f = t.files && t.files[0]; if (!ex || !f) return;
     try { const id = await storePhoto(f); ex.photos.unshift(id); save(); toast('Đã lưu ảnh máy tập');
-      if (!$('#viewer').hidden) { viewer.ex = ex; viewer.i = 0; showViewer(); }
       if (ui.tab === 'today') render(true); } catch (err) { toast('Không đọc được ảnh, thử lại'); }
     t.value = '';
   }
@@ -5802,7 +5331,7 @@ setInterval(() => { const el = $('#elapsed'); if (el && state.active) { el.textC
   if (!location.hash.startsWith('#nhap=')) maybeWeekPlan();
   setTimeout(() => drvAuto(), 1500);
   setTimeout(() => pushRegister(), 3000);
-  if (state.settings.notify && alertMethod() === 'push') currentPushSub().then(async sub => {
+  if (state.settings.notify) currentPushSub().then(async sub => {
     /* PA-23: đã cho phép thông báo mà máy chưa nối máy chủ thì tự nối, không cần dán địa chỉ */
     if (!sub && pushBase() && pushSupported() && Notification.permission === 'granted') await enablePush().catch(() => {});
     if (ui.tab === 'more') render(true);
@@ -5811,7 +5340,7 @@ setInterval(() => { const el = $('#elapsed'); if (el && state.active) { el.textC
   if (h.startsWith('#nhap=')) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} oldCode(); }
   if ('serviceWorker' in navigator && location.protocol === 'https:' && document.documentElement.dataset.pwa === '1') { navigator.serviceWorker.register('sw.js').catch(() => {}); }
 })();
-window.__sota = { suggest, roadmap, exHistory, baseKg, buildICS, warmSets, recommend, muscleLoad, switchProfile, encodePlan, decodePlan, findEx, slotOf, autoGid, guideSheet, qrPayload, qrReceive, qrSendSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
+window.__sota = { suggest, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
 })();
 </script>
 </body>

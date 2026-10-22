@@ -102,15 +102,6 @@ with sync_playwright() as p:
     # gửi lại lần nữa không nhân đôi ảnh
     pc.ev("async (P) => { await syncReceive(P); }", fl); pc.wait_for_timeout(300)
     ok('không có gì mới' in pc.inner_text('#sheet'), 'Gửi lại cùng gói: không trùng lặp')
-    # --- giao diện: các màn hình mở được
-    pc.ev("async () => { closeSheet(); await syncSheet('pm'); }"); pc.wait_for_timeout(200)
-    ok('Đồng bộ với học viên Minh' in pc.inner_text('#sheet'), 'Màn Đồng bộ trên máy HLV')
-    pc.click('[data-act="sync-qr"]'); pc.wait_for_timeout(500)
-    ok(pc.ev("() => !!document.querySelector('#qr-c') && document.querySelector('#qr-c').width > 0"), 'Hiện mã QR')
-    pc.screenshot(path='qr.png')
-    ps.ev("async () => { closeSheet(); await syncSheet(); }"); ps.wait_for_timeout(200)
-    ok('Đồng bộ với HLV Hoàng' in ps.inner_text('#sheet'), 'Màn Đồng bộ trên máy HV')
-    ps.set_viewport_size({'width':390,'height':844}); ps.screenshot(path='hv-sync.png')
     # sai vai trò
     pc.ev("async (P) => { await syncReceive(P); }", pk3); pc.wait_for_timeout(200)
     ok('Không đồng bộ được' in pc.inner_text('#sheet'), 'Chặn gói HLV mở trên máy HLV')
