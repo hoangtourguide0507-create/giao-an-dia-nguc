@@ -233,8 +233,10 @@ stateDiagram-v2
 - Học viên: `tv.kieu = 'hv'` (nối bằng QR, tối đa 5 máy, đổi mã thu hồi mọi máy, khoá chặn ngay). Hồ sơ sao lưu của HLV: `kieu = 'sl'`, lưu với khoá `sl:<mã>`, không lẫn vào danh sách học viên và không bao giờ báo.
 - Bản ghi `rec(hv, k, id, seq, t, vai, xoa, d)`: `k` là `buoi:<id>` (cả hai phía), `plan@hlv` (chỉ HLV), `plan@hv` (chỉ học viên). `seq` tăng toàn phòng; bản cũ hơn (`t` nhỏ hơn) bị từ chối và trả lại bản hiện có. Giới hạn: buổi 256 KB, giáo án 1 MB, 200 bản ghi/lần.
 - Thông báo: `ev` chỉ báo khi bản ghi mới thật, không có `backfill`, không phải `sl:`. Buổi mới → máy HLV (`who = 'hlv'`); giáo án mới → máy của học viên (`who = 'hv:<mã>'`).
-- Chưa có (PA-33b): đăng nhập passkey, ảnh máy tập (`/s/anh/*`). Chưa có WebSocket theo quyết định của anh.
-- Kiểm thử: `tests/test_hub_sync.mjs` (49 kiểm tra) chạy đúng `push-server/src/index.js` với SQLite thật (`node:sqlite`), được gọi trong `bash tests/chay.sh`.
+- **Passkey (PA-33b)**: `POST /s/pk/thach` cấp thách thức dùng một lần (hết hạn 5 phút). `POST /s/pk/dky` (máy HV) lưu khoá công khai, kiểm `type = webauthn.create`, `challenge`, `origin`. `POST /s/pk/vao` (không cần khoá máy) kiểm `type = webauthn.get`, `origin`, `rpIdHash`, cờ UP và UV, chữ ký ECDSA P-256 (DER → r‖s) rồi cấp khoá máy mới. Mặc định `RP_ID = gym.fiddle.vn`, `RP_ORIGIN = https://gym.fiddle.vn` (ghi đè bằng biến môi trường). Tối đa 5 khoá/học viên.
+- **Ảnh máy tập (PA-33b)**: `POST /s/anh/co` hỏi ảnh còn thiếu; `PUT /s/anh/<tên>?hv=` và `GET /s/anh/<tên>?hv=`. Tên ảnh `[A-Za-z0-9_-]{4,64}` (mã băm PA-25). Tối đa 1,2 MB/ảnh (base64 vẫn dưới giới hạn 2 MB của một dòng SQLite). Hạn mức 400 MB/học viên và 4 GB/phòng (`IMG_QUOTA_HV`, `IMG_QUOTA_ROOM` ghi đè được); vượt thì 507, nhưng chữ (`/s/ghi`) vẫn nhận. Ghi đè ảnh cùng tên không cộng dồn.
+- Chưa có WebSocket theo quyết định của anh (dùng Web Push và hỏi `/s/doi` định kỳ).
+- Kiểm thử: `tests/test_hub_sync.mjs` (49 kiểm tra, PA-33) và `tests/test_hub_pa33b.mjs` (34 kiểm tra: passkey gồm chữ ký thật do khoá P-256 giả lập ký theo DER, ảnh, hạn mức), đều chạy đúng `push-server/src/index.js` với SQLite thật (`node:sqlite`), được gọi trong `bash tests/chay.sh`.
 
 ## 8. File sao lưu
 ```js
