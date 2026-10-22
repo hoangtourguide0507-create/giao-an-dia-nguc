@@ -5,7 +5,7 @@
   "scripts": {
     "test": "npm run test:sw && npm run test:app",
     "test:app": "playwright test",
-    "test:fast": "NO_COVERAGE=1 playwright test",
+    "test:cov": "COVERAGE=1 playwright test",
     "test:sw": "node --test --experimental-test-coverage --test-coverage-include=sw.js --test-coverage-lines=90 --test-coverage-functions=90 --test-coverage-branches=80 tests/sw/*.test.mjs",
     "check": "node scripts/check-syntax.mjs"
   },

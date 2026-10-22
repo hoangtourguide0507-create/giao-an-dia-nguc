@@ -15,12 +15,12 @@
 ## Khi sửa app
 - App là một file `index.html` (toàn bộ JS trong một IIFE), `sw.js` là service worker.
 - Mỗi lần đổi `index.html` thì tăng `CACHE` trong `sw.js` để điện thoại nhận bản mới.
-- Kiểm tra cú pháp bằng `npm run check` và chạy `npm test` (Playwright + coverage, ngưỡng lines/statements/functions 90%, branches 80%) trước khi commit.
+- Kiểm tra cú pháp bằng `npm run check` và chạy `npm test` (Playwright, không đo coverage). Coverage (ngưỡng lines/statements/functions 90%, branches 80%) chỉ đo bằng `npm run test:cov`, hook post-merge tự chạy khi gộp vào `main` trước khi commit.
 - Giao diện và nội dung viết bằng tiếng Việt.
 
 ## Kiểm thử
 - `bash tests/chay.sh`: dựng bản thử `tests/site/` (chèn móc `window.__ev`), kiểm cú pháp, chạy các kiểm thử Playwright và kiểm thử 2 máy chủ. Phải xanh trước khi đẩy nhánh và trước khi gộp.
-- `npm run test:fast`: chạy Playwright không đo coverage (nhanh hơn ~2 lần) để dùng khi đang code; `npm test` đầy đủ chỉ cần chạy trước khi đẩy/gộp.
+- `npm run test:cov`: Playwright có đo coverage (chậm hơn ~2 lần); chỉ cần khi gộp vào `main` hoặc khi sửa test để giữ ngưỡng.
 - Tính năng mới: thêm `tests/test_pa<số>.py` và đưa vào danh sách mặc định trong `tests/chay.sh`.
 
 ## Agent của dự án (`.claude/agents/`)

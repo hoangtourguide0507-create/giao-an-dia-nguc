@@ -10,7 +10,8 @@ export const GAS_URL_TEST = 'https://script.google.com/macros/s/AKtest/exec';
 export const NOW = new Date(`${TODAY}T09:00:00+07:00`);
 export { expect };
 
-const COVER = !process.env.NO_COVERAGE;
+/* chỉ đo coverage khi COVERAGE=1 (npm run test:cov, hook post-merge trên main): đo làm app chậm ~2,3 lần */
+const COVER = !!process.env.COVERAGE;
 /* bộ đếm coverage nằm trong trang: lấy ra trước mỗi lần tải lại trang và khi test xong */
 async function covSnap(page) { if (!COVER) return; try { saveRaw(randomUUID(), await page.evaluate(() => window.__coverage__)); } catch (e) { /* trang đã đóng */ } }
 
