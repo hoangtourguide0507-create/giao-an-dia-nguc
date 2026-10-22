@@ -42,7 +42,7 @@
       │
  4. Test ── viết/sửa test theo tiêu chí chấp nhận; chạy để thấy test mới ĐỎ (đúng lý do)
       │
- 5. Code ── sửa app tới khi mọi test XANH, coverage đạt ngưỡng; cập nhật BR.md + SA.md
+ 5. Code ── sửa app tới khi mọi test XANH, coverage đạt ngưỡng (`npm run test:cov`); cập nhật BR.md + SA.md
       │      (+ VAN-DE-VA-CHIEN-LUOC.md nếu xử lý xong vấn đề nào)
       │
  6. Nhánh pa-<số>-<tên> ── gửi link xem thử; chờ "Duyệt PA-x" rồi mới gộp vào main
@@ -63,10 +63,11 @@ npm test
 ```
 
 - `npm run test:sw` — test service worker `sw.js` (Node test runner, ngưỡng 90% dòng/hàm, 80% nhánh).
-- `npm run test:app` — test toàn bộ app trong Chromium (Playwright, giả lập iPhone 13, giờ Việt Nam, ngày cố định **Thứ Tư 21/10/2026 09:00**). Kết thúc in coverage và **báo lỗi nếu dưới ngưỡng**.
+- `npm run test:app` — test toàn bộ app trong Chromium (Playwright, giả lập iPhone 13, giờ Việt Nam, ngày cố định **Thứ Tư 21/10/2026 09:00**). Không đo coverage (nhanh).
 - `npm run check` — kiểm tra cú pháp script chính trong `index.html` và `sw.js` (thay cho `node --check` thủ công).
-- Báo cáo coverage chi tiết: `coverage/report/index.html` (số dòng khớp `index.html`).
-- `NO_COVERAGE=1 npx playwright test <tên-file>` để chạy nhanh một nhóm khi đang viết test.
+- `npm run test:cov` — như `test:app` nhưng đo coverage, in kết quả và **báo lỗi nếu dưới ngưỡng**. Hook `post-merge` tự chạy khi gộp vào `main`; chạy tay khi sửa test.
+- Báo cáo coverage chi tiết (sau `test:cov`): `coverage/report/index.html` (số dòng khớp `index.html`).
+- `npx playwright test <tên-file>` để chạy một nhóm khi đang viết test.
 
 **Bộ thứ hai — hồi quy theo PA (Python):** `bash tests/chay.sh` (cần `pip install playwright && playwright install chromium`) chạy `tests/test_<pa>.py`, `tests/test_push_server.mjs` và `tests/test_drive_gas.js` (chạy thẳng `drive/Code.gs`). Bộ này không đo coverage nhưng giữ các hành vi PA trước đã chốt; chạy một vài file: `bash tests/chay.sh pa22 sync`. Cả hai bộ phải xanh trước khi commit.
 
