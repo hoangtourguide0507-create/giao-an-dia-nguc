@@ -47,7 +47,7 @@ test('đổi giao diện: Hổ Phách (mặc định) và Đen Tuyền, màu tha
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#161518');
 });
 
-test.fixme('VD-32: người dùng mới chọn Đen Tuyền thì lần mở sau vẫn giữ Đen Tuyền', async ({ app, page }) => {
+test('VD-32: người dùng mới chọn Đen Tuyền thì lần mở sau vẫn giữ Đen Tuyền', async ({ app, page }) => {
   await app.goto();
   await app.more('skin');
   await app.view().locator('[data-act="skin"][data-k="gold"]').click();

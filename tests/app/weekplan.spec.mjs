@@ -112,7 +112,7 @@ test('đủ 6 tuần: kế hoạch tuần gợi ý deload; giáo án chưa có b
   await expect(page.locator('#cycle')).toHaveText('Tuần 2/6');
 });
 
-test.fixme('VD-31: duyệt kế hoạch tuần Deload khi hồ sơ chưa có ngày bắt đầu chu kỳ làm lỗi vẽ lại màn hình', async ({ app, page }) => {
+test('VD-31: duyệt kế hoạch tuần Deload khi hồ sơ chưa có ngày bắt đầu chu kỳ làm lỗi vẽ lại màn hình', async ({ app, page }) => {
   const { st } = setup();
   await app.seed({ state: st });
   await expect(app.sheet()).toContainText('Kế hoạch tuần', { timeout: 3000 });

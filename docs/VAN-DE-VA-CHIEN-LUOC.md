@@ -22,8 +22,8 @@
 | VD-16 | 🟡 | Tuần deload + đang đau nhẹ: giảm cộng dồn (90% rồi 80% → ~72%). | test `edge.spec.mjs` (20 → 17,5 → 12,5 kg) | Cần quyết định nghiệp vụ (lấy mức thấp hơn thay vì nhân dồn?) |
 | VD-17 | 🟡 | Lịch tập theo thứ đã bỏ nhưng khoá `schedule`, `remindTime`, `remindBefore` còn nằm trong trạng thái (không còn dùng, không còn hiển thị “x/y buổi theo lịch” — PA-15 đã dọn phần đó). | `freshState().settings` | Xoá khoá chết trong bước chuyển đổi dữ liệu (kèm lược đồ v4) |
 | VD-18 | 🟠 | Tốc độ “Thận trọng” và chế độ “Tăng theo rep” không còn chỗ chọn trên giao diện (Nhịp nghỉ & nhịp rep chỉ có nhịp rep và nhịp nghỉ), nhưng dữ liệu cũ đã chọn vẫn chạy theo → người dùng không đổi lại được. | `PACE`, `progMode`; không có handler `pace`/`mode` | Hiện lại lựa chọn hoặc chuyển đổi dữ liệu cũ về mặc định |
-| VD-31 | 🟠 | **Duyệt kế hoạch tuần *Deload* khi hồ sơ chưa có ngày bắt đầu chu kỳ** làm lỗi JS khi vẽ lại màn hình (`Cannot read properties of null`): kế hoạch không lưu được/giao diện đứng. Gặp ở người mới chưa tập buổi nào mà chọn Deload. | `weekplan.spec.mjs` › `test.fixme` *VD-31* (khẳng định không có `pageerror`) | Chặn `cycleInfo()` null trong đường vẽ thẻ deload; hoặc đặt `cycleStart` khi chọn Deload lần đầu |
-| VD-32 | 🟠 | **Người dùng mới chọn Đen Tuyền thì lần mở sau bị trả về Hổ Phách.** Bước chuyển giao diện PA-22 trong `loadState` chạy khi chưa có cờ `skin22` và đặt lại `skin = 'amber'`; cờ chưa kịp lưu nên lựa chọn bị mất. | `settings.spec.mjs` › `test.fixme` *VD-32* | Đặt `skin22` ngay khi áp dụng/khi người dùng chọn giao diện; hoặc chỉ chuyển giao diện cho dữ liệu có skin cũ |
+| VD-31 | ✅ PA-26 | **Duyệt kế hoạch tuần *Deload* khi hồ sơ chưa có ngày bắt đầu chu kỳ** làm lỗi JS khi vẽ lại màn hình (`Cannot read properties of null`): kế hoạch không lưu được/giao diện đứng. Gặp ở người mới chưa tập buổi nào mà chọn Deload. | `weekplan.spec.mjs` › `test.fixme` *VD-31* (khẳng định không có `pageerror`) | Chặn `cycleInfo()` null trong đường vẽ thẻ deload; hoặc đặt `cycleStart` khi chọn Deload lần đầu |
+| VD-32 | ✅ PA-26 | **Người dùng mới chọn Đen Tuyền thì lần mở sau bị trả về Hổ Phách.** Bước chuyển giao diện PA-22 trong `loadState` chạy khi chưa có cờ `skin22` và đặt lại `skin = 'amber'`; cờ chưa kịp lưu nên lựa chọn bị mất. | `settings.spec.mjs` › `test.fixme` *VD-32* | Đặt `skin22` ngay khi áp dụng/khi người dùng chọn giao diện; hoặc chỉ chuyển giao diện cho dữ liệu có skin cũ |
 | VD-33 | 🟠 | **Ảnh máy tập không đồng bộ qua Drive thật.** Mã băm ảnh (`strHash` = `<base36>.<độ dài>`) có dấu `.` mà máy chủ `Code.gs` từ chối tên ảnh có dấu chấm → `anh.day` lỗi, học viên không nhận ảnh HLV chụp (kiểm bằng `gas_server.js` chạy đúng `Code.gs`). | `drive.spec.mjs` › `test.fixme` *VD-33* | Đổi định dạng mã băm (bỏ `.`) hoặc cho phép dấu chấm trong `Code.gs`; kèm chuyển đổi mã ảnh đã lưu |
 
 ## 2. Dữ liệu, riêng tư, đồng bộ
@@ -90,5 +90,5 @@ Nguyên tắc ưu tiên: **(1) đúng kết quả tập & không mất dữ li�
 
 ### Chỉ số theo dõi
 - `npm test` xanh trên mọi PA; coverage không giảm dưới ngưỡng (lines/statements/functions ≥ 90%, branches ≥ 80%).
-- Số `test.fixme` (lỗi đã biết) giảm dần về 0 (hiện 4: VD-02, VD-31, VD-32, VD-33).
+- Số `test.fixme` (lỗi đã biết) giảm dần về 0 (hiện 2: VD-02, VD-33).
 - Kích thước `index.html` và số dòng > 300 ký tự giảm dần trong Giai đoạn 2.
