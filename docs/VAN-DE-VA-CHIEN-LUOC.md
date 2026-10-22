@@ -9,7 +9,7 @@
 | Mã | Mức | Vấn đề | Bằng chứng | Hướng sửa đề xuất |
 |---|---|---|---|---|
 | VD-01 | ✅ | **Đã xử lý (PA-19).** Quét mã giáo án bằng camera từng hỏng vì tách `split('.')`; giờ giáo án không còn gửi bằng mã, chỉ còn mã liên kết `GAL1` (thân base64url, không có dấu chấm), và test quét camera đã xanh. | `drive.spec.mjs` › *mã liên kết dán vào máy HLV bị từ chối… quét bằng camera* | — |
-| VD-02 | 🟠 | **Nút "Gửi giáo án" trong Việc cần làm (Phòng HLV) không làm gì.** Thẻ "X chưa tập buổi nào" có `data-act="coach-share"` nhưng không có hàm xử lý. | `viewCoach` todo; `handlers` thiếu `coach-share`; test `profiles.spec.mjs` (`fixme`) | Mở đồng bộ/gửi giáo án cho đúng học viên |
+| VD-02 | ✅ | **Đã xử lý (PA-27).** Thẻ "X chưa tập buổi nào" trong Việc cần làm (Phòng HLV) nay mở bảng **Mã liên kết Google Drive** của đúng học viên (cùng bảng với nút ☁ Mã liên kết); giáo án đi qua Drive, không gửi bằng QR/tin nhắn. | `profiles.spec.mjs`, `drive.spec.mjs` › *VD-02* | — |
 | VD-03 | 🟠 | **Tuần deload kẹt nếu không bấm “Xong deload”.** Đã xử lý một phần: nút *Xong deload, bắt đầu chu kỳ mới* đã trở lại trong thẻ **Việc cần làm** (Trang chủ). Còn lại: từ tuần thứ 7 mà không bấm (và không duyệt kế hoạch tuần khác Deload) thì mọi buổi vẫn là deload — không cập nhật mức “đang tập”, gợi ý luôn “DELOAD”; app không tự sang chu kỳ mới. | `home.spec.mjs` › *tuần deload (đủ 6 tuần)…*; `isDeloadCycle` không có điểm dừng | Tự sang chu kỳ mới sau 1 tuần deload (`cycleStart` = thứ Hai sau tuần deload) |
 | VD-04 | 🟠 | **“Xoá toàn bộ dữ liệu” xoá luôn thư viện hình offline** (kho `photos`, cả `exdb:*`) mà khoá `exdbPack` ở kho `kv` có thể còn → thẻ “Đã tải N hình” sai (kiểm bằng chạy thật ngày 21/10; chưa có test riêng sau PA-22, test hiện chỉ khẳng định `photos = []`). | `wipe`; `settings.spec.mjs` › *xoá toàn bộ dữ liệu* | Giữ `exdb:*` khi xoá dữ liệu người dùng, hoặc xoá cả `exdbPack` |
 | VD-05 | 🟠 | **Chữ hướng dẫn không khớp hành vi (từ PA-10).** Kế hoạch tuần “Ưu tiên” hứa “+1 set mỗi bài nhóm ưu tiên, nhóm khác −1 set”; “Deload” nói “số set giảm một nửa” (bảng duyệt cũng hiện nửa số set) — nhưng `setsFor()` luôn trả đúng số set của bài. | `setsFor` (PA-10); `weekPlanSheet` (`.wpnote`); test `weekplan.spec.mjs` khẳng định số set giữ nguyên | Chọn 1: sửa chữ cho đúng PA-10, hoặc bật lại ±set — cần anh quyết |
@@ -66,7 +66,7 @@ Nguyên tắc ưu tiên: **(1) đúng kết quả tập & không mất dữ li�
 ### Giai đoạn 1 — Sửa lỗi nặng (1–2 tuần, mỗi mục 1 PA nhỏ)
 1. **VD-33** ảnh máy tập qua Drive: đổi định dạng mã băm hoặc sửa `Code.gs`. Bỏ `fixme` trong `drive.spec.mjs`. *(Học viên không nhận ảnh HLV chụp — làm trước.)*
 2. **VD-31** duyệt Deload khi chưa có `cycleStart` lỗi JS; **VD-32** giao diện Đen Tuyền không nhớ. Bỏ `fixme` trong `weekplan.spec.mjs`, `settings.spec.mjs`.
-3. **VD-02** nút “Gửi giáo án” ở Phòng HLV — nay nên mở “Mã liên kết”/Quản lý học viên cho đúng học viên. Bỏ `fixme` trong `profiles.spec.mjs`.
+3. ✅ **VD-02** (PA-27) nút “Gửi giáo án” ở Phòng HLV nay mở “Mã liên kết” Drive của đúng học viên. Đã bỏ `fixme` trong `profiles.spec.mjs`.
 4. **VD-03** tuần deload tự sang chu kỳ mới; **VD-04** xoá dữ liệu giữ thư viện hình; **VD-11** dọn video.
 5. **VD-05, VD-06, VD-12** sửa chữ cho khớp hành vi (cần anh chọn hướng ở VD-05).
 6. **VD-22** CI: GitHub Actions chạy `npm test` và `bash tests/chay.sh` trên mọi nhánh `pa-*`, chặn gộp khi đỏ.
@@ -90,5 +90,5 @@ Nguyên tắc ưu tiên: **(1) đúng kết quả tập & không mất dữ li�
 
 ### Chỉ số theo dõi
 - `npm test` xanh trên mọi PA; coverage không giảm dưới ngưỡng (lines/statements/functions ≥ 90%, branches ≥ 80%).
-- Số `test.fixme` (lỗi đã biết) giảm dần về 0 (hiện 4: VD-02, VD-31, VD-32, VD-33).
+- Số `test.fixme` (lỗi đã biết) giảm dần về 0 (hiện 3: VD-31, VD-32, VD-33).
 - Kích thước `index.html` và số dòng > 300 ký tự giảm dần trong Giai đoạn 2.
