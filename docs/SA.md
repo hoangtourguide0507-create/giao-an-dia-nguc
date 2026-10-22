@@ -227,6 +227,15 @@ stateDiagram-v2
 - App: `pushRegister` (đăng ký `PushManager` bằng khoá VAPID, gửi `/sub` + `/remind`; băm `pushRegH` tránh lặp; gọi lại sau khi đổi cài đặt/đăng nhập) · `schedulePush/cancelPush` (giờ nghỉ) · `pushNotify` khi giáo án HLV đổi hoặc học viên tập xong · **chủ đề** `drvTopic = SHA-256(mã:id:phía)[:32]` nên chỉ hai máy cùng liên kết nhận được tin của nhau.
 - `sw.js` hiện thông báo trong sự kiện `push` và mở/focus app ở `notificationclick`.
 
+### 7.7 Máy chủ đồng bộ `/s/*` (PA-33 · chưa dùng trong app)
+- Mã: `push-server/src/sync.js`, gắn vào `Hub.fetch` qua tiền tố `/s/`. Dữ liệu: SQLite của Durable Object (`tv`, `tb`, `rec`, `meta`). Chi tiết thiết kế và BR: [epics/2026-10-22.md](epics/2026-10-22.md), hạng mục 4.
+- Xác thực: `Bearer h.<khoá HLV>` (băm phải khớp secret `HLV_HASH`) hoặc `Bearer v.<mã HV>.<khoá máy>`. Không có lệnh tạo HLV. Khoá HV và khoá máy chỉ lưu dạng băm SHA-256.
+- Học viên: `tv.kieu = 'hv'` (nối bằng QR, tối đa 5 máy, đổi mã thu hồi mọi máy, khoá chặn ngay). Hồ sơ sao lưu của HLV: `kieu = 'sl'`, lưu với khoá `sl:<mã>`, không lẫn vào danh sách học viên và không bao giờ báo.
+- Bản ghi `rec(hv, k, id, seq, t, vai, xoa, d)`: `k` là `buoi:<id>` (cả hai phía), `plan@hlv` (chỉ HLV), `plan@hv` (chỉ học viên). `seq` tăng toàn phòng; bản cũ hơn (`t` nhỏ hơn) bị từ chối và trả lại bản hiện có. Giới hạn: buổi 256 KB, giáo án 1 MB, 200 bản ghi/lần.
+- Thông báo: `ev` chỉ báo khi bản ghi mới thật, không có `backfill`, không phải `sl:`. Buổi mới → máy HLV (`who = 'hlv'`); giáo án mới → máy của học viên (`who = 'hv:<mã>'`).
+- Chưa có (PA-33b): đăng nhập passkey, ảnh máy tập (`/s/anh/*`). Chưa có WebSocket theo quyết định của anh.
+- Kiểm thử: `tests/test_hub_sync.mjs` (49 kiểm tra) chạy đúng `push-server/src/index.js` với SQLite thật (`node:sqlite`), được gọi trong `bash tests/chay.sh`.
+
 ## 8. File sao lưu
 ```js
 // cả máy

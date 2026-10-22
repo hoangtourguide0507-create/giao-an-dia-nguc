@@ -21,6 +21,17 @@ npx wrangler deploy
 ```
 Cuối cùng Terminal in ra địa chỉ `https://gadn-push.<tên>.workers.dev`.
 
+## Đặt khoá HLV (bắt buộc để đồng bộ hoạt động) · PA-33
+Máy chủ không có lệnh "tạo HLV": chỉ ai có **QR HLV** mới là HLV. Máy chủ chỉ giữ **băm** của khoá trong QR,
+không giữ khoá gốc. Sau khi deploy, chạy trong thư mục `push-server/` (cần đăng nhập `npx wrangler login`):
+```bash
+npx wrangler secret put HLV_HASH
+# dán chuỗi băm của QR HLV (43 ký tự), rồi Enter
+```
+Chưa đặt `HLV_HASH` thì mọi lệnh đồng bộ đều bị từ chối (401): an toàn, không ai vào được.
+Mất QR: sinh QR mới ngoài repo, đặt lại `HLV_HASH` bằng lệnh trên. Dữ liệu trên máy chủ không mất.
+Dữ liệu đồng bộ nằm trong Durable Object `Hub` (SQLite), không cần tạo bảng tay.
+
 ## Kiểm tra
 Mở địa chỉ trên trình duyệt → thấy `{"ok":true,"ten":"Giáo Án Địa Ngục · máy chủ thông báo"}` là chạy.
 
