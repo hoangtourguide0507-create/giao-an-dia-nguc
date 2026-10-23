@@ -210,7 +210,7 @@ Test: `tests/app/cloud.spec.mjs`
 - **BR-18.1** Khi mở trong claude.ai và có quyền ghi: dữ liệu mỗi hồ sơ lưu riêng trong tài khoản Claude của người dùng; người khác mở link không thấy.
 - **BR-18.2 Lần đầu kết nối**: tài khoản mới hơn → nạp từ tài khoản; máy mới hơn → giữ máy, nhận thêm buổi chỉ có trên tài khoản, đẩy lên (kể cả ảnh) và báo "Đã đưa dữ liệu lên tài khoản Claude". Hồ sơ có trên tài khoản được thêm vào máy.
 - **BR-18.3** Mọi thay đổi tự lưu lên tài khoản sau ~1,2 giây (chỉ phần thay đổi); ảnh lưu riêng; ảnh thiếu trên máy lấy từ tài khoản.
-- **BR-18.4 Trạng thái** hiển thị ở tab Tôi: Lưu trên máy này · Đang kết nối · Đang lưu · Đã đồng bộ · Chưa lưu được (thử lại khi mở lại app) · Bộ nhớ đồng bộ đã đầy · Chỉ lưu trên máy này (không có quyền).
+- **BR-18.4 Trạng thái** hiển thị ở tab Tôi: Lưu trên máy này (PA-40: chỉ tiêu đề; đã gửi lên máy chủ thì đổi màu thành *Đã đồng bộ với server*, BR-27.8) · Đang kết nối · Đang lưu · Đã đồng bộ · Chưa lưu được (thử lại khi mở lại app) · Bộ nhớ đồng bộ đã đầy · Chỉ lưu trên máy này (không có quyền).
 - **BR-18.5** Kéo xuống để làm mới / mở lại app: lấy bản mới hơn từ tài khoản (khi không đang tập).
 - **BR-18.6** Trong claude.ai: không nhắc sao lưu, không hướng dẫn cài app, không có thông báo đẩy; tải file dùng chức năng tải của claude.ai (từ chối thì im lặng; loại file bị chặn thì báo).
 
@@ -252,8 +252,8 @@ Test: `tests/app/notify.spec.mjs`, `tests/app/rest.spec.mjs`, `tests/test_push_s
 - **BR-24.3** Học viên nối máy: quét thẻ `GAV1` của HLV (camera, dán mã, hoặc ảnh) → máy chủ cấp khoá riêng cho máy này, app ghi nhận và báo "Đã nối với HLV · <tên>". Tối đa 5 máy mỗi học viên (máy thứ 6 đẩy máy cũ nhất). *Test:* `tests/app/hub.spec.mjs`.
 - **BR-24.6** Buổi đã tập tự gửi lên máy chủ sau khoảng 1,5 giây kể từ lúc lưu, và gửi lại khi mở app hoặc có mạng. Buổi đã gửi không gửi lại; buổi đang tập dở không gửi. *Test:* `tests/app/hub.spec.mjs`.
 - **BR-24.4** Máy HLV thêm học viên thì có sẵn một hồ sơ cho học viên đó. Buổi học viên đã gửi được kéo về khi mở app, khi quay lại app, khi có mạng, và mỗi 20 giây khi app đang hiện. Buổi chỉ ghi đè bản cũ hơn, và được ghi đúng vào hồ sơ của học viên. *Test:* `tests/app/hub.spec.mjs`.
-- **BR-24.4 (khôi phục khi máy trống)** Học viên bật *Khôi phục bằng Face ID* trên máy đã nối. Máy trống (vừa xoá dữ liệu) chọn *Khôi phục bằng Face ID* → máy chủ kiểm chữ ký passkey và cấp khoá máy mới → app kéo lại toàn bộ buổi đã gửi. Không có Face ID thì quét lại thẻ học viên cho kết quả giống hệt. Face ID không dùng được hoặc chưa bật thì báo lỗi, không nối máy. *Test:* `tests/app/hub.spec.mjs`.
-- **BR-24.9** Giáo án HLV → học viên: máy HLV gửi giáo án của mỗi học viên khi giáo án đổi; máy học viên nhận trong vòng 20 giây (kéo định kỳ) và gộp bằng cùng động cơ với Drive (`syncMerge`). Học viên hoàn tác được giáo án vừa nhận (*Hoàn tác giáo án*). *Test:* `tests/app/hub.spec.mjs`.
+- ~~**BR-24.4 (khôi phục khi máy trống)** Học viên bật *Khôi phục bằng Face ID* trên máy đã nối. Máy trống (vừa xoá dữ liệu) chọn *Khôi phục bằng Face ID* → máy chủ kiểm chữ ký passkey và cấp khoá máy mới → app kéo lại toàn bộ buổi đã gửi. Không có Face ID thì quét lại thẻ học viên cho kết quả giống hệt. Face ID không dùng được hoặc chưa bật thì báo lỗi, không nối máy. *Test:* `tests/app/hub.spec.mjs`.~~ **ĐÃ BỎ (PA-40, BR-27.5)**
+- **BR-24.9** (PA-40: gộp theo từng ngày, chỉ hỏi khi một ngày bị đổi cả hai bên — BR-27.6) Giáo án HLV → học viên: máy HLV gửi giáo án của mỗi học viên khi giáo án đổi; máy học viên nhận trong vòng 20 giây (kéo định kỳ) và gộp bằng cùng động cơ với Drive (`syncMerge`). Học viên hoàn tác được giáo án vừa nhận (*Hoàn tác giáo án*). *Test:* `tests/app/hub.spec.mjs`.
 - **BR-24.17 (chuyển học viên có sẵn)** HLV chọn các hồ sơ học viên đang có (*Chuyển học viên có sẵn*): mỗi người được cấp một thẻ QR và hồ sơ giữ nguyên. Học viên quét thẻ thì nhận giáo án của HLV và buổi đã tập cũ được gửi lên. *Test:* `tests/app/hub.spec.mjs`.
 - **BR-24.18 Xung đột giữa máy này và máy chủ** (PA-35): tự gộp khi có thể; hỏi người dùng khi không thể.
 
@@ -268,7 +268,7 @@ Test: `tests/app/notify.spec.mjs`, `tests/app/rest.spec.mjs`, `tests/test_push_s
 
 So sánh giáo án bỏ qua mức tạ hiện tại (đổi mỗi buổi tập, không phải thay đổi giáo án). *Test:* `tests/app/hub.spec.mjs`.
 - **Xoá buổi** (PA-34.6): học viên xoá buổi thì máy HLV cũng xoá, trừ khi buổi đã được sửa sau lần xoá (so thời điểm: xoá sau thời điểm sửa thì xoá). *Test:* `tests/app/hub.spec.mjs`. Lưu ý: so sánh theo đồng hồ của hai máy, lệch giờ lớn có thể sai thứ tự.
-- **BR-24.5 Khôi phục thủ công**: *Khôi phục từ máy chủ* thay buổi trên máy bằng bản đã gửi (có xác nhận, nói rõ buổi chưa gửi sẽ mất). *Hoàn tác khôi phục* trả lại như cũ. *Test:* `tests/app/hub.spec.mjs`.
+- ~~**BR-24.5 Khôi phục thủ công**: *Khôi phục từ máy chủ* thay buổi trên máy bằng bản đã gửi (có xác nhận, nói rõ buổi chưa gửi sẽ mất). *Hoàn tác khôi phục* trả lại như cũ. *Test:* `tests/app/hub.spec.mjs`.~~ **ĐÃ BỎ (PA-40, BR-27.5)**
 - **BR-24.15 Trạng thái gửi**: máy học viên hiện *Đã gửi xong · lần cuối lúc …*, *Chờ gửi N buổi*, hoặc *Chưa gửi được: không liên lạc được máy chủ*. *Test:* `tests/app/hub.spec.mjs`.
 - **BR-24.7 Thông báo đẩy** (PA-34.6): học viên tập xong → HLV nhận "<tên> vừa tập xong · <buổi> · n bài · m set"; giáo án đổi → học viên nhận "HLV vừa cập nhật giáo án". Buổi trước khi nối máy (lịch sử) không báo. Tắt công tắc *Học viên tập xong / HLV cập nhật giáo án* thì máy đó không nhận nữa. Máy chủ gửi qua Web Push; kiểm trong bộ test máy chủ (`tests/test_hub_sync.mjs`). **Chưa kiểm trên iPhone thật.**
 - Ngắt đăng ký trên máy này chỉ xoá khoá trên máy, không xoá dữ liệu trên máy chủ.
@@ -292,5 +292,23 @@ Test: `tests/app/taikhoan.spec.mjs`, `tests/app/hub.spec.mjs`, `tests/app/vai.sp
 - **BR-26.2 Chia sẻ**: sheet thẻ có *Chia sẻ ảnh QR* (file PNG qua bảng chia sẻ của máy), *Chia sẻ mã* (chữ `GAV1`, qua bảng chia sẻ) và *Sao chép mã*. Máy không có bảng chia sẻ file thì tải ảnh về; không có bảng chia sẻ chữ thì chép mã vào bộ nhớ tạm. *Test:* `taikhoan.spec.mjs`.
 - **BR-26.3 Bỏ "Vai trên máy này"**: thẻ này không còn ở Tài khoản; vai hiện qua khối đăng nhập (chưa có vai), khối máy chủ (HLV, HV). *Test:* `taikhoan.spec.mjs`.
 - **BR-26.4 Bỏ "Đồng bộ với HLV"**: dòng này và trang con *Đồng bộ với HLV* đã gỡ; nút *Đồng bộ với HLV* trong banner đổi thành *Quét mã QR* (mở quét mã). *Test:* `taikhoan.spec.mjs`.
-- **BR-26.5 Đăng nhập** (máy chưa có vai): khối đầu Tài khoản có *Quét mã QR* (camera, chọn ảnh, dán từ bộ nhớ tạm; nhận `GAH1` hoặc `GAV1`), *Khôi phục bằng Face ID* và *Hoặc dán mã* (ô chữ nhận `GAH1.…` hoặc `GAV1.…`). Mã sai báo "Không tìm thấy mã liên kết" hoặc "Mã HLV không đúng" và không lưu gì. *Test:* `taikhoan.spec.mjs`.
+- **BR-26.5 Đăng nhập** (máy chưa có vai): khối đầu Tài khoản có *Quét mã QR* (camera, chọn ảnh, dán từ bộ nhớ tạm; nhận `GAH1` hoặc `GAV1`) và *Hoặc dán mã* (PA-40: bỏ *Khôi phục bằng Face ID*, BR-27.5) (ô chữ nhận `GAH1.…` hoặc `GAV1.…`). Mã sai báo "Không tìm thấy mã liên kết" hoặc "Mã HLV không đúng" và không lưu gì. *Test:* `taikhoan.spec.mjs`.
 - **BR-26.6** Máy đã có vai không thấy khối Đăng nhập. Không có nút đăng xuất trong khối này. *Test:* `taikhoan.spec.mjs`.
+
+## BR-27 Popup, chữ, đồng bộ tự động, lịch tập và báo cơ chưa phục hồi — PA-40 (23/10/2026)
+Test: `tests/app/popup.spec.mjs`, `tests/app/pa40.spec.mjs`, `tests/app/hub.spec.mjs` (BR-27.6), `tests/test_hub_sync.mjs` (dau@hv)
+
+- **BR-27.1 Nút đóng popup**: mọi popup (bảng, trình xem ảnh, báo hết giờ) có nút × ở góc trên phải; bấm × thì đóng, trang nền giữ nguyên. *Test:* `popup.spec.mjs`.
+- **BR-27.2 Kéo xuống để đóng**: kéo vạch đầu popup (hoặc thanh trên của trình xem ảnh) xuống quá 90 px thì đóng; kéo ngắn hơn thì popup trở lại chỗ cũ. Không kích hoạt khi kéo trong ô nhập hay ảnh so sánh. *Test:* `popup.spec.mjs`.
+- **BR-27.3 Nút quay lại (trình duyệt / vuốt trái)**: đang có popup thì đóng popup; không có popup mà đang ở tab khác thì về Trang chủ. *Test:* `popup.spec.mjs`.
+- **BR-27.4 Chữ không chọn được**: mọi chữ không sửa được (nhãn, nút, tab, tiêu đề, mô tả, nội dung thẻ) không chọn được, kể cả bằng nhấn đúp hay kéo; ô nhập và ô soạn thảo vẫn chọn và sửa bình thường. *Test:* `popup.spec.mjs`.
+- **BR-27.5 Bỏ hẳn khôi phục và ngắt kết nối**: không còn *Bật khôi phục bằng Face ID*, *Khôi phục bằng Face ID* (khối đăng nhập), *Khôi phục từ máy chủ*, *Hoàn tác khôi phục*, *Ngắt kết nối trên máy này* / *Ngắt đăng ký trên máy này*. Dữ liệu đã lưu giữ nguyên. Khi nối máy, buổi đã gửi vẫn tự kéo về như trước. *Test:* `pa40.spec.mjs`.
+- **BR-27.6 Đồng bộ tự động, hỏi khi cần**: app tự gửi và kéo dữ liệu khi mở app, có mạng, quay lại app và mỗi 20 giây (như trước). Giáo án gộp **theo từng ngày** so với bản đã thống nhất: ngày chỉ một bên đổi thì tự gộp; chỉ khi **cùng một ngày** bị đổi cả hai bên mới hỏi, từng ngày một (*Dùng bản HLV* / *Giữ bản máy này*). Ngày còn lại không bị chặn. Mất mạng thì báo ở thẻ máy chủ và tự thử lại. *Test:* `hub.spec.mjs` (BR-27.6, BR-24.9).
+- **BR-27.7 Thư viện hình cho học viên**: không có tab hay nút tải/xoá; chỉ một dòng trạng thái *Đã đồng bộ · N hình* hoặc *Chưa đồng bộ* trong Tài khoản. HLV giữ nguyên quản lý. *Test:* `pa40.spec.mjs`.
+- **BR-27.8 Thẻ "Lưu trên máy này"**: chỉ còn tiêu đề. Khi dữ liệu đã được gửi lên máy chủ Cloudflare (`lastOk` hoặc giáo án đã gửi), tiêu đề đổi màu thành *Đã đồng bộ với server*. *Test:* `pa40.spec.mjs`.
+- **BR-27.9 Dòng tóm tắt lịch tập**: "x bài · x set · thời gian" nằm một hàng ngay dưới tiêu đề ngày, không xuống dòng. *Test:* `pa40.spec.mjs`.
+- **BR-27.10 Sắp lịch tập theo sức khoẻ cơ**: ngày có nhóm cơ chính hồi phục nhiều hơn xếp trước (theo bộ đếm hồi phục có sẵn, BR-02.2). Số thứ tự theo vị trí hiển thị. *Test:* `pa40.spec.mjs`.
+- **BR-27.11 Báo cơ chưa phục hồi**: trong ngày đang mở ở Lịch tập có hàng *Cơ chưa hồi phục?* với một nút cho mỗi nhóm cơ của ngày. Chạm để báo (nhãn *chưa phục hồi · từ X giờ*); chạm lại để bỏ. Đây là thông tin cho HLV, **không** đổi bộ đếm hồi phục hay gợi ý tạ. Báo đau tổn thương (*Báo đau* ở Hôm nay, `state.pains`) vẫn tách riêng. Báo được gửi lên máy chủ (`dau@hv`) để HLV thấy nhãn ở hồ sơ học viên. *Test:* `pa40.spec.mjs`, `test_hub_sync.mjs`.
+- **BR-27.12 Tự hết sau 24 giờ**: mục báo cơ quá 24 giờ không còn hiển thị ở máy học viên và máy HLV; máy chủ bỏ bản cũ khi có bản mới. *Test:* `pa40.spec.mjs`, `test_hub_sync.mjs`.
+
+Ngoài phạm vi PA-40: đổi công thức hồi phục, đổi cảnh báo đau có sẵn, đổi giao diện các mục khác. Máy chủ `push-server/` cần triển khai bản có `dau@hv` trước khi báo cơ đau tới được HLV (app cũ vẫn chạy; báo chỉ bị bỏ qua).

@@ -62,7 +62,8 @@ test('thẻ bài trong giáo án có biểu đồ nhỏ khi bài đã tập từ
   const ss = [[14, 37.5], [7, 40], [1, 42.5]].map(([ago, kg]) => session(P.chest, addDays(TODAY, -ago), [[P.bench, [[kg, 10], [kg, 10], [kg, 10]]]]));
   await app.seed({ state: state({ days: P.days, sessions: ss }) });
   await app.tab('plan');
-  await app.click('toggle-day');
+  /* PA-40: ngày Ngực vừa tập nên xếp sau ngày đã hồi phục; mở đúng ngày theo tên */
+  await app.view().locator('[data-act="toggle-day"]', { hasText: 'Ngực + Tay sau' }).click();
   await expect(app.view().locator('.exr', { hasText: 'Bench press' }).locator('svg.spk')).toHaveCount(1);
   await expect(app.view().locator('.exr', { hasText: 'Pec deck' }).locator('svg.spk')).toHaveCount(0);
 });

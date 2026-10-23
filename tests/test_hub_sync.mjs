@@ -93,6 +93,10 @@ const planH = await api('/s/ghi', { hv: 'lan-7k3f', recs: [{ k: 'plan@hlv', id: 
 ok(planH.s === 200 && planH.j.seq > seq1, 'HLV ghi giáo án (plan@hlv)');
 ok((await api('/s/ghi', { hv: 'lan-7k3f', recs: [{ k: 'plan@hv', id: 'h', t: T, vai: 'hv', d: '{}' }] }, H)).s === 403, 'HLV ghi mức tạ tự nhập của học viên (plan@hv) → 403');
 
+// PA-40: báo cơ còn đau (dau@hv): học viên ghi, HLV chỉ đọc, bản quá 24 giờ bị bỏ
+ok((await api('/s/ghi', { hv: 'lan-7k3f', recs: [{ k: 'dau@hv', id: 'dau', t: T, vai: 'hv', d: '[{"m":"Ngực","at":1}]' }] }, V('lan-7k3f', dk6))).s === 200, 'Học viên ghi báo cơ còn đau (dau@hv)');
+ok((await api('/s/ghi', { hv: 'lan-7k3f', recs: [{ k: 'dau@hv', id: 'dau', t: T, vai: 'hlv', d: '[]' }] }, H)).s === 403, 'HLV không ghi được báo cơ của học viên (dau@hv) → 403');
+ok((await api('/s/ghi', { hv: 'lan-7k3f', recs: [{ k: 'dau@hv', id: 'khac', t: T, vai: 'hv', d: '[]' }] }, V('lan-7k3f', dk6))).s === 403, 'Bản dau@hv có mã khác “dau” → 403');
 const doi = (q, a) => api('/s/doi?' + q, null, a, 'GET');
 const hlvAll = await doi('since=0', H);
 ok(hlvAll.j.recs.some(r => r.id === 'b1') && hlvAll.j.seq >= planH.j.seq, 'HLV đọc mọi học viên và seq hiện tại');

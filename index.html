@@ -394,6 +394,12 @@ textarea.inp{min-height:88px;resize:vertical}
   border-radius:var(--r-hero) var(--r-hero) 0 0;border-top:1px solid var(--line-2);padding:10px 16px calc(22px + env(safe-area-inset-bottom,0px))}
 .sheet-panel .inp{background:var(--surface-2)}
 .grab{width:40px;height:5px;border-radius:3px;background:var(--surface-3);margin:0 auto 14px}
+/* PA-40: nút × đóng popup */
+.sheet-x{position:absolute;top:8px;right:10px;z-index:2;width:36px;height:36px;border-radius:50%;border:0;background:var(--surface-2);color:var(--fg-2);font-size:22px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer}
+/* PA-40 · BR-27.4 (chỉnh 23/10): chữ không sửa được thì không chọn được; ô nhập và ô soạn thảo vẫn chọn được */
+body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,select,[contenteditable="true"]{-webkit-user-select:text;user-select:text}
+.cmp,.cmp *,.chart,.chart *{-webkit-user-select:none;user-select:none}
 .sh-title{font-size:22px;font-weight:800;margin:0 0 4px;line-height:1.2;letter-spacing:-.01em;text-wrap:balance}
 .sh-text{color:var(--fg-2);margin:0 0 14px;font-size:14px}
 .sh-actions{display:flex;flex-direction:column;gap:8px;margin-top:20px}
@@ -417,6 +423,7 @@ textarea.inp{min-height:88px;resize:vertical}
 /* alarm popup */
 .alarm{position:fixed;inset:0;z-index:65;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.62);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .alarm-in{width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:26px 20px 20px;border-radius:var(--r-hero);background:var(--surface);border:1px solid rgb(var(--acc-rgb) / .45);box-shadow:0 0 0 6px rgb(var(--acc-rgb) / .12),0 24px 60px -20px rgba(0,0,0,.8)}
+.alarm-in{position:relative}
 .alarm-ico{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--gold);color:var(--gold-ink);margin-bottom:8px;animation:ring 1s ease-in-out infinite}
 .alarm-ico .ico{width:32px;height:32px;stroke-width:2}
 .alarm-in b{font-family:var(--font-d);font-size:26px;font-weight:800}
@@ -616,7 +623,12 @@ input[type=checkbox],input[type=radio]{font-size:inherit}
 .pnum{flex:none;width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-weight:800;font-size:17px;
   color:var(--dc);background:color-mix(in srgb,var(--dc) 14%,transparent);border:1px solid color-mix(in srgb,var(--dc) 35%,transparent)}
 .pday.open .pnum{background:var(--dc);color:#111}
-.pday-h .pmeta{display:block;margin-top:2px}
+.pday-h .pmeta{display:block;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}   /* PA-40 · BR-27.9: một dòng ngang dưới tiêu đề */
+.mpain{margin:0 0 10px;padding:10px 12px;border-radius:14px;background:var(--surface-2)}
+.mpain-h{display:block;font-size:12px;font-weight:700;color:var(--fg-2);margin-bottom:8px}
+.mpain-l{display:flex;flex-wrap:wrap;gap:6px}
+.mp{border:1px solid var(--line-2);background:var(--surface-3);color:var(--fg-2);border-radius:var(--pill);padding:6px 10px;font-size:12px;font-weight:700;min-height:32px}
+.mp.on{background:rgb(var(--acc-rgb) / .16);color:var(--gold);border-color:rgb(var(--acc-rgb) / .45)}
 .pmus{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
 .pmus i{font-style:normal;font-size:11px;font-weight:700;padding:3px 8px;border-radius:var(--pill);background:var(--surface-3);color:var(--fg-2)}
 .pside{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px;text-align:right}
@@ -1311,7 +1323,7 @@ body.resting{padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) 
 </div>
 <div class="viewer" id="viewer" hidden></div>
 <div class="alarm" id="alarm" hidden role="alertdialog" aria-labelledby="alarm-t">
-  <div class="alarm-in"><div class="alarm-ico" id="alarm-ico"></div><b id="alarm-t">Hết giờ nghỉ</b><span id="alarm-sub">Vào set tiếp theo thôi!</span>
+  <div class="alarm-in"><button type="button" class="sheet-x" data-act="alarm-x" aria-label="Đóng">×</button><div class="alarm-ico" id="alarm-ico"></div><b id="alarm-t">Hết giờ nghỉ</b><span id="alarm-sub">Vào set tiếp theo thôi!</span>
   <button type="button" class="btn gold big" data-act="alarm-ok">Vào set tiếp</button></div>
 </div>
 <div class="toast" id="toast" hidden></div>
@@ -1677,7 +1689,7 @@ async function switchProfile(pid) {
 }
 function syncCardHtml() {
   const M = {
-    device: ['Lưu trên máy này', 'Dữ liệu nằm trong trình duyệt của điện thoại. Khi đã nối máy chủ đồng bộ, dữ liệu được gửi tự động.', ''],
+    device: ['Lưu trên máy này', '', ''],
     connecting: ['Đang kết nối tài khoản Claude…', 'Bạn vẫn dùng app bình thường trong lúc chờ.', ''],
     saving: ['Đang lưu lên tài khoản…', 'Giáo án, buổi tập, số đo và ảnh được lưu vào tài khoản Claude của bạn.', 'ok'],
     cloud: ['Đã đồng bộ với tài khoản Claude', 'Dữ liệu lưu riêng trong tài khoản của bạn. Mở link này trên điện thoại hay máy tính đều thấy, người khác mở link không xem được dữ liệu của bạn.', 'ok'],
@@ -1685,8 +1697,10 @@ function syncCardHtml() {
     full: ['Bộ nhớ đồng bộ đã đầy', 'Xoá bớt ảnh máy tập hoặc ảnh body cũ để lưu tiếp lên tài khoản.', 'warn'],
     readonly: ['Chỉ lưu trên máy này', 'Với quyền truy cập hiện tại, app không lưu được lên tài khoản. Dữ liệu nằm trong trình duyệt và có thể mất, hãy tải file sao lưu thường xuyên.', 'warn']
   };
-  const [t, d, k] = M[syncStatus] || M.device;
-  return `<div class="card set-card sync ${k}" id="sync"><div class="sync-h"><span class="sync-dot"></span><h3>${t}</h3></div><p>${d}</p></div>`;
+  /* PA-40 · BR-27.8: khi dữ liệu đã được gửi lên máy chủ Cloudflare thì tiêu đề đổi màu và đổi chữ */
+  const onServer = syncStatus === 'device' && hubSynced();
+  const [t, d, k] = onServer ? ['Đã đồng bộ với server', '', 'ok'] : M[syncStatus] || M.device;
+  return `<div class="card set-card sync ${k}" id="sync"><div class="sync-h"><span class="sync-dot"></span><h3>${t}</h3></div>${d ? `<p>${d}</p>` : ''}</div>`;
 }
 const freshState = () => ({ v: 3, days: [], sessions: [], body: [], bodyPhotos: [], active: null,
   settings: { name: '', height: null, setMin: 10, setMax: 20, deloadEvery: 6, cycleStart: null, progMode: 'linear', pace: 'std', restMode: 'std', tempo: 3, skin: 'amber', notify: false, sfx: true, haptics: true, eff: true, fxOff: false, animOff: false } });
@@ -1716,6 +1730,7 @@ function loadState(s) {
     if (!ex.mainSince) { const ds = state.sessions.filter(x => x.entries.some(en => en.exId === ex.id)).map(x => x.date).sort(); ex.mainSince = ds[0] || ymd(); } }));
   if (!Array.isArray(state.bodyPhotos)) state.bodyPhotos = [];
   if (!Array.isArray(state.pains)) state.pains = [];
+  if (!Array.isArray(state.musclePain)) state.musclePain = [];   /* PA-40: báo cơ chưa phục hồi, [{ m, at }] */
   if (!state.weekPlans || typeof state.weekPlans !== 'object') state.weekPlans = {};
   sets3(state); warmAll(state); mig29(state);
   /* PA-22: chỉ còn Hổ Phách và Đen Tuyền; lần đầu chuyển mọi người sang Hổ Phách */
@@ -2022,13 +2037,24 @@ function recoveryHint() {
 const BIG_MUSCLES = ['Ngực', 'Lưng', 'Đùi trước', 'Đùi sau', 'Mông'];
 const recHours = m => BIG_MUSCLES.includes(m) ? 72 : 48;
 const NOREC = ['Khác'];
-function dayRd(d, last) {
+/* nhóm cơ chính của ngày (chiếm từ 30% số set trở lên) và mức hồi phục của từng nhóm */
+function primReady(d, last) {
   const per = {}; for (const e of d.exercises) if (!NOREC.includes(e.muscle)) per[e.muscle] = (per[e.muscle] || 0) + e.sets;
   const tot = Object.values(per).reduce((a, b) => a + b, 0); if (!tot) return null;
   const prim = Object.keys(per).filter(m => per[m] >= tot * 0.3);
-  const rs = prim.map(m => readiness(m, last));
-  return { ...rdState({ r: Math.min(...rs.map(x => x.r)), left: Math.max(...rs.map(x => x.left)) }), prim };
+  return { prim, rs: prim.map(m => readiness(m, last)) };
 }
+function dayRd(d, last) {
+  const p = primReady(d, last); if (!p) return null;
+  return { ...rdState({ r: Math.min(...p.rs.map(x => x.r)), left: Math.max(...p.rs.map(x => x.left)) }), prim: p.prim };
+}
+/* PA-40 · BR-27.11–27.12: báo cơ chưa phục hồi theo tiến độ, tự hết sau 24 giờ (không đổi bộ đếm hồi phục) */
+const MPAIN_MS = 24 * 3600e3;
+const painLive = p => Date.now() - p.at < MPAIN_MS;
+const musclePainOf = m => (state.musclePain || []).find(p => p.m === m && painLive(p));
+const hrsAgo = t => { const h = Math.max(0, Math.round((Date.now() - t) / 3.6e6)); return h < 1 ? 'vừa báo' : `từ ${h} giờ trước`; };
+/* PA-40 · BR-27.10: điểm sức khoẻ cơ của ngày = nhóm cơ chính hồi phục ít nhất; ngày không có nhóm cơ coi như đã sẵn sàng */
+const dayReady = (d, last) => { const p = primReady(d, last); return p ? Math.min(...p.rs.map(x => x.r)) : 1; };
 function muscleLoad() {
   const last = {};
   for (const s of state.sessions) {
@@ -2413,12 +2439,16 @@ async function packSheet() {
   const el = $('#pack-st'); if (el) el.textContent = msg; toast(msg); render(true);
 }
 function packBanner() {
-  if (ui.pack !== false || state.active) return '';
+  if (ui.pack !== false || state.active || packHv()) return '';
   if (state.settings.packSkip && daysBetween(state.settings.packSkip, ymd()) < 7) return '';
   return `<div class="banner"><span class="bi">${GUIDE_ICO}</span><div><b>Tải thư viện hình hướng dẫn</b><p>Khoảng 20 MB, 873 bài có hình tư thế. Tải 1 lần qua wifi để xem offline ở phòng tập.</p><div class="row" style="display:flex;gap:8px;margin-top:8px"><button class="btn sm gold" data-act="pack-load">Tải ngay</button><button class="btn sm ghost" data-act="pack-skip">Để sau</button></div></div></div>`;
 }
+/* PA-40 · BR-27.7: học viên không quản lý thư viện, chỉ thấy đã đồng bộ hay chưa */
+const packHv = () => hubRole() === 'hv';
+const packStatus = () => ui.pack ? `Đã đồng bộ · ${ui.pack.n} hình` : 'Chưa đồng bộ';
 function packCard() {
   const p = ui.pack;
+  if (packHv()) return `<div class="card set-card"><h3>Thư viện hình hướng dẫn</h3><p>${packStatus()}</p></div>`;
   return `<div class="card set-card"><h3>Thư viện hình hướng dẫn</h3><p>${p ? `Đã tải ${p.n} hình · ${dm(ymd(new Date(p.at)))}. Xem được khi không có mạng.` : p === false ? 'Chưa tải. Khoảng 20 MB, nên dùng wifi.' : 'Đang kiểm tra…'}</p>
     <div class="row"><button class="btn ${p ? '' : 'gold'}" data-act="pack-load">${p ? 'Tải lại' : 'Tải thư viện hình'}</button></div></div>`;
 }
@@ -2519,7 +2549,7 @@ async function guideSheet(exId) {
     <label class="f full" style="margin-top:10px">Link video riêng (YouTube, TikTok…)<input class="inp" id="g-vlink" inputmode="url" placeholder="https://" value="${esc(ex.vlink || '')}"></label>
     ${ex.vlink && /^https?:\/\//.test(ex.vlink) ? `<a class="btn ghost" style="margin-top:8px;width:100%" href="${esc(ex.vlink)}" target="_blank" rel="noopener">Mở link video</a>` : ''}
     <div class="gsafe">Đau nhói ở khớp, tê hoặc mất lực đột ngột thì dừng bài ngay và bấm <b>Báo đau</b>. Hình minh hoạ để tham khảo, không thay được người hướng dẫn trực tiếp.</div>
-    <div class="sh-actions"><button class="btn" data-act="guide-pick">${g ? 'Đổi hình minh hoạ' : 'Chọn hình minh hoạ'}</button>${ui.pack ? '' : '<button class="btn ghost" data-act="pack-load">Tải thư viện hình offline (~20 MB)</button>'}<button class="btn ghost" data-act="close-sheet">Đóng</button></div>
+    <div class="sh-actions"><button class="btn" data-act="guide-pick">${g ? 'Đổi hình minh hoạ' : 'Chọn hình minh hoạ'}</button>${ui.pack || packHv() ? '' : '<button class="btn ghost" data-act="pack-load">Tải thư viện hình offline (~20 MB)</button>'}<button class="btn ghost" data-act="close-sheet">Đóng</button></div>
     <p class="note-line">Ảnh minh hoạ: Free Exercise DB (public domain).</p>`);
   if (ex.vid) { LDB.get('photos', ex.vid).then(bl => { const v = $('#g-vid'); if (bl && v && ui.guideEx === ex.id) { if (ui.vidUrl) URL.revokeObjectURL(ui.vidUrl); ui.vidUrl = URL.createObjectURL(bl); v.src = ui.vidUrl; } }); }
   if (g) { const [a, b] = await Promise.all([exdbImg(g.id, 0), exdbImg(g.id, 1)]); const box = $('#g-demo'); if (box && ui.guideEx === ex.id) { const im = box.querySelectorAll('img'); if (a) im[0].src = a; else im[0].src = EXDB_URL + g.id + '/0.jpg'; if (b) im[1].src = b; else im[1].src = EXDB_URL + g.id + '/1.jpg'; } }
@@ -3038,7 +3068,8 @@ function viewPlan() {
   if (nOther) h += `<div class="banner"><span class="bi">?</span><div><b>${nOther} bài chưa có nhóm cơ (đang để “Khác”)</b><p>App không tính được độ hồi phục cho các bài này. Gán nhóm cơ để gợi ý buổi tập chính xác hơn.</p><button class="btn sm gold" data-act="other-open">Gán nhóm cơ</button></div></div>`;
   if (dueN) h += `<div class="banner"><span class="bi">⟳</span><div><b>${dueN} ô bài đã giữ bài chính hơn 6 tuần</b><p>Nên đổi sang bài thay thế lâu chưa tập để cơ có kích thích mới. Tuần deload là lúc đổi hợp lý nhất.</p><button class="btn sm gold" data-act="rot-open">Xem gợi ý đổi bài</button></div></div>`;
   if (dbPending.length) h += `<div class="banner"><span class="bi">${ICON.swap}</span><div><b>${dbPending.length} bài tạ đơn: đang ghi tổng hay mỗi tay?</b><p>Ví dụ cầm 2 quả 12,5 kg: ghi 12,5 (mỗi tay) dễ hiểu hơn 25 (tổng). Chọn một lần, app đổi luôn số cũ cho đúng.</p><button class="btn sm gold" data-act="db-setup">Thiết lập tạ đơn</button></div></div>`;
-  state.days.forEach((d, i) => {
+  const order = state.days.map((d, i) => ({ d, i, r: dayReady(d, rc.last) })).sort((a, b) => b.r - a.r || a.i - b.i);
+  order.forEach(({ d, i }, pos) => {
     const open = ui.openDay === d.id, dc = DAYC[i % DAYC.length], ent = rc.list.find(x => x.d.id === d.id);
     const st = dayRd(d, rc.last);
     const ls = lastSessionOfDay(d.id), sgs = d.exercises.map(e => suggest(e)), nUp = sgs.filter(g => g.kind === 'up').length;
@@ -3046,12 +3077,14 @@ function viewPlan() {
     const ms = [...new Set(d.exercises.map(e => e.muscle))];
     const anim = ui.justOpen === d.id;
     h += `<article class="pday ${open ? 'open' : ''} ${isBest ? 'glow' : ''}" style="--dc:${dc}"><button type="button" class="pday-h" data-act="toggle-day" data-id="${d.id}" aria-expanded="${open}">
-      <span class="pnum">${String(i + 1).padStart(2, '0')}</span>
+      <span class="pnum">${String(pos + 1).padStart(2, '0')}</span>
       <span class="t"><b>${esc(d.name)}</b><span class="pmeta">${d.exercises.length} bài · ${d.exercises.reduce((a, e) => a + e.sets + (e.dropSet ? 3 : 0), 0)} set · ${minTxt(dayEst(d.exercises))}</span>
         ${ms.length ? `<span class="pmus">${ms.slice(0, 4).map(m => `<i>${esc(m)}</i>`).join('')}</span>` : ''}</span>
       <span class="pside">${isBest ? '<span class="ptag">Gợi ý</span>' : ''}${st ? `<span class="rs ${st.k}">${st.t}</span>` : ''}${nUp ? `<span class="upb">▲ ${nUp} lên tạ</span>` : ''}<span class="last">${ls ? ago(ls.date) : 'Chưa tập'}</span></span>${ICON.chev}</button>`;
     if (!open && d.exercises.length) h += `<div class="segbar" aria-hidden="true">${sgs.map((g, j) => `<i class="${g.kind}" style="--j:${j}"></i>`).join('')}</div>`;
     if (open) {
+      const mus = ms.filter(m => !NOREC.includes(m));
+      if (mus.length) h += `<div class="mpain"><span class="mpain-h">Cơ chưa hồi phục? Chạm để báo, chạm lại để bỏ</span><div class="mpain-l">${mus.map(m => { const on = musclePainOf(m); return `<button type="button" class="mp ${on ? 'on' : ''}" data-act="mpain" data-m="${esc(m)}" aria-pressed="${!!on}">${esc(m)}${on ? ` · chưa phục hồi · ${hrsAgo(on.at)}` : ''}</button>`; }).join('')}</div></div>`;
       h += `<ol class="exl">`;
       d.exercises.forEach((ex, j) => {
         const b = baseKg(ex), sg = sgs[j], alts = ex.alts || [], openA = !!(ui.altOpen || {})[ex.id], due = rotDue(ex), pick = due ? rotPick(ex) : null;
@@ -3632,7 +3665,7 @@ function bindCompare() {
 async function showBodyViewer(id) {
   const bp = state.bodyPhotos.find(x => x.id === id); if (!bp) return;
   let src = photoCache.get(bp.photoId); if (!src) { src = await DB.get('photos', bp.photoId); if (src) photoCache.set(bp.photoId, src); }
-  const v = $('#viewer'); v.hidden = false;
+  const v = $('#viewer'); if (v.hidden) pushPop(); v.hidden = false;
   v.innerHTML = `<div class="vtop"><b>${esc(bp.pose)} · ${DOWL[parseYmd(bp.date).getDay()]} ${dm(bp.date)}/${bp.date.slice(0, 4)}</b><button type="button" data-act="viewer-close">Đóng</button></div>
     <div class="vimg">${src ? `<img src="${src}" alt="Ảnh body">` : ''}</div>
     <div class="vnav vbp"><button type="button" data-act="bp-ab" data-id="${bp.id}" data-k="A">Làm ảnh Trước</button><button type="button" data-act="bp-ab" data-id="${bp.id}" data-k="B">Làm ảnh Sau</button></div>
@@ -3771,7 +3804,7 @@ function viewMore() {
   ${hubRole() ? hubCardHtml() : loginCardHtml()}
   ${isHlv() ? hlvStudentsHtml() : ''}
   <div class="gh">Đồng bộ & dữ liệu</div><div class="card grp">
-    ${row('pack', 'book', 'Thư viện hình hướng dẫn', ui.pack ? `Đã tải ${ui.pack.n} hình · xem được khi không có mạng` : 'Chưa tải · khoảng 20 MB')}
+    ${packHv() ? `<div class="grow"><span class="gi">${ICON.book}</span><span class="gt"><b>Thư viện hình hướng dẫn</b><span>${packStatus()}</span></span></div>` : row('pack', 'book', 'Thư viện hình hướng dẫn', ui.pack ? `Đã tải ${ui.pack.n} hình · xem được khi không có mạng` : 'Chưa tải · khoảng 20 MB')}
   </div>
   ${syncCardHtml()}
   <div class="gh">Tập luyện</div><div class="card grp">
@@ -4276,6 +4309,8 @@ const slugName = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace
    có khoá k = HMAC-SHA256(khoá HLV, "gadn-hv:<mã>:<epoch>"), nên HLV tính lại được bất cứ lúc nào, không cần lưu. */
 const OLD_CODE = 'Mã này là kiểu gửi cũ, không còn dùng. Quét mã QR HLV hoặc thẻ học viên, hoặc dán mã, trong Tài khoản → Đăng nhập.';
 const hubOn = () => !!hubRole();
+/* đã gửi được dữ liệu lên máy chủ: học viên đã gửi buổi tập ít nhất một lần, hoặc HLV đã gửi giáo án */
+const hubSynced = () => { const sy = state.settings.sync || {}; return !!sy.lastOk || Object.keys(sy.planH || {}).length > 0; };
 /* hlv: máy có khoá HLV · hv: máy học viên đã nối bằng thẻ · '': chưa nối */
 function hubRole() { const sy = state.settings.sync || {}; return sy.hk ? 'hlv' : sy.dk ? 'hv' : ''; }
 async function hubCall(path, body, method) {
@@ -4331,15 +4366,6 @@ async function hubSubscribe() {
   await hubCall('/s/dk', { sub, off: state.settings.nSync === false }).catch(() => {});
 }
 /* khôi phục thủ công (BR-24.5): buổi trên máy được thay bằng bản trên máy chủ; bản cũ giữ trong state.sync.undo để hoàn tác */
-async function hubRestoreManual() {
-  const sy = state.settings.sync;
-  const r = await hubCall('/s/doi?hv=' + encodeURIComponent(sy.i) + '&since=0', null, 'GET');
-  if (r.s !== 200) { toast('Không kết nối được máy chủ. Thử lại khi có mạng.'); return; }
-  state.sync = state.sync || { sent: {} }; state.sync.undo = { sessions: clone(state.sessions), sent: clone(state.sync.sent) };
-  state.sessions = []; state.sync.sent = {};
-  for (const rec of r.j.recs) if (rec.k.startsWith('buoi:')) await hubApplySession(profiles.active, rec);
-  save(); render(true); toast('Đã khôi phục từ máy chủ · có thể hoàn tác');
-}
 async function hubRestoreSelf() {
   const sy = state.settings.sync; if (hubRole() !== 'hv') return;
   const r = await hubCall('/s/doi?hv=' + encodeURIComponent(sy.i) + '&since=0', null, 'GET');
@@ -4348,30 +4374,6 @@ async function hubRestoreSelf() {
     if (rec.k === 'plan@hlv') await hubApplyPlan(rec);
     else if (rec.k.startsWith('buoi:')) await hubApplySession(profiles.active, rec);
   }
-}
-/* PA-34.4 · passkey (Face ID / vân tay): bật trên máy học viên; máy trống khôi phục bằng chữ ký passkey, không cần thẻ */
-const hubAnon = async (path, body) => { const r = await fetch(pushBase() + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) }); return { s: r.status, j: await r.json().catch(() => ({})) }; };
-async function hubPasskeyAdd() {
-  if (hubRole() !== 'hv') return;
-  const sy = state.settings.sync;
-  try {
-    const t = await hubCall('/s/pk/thach', null);
-    const c = await navigator.credentials.create({ publicKey: {
-      challenge: unb64u(t.j.chal), rp: { id: location.hostname, name: 'Giáo Án Địa Ngục' },
-      user: { id: new TextEncoder().encode(sy.i), name: sy.ten || sy.i, displayName: sy.ten || sy.i },
-      pubKeyCredParams: [{ type: 'public-key', alg: -7 }], authenticatorSelection: { residentKey: 'required', userVerification: 'required' }, attestation: 'none', timeout: 60000 } });
-    const r = await hubCall('/s/pk/dky', { cred: b64u(new Uint8Array(c.rawId)), pub: b64u(new Uint8Array(c.response.getPublicKey())), cdj: b64u(new Uint8Array(c.response.clientDataJSON)), chal: t.j.chal });
-    toast(r.s === 200 ? 'Đã bật khôi phục bằng Face ID' : (r.j.loi || 'Không bật được khôi phục'));
-  } catch (e) { toast('Không bật được khôi phục bằng Face ID trên máy này'); }
-}
-async function hubPasskeyRestore() {
-  try {
-    const t = await hubAnon('/s/pk/thach');
-    const a = await navigator.credentials.get({ publicKey: { challenge: unb64u(t.j.chal), rpId: location.hostname, userVerification: 'required', timeout: 60000 } });
-    const r = await hubAnon('/s/pk/vao', { cred: b64u(new Uint8Array(a.rawId)), ad: b64u(new Uint8Array(a.response.authenticatorData)), cdj: b64u(new Uint8Array(a.response.clientDataJSON)), sig: b64u(new Uint8Array(a.response.signature)), chal: t.j.chal });
-    if (r.s !== 200) { toast(r.j.loi || 'Không khôi phục được'); return; }
-    await hubJoin(pushBase(), r.j.id, r.j.dk, r.j.ten);
-  } catch (e) { toast('Không dùng được Face ID trên máy này. Hãy quét lại thẻ học viên.'); }
 }
 /* gửi các buổi đã tập chưa gửi (hoặc đã sửa sau lần gửi trước); buổi đang tập dở không gửi. Trạng thái trong state.sync.sent */
 const hubRev = s => s.finishedAt || s.startedAt;
@@ -4403,7 +4405,7 @@ async function hubFlush() {
 /* BR-26.5: máy chưa có vai thấy khối đăng nhập: quét QR (camera, ảnh) hoặc dán mã GAH1/GAV1 */
 function loginCardHtml() {
   return `<div class="card set-card" id="login"><h3>Đăng nhập</h3><p>HLV: quét mã QR HLV hoặc dán mã HLV. Học viên: quét thẻ QR của HLV hoặc dán mã thẻ.</p>
-    <div class="row"><button class="btn gold" data-act="qr-scan">Quét mã QR</button><button class="btn" data-act="hub-restore">Khôi phục bằng Face ID</button></div>
+    <div class="row"><button class="btn gold" data-act="qr-scan">Quét mã QR</button></div>
     <details class="wpkeep" style="margin-top:10px"><summary>Hoặc dán mã</summary><div class="paste-box"><textarea class="inp" id="login-in" rows="2" placeholder="Dán mã GAH1… hoặc GAV1…"></textarea><button type="button" class="btn sm gold" data-act="login-go">Đăng nhập</button></div></details></div>`;
 }
 /* BR-26.1: HLV lấy và chia sẻ thẻ QR từng học viên; học viên chưa có thẻ thì bấm để tạo */
@@ -4419,10 +4421,10 @@ function hubCardHtml() {
     const stLine = sy.lastErr && (!sy.lastOk || sy.lastErr > sy.lastOk) ? 'Chưa gửi được: không liên lạc được máy chủ. Sẽ thử lại tự động.'
       : pend ? `Chờ gửi ${pend} buổi.` : sy.lastOk ? `Đã gửi xong · lần cuối lúc ${hhmm(sy.lastOk)}.` : 'Chưa gửi buổi nào.';
     return hubConflictHtml() + `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã nối với HLV ${esc(sy.ten || '')}. ${stLine}</p>
-    <div class="row"><button class="btn gold" data-act="hub-pk-add">Bật khôi phục bằng Face ID</button><button class="btn" data-act="hub-restore-manual">Khôi phục từ máy chủ</button>${state.sync && state.sync.undo ? '<button class="btn" data-act="hub-restore-undo">Hoàn tác khôi phục</button>' : ''}${state.sync && state.sync.prevDays ? '<button class="btn" data-act="hub-plan-undo">Hoàn tác giáo án</button>' : ''}<button class="btn ghost" data-act="hub-unlink">Ngắt kết nối trên máy này</button></div></div>`;
+    ${state.sync && state.sync.prevDays ? '<div class="row"><button class="btn" data-act="hub-plan-undo">Hoàn tác giáo án</button></div>' : ''}</div>`;
   }
   return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã đăng ký làm HLV. Thêm học viên bằng thẻ QR; thẻ dùng được lâu dài.</p>
-    <div class="row"><button class="btn gold" data-act="hub-add">Thêm học viên</button><button class="btn" data-act="hub-self-open">Hồ sơ HLV</button><button class="btn" data-act="hub-migrate">Chuyển học viên có sẵn</button><button class="btn" data-act="hub-reg">Quét mã</button><button class="btn ghost" data-act="hub-unlink">Ngắt đăng ký trên máy này</button></div></div>`;
+    <div class="row"><button class="btn gold" data-act="hub-add">Thêm học viên</button><button class="btn" data-act="hub-self-open">Hồ sơ HLV</button><button class="btn" data-act="hub-migrate">Chuyển học viên có sẵn</button><button class="btn" data-act="hub-reg">Quét mã</button></div></div>`;
 }
 /* HLV: mọi học viên trong danh sách phải có thẻ QR. Hồ sơ tên “Tôi” là hồ sơ tự tập của HLV, không tính là học viên.
    Tự tạo học viên trên máy chủ cho hồ sơ nào chưa có; mất mạng thì thử lại khi có mạng, khi mở app, và mỗi 20 giây. */
@@ -4583,6 +4585,7 @@ async function hubPull() {
     for (const rec of r.j.recs) {
       if (role === 'hv') { if (rec.k === 'plan@hlv' && rec.t > (sy.planT || 0)) await hubApplyPlan(rec); }
       else if (rec.k.startsWith('buoi:') && sy.map && sy.map[rec.hv]) await hubApplySession(sy.map[rec.hv], rec);
+      else if (rec.k === 'dau@hv' && sy.map && sy.map[rec.hv]) await hubApplyPain(sy.map[rec.hv], rec);
     }
     if (r.j.seq > (sy.seq || 0)) { sy.seq = r.j.seq; save(); }
   } catch (e) { /* mất mạng: lần sau kéo tiếp */ } finally { hubPulling = false; }
@@ -4590,7 +4593,23 @@ async function hubPull() {
 /* khoá so sánh giáo án: bỏ mức tạ hiện tại (đổi mỗi buổi tập, không phải thay đổi giáo án) */
 const planKey = plan => { const strip = e => ({ ...e, currentKg: undefined, kgSetAt: undefined, l: (e.l || []).map(strip) }); return strHash(JSON.stringify(plan.map(d => ({ n: d.n, e: (d.e || []).map(strip) })))); };
 /* giáo án HLV → học viên: HLV gửi khi giáo án đổi; học viên nhận bằng cùng động cơ gộp của Drive (syncMerge). Lưu bản cũ để hoàn tác. */
-let hubPlanT = 0;
+let hubPlanT = 0, hubPainT = 0;
+function hubPainSoon() { if (hubRole() !== 'hv') return; clearTimeout(hubPainT); hubPainT = setTimeout(hubPainPush, 300); }
+/* PA-40 · Q4: HV gửi danh sách cơ còn đau cho HLV, bản ghi riêng nên lỗi không ảnh hưởng gửi buổi tập; máy chủ chưa hỗ trợ thì bỏ qua */
+async function hubPainPush() {
+  if (hubRole() !== 'hv' || !navigator.onLine) return;
+  const sy = state.settings.sync, list = (state.musclePain || []).filter(painLive);
+  try { await hubCall('/s/ghi', { hv: sy.i, recs: [{ k: 'dau@hv', id: 'dau', t: Date.now(), vai: 'hv', d: JSON.stringify(list) }] }); } catch (e) { /* mất mạng: lần báo sau gửi lại */ }
+}
+/* HLV nhận danh sách cơ còn đau của học viên vào đúng hồ sơ; mục quá 24 giờ bỏ */
+async function hubApplyPain(pid, rec) {
+  let L = []; try { L = JSON.parse(rec.d); } catch (e) {}
+  const list = (Array.isArray(L) ? L : []).filter(p => p && typeof p.m === 'string' && Number.isFinite(p.at) && painLive(p)).slice(0, 20);
+  const st = pid === profiles.active ? state : await profState(pid); if (!st) return;
+  st.musclePain = list;
+  if (pid === profiles.active) { save(); render(true); return; }
+  st.updatedAt = Date.now(); await LDB.put('kv', stateKey(pid), clone(st));
+}
 function hubPlanSoon() { clearTimeout(hubPlanT); hubPlanT = setTimeout(hubPushPlans, 1500); }
 /* quiet: gửi giáo án lần đầu khi chuyển học viên, không báo */
 async function hubPushPlans(quiet) {
@@ -4610,52 +4629,57 @@ async function hubPushPlans(quiet) {
 }
 /* Giáo án: so 3 phía — bản đã thống nhất lần trước (planBase), bản trên máy, bản trên máy chủ.
    Chỉ khi cả máy này và HLV cùng đổi thì hỏi người dùng (xem hubConflictHtml). Buổi tập không cần hỏi: xem hubApplySession. */
+/* PA-40 · Q9: gộp giáo án theo từng ngày. Mỗi ngày so 3 phía: bản đã thống nhất (planDays), bản máy này, bản HLV.
+   Ngày chỉ một bên đổi thì tự gộp; chỉ ngày mà cả hai bên cùng đổi mới đưa vào conflict để anh chọn. */
+/* so bản giáo án của một ngày: chỉ các thông số bài tập; không tính mã bài, mức tạ hiện tại và cờ nội bộ */
+const planDayHash = d => strHash(JSON.stringify({ n: d.n, e: (d.e || []).map(e => ({ name: e.name, muscle: e.muscle, zone: e.zone, type: e.type, sets: e.sets, repTarget: e.repTarget, repMin: e.repMin, repMax: e.repMax, dropSet: e.dropSet, step: e.step, rest: e.rest, each: e.each, warmup: e.warmup, targetKg: e.targetKg, setup: e.setup })) }));
+const cleanPlanOf = plan => cleanPkg({ app: 'gadn-sync', role: 'coach', link: {}, plan, sessions: [], del: {} }).plan;
+const planDayMap = plan => Object.fromEntries(plan.map(d => [d.n, planDayHash(d)]));
 async function hubApplyPlan(rec) {
   let J = null; try { J = JSON.parse(rec.d); } catch (e) {}
   if (!J || !Array.isArray(J.plan)) return;
+  /* giáo án từ máy chủ đưa qua cùng bước làm sạch như gói Drive, để so sánh đúng với giáo án trên máy */
+  let RP = null; try { RP = cleanPlanOf(J.plan); } catch (e) {}
+  if (!RP) return;
   const sy = state.settings.sync; state.sync = state.sync || { sent: {} };
-  const localH = planKey(await serPlan(state, false, {})), remoteH = planKey(J.plan);
-  if (localH === remoteH) { state.sync.planBase = localH; sy.planT = rec.t; save(); return; }
-  /* máy trống (chưa có giáo án), hoặc chưa từng thống nhất và máy không đổi: nhận thẳng */
-  if (!state.days.length || (state.sync.planBase === localH)) { await applyRemotePlan(J.plan, rec.t); return; }
-  /* cả hai bên đều khác bản đã thống nhất (hoặc chưa thống nhất lần nào và máy đã có giáo án): hỏi người dùng */
-  state.sync.conflict = { plan: J.plan, t: rec.t };
+  const localPlan = cleanPlanOf(await serPlan(state, false, {}));
+  if (planKey(localPlan) === planKey(RP)) { state.sync.planBase = planKey(localPlan); state.sync.planDays = planDayMap(RP); state.sync.conflict = null; sy.planT = rec.t; save(); return; }
+  /* máy trống (chưa có giáo án): nhận thẳng */
+  if (!state.days.length) { await applyRemotePlan(RP, rec.t); return; }
+  const base = state.sync.planDays || {}, L = new Map(localPlan.map(d => [d.n, d])), R = new Map(RP.map(d => [d.n, d]));
+  const names = [...new Set([...RP.map(d => d.n), ...localPlan.map(d => d.n)])];
+  const out = [], conflicts = [];
+  for (const n of names) {
+    const ld = L.get(n), rd = R.get(n), lh = ld && planDayHash(ld), rh = rd && planDayHash(rd), bh = base[n];
+    if (lh === rh) { if (ld) out.push(ld); continue; }
+    if (lh === bh) { if (rd) out.push(rd); continue; }          /* chỉ HLV đổi (hoặc HLV xoá ngày): nhận */
+    if (rh === bh) { if (ld) out.push(ld); continue; }          /* chỉ máy này đổi: giữ */
+    conflicts.push(n); if (ld) out.push(ld);                   /* cả hai cùng đổi: giữ bản máy này tới khi anh chọn */
+  }
+  await applyRemotePlan(out, rec.t);
+  const after = await serPlan(state, false, {}), nb = { ...base };
+  for (const n of names) if (!conflicts.includes(n)) { const d = after.find(x => x.n === n); if (d) nb[n] = planDayHash(d); else delete nb[n]; }
+  for (const n of names) if (!R.has(n) && !conflicts.includes(n)) delete nb[n];
+  state.sync.planDays = nb; state.sync.planBase = planKey(after);
+  state.sync.conflict = conflicts.length ? { plan: RP, t: rec.t, days: conflicts } : null;
   sy.planT = rec.t; save(); render(true);
 }
 /* áp giáo án của HLV vào máy (gộp như Drive trước đây), lưu bản cũ để hoàn tác, và ghi nhận bản đã thống nhất */
 async function applyRemotePlan(plan, t) {
   let P = null; try { P = cleanPkg({ app: 'gadn-sync', role: 'coach', link: {}, plan, sessions: [], del: {} }); } catch (e) { return; }
   const { st } = await syncMerge(state, P, {});
-  state.sync = state.sync || { sent: {} }; state.sync.prevDays = clone(state.days); state.sync.conflict = null;
+  state.sync = state.sync || { sent: {} }; state.sync.prevDays = clone(state.days);
   state.days = st.days; state.settings.sync.planT = t;
   state.sync.planBase = planKey(await serPlan(state, false, {}));
   save(); render(true);
 }
-/* tóm tắt giáo án để người dùng so sánh: số ngày, số bài, tên ngày chỉ có ở một bên, ngày có cùng tên nhưng khác số bài */
-function planCompare(localDays, remotePlan) {
-  const L = localDays.map(d => ({ n: d.name, a: d.exercises.length })), R = remotePlan.map(d => ({ n: d.n, a: (d.e || []).length }));
-  const ln = new Set(L.map(x => x.n)), rn = new Set(R.map(x => x.n));
-  return {
-    local: { days: L.length, ex: L.reduce((a, x) => a + x.a, 0) }, remote: { days: R.length, ex: R.reduce((a, x) => a + x.a, 0) },
-    onlyLocal: L.filter(x => !rn.has(x.n)).map(x => x.n), onlyRemote: R.filter(x => !ln.has(x.n)).map(x => x.n),
-    diffEx: L.filter(x => rn.has(x.n) && R.find(y => y.n === x.n).a !== x.a).map(x => `${x.n} (${x.a} ↔ ${R.find(y => y.n === x.n).a} bài)`)
-  };
-}
 function hubConflictHtml() {
-  const c = state.sync && state.sync.conflict; if (!c) return '';
-  const k = planCompare(state.days, c.plan), list = a => a.length ? a.map(esc).join(', ') : '—';
-  return `<div class="card set-card"><h3>Giáo án khác với HLV</h3>
-    <p>Giáo án trên máy này và giáo án HLV vừa cập nhật đều đã đổi so với lần đồng bộ trước. Chọn bản giữ lại:</p>
-    <table class="cmp" style="width:100%;font-size:13px;margin:10px 0;border-collapse:collapse">
-      <tr><th style="text-align:left"></th><th style="text-align:left">Máy này</th><th style="text-align:left">HLV</th></tr>
-      <tr><td>Số ngày tập</td><td>${k.local.days}</td><td>${k.remote.days}</td></tr>
-      <tr><td>Số bài</td><td>${k.local.ex}</td><td>${k.remote.ex}</td></tr>
-      <tr><td>Chỉ có trên máy này</td><td colspan="2">${list(k.onlyLocal)}</td></tr>
-      <tr><td>Chỉ có ở HLV</td><td colspan="2">${list(k.onlyRemote)}</td></tr>
-      <tr><td>Khác số bài</td><td colspan="2">${list(k.diffEx)}</td></tr>
-    </table>
-    <p class="small muted">Dùng giáo án HLV: các ngày và bài theo giáo án HLV thay cho bản trên máy; bài bạn tự thêm được giữ lại; lịch sử tập và mức tạ được giữ. Bạn có thể hoàn tác sau đó. Giữ giáo án máy này: giữ nguyên bản trên máy; bản của HLV không áp dụng cho đến khi HLV cập nhật lần nữa.</p>
-    <div class="row"><button class="btn gold" data-act="hub-conflict-remote">Dùng giáo án HLV</button><button class="btn" data-act="hub-conflict-local">Giữ giáo án máy này</button></div></div>`;
+  const c = state.sync && state.sync.conflict; if (!c || !c.days || !c.days.length) return '';
+  const L = new Map(state.days.map(d => [d.name, d.exercises.length])), R = new Map(c.plan.map(d => [d.n, (d.e || []).length]));
+  const rows = c.days.map(n => `<div class="row" style="align-items:center;justify-content:space-between;gap:8px"><span><b>${esc(n)}</b><br><span class="small muted">Máy này ${L.get(n) ?? '—'} bài · HLV ${R.get(n) ?? '—'} bài</span></span>
+    <span class="row" style="gap:6px"><button class="btn sm gold" data-act="hub-conflict-day" data-n="${esc(n)}" data-v="remote">Dùng bản HLV</button><button class="btn sm" data-act="hub-conflict-day" data-n="${esc(n)}" data-v="local">Giữ bản máy này</button></span></div>`).join('');
+  return `<div class="card set-card"><h3>${c.days.length} ngày khác với HLV</h3>
+    <p>Ngày dưới đây đã đổi cả trên máy này lẫn ở HLV. Các ngày còn lại đã được gộp tự động. Chọn bản giữ lại cho từng ngày:</p>${rows}</div>`;
 }
 /* chỉ nhận bản mới hơn bản đã có; buổi của hồ sơ đang mở được ghi qua state để không bị ghi đè */
 async function hubApplySession(pid, rec) {
@@ -4719,9 +4743,40 @@ const canonKey = ex => shKey(ex.srcId || ex.id);
 /* đóng gói đồng bộ vừa 1 mã: giáo án (nếu đổi) + các buổi mới nhất vừa đủ chỗ */
 /* ---------- file & lịch ---------- */
 /* ---------- sheet, toast, viewer ---------- */
-function openSheet(html) { const fresh = $('#sheet').hidden; $('#sheet-body').innerHTML = '<div class="grab"></div>' + html; $('#sheet').hidden = false;
+/* PA-40 · popup: nút × và kéo xuống để đóng; nút quay lại của trình duyệt đóng popup trước, không có popup thì về Trang chủ */
+/* popSkip: số lần quay lại do app tự gọi (chưa xong); popWant: popup mở trong lúc đó, chờ có mục lịch sử để đẩy vào sau */
+let popDepth = 0, popSkip = 0, popWant = 0, popFromBack = false;
+function pushPop() { popDepth++; if (popSkip > 0) popWant++; else history.pushState({ gadnPop: 1 }, ''); }
+function popDone() { if (popFromBack || popDepth <= 0) return; popDepth--; popSkip++; history.back(); }
+function openSheet(html) { const fresh = $('#sheet').hidden; $('#sheet-body').innerHTML = '<div class="grab"></div><button type="button" class="sheet-x" data-act="sheet-x" aria-label="Đóng">×</button>' + html; $('#sheet').hidden = false;
+  if (fresh) pushPop();
   if (fresh && !reduceMotion()) [...$('#sheet-body').children].slice(1, 12).forEach((el, i) => { el.classList.add('rv-now'); el.style.setProperty('--i', i); }); document.body.style.overflow = 'hidden'; $('#sheet-body').scrollTop = 0; }
-function closeSheet() { $('#sheet').hidden = true; document.body.style.overflow = ''; $('#sheet-body').innerHTML = ''; }
+function closeSheet() { if ($('#sheet').hidden) return; $('#sheet').hidden = true; document.body.style.overflow = ''; $('#sheet-body').innerHTML = ''; popDone(); }
+function closeViewer() { const v = $('#viewer'); if (v.hidden) return; v.hidden = true; v.innerHTML = ''; popDone(); }
+/* kéo đầu popup (vạch, tiêu đề, thanh trên của trình xem ảnh) xuống quá 90px thì đóng; kéo chưa đủ thì trở về */
+let swipe = null;
+const swipePanel = () => (!$('#viewer').hidden ? $('#viewer') : !$('#sheet').hidden ? $('#sheet-body') : null);
+document.addEventListener('touchstart', e => {
+  const p = swipePanel(); swipe = null;
+  if (!p || e.touches.length !== 1 || e.target.closest('input,textarea,select,.cmp,.chart')) return;
+  const top = p.id === 'viewer' ? !!e.target.closest('.vtop') : (p.scrollTop <= 0 && (!!e.target.closest('.grab,.sheet-x,.sh-title') || e.touches[0].clientY - p.getBoundingClientRect().top < 90));
+  if (top) swipe = { p, y0: e.touches[0].clientY, d: 0 };
+}, { passive: true });
+document.addEventListener('touchmove', e => {
+  if (!swipe) return; swipe.d = Math.max(0, e.touches[0].clientY - swipe.y0);
+  swipe.p.style.transform = swipe.d ? `translateY(${Math.min(swipe.d, 260)}px)` : '';
+}, { passive: true });
+document.addEventListener('touchend', () => {
+  if (!swipe) return; const { p, d } = swipe; swipe = null; p.style.transform = '';
+  if (d >= 90) { if (p.id === 'viewer') closeViewer(); else closeSheet(); }
+});
+/* nút quay lại của trình duyệt / cử chỉ vuốt trái (BR-27.3) */
+addEventListener('popstate', () => {
+  if (popSkip > 0) { popSkip--; if (!popSkip) while (popWant > 0) { popWant--; history.pushState({ gadnPop: 1 }, ''); } return; }
+  if (popDepth > 0) { popDepth--; popFromBack = true; if (!$('#viewer').hidden) closeViewer(); else closeSheet(); popFromBack = false; return; }
+  if (ui.tab !== 'home') { ui.tab = 'home'; render(); }
+});
+
 function confirmSheet({ title, text, ok, danger, onOk }) {
   pendingConfirm = onOk;
   openSheet(`<h3 class="sh-title">${title}</h3><p class="sh-text">${text}</p><div class="sh-actions"><button class="btn big ${danger ? 'danger-fill' : 'gold'}" data-act="confirm-ok">${ok}</button><button class="btn ghost" data-act="confirm-cancel">Thôi</button></div>`);
@@ -4849,7 +4904,7 @@ const handlers = {
   'guide-none': () => { const ex = findEx(ui.guideEx); if (!ex) return; ex.gid = null; save(); guideSheet(ex.id); },
   'ex-focus': t => { const a = state.active; if (!a) return; const en = a.entries[+t.dataset.i]; if (!en) return; sfx('step'); vibe(8); switchFocusEx(en.exId); scrollFocus(); },
   'hero-ph': t => { const a = state.active; if (!a) return; const fi = focusIdx(), ex = exOrSnap(a.entries[fi]); const n = (ex.photos || []).length; if (n < 2) return; ui.heroPh = ((ui.heroPh || 0) + +t.dataset.d + n) % n; refreshExCard(fi); },
-  'viewer-close': () => { $('#viewer').hidden = true; $('#viewer').innerHTML = ''; },
+  'viewer-close': () => closeViewer(),
   'onb-new': () => { ui.tab = 'plan'; render(); dayNameSheet(null); },
   'onb-sample': () => {
     state.days = SAMPLE.map(([n, list]) => ({ id: uid(), name: n, sample: true, exercises: list.map(newEx) }));
@@ -4867,6 +4922,7 @@ const handlers = {
   'del-day': t => { const d = findDay(t.dataset.id); confirmSheet({ title: `Xoá ngày “${esc(d.name)}”?`, text: 'Các bài tập và ảnh trong ngày này sẽ bị xoá. Lịch sử các buổi đã tập vẫn được giữ.', ok: 'Xoá ngày tập', danger: true,
     onOk: () => { d.exercises.forEach(ex => [ex, ...(ex.alts || [])].forEach(e2 => { markDelEx(e2); e2.photos.forEach(id => DB.del('photos', id)); if (e2.vid) LDB.del('photos', e2.vid); })); state.days = state.days.filter(x => x !== d); save(); render(true); } }); },
   'move-day': t => { const i = state.days.findIndex(d => d.id === t.dataset.id), j = i + +t.dataset.d; if (j < 0 || j >= state.days.length) return; [state.days[i], state.days[j]] = [state.days[j], state.days[i]]; save(); render(true); },
+  'mpain': t => { const m = t.dataset.m, on = !!musclePainOf(m); state.musclePain = (state.musclePain || []).filter(p => p.m !== m && painLive(p)); if (!on) state.musclePain.push({ m, at: Date.now() }); save(); render(true); hubPainSoon(); toast(on ? `Đã bỏ báo ${m}` : `Đã báo ${m} chưa phục hồi · tự bỏ sau 24 giờ`); },
   'toggle-day': t => { ui.openDay = ui.openDay === t.dataset.id ? null : t.dataset.id; ui.justOpen = ui.openDay; render(true); },
   'db-setup': () => dbSheet(),
   'db-set': t => { const ex = findEx(t.dataset.id); if (!ex) return; const m = t.dataset.m;
@@ -4880,7 +4936,7 @@ const handlers = {
   'nbz': t => { ui.nb = { z: ui.nb && ui.nb.z === t.dataset.v ? '' : t.dataset.v }; const box = $('#nb-box'); if (box) { box.innerHTML = nbHtml(); hydratePhotos(box); } if ($('#f-zone') && ui.nb.z) $('#f-zone').value = ui.nb.z; },
   'zlib': t => applyLibPick(t.dataset.v),
   'z-toggle': t => { ui.zOpen = !t.parentElement.open; t.parentElement.open = ui.zOpen; },
-  'pack-load': () => packSheet(),
+  'pack-load': () => { if (!packHv()) packSheet(); },
   'pack-skip': () => { state.settings.packSkip = ymd(); save(); render(true); },
   'vid-del': () => { const ex = findEx(ui.guideEx); if (!ex || !ex.vid) return; LDB.del('photos', ex.vid); ex.vid = null; save(); guideSheet(ex.id); toast('Đã xoá video'); },
   'nb': t => {
@@ -5004,17 +5060,22 @@ const handlers = {
     if (!id2) { toast('Chưa tạo được thẻ QR cho học viên này. Kiểm tra mạng và thử lại.'); return; }
     hubCardsSheet([{ name: p.name, code: hubCodeOf(id2, await hubKey(id2, 0)) }]);
   },
-  'hub-pk-add': () => hubPasskeyAdd(),
   'hub-migrate': () => hubMigrateSheet(),
   'hub-migrate-go': () => hubMigrateGo(),
-  'hub-conflict-remote': async () => { const c = state.sync && state.sync.conflict; if (c) await applyRemotePlan(c.plan, c.t); toast('Đã dùng giáo án của HLV'); },
-  'hub-conflict-local': async () => { state.sync.conflict = null; state.sync.planBase = planKey(await serPlan(state, false, {})); save(); render(true); toast('Đã giữ giáo án trên máy này'); },
-  'hub-restore-manual': () => confirmSheet({ title: 'Khôi phục từ máy chủ?', text: `Buổi tập trên máy này sẽ được thay bằng bản đã gửi lên máy chủ.Buổi chưa gửi trên máy này sẽ mất. Bạn có thể hoàn tác ngay sau đó.`, ok: 'Khôi phục', danger: true, onOk: () => hubRestoreManual() }),
-  'hub-restore-undo': () => { const u = state.sync && state.sync.undo; if (!u) return; state.sessions = u.sessions; state.sync.sent = u.sent; state.sync.undo = null; save(); render(true); toast('Đã hoàn tác khôi phục'); },
+  'hub-conflict-day': async t => {
+    const c = state.sync && state.sync.conflict; const n = t.dataset.n; if (!c || !c.days.includes(n)) return;
+    const R = c.plan.find(d => d.n === n), local = await serPlan(state, false, {});
+    if (t.dataset.v === 'remote') {   /* thay đúng ngày đó bằng bản HLV, các ngày khác giữ nguyên */
+      const k = local.findIndex(d => d.n === n);
+      const np = R ? (k < 0 ? [...local, R] : local.map((d, j) => j === k ? R : d)) : local.filter(d => d.n !== n);
+      await applyRemotePlan(np, c.t);
+    }
+    state.sync.planDays = { ...(state.sync.planDays || {}), [n]: R ? planDayHash(R) : undefined }; if (!R) delete state.sync.planDays[n];
+    state.sync.conflict = { ...c, days: c.days.filter(x => x !== n) }; if (!state.sync.conflict.days.length) state.sync.conflict = null;
+    save(); render(true); toast(t.dataset.v === 'remote' ? `Đã dùng bản HLV cho ${n}` : `Đã giữ bản máy này cho ${n}`);
+  },
   'hub-plan-undo': () => { if (!state.sync || !state.sync.prevDays) return; state.days = state.sync.prevDays; state.sync.prevDays = null; save(); render(true); toast('Đã hoàn tác giáo án'); },
-  'hub-restore': () => hubPasskeyRestore(),
   'hub-add-go': () => hubAddGo(),
-  'hub-unlink': () => confirmSheet({ title: 'Ngắt kết nối trên máy này?', text: 'Chỉ xoá khoá trên máy này. Dữ liệu trên máy chủ vẫn giữ nguyên; quét lại thẻ để nối lại.', ok: 'Ngắt', danger: true, onOk: () => { state.settings.sync = {}; save(); render(true); toast('Đã ngắt kết nối trên máy này'); } }),
                       'qr-close': () => { clearInterval(ui.qrT); qrStop(); closeSheet(); },
   'lb': t => { ui.lb = t.dataset.k; render(true); },
   'goal': t => { const p = profiles.list.find(x => x.id === t.dataset.id); if (!p) return; p.goal = (p.goal || 5) >= 6 ? 3 : (p.goal || 5) + 1; saveProfiles(); render(true); toast(`Mục tiêu ${p.name}: ${p.goal} buổi mỗi tuần`); },
@@ -5100,6 +5161,8 @@ const handlers = {
   'deload-done': () => { state.settings.cycleStart = ymd(); save(); render(true); toast('Bắt đầu chu kỳ mới'); },
   'confirm-cancel': () => { pendingConfirm = null; if (ui.draft) exSheet(); else closeSheet(); },
   'confirm-ok': () => { const f = pendingConfirm; pendingConfirm = null; closeSheet(); f && f(); },
+  'sheet-x': () => handlers['close-sheet'](),
+  'alarm-x': () => handlers['alarm-ok'](),
   'close-sheet': () => { clearInterval(ui.qrT); qrStop(); if (ui.draft) { handlers['cancel-ex'](); return; } if (ui.wpDraft) { ui.wpDraft = null; if (!wpCur()) state.wpSkip = weekKey(); } closeSheet(); }
 };
 document.addEventListener('click', e => {
