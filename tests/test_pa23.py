@@ -5,7 +5,7 @@ def ev(self, code, arg=None): return self.evaluate("([c, a]) => { const f = wind
 Page.ev = ev
 errs = []
 def ok(c, m): print(('PASS ' if c else 'FAIL ') + m); (None if c else errs.append(m))
-SV = 'https://gadn-push.hoangtourguide0507.workers.dev'
+SV = 'https://gadn-push.sakutara.workers.dev'
 srv = subprocess.Popen(['python3', '-m', 'http.server', '8793', '-d', 'site'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL); time.sleep(1)
 try:
     with sync_playwright() as p:

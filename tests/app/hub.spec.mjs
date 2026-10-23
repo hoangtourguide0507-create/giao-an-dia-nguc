@@ -135,3 +135,61 @@ test('BR-24.4 · HLV thêm học viên → học viên nối máy và tập xong
   expect(rec).toMatchObject({ dayName: done.dayName, date: TODAY });
   expect(rec.entries[0].name).toHaveLength(80);
 });
+
+/* bộ xác thực ảo (như Face ID) cho một trang; khoá của nó chuyển sang máy khác để mô phỏng iCloud Keychain */
+async function virtualAuth(page) {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('WebAuthn.enable');
+  const { authenticatorId } = await cdp.send('WebAuthn.addVirtualAuthenticator', { options: { protocol: 'ctap2', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true } });
+  return { cdp, authenticatorId };
+}
+async function shareCredentials(from, to) {
+  const { credentials } = await from.cdp.send('WebAuthn.getCredentials', { authenticatorId: from.authenticatorId });
+  for (const credential of credentials) await to.cdp.send('WebAuthn.addCredential', { authenticatorId: to.authenticatorId, credential });
+}
+/* HLV thêm Lan và lấy thẻ; Lan nối máy và tập một buổi; đợi buổi đã lên máy chủ */
+async function lanTrains(app, hub, device) {
+  await seedHlv(app); await registerHlv(app, hub);
+  await app.click('hub-add'); await app.page.fill('#hub-ten', 'Lan'); await app.click('hub-add-go');
+  const code = await app.page.locator('#hub-code').inputValue(); await app.page.keyboard.press('Escape'); await app.flushed();
+  const hv = await device();
+  const d = basicPlan().days[0]; const done = session(d, TODAY, [[d.exercises[0], [[40, 8]]]]);
+  await hv.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Lan', color: 0 }] }, states: { p1: state({ days: [d], sessions: [done], settings: { pushServer: hub.url } }) } });
+  await hv.more('drive'); await fakeCamera(hv.page, code); await hv.click('hub-reg');
+  await expect(hv.toast()).toContainText('Đã nối với HLV · Lan');
+  const { i, dk } = (await hv.state()).settings.sync;
+  await expect.poll(async () => (await hub.req(`/s/doi?hv=${i}&since=0`, 'GET', null, `Bearer v.${i}.${dk}`)).j.recs.map(r => r.id), { timeout: 15000 }).toEqual([done.id]);
+  return { hv, code, done, i };
+}
+
+test('BR-24.4 · máy học viên bật khôi phục bằng Face ID; máy trống khôi phục đủ buổi tập chỉ bằng Face ID', async ({ app, hub, device }) => {
+  const { hv, done } = await lanTrains(app, hub, device);
+  const pass = await virtualAuth(hv.page);
+  await hv.click('hub-pk-add');
+  await expect(hv.toast()).toContainText('Đã bật khôi phục bằng Face ID');
+
+  const fresh = await device(); const passFresh = await virtualAuth(fresh.page);
+  await shareCredentials(pass, passFresh);
+  await fresh.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] }, states: { p1: state({ settings: { pushServer: hub.url } }) } });
+  await fresh.more('drive'); await fresh.click('hub-restore');
+  await expect(fresh.toast()).toContainText('Đã nối với HLV · Lan');
+  await expect.poll(async () => (await fresh.state()).sessions.map(x => x.id), { timeout: 15000 }).toEqual([done.id]);
+});
+
+test('BR-24.4 · máy trống không có Face ID: quét lại thẻ học viên vẫn khôi phục đủ buổi tập', async ({ app, hub, device }) => {
+  const { code, done } = await lanTrains(app, hub, device);
+  const fresh = await device();
+  await fresh.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] }, states: { p1: state({ settings: { pushServer: hub.url } }) } });
+  await fresh.more('drive'); await fakeCamera(fresh.page, code); await fresh.click('hub-reg');
+  await expect(fresh.toast()).toContainText('Đã nối với HLV · Lan');
+  await expect.poll(async () => (await fresh.state()).sessions.map(x => x.id), { timeout: 15000 }).toEqual([done.id]);
+});
+
+test('BR-24.4 · máy chưa bật Face ID cho học viên nào: khôi phục bằng Face ID báo lỗi, không nối máy', async ({ app, hub, device }) => {
+  await seedHlv(app); await registerHlv(app, hub);
+  const fresh = await device(); await virtualAuth(fresh.page);
+  await fresh.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] }, states: { p1: state({ settings: { pushServer: hub.url } }) } });
+  await fresh.more('drive'); await fresh.click('hub-restore');
+  await expect(fresh.toast()).toContainText('Không dùng được Face ID');
+  expect((await fresh.state()).settings.sync).toBeUndefined();
+});

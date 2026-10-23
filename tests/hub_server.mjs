@@ -15,7 +15,7 @@ const storage = {
   sql: { exec(q, ...b) { const st = db.prepare(q); const rows = /^\s*(select|with)/i.test(q) ? st.all(...b) : (st.run(...b), []); return { toArray: () => rows, one: () => rows[0] }; } }
 };
 const HK = process.env.HK;
-const hub = new Hub({ storage, blockConcurrencyWhile: f => f() }, { HLV_HASH: crypto.createHash('sha256').update(HK).digest('base64url') });
+const hub = new Hub({ storage, blockConcurrencyWhile: f => f() }, { HLV_HASH: crypto.createHash('sha256').update(HK).digest('base64url'), RP_ID: process.env.RP_ID, RP_ORIGIN: process.env.RP_ORIGIN });
 
 http.createServer((rq, rs) => {
   const chunks = []; rq.on('data', c => chunks.push(c));

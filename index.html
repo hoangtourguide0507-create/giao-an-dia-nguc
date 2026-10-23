@@ -2795,7 +2795,7 @@ function refreshWarm(i) { const box = $('#warm-' + i); if (box && state.active) 
 function getSet(i, j) { const en = state.active.entries[i]; return j === 'drop' ? en.drop : en.sets[+j]; }
 
 /* ---------- đồng hồ nghỉ ---------- */
-const PUSH_SERVER = 'https://gadn-push.hoangtourguide0507.workers.dev'; /* PA-23: máy chủ thông báo dựng sẵn cho cả nhóm */
+const PUSH_SERVER = 'https://gadn-push.sakutara.workers.dev'; /* PA-23: máy chủ thông báo dựng sẵn cho cả nhóm */
 const isIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const isStandalone = () => !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
 const pushBase = () => String(state.settings.pushServer || PUSH_SERVER || '').trim().replace(/\/+$/, '');
@@ -4919,8 +4919,43 @@ async function hubPair(body) {
   const r = await fetch(J.s + '/s/noi', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ i: J.i, k: J.k, tb: /iPhone|iPad/.test(navigator.userAgent) ? 'iPhone' : 'Máy học viên' }) });
   const j = await r.json().catch(() => ({}));
   if (r.status !== 200) { toast(j.loi || 'Thẻ không đúng hoặc đã bị khoá'); return false; }
-  state.settings.sync = { s: J.s, i: J.i, dk: j.dk, ten: j.ten };
-  save(); closeSheet(); render(true); toast(`Đã nối với HLV · ${j.ten}`); hubFlushSoon(); return true;
+  return hubJoin(J.s, J.i, j.dk, j.ten);
+}
+/* nối máy học viên (bằng thẻ hoặc passkey): lưu khoá, rồi kéo lại buổi đã gửi trước đó (khôi phục khi máy trống) */
+async function hubJoin(s, i, dk, ten) {
+  state.settings.sync = { s, i, dk, ten };
+  save(); closeSheet(); render(true); toast(`Đã nối với HLV · ${ten}`); hubFlushSoon();
+  await hubRestoreSelf(); return true;
+}
+async function hubRestoreSelf() {
+  const sy = state.settings.sync; if (hubRole() !== 'hv') return;
+  const r = await hubCall('/s/doi?hv=' + encodeURIComponent(sy.i) + '&since=0', null, 'GET');
+  if (r.s !== 200) return;
+  for (const rec of r.j.recs) if (rec.k.startsWith('buoi:')) await hubApplySession(profiles.active, rec);
+}
+/* PA-34.4 · passkey (Face ID / vân tay): bật trên máy học viên; máy trống khôi phục bằng chữ ký passkey, không cần thẻ */
+const hubAnon = async (path, body) => { const r = await fetch(pushBase() + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) }); return { s: r.status, j: await r.json().catch(() => ({})) }; };
+async function hubPasskeyAdd() {
+  if (hubRole() !== 'hv') return;
+  const sy = state.settings.sync;
+  try {
+    const t = await hubCall('/s/pk/thach', null);
+    const c = await navigator.credentials.create({ publicKey: {
+      challenge: unb64u(t.j.chal), rp: { id: location.hostname, name: 'Giáo Án Địa Ngục' },
+      user: { id: new TextEncoder().encode(sy.i), name: sy.ten || sy.i, displayName: sy.ten || sy.i },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }], authenticatorSelection: { residentKey: 'required', userVerification: 'required' }, attestation: 'none', timeout: 60000 } });
+    const r = await hubCall('/s/pk/dky', { cred: b64u(new Uint8Array(c.rawId)), pub: b64u(new Uint8Array(c.response.getPublicKey())), cdj: b64u(new Uint8Array(c.response.clientDataJSON)), chal: t.j.chal });
+    toast(r.s === 200 ? 'Đã bật khôi phục bằng Face ID' : (r.j.loi || 'Không bật được khôi phục'));
+  } catch (e) { toast('Không bật được khôi phục bằng Face ID trên máy này'); }
+}
+async function hubPasskeyRestore() {
+  try {
+    const t = await hubAnon('/s/pk/thach');
+    const a = await navigator.credentials.get({ publicKey: { challenge: unb64u(t.j.chal), rpId: location.hostname, userVerification: 'required', timeout: 60000 } });
+    const r = await hubAnon('/s/pk/vao', { cred: b64u(new Uint8Array(a.rawId)), ad: b64u(new Uint8Array(a.response.authenticatorData)), cdj: b64u(new Uint8Array(a.response.clientDataJSON)), sig: b64u(new Uint8Array(a.response.signature)), chal: t.j.chal });
+    if (r.s !== 200) { toast(r.j.loi || 'Không khôi phục được'); return; }
+    await hubJoin(pushBase(), r.j.id, r.j.dk, r.j.ten);
+  } catch (e) { toast('Không dùng được Face ID trên máy này. Hãy quét lại thẻ học viên.'); }
 }
 /* gửi các buổi đã tập chưa gửi (hoặc đã sửa sau lần gửi trước); buổi đang tập dở không gửi. Trạng thái trong state.sync.sent */
 const hubRev = s => s.finishedAt || s.startedAt;
@@ -4939,9 +4974,9 @@ async function hubFlush() {
 }
 function hubCardHtml() {
   if (hubRole() === 'hv') return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã nối với HLV ${esc(state.settings.sync.ten || '')}. Buổi tập đã lưu tự gửi lên máy chủ.</p>
-    <div class="row"><button class="btn ghost" data-act="hub-unlink">Ngắt kết nối trên máy này</button></div></div>`;
+    <div class="row"><button class="btn gold" data-act="hub-pk-add">Bật khôi phục bằng Face ID</button><button class="btn ghost" data-act="hub-unlink">Ngắt kết nối trên máy này</button></div></div>`;
   if (!hubOn()) return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>HLV: quét mã QR HLV để đăng ký (chỉ làm một lần). Học viên: quét thẻ học viên của HLV.</p>
-    <div class="row"><button class="btn gold" data-act="hub-reg">Quét mã QR</button></div></div>`;
+    <div class="row"><button class="btn gold" data-act="hub-reg">Quét mã QR</button><button class="btn" data-act="hub-restore">Khôi phục bằng Face ID</button></div></div>`;
   return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã đăng ký làm HLV. Thêm học viên bằng thẻ QR; thẻ dùng được lâu dài.</p>
     <div class="row"><button class="btn gold" data-act="hub-add">Thêm học viên</button><button class="btn" data-act="hub-reg">Quét mã</button><button class="btn ghost" data-act="hub-unlink">Ngắt đăng ký trên máy này</button></div></div>`;
 }
@@ -4995,6 +5030,7 @@ async function hubApplySession(pid, rec) {
   const i = st.sessions.findIndex(x => x.id === s.id);
   if (i >= 0 && hubRev(st.sessions[i]) >= rec.t) return;
   if (i >= 0) st.sessions[i] = s; else st.sessions.push(s);
+  st.sync = st.sync || { sent: {} }; st.sync.sent[s.id] = rec.t;
   if (pid === profiles.active) { save(); render(true); return; }
   st.updatedAt = Date.now(); await LDB.put('kv', stateKey(pid), clone(st));
 }
@@ -5424,6 +5460,8 @@ const handlers = {
   'acc-copy': () => copyOrShareCode(ui.accCred, 'Tài khoản Giáo Án Địa Ngục'),
   'hub-reg': () => qrScanSheet('hub'),
   'hub-add': () => hubAddSheet(),
+  'hub-pk-add': () => hubPasskeyAdd(),
+  'hub-restore': () => hubPasskeyRestore(),
   'hub-add-go': () => hubAddGo(),
   'hub-unlink': () => confirmSheet({ title: 'Ngắt kết nối trên máy này?', text: 'Chỉ xoá khoá trên máy này. Dữ liệu trên máy chủ vẫn giữ nguyên; quét lại thẻ để nối lại.', ok: 'Ngắt', danger: true, onOk: () => { state.settings.sync = {}; save(); render(true); toast('Đã ngắt kết nối trên máy này'); } }),
   'drv-hv': t => drvHvSheet(t.dataset.id),

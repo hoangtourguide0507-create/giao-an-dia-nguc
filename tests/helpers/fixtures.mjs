@@ -141,7 +141,7 @@ export const test = base.extend({
   /* máy chủ đồng bộ giả: chạy tests/hub_server.mjs với một khoá HLV ngẫu nhiên; mỗi test một máy chủ riêng */
   hub: async ({}, use) => {
     const port = 21000 + Math.floor(Math.random() * 20000), hk = randomBytes(32).toString('base64url');
-    const proc = spawn(process.execPath, [fileURLToPath(new URL('../hub_server.mjs', import.meta.url)), String(port)], { stdio: ['ignore', 'pipe', 'inherit'], env: { ...process.env, HK: hk } });
+    const proc = spawn(process.execPath, [fileURLToPath(new URL('../hub_server.mjs', import.meta.url)), String(port)], { stdio: ['ignore', 'pipe', 'inherit'], env: { ...process.env, HK: hk, RP_ID: 'localhost', RP_ORIGIN: `http://localhost:${process.env.PORT || 4173}` } });
     await new Promise((res, rej) => { proc.stdout.once('data', res); proc.once('error', rej); });
     currentHub = port;
     const req = async (path, method = 'GET', body, auth) => { const r = await fetch(`http://localhost:${port}${path}`, { method, headers: { 'Content-Type': 'application/json', ...(auth ? { Authorization: auth } : {}) }, body: body ? JSON.stringify(body) : undefined }); return { s: r.status, j: await r.json().catch(() => ({})) }; };
