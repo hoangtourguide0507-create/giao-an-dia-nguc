@@ -424,6 +424,22 @@ test('BR-28.1 · máy HLV thứ hai đăng nhập bằng cùng QR HLV: hồ sơ 
   expect(JSON.parse((await selfRecs(hub, 'plan@hlv'))[0].d).plan.map(x => x.n)).toEqual(P.days.map(x => x.name));
 });
 
+/* BR-28.8: cài lại app, hồ sơ mặc định đã đổi tên (không còn là “Tôi”) vẫn nhận sl:tu-tap làm hồ sơ HLV, không tạo hồ sơ mới */
+test('BR-28.8 · máy HLV mới (hồ sơ mặc định đổi tên) tải sl:tu-tap làm hồ sơ HLV, không tạo hồ sơ thêm', async ({ app, hub, device }) => {
+  const P = basicPlan(), d = P.days[0];
+  const done = session(d, TODAY, [[d.exercises[0], [[40, 8]]]]);
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] }, states: { p1: state({ days: P.days, sessions: [done] }) } });
+  await registerHlv(app, hub);
+  await expect.poll(async () => (await selfRecs(hub, 'buoi:')).map(r => r.id), { timeout: 15000 }).toEqual([done.id]);
+  const b = await device();
+  await b.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0 }] }, states: { p1: state() } });
+  await registerHlv(b, hub);
+  await expect.poll(async () => (await b.state()).sessions.map(x => x.id), { timeout: 20000 }).toEqual([done.id]);
+  expect((await b.profiles()).list.map(p => p.id)).toEqual(['p1']);
+  expect((await b.state()).settings.sync.self).toBe('p1');
+  expect(await hvRecords(hub)).toHaveLength(0);
+});
+
 /* BR-28.4 (PA-44): đổi hồ sơ HLV khi hồ sơ HLV cũ có dữ liệu → hồ sơ cũ thành học viên có thẻ, buổi tập của nó chuyển lên học viên mới;
    học viên được chọn mất thẻ và dữ liệu trên máy chủ (BR-24.20); hồ sơ được chọn trở thành hồ sơ tập của HLV và đang mở */
 test('BR-28.4 · đổi hồ sơ HLV có dữ liệu: buổi tập của hồ sơ HLV cũ chuyển lên học viên mới, học viên được chọn bị gỡ khỏi máy chủ', async ({ app, hub }) => {

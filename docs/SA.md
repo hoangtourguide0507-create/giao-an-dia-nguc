@@ -240,6 +240,7 @@ Máy chủ Apps Script (`drive/Code.gs`), liên kết `GAL1`, tài khoản tên 
 - Gửi buổi: `hubFlush` lấy các buổi có `finishedAt` mà `state.sync.sent[id] !== hubRev(buổi)` (`hubRev = finishedAt || startedAt`), gửi tối đa 20 buổi bằng `POST /s/ghi` (`k = buoi:<id>`, `d` là JSON của buổi), rồi đánh dấu đã gửi. Chạy khi `save()` (debounce 1,5 s), khi mở app (1,6 s), khi hiện lại app và khi có mạng (`online`). Lỗi mạng thì giữ nguyên để lần sau thử lại.
 
 ### 7.9 Hồ sơ tập của HLV trên máy chủ (PA-44)
+- Quy tắc: hồ sơ HLV trên máy (`settings.sync.self`) luôn ứng với `HLV_SELF = 'sl:tu-tap'`; `hubSelfPick` xoá bản cũ trên máy chủ rồi hồ sơ mới thừa kế id này.
 - Bản duy nhất: `tv.id = 'tu-tap'`, `kieu = 'sl'` → khoá `sl:tu-tap`, tạo một lần bởi `hubSelfMake` (`/s/tv/them`, 409 coi như đã có) và đánh dấu `settings.sync.selfMade`. Máy chủ không đổi: vẫn chỉ HLV ghi/đọc được `sl:`, không báo đẩy cho `sl:`.
 - Máy HLV đẩy: buổi tập qua `hubFlush` khi hồ sơ HLV là hồ sơ đang mở (`hid = HLV_SELF`); giáo án qua `planTargets(sy)` (học viên theo `map` + `[HLV_SELF, hồ sơ HLV]`). `hubSelfMake` đặt `planH[HLV_SELF]` = giáo án trống nếu hồ sơ trống, để máy trống không đè giáo án trên máy chủ.
 - Máy HLV kéo: `hubPullSelf` (gọi trong `hubSync`) đọc `GET /s/doi?hv=sl:tu-tap&since=settings.sync.selfSeq`. Buổi → `hubApplySession(pid)` (đúng cả khi hồ sơ không mở). Giáo án: `hubSelfPlan` → hồ sơ trống thì `hubAdoptPlan`; hồ sơ có dữ liệu và đang mở thì `hubApplyPlan`; không mở thì lưu `settings.sync.selfPlan` và áp dụng khi mở (`hubPullSelf`).
@@ -247,6 +248,7 @@ Máy chủ Apps Script (`drive/Code.gs`), liên kết `GAL1`, tài khoản tên 
 - Lỗi giữa chừng: bước (1) lưu `map` trước khi đẩy buổi, nên thử lại không tạo thẻ thứ hai; bước (3) không chạy nếu (1) hoặc (2) lỗi.
 - Ảnh: chưa đồng bộ (chờ thiết kế gắn ảnh vào bài tập; xem BR-28.6).
 - Không đè giáo án trống (BR-28.7): `planH[mã]` phải được đặt **trước** khi học viên vào `map` (`hubAdopt`) và **cùng lúc** với `selfMade` (`hubSelfMake`), vì `save()` gọi `hubPushPlans` bất kỳ lúc nào. `planTargets` chỉ gồm hồ sơ HLV khi `selfMade`. `hubPushPlans` bỏ qua (và ghi `planH`) giáo án trống của mục chưa từng đồng bộ. `hubEnsure` bật cờ `hubEnsuring` trước mọi lần chờ mạng.
+- Hồ sơ HLV sau khi cài lại (BR-28.8): `hubSelfResolve()` chạy đầu `hubEnsure`, trước `hubSelfMake`. Nếu `settings.sync.self` chưa có: chọn `hlvSelf()` (hồ sơ “Tôi”), không có thì hồ sơ `p1` chưa gắn thẻ (`map`), không có nữa mới tạo hồ sơ “Tôi” mới; ghi `sync.self` để đổi tên hồ sơ không làm mất liên kết. Buổi tập và giáo án của `sl:tu-tap` về hồ sơ đó qua `hubPullSelf` như cũ.
 
 ## 8. File sao lưu
 > **ĐÃ BỎ (PA-36, 23/10/2026)**: file sao lưu và khôi phục đã gỡ (PA-36). Không còn định dạng file `so-ta`/`gadn-sync` nào được đọc. Mục này giữ lại để tra cứu dữ liệu cũ.
