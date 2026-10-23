@@ -12,7 +12,7 @@ test('trang Tài khoản: thẻ hồ sơ + danh mục các mục; bấm vào m�
   await expect(app.view().locator('.ap-stats')).toContainText('3buổi đã tập');
   await expect(app.view().locator('.ap-stats')).toContainText('3tuần liên tục');
   const rows = app.view().locator('.grow');
-  await expect(rows).toHaveCount(10);
+  await expect(rows).toHaveCount(9);   /* sao lưu & khôi phục bằng file đã gỡ (PA-36) */
   await expect(app.view().locator('.gh')).toHaveText(['Đồng bộ & dữ liệu', 'Tập luyện', 'Giao diện', 'Khác']);
   await expect(rows.filter({ hasText: 'Chỉ số cơ thể' })).toContainText('Cao 172 cm');
   await expect(rows.filter({ hasText: 'Lưu ý form khi tập' })).toContainText('Đầy đủ');

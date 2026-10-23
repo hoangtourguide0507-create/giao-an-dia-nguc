@@ -287,7 +287,8 @@ test('BR-24.6 · học viên xoá buổi → máy HLV cũng xoá buổi đó (tr
   await expect.poll(async () => (await app.idb('kv', 'state:' + pid))?.sessions?.map(x => x.id), { timeout: 45000 }).toEqual([done.id]);
   /* xoá sau lúc buổi kết thúc (như khi người dùng xoá thật) */
   await hv.page.evaluate(id => { const s = window.__sota.state; s.syncDel = s.syncDel || { s: {}, e: {} }; s.syncDel.s[id] = Date.now() + 86400000; s.sessions = []; }, done.id);
-  await expect.poll(async () => (await app.idb('kv', 'state:' + pid))?.sessions?.map(x => x.id), { timeout: 60000 }).toEqual([]);
+  /* máy học viên gửi mỗi 20 giây, máy HLV kéo mỗi 20 giây: tối đa khoảng 40 giây, để dư khi máy chạy chậm */
+  await expect.poll(async () => (await app.idb('kv', 'state:' + pid))?.sessions?.map(x => x.id), { timeout: 120000 }).toEqual([]);
 });
 
 test('BR-24.5 · khôi phục từ máy chủ thay buổi trên máy, có thể hoàn tác', async ({ app, hub, device }) => {

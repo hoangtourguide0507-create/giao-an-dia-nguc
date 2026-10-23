@@ -238,13 +238,7 @@ Máy chủ Apps Script (`drive/Code.gs`), liên kết `GAL1`, tài khoản tên 
 - Gửi buổi: `hubFlush` lấy các buổi có `finishedAt` mà `state.sync.sent[id] !== hubRev(buổi)` (`hubRev = finishedAt || startedAt`), gửi tối đa 20 buổi bằng `POST /s/ghi` (`k = buoi:<id>`, `d` là JSON của buổi), rồi đánh dấu đã gửi. Chạy khi `save()` (debounce 1,5 s), khi mở app (1,6 s), khi hiện lại app và khi có mạng (`online`). Lỗi mạng thì giữ nguyên để lần sau thử lại.
 
 ## 8. File sao lưu
-```js
-// cả máy
-{ app:'so-ta', v:3, exportedAt, profiles, states: { <pid>: State }, state /* hồ sơ đang xem */, photos: { <id>: dataURL } }
-// 1 người
-{ app:'so-ta', v:3, one:true, exportedAt, person:{ id, name, color }, state, photos }
-```
-Khôi phục cả máy xoá ảnh cũ không còn dùng, ghi ảnh trong file, ghi trạng thái từng hồ sơ; khôi phục 1 người chỉ đụng một hồ sơ, lọc ảnh bằng `okPhoto`, lưu `syncUndo`. Lưu file: `navigator.share({files})` nếu được (không áp dụng trong claude.ai), không thì `saveFile` (`window.claude.use('downloads')` hoặc thẻ `<a download>`).
+> **ĐÃ BỎ (PA-36, 23/10/2026)**: file sao lưu và khôi phục đã gỡ (PA-36). Không còn định dạng file `so-ta`/`gadn-sync` nào được đọc. Mục này giữ lại để tra cứu dữ liệu cũ.
 
 ## 9. Offline & tài nguyên ngoài
 - `sw.js` (`CACHE = 'gadn-v53'`): `install` thêm `SHELL` (bỏ qua file lỗi) + `skipWaiting`; `activate` xoá cache khác tên + `clients.claim`; `fetch`: GET cùng nguồn — bỏ qua `.bin`; điều hướng = network-first, lưu `./index.html`, lỗi mạng trả bản lưu; còn lại cache-first rồi lưu. Font Google: trả bản lưu ngay + làm mới ngầm. `notificationclick`, `push` (hiện thông báo từ máy chủ thông báo). Service worker chỉ đăng ký khi `https:` và `<html data-pwa="1">`.
@@ -335,20 +329,7 @@ Các file `tests/test_<pa>.py` (`sync form focus pa10 pa11 pa14 pa16 pa18 pa19 p
 | BR-23 Chia sẻ kết quả với PT | `share.spec.mjs`, `session.spec.mjs` |
 
 ## 13. Chia sẻ kết quả buổi tập với PT (PA-32)
-Mã: `shEncode` / `shDecode`, `shareSheet`, `shareReceive`, `shareApply`, `shMerge`, `ensureUids`, `shareHash` (`index.html`, khối PA-32 trước khối PA-21).
-- **Gói nhị phân** (không JSON): byte đầu = `SH_VER` (1) + 128 nếu phần sau đã nén `deflate-raw` (chỉ nén khi ngắn hơn). Phần thân: `uid` (chuỗi), tên học viên (chuỗi), ngày (số ngày từ 01/01/2020, varint), số buổi (≤ 6); mỗi buổi: phút trong ngày (bắt đầu), phút tập, cờ deload, tên buổi, số bài (≤ 40); mỗi bài: **byte chỉ số kho bài** (`LIB2`, 255 = bài tự đặt tên, sau đó gửi tên), **mã đồng bộ** (`canonKey`, 5 ký tự, rỗng nếu không có), ghi chú, rồi các **nhóm set**: `[số lần][kg × 10 varint][rep varint][byte cờ: bit 0–1 dr, bit 2–4 ef (e/m/h/f), bit 5 drop]`. Chuỗi là varint độ dài + UTF-8.
-- **Chuỗi lặp**: set giống hệt (kg, rep, dr, ef, drop) liên tiếp gộp thành một nhóm.
-- **Link**: `location.origin + location.pathname + '#cs=' + mã` (base64url, `b64u`/`unb64u`). Fragment không gửi lên máy chủ.
-- **Quy tắc với `LIB2`**: chỉ số kho bài là vị trí trong `LIB2`. **Chỉ được thêm bài vào cuối `LIB2`**, không chèn/xoá/đổi chỗ, nếu không link cũ sai tên bài.
-- **userid**: `profiles.list[].uid`, gán bởi `ensureUids()` một lần (ưu tiên `state.drv.id`, rồi mã hồ sơ khác `p1`, rồi `uid()`). Không đổi `id` nội bộ.
-- **Gửi**: `shareSheet(date, sid?)` lọc buổi của ngày (hoặc một buổi), dựng link, vẽ QR bằng `drawQR`; "Gửi link" dùng `copyOrShareCode`; "Gửi ảnh QR" dùng `navigator.share` với file PNG, không có thì tải về.
-- **Nhận**: `shareHash()` (khi khởi động và `hashchange`), `qrScanSheet` (camera: nhận ngay khi giải được link), `receiveQrImage` (ảnh tải lên), `handleCodeText` (dán). Mọi đường đi đều gọi `shareReceive(token)`: giải mã (kiểm phiên bản, số buổi/bài/set), bật `profiles.coach` (on), tìm hồ sơ cùng `uid`, mở bảng xem trước.
-- **Ghi (`shareApply`)**: không ghi khi hồ sơ đang có `state.active`. Chụp `prev`, dựng `ns` từ bản sao rồi `shMerge(ns, d)`: ghi dấu xoá (`syncDelOf(ns).s`) cho buổi cũ cùng ngày, thêm buổi mới (`shSession`: khớp bài theo `exKeys`/tên, bài kho chưa có thì `shAddPlan` vào ngày cùng tên buổi), cập nhật `currentKg` khi không có buổi nào mới hơn của bài. Ghi vào `state` (hồ sơ đang mở) hoặc `LDB.put('kv', stateKey(pid), ns)`. `ui.shareUndo` giữ `prev` và `prevUid` để **Hoàn tác** (`shareUndo`).
-- **Gợi ý sau lưu buổi**: `saveSession` → `shareAskSheet(a)` khi không phải chế độ HLV và `settings.shareNoAsk` chưa bật; checkbox `#share-noask` đặt cờ đó.
-- **Lịch**: ô ngày trong `.mcal` mở `daySheet(date)` (danh sách buổi + chia sẻ cả ngày).
-- **Dữ liệu cũ & đồng bộ**: `uid` là trường thêm mới trong `profiles.list`, hồ sơ cũ được gán khi chia sẻ/nhận lần đầu. Gói Drive và sao lưu không đổi định dạng. Buổi nhận không có mã buổi gốc nên được cấp mã `sh…` mới.
-- **Offline**: không tài nguyên mới; `CACHE` đã tăng lên `gadn-v55`.
-- **Riêng tư**: ai có link/QR đều xem được buổi tập và tên học viên của ngày đó.
+> **ĐÃ BỎ (PA-36, 23/10/2026)**: đã gỡ (PA-36), thay bằng đồng bộ tự động qua máy chủ (§7.7–§7.8).
 
 ## 14. Phát hành
 1. Làm trên nhánh `pa-<số>-<tên>`; `npm run check` + `npm test` xanh; tăng `CACHE` trong `sw.js`.

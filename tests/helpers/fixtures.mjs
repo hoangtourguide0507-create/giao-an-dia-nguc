@@ -59,7 +59,7 @@ class App {
     if (name === 'settings') { await nav('more'); return; }
     await nav(name);
   }
-  /* mở một trang con trong Tài khoản: drive · backup · pack · pace · form · height · notif · skin · install · wipe */
+  /* mở một trang con trong Tài khoản: drive · pack · pace · form · height · notif · skin · install · wipe */
   async more(key) {
     await this.tab('more');
     /* khi bật chế độ HLV, tab này là Phòng HLV: vào Cài đặt bằng nút ⚙ */

@@ -1,4 +1,4 @@
-// Chuyển đổi dữ liệu bản cũ, chia sẻ qua bảng chia sẻ của điện thoại, sao chép thủ công, phím Esc, các trường hợp rìa.
+// Chuyển đổi dữ liệu bản cũ, sao chép thủ công, phím Esc, các trường hợp rìa.
 import { test, expect, sheetImage } from '../helpers/fixtures.mjs';
 import { state, basicPlan, ex, day, session, addDays, TODAY, PHOTO } from '../helpers/data.mjs';
 

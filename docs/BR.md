@@ -191,12 +191,7 @@ Test: `tests/app/drive.spec.mjs` (mã kiểu cũ bị từ chối), `tests/app/e
 > **ĐÃ BỎ (PA-35, 23/10/2026)**: đồng bộ Google Drive và mã liên kết `GAL1` đã gỡ khỏi app và khỏi repo (`drive/` đã xoá). Thay bằng [BR-24](#br-24-máy-chủ-đồng-bộ-mới-pa-34).
 
 ## BR-15 Sao lưu & khôi phục
-Test: `tests/app/backup.spec.mjs`, `tests/app/misc.spec.mjs`
-
-- **BR-15.1 Sao lưu**: 1 người → file cả máy; nhiều người → chọn **file của 1 người** (chỉ dữ liệu người đó) hoặc cả máy. File JSON gồm giáo án, buổi tập, số đo, ảnh máy, ảnh body; báo số buổi, số ảnh, dung lượng, ảnh thiếu. Lưu qua bảng chia sẻ (iPhone: Lưu vào Tệp/iCloud) hoặc tải file. Ghi nhận lần sao lưu (cho banner nhắc).
-- **BR-15.2 Khôi phục file cả máy** (xác nhận): thay toàn bộ người tập + ảnh; giữ cài đặt dùng chung; báo số ảnh khôi phục/thiếu. File kiểu cũ (1 trạng thái) thay dữ liệu người đang xem.
-- **BR-15.3 Khôi phục file 1 người**: thêm thành hồ sơ mới, hoặc thay một hồ sơ có sẵn (gợi ý trùng tên, xác nhận, **Hoàn tác**); hồ sơ khác không bị ảnh hưởng; ảnh không hợp lệ bị bỏ.
-- **BR-15.4** File không phải của app → báo lỗi. File `gadn-sync` (gói đồng bộ) → luồng gộp thủ công có xem trước, chọn hồ sơ, xử lý buổi trùng và hoàn tác (BR-14.7).
+> **ĐÃ BỎ (PA-36, 23/10/2026)**: sao lưu ra file, khôi phục từ file (cả máy và một người), banner và bộ đếm nhắc sao lưu đã gỡ. Dữ liệu đã nằm trên máy chủ đồng bộ (BR-24) và trên các máy đã nối.
 
 ## BR-16 Hướng dẫn bài tập & thư viện hình
 Test: `tests/app/guide.spec.mjs`
@@ -246,20 +241,7 @@ Test: `tests/app/notify.spec.mjs`, `tests/app/rest.spec.mjs`, `tests/test_push_s
 - **BR-22.5** Khi hết giờ nghỉ mà app đã mở: chuông + hộp báo trong app (BR-04.3), không gửi thêm thông báo hệ thống.
 
 ## BR-23 Chia sẻ kết quả buổi tập với PT
-Test: `tests/app/share.spec.mjs`, `tests/app/session.spec.mjs`, `tests/app/progress.spec.mjs`
-
-- **BR-23.1 Nội dung**: chia sẻ **các buổi của một ngày**: tên buổi, giờ bắt đầu, thời lượng, cờ deload; mỗi bài **có ít nhất 1 set đã tập** (bài chưa tập không gửi, bài ngoài giáo án vẫn gửi); mỗi set có kg, rep, mức độ khó/effort, cờ drop; ghi chú của bài nếu có. Kèm tên học viên, `userid` và ngày. **Không gửi**: giáo án, số đo, đau/chấn thương, cài đặt, liên kết Drive/tài khoản, ảnh, video, mức tạ "đang tập" của bài.
-- **BR-23.2 Cách gửi**: bảng "Chia sẻ với PT" nêu rõ gửi gì / không gửi gì, có QR to, **Gửi link** (bảng chia sẻ của máy, không có thì sao chép), **Gửi ảnh QR** và **Lưu ảnh QR**. QR chứa đúng link.
-- **BR-23.3 Link ngắn**: `https://gym.fiddle.vn/#cs=<mã>`; dữ liệu nằm sau `#` (không gửi lên máy chủ). Gói nhị phân, nén deflate-raw khi ngắn hơn, base64url. Test: ngày thường ≤ 350 ký tự, ngày nặng (10 bài × 5 set, nhiều ghi chú) ≤ 700 ký tự. Vượt 700 thì bảng báo hãy chia sẻ từng buổi.
-- **BR-23.4 userid**: trường `uid` trong danh sách hồ sơ. Hồ sơ chưa có `uid` được gán một lần: mã Drive của học viên (`drv.id`) nếu đã liên kết; hồ sơ khác `p1` dùng mã hồ sơ; `p1` (hoặc hồ sơ chưa có gì) dùng mã ngẫu nhiên. Mã `p1` không bao giờ được dùng làm userid. Sau khi có `uid` thì giữ nguyên.
-- **BR-23.5 PT nhận**: mở link (đổi `#`, hoặc tải lại trang bằng link), **quét QR bằng camera** hoặc **tải ảnh có QR** (ở Tài khoản → Quét mã liên kết, hoặc Phòng HLV → ⌗ Nhận kết quả). Máy nhận **tự bật chế độ HLV** (không hỏi). Xem trước "Kết quả của {tên} ngày dd/mm: n buổi · n bài · n set · tấn tạ" kèm số buổi sẽ thay. Link/QR/ảnh hỏng → "Không đọc được kết quả chia sẻ", không đổi dữ liệu.
-- **BR-23.6 Khớp học viên**: hồ sơ có cùng `uid` → "Cập nhật vào {tên}"; chưa có → chọn **Gộp vào {học viên có sẵn}** (hồ sơ đó nhận `uid` của link) hoặc **Tạo học viên mới** (tên từ link, giáo án trống).
-- **BR-23.7 Ghi đè theo ngày**: xoá các buổi của học viên trong **đúng ngày** được chia sẻ (có ghi dấu xoá) rồi ghi buổi nhận; ngày khác giữ nguyên; giáo án, số đo, đau không đổi. **Hoàn tác** (chỉ máy PT) khôi phục buổi cũ, bài vừa thêm và `uid`. Hồ sơ đang có buổi tập dở → từ chối, báo "Đang tập dở".
-- **BR-23.8 Định danh bài**: bài có mã đồng bộ Drive → khớp theo mã; không có → khớp theo tên; bài **trong kho bài** mà giáo án PT chưa có → **tự thêm vào giáo án** (vào ngày tập cùng tên buổi, chưa có thì tạo ngày đó); bài tự đặt tên ngoài kho → chỉ ghi lịch sử, không thêm vào giáo án (như BR-03.17).
-- **BR-23.9 Mức tạ**: sau khi nhận, bài khớp được cập nhật mức tạ "đang tập" = kg cao nhất trong các set chính, **chỉ khi** buổi nhận không cũ hơn buổi mới nhất của bài ở hồ sơ đó (buổi deload không cập nhật).
-- **BR-23.10 Chọn ngày trong lịch**: ở Tiến độ → lịch **tháng**, chạm ngày có buổi tập → bảng ngày liệt kê các buổi và nút **Chia sẻ cả ngày này với PT**. Chi tiết buổi cũng có nút **Chia sẻ với PT** (chỉ buổi đó). Lịch tuần không có chạm ngày.
-- **BR-23.11 Gợi ý sau buổi tập** (học viên, chưa bật chế độ HLV): sau "Lưu buổi tập" hiện bảng **Chia sẻ với PT** / **Xong** và ô **Đừng hỏi lại** (lưu theo hồ sơ). Toast lưu buổi không còn nút Hoàn tác ở máy học viên.
-- **BR-23.12 Chưa làm**: chia sẻ ảnh học viên chụp; gửi tự động; chia sẻ nhiều ngày một link; đồng bộ ngược từ PT sang học viên; bật/tắt "Đừng hỏi lại" trong Cài đặt (hiện chỉ đặt từ bảng gợi ý).
+> **ĐÃ BỎ (PA-36, 23/10/2026)**: chia sẻ kết quả buổi tập với PT bằng link và QR đã gỡ. Dữ liệu đã đi tự động qua máy chủ đồng bộ (BR-24.6).
 
 ## BR-24 Máy chủ đồng bộ mới (PA-34, đang làm theo bước)
 > Trạng thái: **bước 1 (PA-34.1)** HLV đăng ký và thêm học viên; **bước 2 (PA-34.2)** học viên nối máy bằng thẻ và buổi tập tự gửi; **bước 3 (PA-34.3)** máy HLV kéo buổi tập về đúng hồ sơ học viên (thông báo đẩy để bước 3b); **bước 4 (PA-34.4)** khôi phục khi máy trống bằng Face ID hoặc thẻ học viên; **bước 5 (PA-34.5)** chuyển học viên có sẵn và giáo án HLV → học viên; **PA-34.6** thông báo đẩy, xoá buổi, khôi phục thủ công có hoàn tác (BR-24.5), trạng thái gửi (BR-24.15). Các bước còn lại ghi trong [epics/2026-10-22.md](epics/2026-10-22.md), hạng mục 4.

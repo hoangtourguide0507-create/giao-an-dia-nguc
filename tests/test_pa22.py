@@ -62,7 +62,7 @@ with sync_playwright() as p:
             pg.locator('.nav [data-tab="more"]').click(); pg.wait_for_timeout(400)
             ok(pg.locator('.acc-prof .ap-stats > div').count() == 3, 'Tài khoản: thẻ hồ sơ có 3 số liệu')
             rows = pg.ev("() => [...document.querySelectorAll('.grow')].map(x => x.dataset.k)")
-            ok(all(k in rows for k in ['drive', 'backup', 'pack', 'pace', 'form', 'height', 'notif', 'skin', 'wipe']), f'Tài khoản: danh mục đủ các mục cài đặt ({len(rows)})')
+            ok(all(k in rows for k in ['drive', 'pack', 'pace', 'form', 'height', 'notif', 'skin', 'wipe']), f'Tài khoản: danh mục đủ các mục cài đặt ({len(rows)})')
             ok(pg.ev("() => document.documentElement.scrollHeight") < 844 * 3, 'Tài khoản gọn (dưới 3 màn hình)')
             pg.locator('.grow[data-k="skin"]').click(); pg.wait_for_timeout(400)
             ok(pg.locator('.subhead .h1').inner_text() == 'Giao diện & hiệu ứng' and pg.locator('.skin').count() == 2, 'Trang con Giao diện: 2 giao diện')
