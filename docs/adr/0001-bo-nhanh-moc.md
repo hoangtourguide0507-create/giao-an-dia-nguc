@@ -47,3 +47,4 @@ Mỗi lần chủ repo duyệt một PA, mốc được lưu bằng một nhánh
 | v21 | `c7fcfe2` | 2026-10-23 | Duyệt PA-36: gỡ sao lưu/khôi phục bằng file, chia sẻ với PT, nhắc sao lưu; đồng bộ HLV ⇄ học viên qua máy chủ Cloudflare (PA-34, PA-35 Drive đã gỡ) |
 | v22 | `89b23bf` | 2026-10-23 | Duyệt PA-37 (gồm PA-33, PA-33b, PA-34.x, PA-35, PA-36): đồng bộ HLV ⇄ học viên qua máy chủ Cloudflare, gỡ Google Drive và sao lưu/chia sẻ bằng file, dọn dữ liệu rác, hồ sơ HLV (BR-24.20) |
 | v23 | `f83fb54` | 2026-10-23 | Duyệt BR-25 (nhánh `ccr-0187bb96-wulwdh`): bỏ chế độ HLV/HV, vai lấy từ mã QR, Phòng HLV ở đầu Trang chủ, mig30. Playwright chưa chạy (chủ repo cho duyệt) |
+| v24 | `5031028` | 2026-10-23 | Duyệt PA-39: Tài khoản HLV — thẻ QR học viên (xem, tạo nếu thiếu, chia sẻ ảnh/mã), bỏ "Vai trên máy này" và "Đồng bộ với HLV", khối Đăng nhập bằng QR hoặc dán mã (CACHE gadn-v71). Playwright đã chạy trên nhánh: npm test 195/195, tests/chay.sh xanh |
