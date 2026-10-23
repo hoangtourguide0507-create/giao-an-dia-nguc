@@ -19,7 +19,7 @@
 - Giao diện và nội dung viết bằng tiếng Việt.
 
 ## Kiểm thử
-- `bash tests/chay.sh`: dựng bản thử `tests/site/` (chèn móc `window.__ev`), kiểm cú pháp, chạy các kiểm thử Playwright và kiểm thử 2 máy chủ. Phải xanh trước khi đẩy nhánh và trước khi gộp.
+- `bash tests/chay.sh`: dựng bản thử `tests/site/` (chèn móc `window.__ev`), kiểm cú pháp, chạy các kiểm thử Playwright và kiểm thử 2 máy chủ. Phải xanh trước khi đẩy nhánh và trước khi gộp. Từ 23/10/2026 chủ repo cho phép duyệt (ghi mốc) khi chưa chạy Playwright; khi đó dòng mốc ghi rõ "Playwright chưa chạy".
 - **Playwright chỉ viết hoặc chạy trên local hoặc remote** (phiên trên máy chủ, tương tác qua điện thoại được). **Trong môi trường cloud (container tạm của claude.ai/code) không viết và không chạy Playwright**, dù yêu cầu có nói gì — `tests/app/*.spec.mjs`, `tests/test_*.py`, `npm run test:app`, `bash tests/chay.sh`. Khi đó báo cáo ghi rõ phần Playwright chưa làm, để chủ repo chạy trên local hoặc remote. Các kiểm tra nhẹ (`npm run check`, `npm run test:sw`) vẫn chạy được trên cloud. Chi tiết: [README](README.md#quy-tắc-cho-ai-test-playwright).
 - Tính năng mới: thêm `tests/test_pa<số>.py` và đưa vào danh sách mặc định trong `tests/chay.sh` (khi làm trên local hoặc remote; trên cloud thì chỉ ghi nhận việc này là còn lại).
 
