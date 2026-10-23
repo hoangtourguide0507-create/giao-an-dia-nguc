@@ -31,4 +31,4 @@ Không bao giờ tự gộp vào `main`.
 - Không tự nhảy bài khi xong; có thanh số bài và nút "Sang bài N".
 - Đề xuất trước khi làm thay đổi lớn hoặc mơ hồ; với thay đổi rõ ràng thì làm luôn.
 - Không thêm tính năng chủ repo đã bỏ: thẻ story, báo cáo tháng, giọng HLV, đấu với lần trước, điểm thưởng/cheat meal, gửi giáo án/dữ liệu bằng QR hoặc tin nhắn, thông báo qua Phím tắt iPhone.
-- Giáo án và mọi dữ liệu chỉ đi qua Google Drive (Apps Script), tự động; mã QR chỉ còn dùng cho mã liên kết Drive (GAL1).
+- Giáo án và dữ liệu đi qua máy chủ Cloudflare (`push-server/`, các đường `/s/*`), tự động; mã QR dùng cho mã HLV (`GAH1`) và thẻ học viên (`GAV1`). Google Drive đã bỏ (PA-35).

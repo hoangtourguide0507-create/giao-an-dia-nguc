@@ -101,21 +101,6 @@ test('banner nhắc chụp ảnh body sau 28 ngày → mở mục Ảnh trong Ti
   await expect(app.view()).toContainText('Ảnh trước / sau');
 });
 
-test('banner nhắc sao lưu khi đã có ≥5 buổi; “Để sau” ẩn 7 ngày', async ({ app }) => {
-  const P = basicPlan();
-  const ss = [1, 3, 5, 8, 10].map(i => session(P.chest, addDays(TODAY, -i), [[P.bench, [[40, 10]]]]));
-  await app.seed({ state: state({ days: P.days, sessions: ss }) });
-  await expect(app.view().locator('#todos')).toContainText('Nhắc sao lưu định kỳ');
-  await expect(app.view().locator('#todos')).toContainText('Bạn đã ghi 5 buổi tập trên máy này.');
-  await app.click('backup-snooze');
-  await expect(app.toast()).toHaveText('Sẽ nhắc lại sau 7 ngày');
-  await expect(app.view()).not.toContainText('Nhắc sao lưu định kỳ');
-  /* đã sao lưu lâu và tập thêm 5 buổi thì nhắc lại kèm số buổi mới */
-  const st = state({ days: P.days, sessions: [...ss, ...[11, 12, 13, 14, 15].map(i => session(P.back, addDays(TODAY, -i), [[P.lat, [[45, 10]]]]))], settings: { lastBackupAt: Date.parse('2026-09-01T00:00:00Z'), lastBackupSess: 5 } });
-  await app.seed({ state: st });
-  await expect(app.view().locator('#todos')).toContainText('Bạn đã tập thêm 5 buổi từ lần sao lưu trước');
-});
-
 test('banner tải thư viện hình: “Để sau” ẩn 7 ngày', async ({ app }) => {
   const P = basicPlan();
   await app.seed({ state: state({ days: P.days }) });

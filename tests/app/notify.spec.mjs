@@ -94,7 +94,7 @@ test('kết nối máy chủ thông báo: kiểm tra địa chỉ, xin quyền, 
   expect(await page.evaluate(() => window.__subscribed.userVisibleOnly)).toBe(true);
   await expect.poll(() => calls.map(c => c.path)).toEqual(expect.arrayContaining(['/vapid', '/sub', '/remind']));
   const remind = calls.find(c => c.path === '/remind').body;
-  expect(remind.rules).toEqual([{ dow: 0, hm: '20:00', title: 'Cuối tuần rồi', body: 'Nhập cân nặng, số đo tuần này và tải bản sao lưu dữ liệu.', tag: 'weekly' }]);
+  expect(remind.rules).toEqual([{ dow: 0, hm: '20:00', title: 'Cuối tuần rồi', body: 'Nhập cân nặng, số đo tuần này.', tag: 'weekly' }]);
   /* gửi thử */
   await app.click('push-try');
   await expect(app.toast()).toHaveText('Đã gửi · thông báo sẽ hiện trong vài giây');
@@ -113,7 +113,7 @@ test('kết nối máy chủ thông báo: kiểm tra địa chỉ, xin quyền, 
   await card(app).locator('#n-weekly').uncheck();
   await card(app).locator('#n-drive').uncheck();
   await card(app).locator('#n-remind').uncheck();
-  expect((await app.state()).settings).toMatchObject({ nWeekly: false, nDrive: false, nRemind: false });
+  expect((await app.state()).settings).toMatchObject({ nWeekly: false, nSync: false, nRemind: false });
   /* bắt đầu nghỉ → hẹn giờ trên máy chủ; bỏ qua nghỉ → huỷ */
   await app.tab('home');
   await app.view().locator('.hero .tgo').click();
@@ -149,26 +149,4 @@ test('máy đã đăng ký đẩy từ trước: tự đăng ký nhắc khi mở
   expect(await page.evaluate(() => !!window.__subscribed)).toBe(true);
   await app.click('push-try');
   await expect(app.toast()).toContainText('Gửi thử không được');
-});
-
-test('HLV/học viên nhận tin qua Drive: máy chủ thông báo được gọi khi giáo án đổi hoặc học viên tập xong', async ({ app, device, gas, page }) => {
-  await mockNotifications(page, { perm: 'granted', subscribed: true });
-  const calls = await mockPushServer(page);
-  const P = basicPlan();
-  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state({ settings: { pushServer: PUSH_URL, notify: true } }), p2: state({ days: P.days }) } });
-  await app.more('drive');
-  await app.click('acc-hlv-new');
-  await page.fill('#hn-sv', gas.url); await page.fill('#hn-key', gas.ma); await page.fill('#hn-ten', 'Hoàng'); await page.fill('#hn-u', 'hoang'); await page.fill('#hn-p', 'matkhau1'); await page.fill('#hn-p2', 'matkhau1');
-  await app.click('acc-hlv-go');
-  /* chờ lần đẩy đầu tiên xong (đã ghi dấu giáo án đã gửi) rồi mới sửa */
-  await expect.poll(async () => (await app.idb('kv', 'state:p2'))?.drv?.nP, { timeout: 20000 }).toBeTruthy();
-  /* HLV đổi giáo án của Lan rồi đồng bộ → báo cho học viên */
-  const st = await app.idb('kv', 'state:p2'); st.days[0].name = 'Ngực mới'; st.updatedAt = Date.now() + 9999;
-  await page.evaluate(async st => { await new Promise(res => { const r = indexedDB.open('so-ta', 1); r.onsuccess = () => { const t = r.result.transaction('kv', 'readwrite'); t.objectStore('kv').put(st, 'state:p2'); t.oncomplete = res; }; }); }, st);
-  await app.flushed();
-  await app.reload();
-  await app.more('drive'); await app.click('drv-now');
-  await expect.poll(() => calls.filter(c => c.path === '/notify').length, { timeout: 15000 }).toBeGreaterThan(0);
-  const n = calls.filter(c => c.path === '/notify').pop().body;
-  expect(n).toMatchObject({ tag: 'drive', title: 'HLV Hoàng vừa cập nhật giáo án' });
 });

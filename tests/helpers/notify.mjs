@@ -1,7 +1,7 @@
 // Giả lập Notification API, service worker + PushManager và máy chủ thông báo (Cloudflare Worker) cho test.
 export const PUSH_URL = 'https://push.test';
 /* địa chỉ máy chủ thông báo dựng sẵn trong app (PA-23) */
-export const DEFAULT_PUSH = 'https://gadn-push.hoangtourguide0507.workers.dev';
+export const DEFAULT_PUSH = 'https://gadn-push.sakutara.workers.dev';
 
 /* perm: 'default' | 'granted' | 'denied' | 'none' (không có Notification) · reg: có đăng ký service worker không */
 export async function mockNotifications(page, { perm = 'default', reg = true, subscribed = false } = {}) {

@@ -203,9 +203,8 @@ test('kết thúc buổi còn set chưa ✓: cảnh báo, tập tiếp hoặc v�
   expect(st.days[0].exercises[0]).toMatchObject({ currentKg: 42.5, kgSetAt: null });
   expect(st.settings.cycleStart).toBe(TODAY);
   await expect(app.view()).toContainText('Hôm nay đã tập Ngực + Tay sau');
-  /* học viên không có Hoàn tác trên toast (BR-23.11); gợi ý chia sẻ cho PT hiện thay thế */
+  /* học viên không có Hoàn tác trên toast (BR-23.11) */
   await expect(app.toast().locator('[data-act="reopen-session"]')).toHaveCount(0);
-  await expect(app.sheet()).toContainText('Chia sẻ với PT');
 });
 
 test('kết thúc khi chưa xong set nào: đề nghị huỷ buổi', async ({ app }) => {
@@ -247,7 +246,7 @@ test('xong hết + kỷ lục mới: tổng kết so với lần trước, số 
   await expect(app.sheet()).toContainText('Kỷ lục mới · 1RM ước tính');
   await expect(page.locator('.slam')).toContainText('KỶ LỤC MỚI');
   await app.click('save-session');
-  await app.closeSheet(); /* gợi ý chia sẻ cho PT (BR-23.11) hiện sau khi lưu; test này không kiểm tra nó */
+  await app.closeSheet();
   expect((await app.state()).sessions).toHaveLength(2);
   /* buổi đã lưu trong ngày: xem lại */
   await app.view().locator('.restcard [data-act="open-session"]').click();

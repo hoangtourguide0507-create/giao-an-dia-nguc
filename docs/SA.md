@@ -15,14 +15,13 @@ flowchart LR
   GH["GitHub Pages<br/>main / (root) · CNAME"] -->|index.html, sw.js, icon, exdb-1/2.bin| Phone
   UI -->|ảnh minh hoạ| RAW["raw.githubusercontent.com<br/>free-exercise-db"]
   UI -->|font| GF["Google Fonts"]
-  UI <-->|"POST text/plain JSON (§7)"| GAS["Apps Script<br/>drive/Code.gs"]
   GAS --> DRV[("Google Drive của HLV<br/>GiaoAnDiaNguc/")]
   UI <-->|"POST JSON /sub /schedule /notify…"| PUSH["Cloudflare Worker + Durable Object<br/>push-server/"]
   PUSH -->|Web Push| SW
   UI <-->|"window.claude.use('db','user','downloads')"| CL["claude.ai Artifact<br/>(tuỳ chọn)"]
 ```
 
-- **Không có backend của nhà phát triển.** Toàn bộ logic app chạy trên trình duyệt; dữ liệu ở IndexedDB của máy. Hai máy chủ nhỏ **do HLV tự triển khai trên tài khoản của mình** (không bắt buộc): `drive/Code.gs` (đồng bộ + tài khoản, §7) và `push-server/` (thông báo đẩy, §7.6). Tuỳ chọn đồng bộ tài khoản Claude khi chạy trong Artifact (§10).
+- **Không có backend của nhà phát triển.** Toàn bộ logic app chạy trên trình duyệt; dữ liệu ở IndexedDB của máy. Một máy chủ nhỏ **do HLV tự triển khai trên tài khoản Cloudflare của mình** (không bắt buộc): `push-server/` (đồng bộ HLV ⇄ học viên và thông báo đẩy, §7.6–§7.8). Tuỳ chọn đồng bộ tài khoản Claude khi chạy trong Artifact (§10).
 - **Phân phối**: GitHub Pages dựng từ `main` / `(root)`; tên miền riêng qua `CNAME`. Bản xem thử một nhánh: `https://raw.githack.com/hoangtourguide0507-create/giao-an-dia-nguc/<nhánh>/index.html`.
 - **Không có bước build.** Sửa `index.html` là phát hành; tăng `CACHE` trong `sw.js` để máy người dùng nhận bản mới.
 
@@ -32,7 +31,6 @@ flowchart LR
 |---|---|
 | `index.html` | Toàn bộ app (~5.340 dòng): `<style>` (2 giao diện `amber`/`gold`), HTML khung (header + chuông, `#view`, thanh nghỉ, thanh dưới `#nav-bar`, bảng `#sheet`, hộp báo `#alarm`, `#toast`), 2 thư viện nhúng (qrcode-generator 1.4.4 MIT, jsQR 1.4.0 Apache-2.0), script chính (IIFE `'use strict'`, thẻ `<script>` lớn nhất) |
 | `sw.js` | Service worker: cache vỏ app, network-first cho trang, cache-first cho tài nguyên, font; hiện thông báo đẩy và mở lại app khi bấm thông báo |
-| `drive/Code.gs`, `drive/appsscript.json`, `drive/HUONG-DAN-TRIEN-KHAI.md` | Máy chủ đồng bộ + tài khoản chạy trên Google Apps Script (§7) |
 | `push-server/` (`src/index.js`, `wrangler.toml`, `HUONG-DAN.md`) | Máy chủ Web Push trên Cloudflare Workers (§7.6) |
 | `thiet-ke/pa22-mockup.html` | Bản mockup thiết kế PA-22 (tham khảo, không phát hành vào app) |
 | `.claude/agents/*.md` | Các agent làm việc của dự án (duyệt PA, kiểm chứng y khoa, kiểm thử, máy chủ, triển khai PA, UX/UI) |
@@ -188,26 +186,9 @@ stateDiagram-v2
 
 ## 7. Đồng bộ qua Google Drive, tài khoản, thông báo
 
-### 7.1 Máy chủ Apps Script (`drive/Code.gs`, `PHIEN_BAN = 3`)
-- Triển khai thành *Ứng dụng web* (chạy dưới quyền HLV, truy cập "Bất kỳ ai"); app gọi `fetch(POST, Content-Type: text/plain;charset=utf-8, body JSON)` để tránh preflight CORS, theo chuyển hướng, hết hạn 45 s (`drvCall`). Trả `{ ok, … }` hoặc `{ ok:false, loi }`; `xungDot:true` khi bản đã đổi (app thử lại một lần với `rev` mới).
-- Dữ liệu trong thư mục Drive `GiaoAnDiaNguc/`: `thanh-vien.json` (danh sách học viên; mã bí mật chỉ lưu dạng băm), `hoc-vien/<id>/hv.json` (phần học viên gửi lên) và `hlv.json` (phần HLV gửi xuống), `anh/<mã băm>` (ảnh máy tập dùng chung, không trùng), `sao-luu/YYYY-MM-DD/` (tự sao lưu mỗi đêm, giữ 14 ngày). Properties: `THU_MUC_ID`, `MA_HLV` (32 ký tự), `HLV_TK`.
-- Giới hạn: ảnh ≤ 3 MB, gói gửi ≤ 25 MB, tải ảnh về ≤ ~20 MB/lần; `LockService` bao quanh ghi.
-- Hành động (`a`): `ping` · `dn` (đăng nhập) · `hlv.tao` · `tv.them` · `tv.tk` · `tv.ds` · `tv.doima` · `tv.tat` / `tv.bat` · `dx` (đăng xuất) · `mk.doi` · `keo` (kéo, kèm `biet:{hv,hlv}` = số bản đã biết) · `day` (đẩy `goi`, kèm `vai`, `rev`) · `anh.co` / `anh.day` / `anh.lay` (hỏi/đẩy/lấy ảnh theo mã băm).
-- Quyền: HLV dùng **MÃ HLV** hoặc phiên HLV; học viên dùng **mã bí mật của mình** (từ mã liên kết) hoặc phiên đăng nhập; mỗi tài khoản tối đa 8 phiên.
-- Hàm chạy tay trong Apps Script: `caiDat` (tạo thư mục, MÃ HLV, lịch sao lưu), `xemMaHLV`, `doiMaHLV`, `xoaTaiKhoanHLV`.
-
-### 7.2 Liên kết và vòng đồng bộ trong app
-- Mỗi hồ sơ có `state.drv = { id, m, … }` (`id` học viên trên Drive, `m` mã bí mật). Máy HLV dùng `drvCred` = (`drvUrl`, `drvKey`); máy học viên dùng (`drv.u`, `drv.m`) hoặc phiên đăng nhập.
-- `drvAuto(force)` (khi mở app, khi quay lại app, `drvSoon` = 20 s sau lần lưu; ≥ 15 s giữa hai lần; hoãn khi có bảng mở): máy HLV `drvEnsureAll` (mọi hồ sơ chưa có `drv` thì `tv.them`), rồi `drvSyncOne(pid)` cho từng hồ sơ; không đồng bộ khi hồ sơ đang tập (`active`).
-- `drvSyncOne`: `keo` → nếu phía kia có bản mới (`rev` > đã thấy) thì `cleanPkg` → kéo ảnh thiếu (`drvPullPhotos`, tối đa 6 vòng) → `syncMerge` → ghi; sau đó đóng gói `syncPack` đầy đủ, so băm với `sentH`; khác thì `drvPushPhotos` (hỏi `anh.co`, đẩy lô ≤ 4 MB `anh.day`) rồi `day`. Máy HLV mới (`drv.restore`) hoặc HLV dùng 2 máy (bản `hlv.json` mới hơn) thì gộp bản HLV từ Drive trước khi gửi.
-- Mã liên kết `GAL1.<id>.<i>.<n>.<thân base64url>` (`drvCode`): thân chứa link máy chủ, id, mã bí mật, tên, địa chỉ máy chủ thông báo; chia nhiều mã QR khi dài. `drvLinkReceive` xem trước rồi `drv-link`. Từ chối nếu dán vào máy HLV hoặc đang tập dở.
-- Đọc mã: `handleCodeText` (regex `GA[QSPL][12]\.…` rồi `joinQrParts`), camera `qrScanSheet` (jsQR), ảnh `receiveQrImage`. **Mọi kiểu mã khác `GAL1` → `oldCode()`**.
-- **Mã băm ảnh (PA-25)**: `strHash` = `<base36>_<độ dài base36>` (khớp `reMaAnh_` của `Code.gs`: `[A-Za-z0-9_-]{4,64}`). Bản trước dùng dấu `.` nên `anh.day` bị từ chối (VD-33). `normHash` đổi mã cũ → mới bằng `replace('.', '_')` (cùng nội dung thì cùng mã); áp ở `cleanEx` (`ph`), `cleanPkg` (khoá `photos`) và danh sách ảnh đã gửi `drvUp:<url>` (`drvPushPhotos`, ghi lại khi có mã cũ). Mã ảnh nội bộ trong IndexedDB (`photos`) là `uid()`, không phải mã băm nên không cần đổi; `sentH` cũ lệch một lần → gửi lại một lần rồi ổn định.
-
-### 7.3 Tài khoản
-- `acc-hlv-go` → `hlv.tao` (cần MÃ HLV) rồi `dn`; `acc-login` → `dn` (tên đăng nhập + mật khẩu) trả `{ vai, ma (phiên), id, ten, hlv… }`; `accApply` gắn phiên: HLV (`drvUrl/drvKey/acc`, bật `coach`, `accRoster(login)` tạo hồ sơ cho từng học viên trên Drive, bỏ hồ sơ trống) hoặc học viên (tìm/tạo hồ sơ có `drv.id` đúng).
-- Mật khẩu: băm có muối phía máy chủ; sai 8 lần liền khoá 15 phút; tên đăng nhập 3–30 ký tự `[a-z0-9._-]`; mật khẩu ≥ 6 ký tự. `accHet()` nhận biết phiên bị thu hồi qua nội dung lỗi (thu hồi / hết hạn / cần đăng nhập lại) → giữ dữ liệu, dừng đồng bộ, hiện *Đăng nhập lại*.
-- Quản lý học viên: `tv.ds`, `tv.them`, `tv.tk` (cấp/đặt lại), `tv.tat/bat` (khoá/mở), `tv.doima` (mã mới); `acc-copy` gửi thông tin đăng nhập qua `copyOrShareCode`.
+### 7.1–7.3 Google Drive và Apps Script (ĐÃ BỎ, PA-35)
+Máy chủ Apps Script (`drive/Code.gs`), liên kết `GAL1`, tài khoản tên + mật khẩu và đồng bộ qua thư mục Drive đã gỡ hoàn toàn khỏi app và repo. Dữ liệu trên máy đã có được giữ nguyên; máy chủ thay thế là `push-server/` (xem §7.7 và §7.8).
+Động cơ gộp `syncPack`/`syncMerge`/`cleanPkg` vẫn dùng cho giáo án và buổi tập (§7.4).
 
 ### 7.4 Gói đồng bộ và động cơ gộp (dùng chung cho Drive và file)
 - Gói đầy đủ (`syncPack`): `{ app:'gadn-sync', v, role:'coach'|'student', link:{pk, cn}, name, at, plan|null, sessions[], del:{s,e}, photos? }`. Khoá nhận diện bài dùng chung giữa máy: `shKey(id) = '~' + 5 ký tự FNV-1a`, `canonKey = shKey(srcId || id)`, `exKeys` gồm cả `alias`.
@@ -238,14 +219,26 @@ stateDiagram-v2
 - Chưa có WebSocket theo quyết định của anh (dùng Web Push và hỏi `/s/doi` định kỳ).
 - Kiểm thử: `tests/test_hub_sync.mjs` (49 kiểm tra, PA-33) và `tests/test_hub_pa33b.mjs` (34 kiểm tra: passkey gồm chữ ký thật do khoá P-256 giả lập ký theo DER, ảnh, hạn mức), đều chạy đúng `push-server/src/index.js` với SQLite thật (`node:sqlite`), được gọi trong `bash tests/chay.sh`.
 
+### 7.8 Máy chủ đồng bộ mới trong app (PA-34.1)
+- Mục *Tài khoản & đồng bộ* có thêm thẻ *Máy chủ đồng bộ mới* (`hubCardHtml`). Khoá HLV lưu ở `settings.sync = { s, hk }` (`sync` thuộc `GLOBAL_KEYS`).
+- `hubCode` nhận `GAH1` (đăng ký HLV) từ camera (`qrScanSheet`), ô dán (`handleCodeText`) và ảnh (`receiveQrImage`); `GAV1` trên máy HLV chỉ báo chưa dùng ở đây.
+- Khoá học viên: `k = base64url(HMAC-SHA256(hk, "gadn-hv:<mã>:<epoch>"))[0:32]`, `skh = base64url(SHA-256(k))` gửi lên `/s/tv/them`. `epoch` hiện luôn 0; đổi mã (PA sau) sẽ tăng `epoch`.
+- Gọi máy chủ: `hubCall(path, body, method)` với `Authorization: Bearer h.<hk>`.
+- Kiểm thử: `tests/app/hub.spec.mjs` dùng máy chủ thật `tests/hub_server.mjs` (chạy `push-server/src/index.js`), nối qua fixture `hub`.
+- **PA-34.2**: `hubRole()` = `hlv` (có `settings.sync.hk`) hoặc `hv` (có `settings.sync.dk`, `i`, `ten`). Học viên quét `GAV1` → `hubPair` gọi `POST /s/noi` và lưu `settings.sync`. `hubCall` dùng `Bearer v.<mã>.<khoá máy>` cho học viên.
+- **PA-34.3** (máy HLV): `hubLinkProfile(mã, tên)` tạo hồ sơ cho học viên và ghi `settings.sync.map[mã] = mã hồ sơ`. `hubPull` gọi `GET /s/doi?since=<seq>` (chỉ HV, không `sl:`), đọc `buoi:` có `hv` trong `map`, rồi `hubApplySession` ghi buổi vào hồ sơ (bản mới hơn theo `hubRev`). Hồ sơ đang mở ghi qua `state`, các hồ sơ khác qua `LDB`. `settings.sync.seq` là số thứ tự đã kéo. Kéo khi mở app, khi có mạng, khi quay lại app, và mỗi 20 giây khi app hiện. Buổi nhận về được làm sạch bằng `cleanPkg` trước khi ghi. **Chưa làm**: thông báo đẩy cho HLV (bước 3b).
+- **PA-34.4** (khôi phục): `hubJoin(máy chủ, mã, khoá máy, tên)` lưu `settings.sync` rồi `hubRestoreSelf` kéo `GET /s/doi?hv=<mã>` và ghi các buổi vào hồ sơ đang mở (đánh dấu đã gửi). Thẻ học viên và passkey đều đi qua `hubJoin`. Passkey: `hubPasskeyAdd` (`navigator.credentials.create`, `rp.id = location.hostname`, gửi `/s/pk/dky`) và `hubPasskeyRestore` (`credentials.get` không cần `allowCredentials`, gửi `/s/pk/vao`). Máy trống dùng `pushBase()` làm địa chỉ máy chủ (cài đặt máy chủ thông báo, mặc định `PUSH_SERVER`).
+- **PA-34.5** (chuyển và giáo án): `hubMigrateSheet`/`hubMigrateGo` tạo thẻ cho hồ sơ có sẵn (`hubNewCard`, `settings.sync.map`), rồi `hubPushPlans` gửi `plan@hlv` (`serPlan`, `strHash` để bỏ qua khi không đổi, lưu `settings.sync.planH`). Máy học viên nhận bằng `hubApplyPlan` → `cleanPkg` → `syncMerge` (cùng đường Drive; `settings.sync.planT` là thời điểm bản đã nhận), lưu `state.sync.prevDays` để hoàn tác. Máy HLV gửi giáo án khi `save()` (debounce 1,5 s) và khi mở app.
+- **Xung đột (PA-35)**: giáo án được so bằng `planKey` (bỏ `currentKg`, `kgSetAt`). Ba phía: `state.sync.planBase` (bản đã thống nhất), máy này, bản HLV (`plan@hlv`). Trong `hubApplyPlan`: bằng nhau → chỉ ghi nhận; máy trống, hoặc máy chưa đổi so với `planBase` → `applyRemotePlan` (gộp như Drive, lưu `prevDays`); còn lại → `state.sync.conflict = {plan, t}` và hiện `hubConflictHtml` (bảng `planCompare`). Chọn HLV → `applyRemotePlan`; chọn máy này → `planBase = planKey(giáo án máy)`. Buổi tập: không hỏi, quy tắc ở BR-24.18.
+- **PA-34.6**: `hubFlush` gửi buổi (`buoi:<mã>`, `d` = JSON buổi), buổi đã xoá (`xoa:1`, từ `syncDel.s`, đánh dấu trong `state.sync.gone`); `ev` chỉ khi có buổi mới sau `settings.sync.at` (thời điểm nối máy), `backfill` khi không có buổi mới. `hubApplySession` xoá buổi khi bản xoá không cũ hơn bản đã sửa. Thông báo: `/s/dk` (`hubSubscribe`, `off` khi tắt công tắc). Khôi phục thủ công: `hubRestoreManual` lưu `state.sync.undo`. Gửi lại định kỳ mỗi 20 giây khi app hiện.
+- **Chưa làm (PA-34)**: học viên chưa tải trước dữ liệu bằng service worker khi nhận thông báo (dữ liệu được kéo khi mở app); kiểm trên iPhone thật.
+- Chưa làm trong 34.5: gửi `backfill` (để lịch sử không báo khi có thông báo đẩy, bước 3b); xem trước khác biệt giáo án khi nối lần đầu (hiện áp dụng luôn, có nút hoàn tác).
+- **Điều kiện passkey**: máy chủ phải có `RP_ID` đúng tên miền trang (mặc định `gym.fiddle.vn`) và `RP_ORIGIN` đúng `https://gym.fiddle.vn`. Mở app từ tên miền khác (ví dụ `github.io`) thì passkey không chạy; vẫn khôi phục được bằng thẻ.
+- `PUSH_SERVER` đổi sang `https://gadn-push.sakutara.workers.dev` (worker mới của HLV). Hai file test giữ địa chỉ cũ cũng đổi theo.
+- Gửi buổi: `hubFlush` lấy các buổi có `finishedAt` mà `state.sync.sent[id] !== hubRev(buổi)` (`hubRev = finishedAt || startedAt`), gửi tối đa 20 buổi bằng `POST /s/ghi` (`k = buoi:<id>`, `d` là JSON của buổi), rồi đánh dấu đã gửi. Chạy khi `save()` (debounce 1,5 s), khi mở app (1,6 s), khi hiện lại app và khi có mạng (`online`). Lỗi mạng thì giữ nguyên để lần sau thử lại.
+
 ## 8. File sao lưu
-```js
-// cả máy
-{ app:'so-ta', v:3, exportedAt, profiles, states: { <pid>: State }, state /* hồ sơ đang xem */, photos: { <id>: dataURL } }
-// 1 người
-{ app:'so-ta', v:3, one:true, exportedAt, person:{ id, name, color }, state, photos }
-```
-Khôi phục cả máy xoá ảnh cũ không còn dùng, ghi ảnh trong file, ghi trạng thái từng hồ sơ; khôi phục 1 người chỉ đụng một hồ sơ, lọc ảnh bằng `okPhoto`, lưu `syncUndo`. Lưu file: `navigator.share({files})` nếu được (không áp dụng trong claude.ai), không thì `saveFile` (`window.claude.use('downloads')` hoặc thẻ `<a download>`).
+> **ĐÃ BỎ (PA-36, 23/10/2026)**: file sao lưu và khôi phục đã gỡ (PA-36). Không còn định dạng file `so-ta`/`gadn-sync` nào được đọc. Mục này giữ lại để tra cứu dữ liệu cũ.
 
 ## 9. Offline & tài nguyên ngoài
 - `sw.js` (`CACHE = 'gadn-v53'`): `install` thêm `SHELL` (bỏ qua file lỗi) + `skipWaiting`; `activate` xoá cache khác tên + `clients.claim`; `fetch`: GET cùng nguồn — bỏ qua `.bin`; điều hướng = network-first, lưu `./index.html`, lỗi mạng trả bản lưu; còn lại cache-first rồi lưu. Font Google: trả bản lưu ngay + làm mới ngầm. `notificationclick`, `push` (hiện thông báo từ máy chủ thông báo). Service worker chỉ đăng ký khi `https:` và `<html data-pwa="1">`.
@@ -259,8 +252,8 @@ Khôi phục cả máy xoá ảnh cũ không còn dùng, ghi ảnh trong file, g
 ## 11. Bảo mật & riêng tư
 - Chèn HTML luôn qua `esc()`; link video riêng chỉ mở khi bắt đầu `http(s)://`; `rel="noopener"`.
 - Dữ liệu nhận từ máy khác được làm sạch (§7.2, `decodePlan`), ảnh chỉ nhận data URL ảnh.
-- Dữ liệu chỉ rời máy tới: Google Drive/Apps Script **của chính HLV** (khi đã liên kết), máy chủ thông báo Cloudflare **của HLV** (chỉ tiêu đề/nội dung thông báo, thời điểm hẹn, endpoint đẩy, chủ đề băm), tải hình từ GitHub, font Google, và (tuỳ chọn) tài khoản Claude.
-- Mật khẩu không lưu trên máy (chỉ phiên); máy chủ lưu mật khẩu dạng băm có muối, mã bí mật dạng băm. Link máy chủ Apps Script mở "Bất kỳ ai" nên mọi thao tác đều đòi MÃ HLV / phiên / mã học viên.
+- Dữ liệu chỉ rời máy tới: máy chủ Cloudflare **của chính HLV** (khi đã nối), máy chủ thông báo Cloudflare **của HLV** (chỉ tiêu đề/nội dung thông báo, thời điểm hẹn, endpoint đẩy, chủ đề băm), tải hình từ GitHub, font Google, và (tuỳ chọn) tài khoản Claude.
+- Khoá HLV (trong mã QR) chỉ lưu trên máy HLV; máy chủ chỉ giữ băm. Khoá học viên và khoá máy chỉ lưu dạng băm. Không có mật khẩu.
 - Khôi phục file cả máy chưa làm sạch nội dung trạng thái (dựa vào `esc()` khi hiển thị) — VD-25.
 
 ## 12. Kiến trúc kiểm thử
@@ -300,7 +293,7 @@ scripts/
 Các file `tests/test_<pa>.py` (`sync form focus pa10 pa11 pa14 pa16 pa18 pa19 pa20 pa21 pa22`) cộng `tests/test_push_server.mjs` và `tests/test_drive_gas.js`. `chuan_bi.py` chép `index.html` sang `tests/site/` và chèn `window.__ev = eval` để các test chạy lệnh trong phạm vi IIFE. Chạy được bằng Python Playwright (`pip install playwright && playwright install chromium`). Bộ này **không đo coverage**; vai trò là giữ nguyên các hành vi PA trước đã chốt. Test của tính năng đã bỏ (báo cáo tháng, Phím tắt, gửi giáo án bằng mã) đã được cắt khỏi các file này khi gộp PA-15 với PA-22.
 
 ### 12.3 Máy chủ thật trong test
-`tests/gas_server.js` nạp **chính `drive/Code.gs`** vào `vm` với Drive/Properties/Lock/Utilities giả lập trong bộ nhớ, mở cổng HTTP và in `MA_HLV` ra stdout. Fixture `gas` chuyển yêu cầu tới `https://script.google.com/**` về máy chủ này, nên test đồng bộ/đăng nhập chạy qua đúng mã máy chủ (kể cả đặt lại mật khẩu, khoá, phiên hết hạn). Mỗi test một máy chủ riêng; fixture `device` mở thêm máy học viên với dữ liệu riêng.
+`tests/hub_server.mjs` chạy **chính `push-server/src/index.js`** với SQLite thật; fixture `hub` nối trình duyệt tới máy chủ này. Mỗi test một máy chủ riêng; fixture `device` mở thêm máy học viên với dữ liệu riêng. (Máy chủ Drive giả `tests/gas_server.js` đã gỡ, PA-35.)
 
 ### 12.4 Kết quả (22/10/2026)
 - `npm test`: **177 test app xanh + 4 `fixme`**, 7 test `sw.js` xanh (script `check` cú pháp OK).
@@ -336,24 +329,11 @@ Các file `tests/test_<pa>.py` (`sync form focus pa10 pa11 pa14 pa16 pa18 pa19 p
 | BR-23 Chia sẻ kết quả với PT | `share.spec.mjs`, `session.spec.mjs` |
 
 ## 13. Chia sẻ kết quả buổi tập với PT (PA-32)
-Mã: `shEncode` / `shDecode`, `shareSheet`, `shareReceive`, `shareApply`, `shMerge`, `ensureUids`, `shareHash` (`index.html`, khối PA-32 trước khối PA-21).
-- **Gói nhị phân** (không JSON): byte đầu = `SH_VER` (1) + 128 nếu phần sau đã nén `deflate-raw` (chỉ nén khi ngắn hơn). Phần thân: `uid` (chuỗi), tên học viên (chuỗi), ngày (số ngày từ 01/01/2020, varint), số buổi (≤ 6); mỗi buổi: phút trong ngày (bắt đầu), phút tập, cờ deload, tên buổi, số bài (≤ 40); mỗi bài: **byte chỉ số kho bài** (`LIB2`, 255 = bài tự đặt tên, sau đó gửi tên), **mã đồng bộ** (`canonKey`, 5 ký tự, rỗng nếu không có), ghi chú, rồi các **nhóm set**: `[số lần][kg × 10 varint][rep varint][byte cờ: bit 0–1 dr, bit 2–4 ef (e/m/h/f), bit 5 drop]`. Chuỗi là varint độ dài + UTF-8.
-- **Chuỗi lặp**: set giống hệt (kg, rep, dr, ef, drop) liên tiếp gộp thành một nhóm.
-- **Link**: `location.origin + location.pathname + '#cs=' + mã` (base64url, `b64u`/`unb64u`). Fragment không gửi lên máy chủ.
-- **Quy tắc với `LIB2`**: chỉ số kho bài là vị trí trong `LIB2`. **Chỉ được thêm bài vào cuối `LIB2`**, không chèn/xoá/đổi chỗ, nếu không link cũ sai tên bài.
-- **userid**: `profiles.list[].uid`, gán bởi `ensureUids()` một lần (ưu tiên `state.drv.id`, rồi mã hồ sơ khác `p1`, rồi `uid()`). Không đổi `id` nội bộ.
-- **Gửi**: `shareSheet(date, sid?)` lọc buổi của ngày (hoặc một buổi), dựng link, vẽ QR bằng `drawQR`; "Gửi link" dùng `copyOrShareCode`; "Gửi ảnh QR" dùng `navigator.share` với file PNG, không có thì tải về.
-- **Nhận**: `shareHash()` (khi khởi động và `hashchange`), `qrScanSheet` (camera: nhận ngay khi giải được link), `receiveQrImage` (ảnh tải lên), `handleCodeText` (dán). Mọi đường đi đều gọi `shareReceive(token)`: giải mã (kiểm phiên bản, số buổi/bài/set), bật `profiles.coach` (on), tìm hồ sơ cùng `uid`, mở bảng xem trước.
-- **Ghi (`shareApply`)**: không ghi khi hồ sơ đang có `state.active`. Chụp `prev`, dựng `ns` từ bản sao rồi `shMerge(ns, d)`: ghi dấu xoá (`syncDelOf(ns).s`) cho buổi cũ cùng ngày, thêm buổi mới (`shSession`: khớp bài theo `exKeys`/tên, bài kho chưa có thì `shAddPlan` vào ngày cùng tên buổi), cập nhật `currentKg` khi không có buổi nào mới hơn của bài. Ghi vào `state` (hồ sơ đang mở) hoặc `LDB.put('kv', stateKey(pid), ns)`. `ui.shareUndo` giữ `prev` và `prevUid` để **Hoàn tác** (`shareUndo`).
-- **Gợi ý sau lưu buổi**: `saveSession` → `shareAskSheet(a)` khi không phải chế độ HLV và `settings.shareNoAsk` chưa bật; checkbox `#share-noask` đặt cờ đó.
-- **Lịch**: ô ngày trong `.mcal` mở `daySheet(date)` (danh sách buổi + chia sẻ cả ngày).
-- **Dữ liệu cũ & đồng bộ**: `uid` là trường thêm mới trong `profiles.list`, hồ sơ cũ được gán khi chia sẻ/nhận lần đầu. Gói Drive và sao lưu không đổi định dạng. Buổi nhận không có mã buổi gốc nên được cấp mã `sh…` mới.
-- **Offline**: không tài nguyên mới; `CACHE` đã tăng lên `gadn-v55`.
-- **Riêng tư**: ai có link/QR đều xem được buổi tập và tên học viên của ngày đó.
+> **ĐÃ BỎ (PA-36, 23/10/2026)**: đã gỡ (PA-36), thay bằng đồng bộ tự động qua máy chủ (§7.7–§7.8).
 
 ## 14. Phát hành
 1. Làm trên nhánh `pa-<số>-<tên>`; `npm run check` + `npm test` xanh; tăng `CACHE` trong `sw.js`.
 2. Gửi link raw.githack để xem thử; chờ "Duyệt PA-x".
 3. `git merge --no-ff` vào `main` → GitHub Pages tự dựng → thêm dòng mốc `vN` (SHA trên `main`) vào [ADR 0001](adr/0001-bo-nhanh-moc.md).
-4. Máy chủ Drive/thông báo do HLV tự triển khai (`drive/HUONG-DAN-TRIEN-KHAI.md`, `push-server/HUONG-DAN.md`): sửa `Code.gs` thì dán lại và *Triển khai → Phiên bản mới* (URL giữ nguyên).
+4. Máy chủ đồng bộ và thông báo do HLV tự triển khai (`push-server/HUONG-DAN.md`).
 5. Số phiên bản hiển thị trong app cập nhật thủ công, không gắn với `CACHE` (VD-26).

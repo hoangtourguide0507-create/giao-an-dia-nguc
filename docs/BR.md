@@ -188,24 +188,10 @@ Test: `tests/app/drive.spec.mjs` (mã kiểu cũ bị từ chối), `tests/app/e
 - **BR-13.3** Link cũ `#nhap=<mã>` không còn nhập giáo án.
 
 ## BR-14 Đồng bộ HLV ⇄ học viên qua Google Drive
-Test: `tests/app/drive.spec.mjs`, `tests/app/account.spec.mjs`, `tests/app/syncfile.spec.mjs`, `tests/app/edge.spec.mjs`; máy chủ: `tests/test_drive_gas.js` (xem SA §7)
-
-- **BR-14.1 Mô hình**: HLV tự triển khai một máy chủ Google Apps Script (`drive/Code.gs`, hướng dẫn `drive/HUONG-DAN-TRIEN-KHAI.md`) lưu dữ liệu vào thư mục `GiaoAnDiaNguc` trên Drive của HLV. Mỗi học viên có một hồ sơ trên Drive, gồm phần HLV gửi xuống (giáo án, mức tạ) và phần học viên gửi lên (buổi tập, số đo…). Hai máy cùng vai thì báo lỗi.
-- **BR-14.2 Cách liên kết một học viên**: (a) **tài khoản đăng nhập** — cách chính, BR-21; (b) **mã liên kết `GAL1`** — HLV bấm "☁ Mã liên kết" trên thẻ học viên → *Gửi mã qua Zalo* (bảng chia sẻ hoặc sao chép; không sao chép được thì hiện ô để tự sao chép), hiện mã QR, hoặc lưu ảnh mã; học viên **dán mã / quét camera / chọn ảnh mã** → xem trước → *Liên kết*. Mã dán vào máy HLV, mã hỏng hoặc thiếu trang bị từ chối rõ ràng. HLV chưa cài Drive bấm mã liên kết thì được dẫn tới Tài khoản & đồng bộ.
-- **BR-14.3 Quản lý liên kết**: "Đồng bộ ngay"; *ngắt liên kết* (dữ liệu trên máy giữ nguyên, ngừng đồng bộ); *cấp mã mới* thì mã cũ hết hiệu lực. Kiểu cũ **MÃ HLV** (không đăng nhập): nhập link máy chủ + MÃ HLV 32 ký tự để kết nối, vẫn dùng song song với tài khoản.
-- **BR-14.4 Tự động**: máy HLV tự đưa **mọi hồ sơ** lên Drive (mỗi người một liên kết); đồng bộ chạy khi mở app, khi quay lại app, và 20 giây sau lần lưu gần nhất (tối thiểu 15 giây một lần; bỏ qua khi đang tập hoặc đang mở bảng); có nút "Đồng bộ ngay". Trạng thái hiện ở Tài khoản & đồng bộ và dòng phụ của mục: *Đang đồng bộ… · Đồng bộ lần cuối … · Lỗi: …* (lỗi mạng thì báo và thử lại được).
-- **BR-14.5 Học viên → HLV**: máy HLV giữ cấu trúc giáo án của HLV; nhận buổi tập, mức tạ mới hơn, bài học viên tự thêm; học viên xoá bài tự thêm thì HLV xoá theo.
-- **BR-14.6 HLV → học viên**: giáo án dựng lại theo HLV nhưng **giữ mã bài cũ** (lịch sử và bài học viên tự thêm không mất); bài HLV bỏ thì bỏ; ảnh máy tập đi kèm theo mã băm nội dung, không nhân đôi khi nhận lại; đồng bộ ảnh qua Drive thật chạy được (mã ảnh chỉ gồm chữ, số, `_`; mã cũ có dấu `.` tự được đổi sang mã mới, PA-25). HLV dùng 2 máy: máy kia gửi bản mới hơn thì gộp về trước khi gửi, không ghi đè.
-- **BR-14.7 Gộp buổi tập**: theo mã (bản sửa sau thắng); buổi **trùng** (cùng ngày + tên buổi, khác mã) → chọn Giữ máy này / máy kia / cả hai (mặc định bản nhiều set hơn). Xoá có ghi dấu (giữ 180 ngày) để máy kia xoá theo. Mức tạ theo buổi mới nhất (bỏ deload) trừ khi có mức tự nhập mới hơn. Đang tập dở thì không gộp. Có xem trước kết quả và **Hoàn tác** lần gộp gần nhất khi gộp thủ công qua file `gadn-sync` (BR-15.4).
-- **BR-14.8 Thông báo**: khi giáo án HLV đổi → báo học viên; khi học viên tập xong → báo HLV (cần máy chủ thông báo, BR-22).
+> **ĐÃ BỎ (PA-35, 23/10/2026)**: đồng bộ Google Drive và mã liên kết `GAL1` đã gỡ khỏi app và khỏi repo (`drive/` đã xoá). Thay bằng [BR-24](#br-24-máy-chủ-đồng-bộ-mới-pa-34).
 
 ## BR-15 Sao lưu & khôi phục
-Test: `tests/app/backup.spec.mjs`, `tests/app/misc.spec.mjs`
-
-- **BR-15.1 Sao lưu**: 1 người → file cả máy; nhiều người → chọn **file của 1 người** (chỉ dữ liệu người đó) hoặc cả máy. File JSON gồm giáo án, buổi tập, số đo, ảnh máy, ảnh body; báo số buổi, số ảnh, dung lượng, ảnh thiếu. Lưu qua bảng chia sẻ (iPhone: Lưu vào Tệp/iCloud) hoặc tải file. Ghi nhận lần sao lưu (cho banner nhắc).
-- **BR-15.2 Khôi phục file cả máy** (xác nhận): thay toàn bộ người tập + ảnh; giữ cài đặt dùng chung; báo số ảnh khôi phục/thiếu. File kiểu cũ (1 trạng thái) thay dữ liệu người đang xem.
-- **BR-15.3 Khôi phục file 1 người**: thêm thành hồ sơ mới, hoặc thay một hồ sơ có sẵn (gợi ý trùng tên, xác nhận, **Hoàn tác**); hồ sơ khác không bị ảnh hưởng; ảnh không hợp lệ bị bỏ.
-- **BR-15.4** File không phải của app → báo lỗi. File `gadn-sync` (gói đồng bộ) → luồng gộp thủ công có xem trước, chọn hồ sơ, xử lý buổi trùng và hoàn tác (BR-14.7).
+> **ĐÃ BỎ (PA-36, 23/10/2026)**: sao lưu ra file, khôi phục từ file (cả máy và một người), banner và bộ đếm nhắc sao lưu đã gỡ. Dữ liệu đã nằm trên máy chủ đồng bộ (BR-24) và trên các máy đã nối.
 
 ## BR-16 Hướng dẫn bài tập & thư viện hình
 Test: `tests/app/guide.spec.mjs`
@@ -243,14 +229,7 @@ Test: `tests/app/misc.spec.mjs`, `tests/app/backup.spec.mjs`, `tests/app/syncfil
 - **BR-20.2** Đọc được mọi định dạng file sao lưu cũ (BR-15.2); mọi định dạng mã gửi cũ được nhận diện và báo rõ là không còn dùng (BR-13.2).
 
 ## BR-21 Tài khoản đăng nhập (HLV và học viên)
-Test: `tests/app/account.spec.mjs`, `tests/app/drive.spec.mjs` (máy chủ thật `drive/Code.gs` chạy trong `tests/gas_server.js`)
-
-- **BR-21.1 HLV tạo tài khoản lần đầu**: Tài khoản & đồng bộ → *Tạo tài khoản HLV lần đầu* → dán link máy chủ (`https://script.google.com/…/exec`) + MÃ HLV (32 ký tự), tên HLV, tên đăng nhập, mật khẩu. Kiểm tra nhập liệu (thiếu trường, link sai, mật khẩu < 6 ký tự, tên đăng nhập không hợp lệ). Xong: tự bật chế độ HLV, đăng nhập, **đưa mọi hồ sơ trên máy lên Drive**. HLV quên mật khẩu: tạo lại bằng MÃ HLV.
-- **BR-21.2 Quản lý học viên** (Phòng HLV → Tài khoản & đồng bộ → Quản lý học viên): danh sách học viên trên Drive; *＋ Thêm học viên* (tên → gợi ý tên đăng nhập không dấu và mật khẩu); *Cấp tài khoản* cho học viên đã có hồ sơ; *Đặt lại mật khẩu* (máy học viên đang đăng nhập bị đăng xuất); *Khoá / Mở khoá* (dữ liệu giữ nguyên); *Gửi cho học viên* (tên đăng nhập, mật khẩu, link app và link máy chủ).
-- **BR-21.3 Học viên đăng nhập**: tên đăng nhập + mật khẩu (+ link máy chủ nhập 1 lần). Sai mật khẩu bị từ chối; sai liên tiếp 8 lần thì tạm khoá tên đăng nhập 15 phút. Đăng nhập xong nhận giáo án HLV soạn; tập xong HLV tự nhận buổi. Máy đang bật chế độ HLV hoặc đang tập dở thì không đăng nhập; học viên đã có hồ sơ liên kết tài khoản khác thì tạo hồ sơ mới cho tài khoản này.
-- **BR-21.4 Đổi máy**: HLV đăng nhập trên máy mới → tự bật chế độ HLV, lấy lại mọi hồ sơ + giáo án + buổi tập từ Drive, bỏ hồ sơ trống mặc định. Học viên đổi máy chỉ cần đăng nhập lại.
-- **BR-21.5 Phiên**: mỗi lần đăng nhập cấp một phiên cho máy đó; HLV đặt lại mật khẩu hoặc khoá tài khoản thì phiên hết hạn → máy học viên báo "Phiên đăng nhập đã hết hạn… Đăng nhập lại", **giữ nguyên dữ liệu**, ngừng đồng bộ. Học viên tự đổi mật khẩu được; *Đăng xuất* gỡ phiên (dữ liệu trên máy giữ nguyên).
-- **BR-21.6 Bảo mật phía máy chủ**: mật khẩu chỉ lưu dạng băm có muối; mã bí mật học viên lưu dạng băm; MÃ HLV đổi được (`doiMaHLV`). Chi tiết: SA §7.
+> **ĐÃ BỎ (PA-35, 23/10/2026)**: tài khoản đăng nhập bằng tên và mật khẩu (qua Apps Script) đã gỡ. Thay bằng mã HLV `GAH1` và thẻ học viên `GAV1` ở [BR-24](#br-24-máy-chủ-đồng-bộ-mới-pa-34).
 
 ## BR-22 Thông báo
 Test: `tests/app/notify.spec.mjs`, `tests/app/rest.spec.mjs`, `tests/test_push_server.mjs`
@@ -262,17 +241,33 @@ Test: `tests/app/notify.spec.mjs`, `tests/app/rest.spec.mjs`, `tests/test_push_s
 - **BR-22.5** Khi hết giờ nghỉ mà app đã mở: chuông + hộp báo trong app (BR-04.3), không gửi thêm thông báo hệ thống.
 
 ## BR-23 Chia sẻ kết quả buổi tập với PT
-Test: `tests/app/share.spec.mjs`, `tests/app/session.spec.mjs`, `tests/app/progress.spec.mjs`
+> **ĐÃ BỎ (PA-36, 23/10/2026)**: chia sẻ kết quả buổi tập với PT bằng link và QR đã gỡ. Dữ liệu đã đi tự động qua máy chủ đồng bộ (BR-24.6).
 
-- **BR-23.1 Nội dung**: chia sẻ **các buổi của một ngày**: tên buổi, giờ bắt đầu, thời lượng, cờ deload; mỗi bài **có ít nhất 1 set đã tập** (bài chưa tập không gửi, bài ngoài giáo án vẫn gửi); mỗi set có kg, rep, mức độ khó/effort, cờ drop; ghi chú của bài nếu có. Kèm tên học viên, `userid` và ngày. **Không gửi**: giáo án, số đo, đau/chấn thương, cài đặt, liên kết Drive/tài khoản, ảnh, video, mức tạ "đang tập" của bài.
-- **BR-23.2 Cách gửi**: bảng "Chia sẻ với PT" nêu rõ gửi gì / không gửi gì, có QR to, **Gửi link** (bảng chia sẻ của máy, không có thì sao chép), **Gửi ảnh QR** và **Lưu ảnh QR**. QR chứa đúng link.
-- **BR-23.3 Link ngắn**: `https://gym.fiddle.vn/#cs=<mã>`; dữ liệu nằm sau `#` (không gửi lên máy chủ). Gói nhị phân, nén deflate-raw khi ngắn hơn, base64url. Test: ngày thường ≤ 350 ký tự, ngày nặng (10 bài × 5 set, nhiều ghi chú) ≤ 700 ký tự. Vượt 700 thì bảng báo hãy chia sẻ từng buổi.
-- **BR-23.4 userid**: trường `uid` trong danh sách hồ sơ. Hồ sơ chưa có `uid` được gán một lần: mã Drive của học viên (`drv.id`) nếu đã liên kết; hồ sơ khác `p1` dùng mã hồ sơ; `p1` (hoặc hồ sơ chưa có gì) dùng mã ngẫu nhiên. Mã `p1` không bao giờ được dùng làm userid. Sau khi có `uid` thì giữ nguyên.
-- **BR-23.5 PT nhận**: mở link (đổi `#`, hoặc tải lại trang bằng link), **quét QR bằng camera** hoặc **tải ảnh có QR** (ở Tài khoản → Quét mã liên kết, hoặc Phòng HLV → ⌗ Nhận kết quả). Máy nhận **tự bật chế độ HLV** (không hỏi). Xem trước "Kết quả của {tên} ngày dd/mm: n buổi · n bài · n set · tấn tạ" kèm số buổi sẽ thay. Link/QR/ảnh hỏng → "Không đọc được kết quả chia sẻ", không đổi dữ liệu.
-- **BR-23.6 Khớp học viên**: hồ sơ có cùng `uid` → "Cập nhật vào {tên}"; chưa có → chọn **Gộp vào {học viên có sẵn}** (hồ sơ đó nhận `uid` của link) hoặc **Tạo học viên mới** (tên từ link, giáo án trống).
-- **BR-23.7 Ghi đè theo ngày**: xoá các buổi của học viên trong **đúng ngày** được chia sẻ (có ghi dấu xoá) rồi ghi buổi nhận; ngày khác giữ nguyên; giáo án, số đo, đau không đổi. **Hoàn tác** (chỉ máy PT) khôi phục buổi cũ, bài vừa thêm và `uid`. Hồ sơ đang có buổi tập dở → từ chối, báo "Đang tập dở".
-- **BR-23.8 Định danh bài**: bài có mã đồng bộ Drive → khớp theo mã; không có → khớp theo tên; bài **trong kho bài** mà giáo án PT chưa có → **tự thêm vào giáo án** (vào ngày tập cùng tên buổi, chưa có thì tạo ngày đó); bài tự đặt tên ngoài kho → chỉ ghi lịch sử, không thêm vào giáo án (như BR-03.17).
-- **BR-23.9 Mức tạ**: sau khi nhận, bài khớp được cập nhật mức tạ "đang tập" = kg cao nhất trong các set chính, **chỉ khi** buổi nhận không cũ hơn buổi mới nhất của bài ở hồ sơ đó (buổi deload không cập nhật).
-- **BR-23.10 Chọn ngày trong lịch**: ở Tiến độ → lịch **tháng**, chạm ngày có buổi tập → bảng ngày liệt kê các buổi và nút **Chia sẻ cả ngày này với PT**. Chi tiết buổi cũng có nút **Chia sẻ với PT** (chỉ buổi đó). Lịch tuần không có chạm ngày.
-- **BR-23.11 Gợi ý sau buổi tập** (học viên, chưa bật chế độ HLV): sau "Lưu buổi tập" hiện bảng **Chia sẻ với PT** / **Xong** và ô **Đừng hỏi lại** (lưu theo hồ sơ). Toast lưu buổi không còn nút Hoàn tác ở máy học viên.
-- **BR-23.12 Chưa làm**: chia sẻ ảnh học viên chụp; gửi tự động; chia sẻ nhiều ngày một link; đồng bộ ngược từ PT sang học viên; bật/tắt "Đừng hỏi lại" trong Cài đặt (hiện chỉ đặt từ bảng gợi ý).
+## BR-24 Máy chủ đồng bộ mới (PA-34, đang làm theo bước)
+> Trạng thái: **bước 1 (PA-34.1)** HLV đăng ký và thêm học viên; **bước 2 (PA-34.2)** học viên nối máy bằng thẻ và buổi tập tự gửi; **bước 3 (PA-34.3)** máy HLV kéo buổi tập về đúng hồ sơ học viên (thông báo đẩy để bước 3b); **bước 4 (PA-34.4)** khôi phục khi máy trống bằng Face ID hoặc thẻ học viên; **bước 5 (PA-34.5)** chuyển học viên có sẵn và giáo án HLV → học viên; **PA-34.6** thông báo đẩy, xoá buổi, khôi phục thủ công có hoàn tác (BR-24.5), trạng thái gửi (BR-24.15). Các bước còn lại ghi trong [epics/2026-10-22.md](epics/2026-10-22.md), hạng mục 4.
+- **BR-24.1** HLV đăng ký bằng mã QR HLV (`GAH1`): quét bằng camera, dán mã hoặc chọn ảnh. Mã sai hoặc máy chủ không nhận thì báo "Mã HLV không đúng" và không lưu khoá. Khoá chỉ nằm trên máy này. *Test:* `tests/app/hub.spec.mjs`.
+- **BR-24.2** HLV thêm học viên: nhập tên → hiện thẻ QR (`GAV1`) có mã học viên và khoá riêng, cùng ô mã để sao chép. Thẻ dùng được lâu dài; hai học viên trùng tên có hai mã khác nhau. *Test:* `tests/app/hub.spec.mjs`.
+- **BR-24.3** Học viên nối máy: quét thẻ `GAV1` của HLV (camera, dán mã, hoặc ảnh) → máy chủ cấp khoá riêng cho máy này, app ghi nhận và báo "Đã nối với HLV · <tên>". Tối đa 5 máy mỗi học viên (máy thứ 6 đẩy máy cũ nhất). *Test:* `tests/app/hub.spec.mjs`.
+- **BR-24.6** Buổi đã tập tự gửi lên máy chủ sau khoảng 1,5 giây kể từ lúc lưu, và gửi lại khi mở app hoặc có mạng. Buổi đã gửi không gửi lại; buổi đang tập dở không gửi. *Test:* `tests/app/hub.spec.mjs`.
+- **BR-24.4** Máy HLV thêm học viên thì có sẵn một hồ sơ cho học viên đó. Buổi học viên đã gửi được kéo về khi mở app, khi quay lại app, khi có mạng, và mỗi 20 giây khi app đang hiện. Buổi chỉ ghi đè bản cũ hơn, và được ghi đúng vào hồ sơ của học viên. *Test:* `tests/app/hub.spec.mjs`.
+- **BR-24.4 (khôi phục khi máy trống)** Học viên bật *Khôi phục bằng Face ID* trên máy đã nối. Máy trống (vừa xoá dữ liệu) chọn *Khôi phục bằng Face ID* → máy chủ kiểm chữ ký passkey và cấp khoá máy mới → app kéo lại toàn bộ buổi đã gửi. Không có Face ID thì quét lại thẻ học viên cho kết quả giống hệt. Face ID không dùng được hoặc chưa bật thì báo lỗi, không nối máy. *Test:* `tests/app/hub.spec.mjs`.
+- **BR-24.9** Giáo án HLV → học viên: máy HLV gửi giáo án của mỗi học viên khi giáo án đổi; máy học viên nhận trong vòng 20 giây (kéo định kỳ) và gộp bằng cùng động cơ với Drive (`syncMerge`). Học viên hoàn tác được giáo án vừa nhận (*Hoàn tác giáo án*). *Test:* `tests/app/hub.spec.mjs`.
+- **BR-24.17 (chuyển học viên có sẵn)** HLV chọn các hồ sơ học viên đang có (*Chuyển học viên có sẵn*): mỗi người được cấp một thẻ QR và hồ sơ giữ nguyên. Học viên quét thẻ thì nhận giáo án của HLV và buổi đã tập cũ được gửi lên. *Test:* `tests/app/hub.spec.mjs`.
+- **BR-24.18 Xung đột giữa máy này và máy chủ** (PA-35): tự gộp khi có thể; hỏi người dùng khi không thể.
+
+| Dữ liệu | Khi xung đột | Cách xử lý |
+|---|---|---|
+| Buổi tập có cùng mã | Hai bên có bản khác nhau | Bản có thời điểm mới hơn thắng (tự động) |
+| Hai buổi khác mã, cùng ngày và tên buổi | Trùng buổi | Giữ cả hai, không xoá (tự động) |
+| Mức tạ của cùng một bài | Hai bên đều có | Mức có thời điểm mới hơn thắng (tự động) |
+| Giáo án | Chỉ HLV đổi | Áp dụng bản của HLV (tự động) |
+| Giáo án | Cả máy này và HLV đều đổi so với lần đồng bộ trước | **Hỏi người dùng**: bảng so sánh (số ngày, số bài, ngày chỉ có ở một bên, bài khác số lượng) và hai lựa chọn: *Dùng giáo án HLV* (có hoàn tác) hoặc *Giữ giáo án máy này* |
+| Giáo án khi nối máy lần đầu, máy đã có giáo án riêng | Khác nhau, chưa có bản đã thống nhất | **Hỏi người dùng** như trên |
+
+So sánh giáo án bỏ qua mức tạ hiện tại (đổi mỗi buổi tập, không phải thay đổi giáo án). *Test:* `tests/app/hub.spec.mjs`.
+- **Xoá buổi** (PA-34.6): học viên xoá buổi thì máy HLV cũng xoá, trừ khi buổi đã được sửa sau lần xoá (so thời điểm: xoá sau thời điểm sửa thì xoá). *Test:* `tests/app/hub.spec.mjs`. Lưu ý: so sánh theo đồng hồ của hai máy, lệch giờ lớn có thể sai thứ tự.
+- **BR-24.5 Khôi phục thủ công**: *Khôi phục từ máy chủ* thay buổi trên máy bằng bản đã gửi (có xác nhận, nói rõ buổi chưa gửi sẽ mất). *Hoàn tác khôi phục* trả lại như cũ. *Test:* `tests/app/hub.spec.mjs`.
+- **BR-24.15 Trạng thái gửi**: máy học viên hiện *Đã gửi xong · lần cuối lúc …*, *Chờ gửi N buổi*, hoặc *Chưa gửi được: không liên lạc được máy chủ*. *Test:* `tests/app/hub.spec.mjs`.
+- **BR-24.7 Thông báo đẩy** (PA-34.6): học viên tập xong → HLV nhận "<tên> vừa tập xong · <buổi> · n bài · m set"; giáo án đổi → học viên nhận "HLV vừa cập nhật giáo án". Buổi trước khi nối máy (lịch sử) không báo. Tắt công tắc *Học viên tập xong / HLV cập nhật giáo án* thì máy đó không nhận nữa. Máy chủ gửi qua Web Push; kiểm trong bộ test máy chủ (`tests/test_hub_sync.mjs`). **Chưa kiểm trên iPhone thật.**
+- Ngắt đăng ký trên máy này chỉ xoá khoá trên máy, không xoá dữ liệu trên máy chủ.
+

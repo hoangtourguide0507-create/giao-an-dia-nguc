@@ -135,25 +135,6 @@ test('kéo xuống để làm mới: lấy dữ liệu mới hơn từ tài kho�
   await expect.poll(async () => (await app.state()).days.map(d => d.name)).toEqual(['Mới']);
 });
 
-test('tải file trong claude.ai dùng chức năng tải của claude.ai; từ chối thì im lặng, loại file bị chặn thì báo', async ({ app, page }) => {
-  await installCloud(page);
-  await app.goto();
-  await app.more('backup');
-  await app.click('backup');
-  await app.click('backup-save');
-  await expect(app.toast()).toHaveText('Đã lưu file');
-  expect((await cloudState(page)).saved[0].filename).toMatch(/^giao-an-dia-nguc-sao-luu-/);
-});
-
-test('tải file trong claude.ai bị chặn loại file', async ({ app, page }) => {
-  await installCloud(page, { dl: 'rejected_extension' });
-  await app.goto();
-  await app.more('backup');
-  await app.click('backup');
-  await app.click('backup-save');
-  await expect(app.toast()).toHaveText('Loại file này chỉ tải được trên bản cài điện thoại');
-});
-
 test('xoá toàn bộ dữ liệu khi đang xem hồ sơ khác: quay về chỗ lưu của hồ sơ đầu', async ({ app, page }) => {
   await installCloud(page);
   await app.seed({ profiles: { active: 'p2', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'Vợ', color: 1 }] }, states: { p1: state(), p2: state({ days: basicPlan().days, updatedAt: 5 }) } });

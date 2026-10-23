@@ -153,6 +153,22 @@ await api('/s/tv/xoa', { id: 'lan-7k3f' }, H);
 ok((await doi('hv=lan-7k3f&since=0', V('lan-7k3f', dkMoi))).s === 401, 'Xoá học viên: máy của họ mất quyền');
 ok(!(await doi('since=0', H)).j.recs.some(r => r.hv === 'lan-7k3f'), 'Xoá học viên: dữ liệu biến mất khỏi máy chủ');
 
+
+// ---------- 11. Tắt thông báo đồng bộ (dk off) ----------
+{
+  const kAn = rnd(24), subT = await subOf();
+  await api('/s/tv/them', { id: 'an-1x2y', ten: 'An', kieu: 'hv', skh: shaFull(kAn) }, H);
+  const dkAn = (await api('/s/noi', { i: 'an-1x2y', k: kAn, tb: 'máy thử' })).j.dk;
+  const recAn = (id, t) => ({ hv: 'an-1x2y', recs: [buoi(id, t)], ev: { title: 'x', body: 'y', tag: id } });
+  await api('/s/dk', { sub: subT }, H);
+  sent.length = 0;
+  await api('/s/ghi', recAn('off1', T + 5000), V('an-1x2y', dkAn));
+  ok(sent.some(u => u.url === subT.endpoint), 'Trước khi tắt: HLV nhận thông báo buổi mới');
+  await api('/s/dk', { sub: subT, off: true }, H);
+  sent.length = 0;
+  await api('/s/ghi', recAn('off2', T + 6000), V('an-1x2y', dkAn));
+  ok(!sent.some(u => u.url === subT.endpoint), 'Sau khi tắt: máy đó không còn nhận thông báo của phòng');
+}
 // ---------- 10. Trạng thái ----------
 const tt = await api('/s/tt', null, H, 'GET');
 ok(tt.s === 200 && typeof tt.j.seq === 'number', 'Trạng thái máy chủ có seq');
