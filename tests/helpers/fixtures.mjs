@@ -51,19 +51,16 @@ class App {
   act(name, extra = '') { return this.page.locator(`[data-act="${name}"]${extra}`); }
   async click(name, extra = '') { await this.act(name, extra).first().click(); }
   /* thanh dưới: home · plan · (nút Tập) · week · more. 'today' = nút giữa khi đang tập, không thì Trang chủ.
-     'body' và 'photos' nằm trong Tiến độ; 'settings' là Cài đặt khi bật HLV. */
+     'body' và 'photos' nằm trong Tiến độ. */
   async tab(name) {
     const nav = n => this.page.locator(`#nav-bar [data-tab="${n}"]`).first().click();
     if (name === 'body' || name === 'photos') { await nav('week'); await this.page.locator(`.ptabs [data-tab="${name}"]`).click(); return; }
     if (name === 'today') { const active = await this.page.evaluate(() => !!window.__sota.state.active); await nav(active ? 'today' : 'home'); return; }
-    if (name === 'settings') { await nav('more'); return; }
     await nav(name);
   }
   /* mở một trang con trong Tài khoản: drive · pack · pace · form · height · notif · skin · install · wipe */
   async more(key) {
     await this.tab('more');
-    /* khi bật chế độ HLV, tab này là Phòng HLV: vào Cài đặt bằng nút ⚙ */
-    const gear = this.page.locator('#view [data-act="tab"][data-tab="settings"]'); if (await gear.count()) await gear.first().click();
     await this.page.locator(`[data-act="more-sec"][data-k="${key}"]`).first().click();
   }
   async startPick() { await this.page.locator('#nav-bar .fab').click(); }
