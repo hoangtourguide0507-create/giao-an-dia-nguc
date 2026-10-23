@@ -11,7 +11,9 @@ test('mở dữ liệu bản cũ: tự chuyển đổi skin, cách báo, nghỉ 
   await page.evaluate(() => localStorage.setItem('gadn-skin', 'light'));
   await app.seed({ state: legacy });
   const st = await app.state();
-  expect(st.settings).toMatchObject({ skin: 'amber', skin22: 1, alertMethod: 'push', notify: true, sets3: 1, warmAll: 1, schedule: {} });
+  expect(st.settings).toMatchObject({ skin: 'amber', skin22: 1, notify: true, sets3: 1, warmAll: 1 });
+  expect(st.settings).not.toHaveProperty('alertMethod');   /* khoá rác đã gỡ (PA-37) */
+  expect(st.settings).not.toHaveProperty('schedule');
   expect(st.bodyPhotos).toEqual([]); expect(st.weekPlans).toEqual({}); expect(st.pains).toEqual([]);
   const [sq, fp] = st.days[0].exercises;
   expect(sq).toMatchObject({ repMin: 8, repMax: 12, repTarget: 10, sets: 3, warmup: true, rest: 0, restV: 2, alts: [], slot: '', mainSince: '2026-08-01', zone: 'Đùi trước', muscle: 'Đùi trước', gid: 'Barbell_Full_Squat' });
@@ -90,20 +92,39 @@ test('khoá màn hình sáng khi tập, quay lại app thì giữ', async ({ app
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
 });
 
-test('PA-36 · dữ liệu bản cũ (có Drive, tài khoản, sao lưu, ảnh) còn nguyên sau khi gỡ tính năng', async ({ app }) => {
+test('dọn rác: khoá của tính năng đã gỡ (Drive, tài khoản, sao lưu, chia sẻ) bị xoá; buổi tập, giáo án, số đo, ảnh giữ nguyên', async ({ app }) => {
   const P = basicPlan();
-  const old = state({
-    days: P.days,
-    sessions: [session(P.chest, TODAY, [[P.bench, [[40, 10]]]]), session(P.back, addDays(TODAY, -2), [[P.lat, [[45, 8]]]])],
-    drv: { id: 'hv1', m: 'k'.repeat(24), at: 1700000000000 },
-    settings: { drvUrl: 'https://script.google.com/macros/s/X/exec', drvKey: 'x', acc: { u: 'hoang', vai: 'hlv' }, lastBackupAt: 1700000000000, lastBackupSess: 5, backupSkipAt: 0 },
+  const junk = { drv: { id: 'hv1', m: 'k'.repeat(24) }, coachLink: { pk: 'x', name: 'Hoàng' }, syncMark: { sent: {} } };
+  const junkSettings = { acc: { u: 'hoang' }, drvUrl: 'https://script.google.com/macros/s/X/exec', drvKey: 'x', drvSv: 'y', nDrive: true, lastBackupAt: 1700000000000, lastBackupSess: 5, backupSkipAt: 1, shareNoAsk: true, alertV17: 1, alertMethod: 'shortcut', ntfyTopic: 'abc', restAlert: 'app', shortcutName: 'Nghỉ', remindTime: '18:00', remindBefore: 30, schedule: {} };
+  const sessions = [session(P.chest, TODAY, [[P.bench, [[40, 10]]]]), session(P.back, addDays(TODAY, -2), [[P.lat, [[45, 8]]]])];
+  await app.seed({
+    profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0, uid: 'abc' }, { id: 'p2', name: 'Lan', color: 1, uid: 'def' }] },
+    state: { ...state({ days: P.days, sessions, body: [{ id: 'b1', date: TODAY, weight: 70 }], settings: { name: 'Hoàng', ...junkSettings } }), ...junk },
+    states: { p2: { ...state({ days: P.days, sessions: [sessions[1]], settings: { name: 'Lan', ...junkSettings } }), ...junk } },
+    kv: { 'drvUp:xyz': ['h1'], syncUndo: { pid: 'p1' } },
   });
-  await app.seed({ state: old });
   await app.flushed();
   const st = await app.idb('kv', 'state');
-  expect(st.sessions.map(s => s.id).sort()).toEqual(old.sessions.map(s => s.id).sort());
+  expect(st.sessions.map(s => s.id).sort()).toEqual(sessions.map(s => s.id).sort());
   expect(st.days.map(d => d.name)).toEqual(P.days.map(d => d.name));
-  expect(st.drv).toMatchObject({ id: 'hv1' });
-  expect(st.settings).toMatchObject({ drvUrl: 'https://script.google.com/macros/s/X/exec', lastBackupAt: 1700000000000 });
-  await expect(app.view()).toBeVisible();
+  expect(st.body).toEqual([{ id: 'b1', date: TODAY, weight: 70 }]);
+  expect(st.settings.name).toBe('Hoàng');
+  for (const k of ['drv', 'coachLink', 'syncMark']) expect(st).not.toHaveProperty(k);
+  for (const k of Object.keys(junkSettings)) expect(st.settings).not.toHaveProperty(k);
+  const st2 = await app.idb('kv', 'state:p2');
+  expect(st2.sessions.map(s => s.id)).toEqual([sessions[1].id]);
+  expect(st2).not.toHaveProperty('drv');
+  expect(st2.settings).not.toHaveProperty('drvUrl');
+  expect(await app.idb('kv', 'drvUp:xyz')).toBeUndefined();
+  expect(await app.idb('kv', 'syncUndo')).toBeUndefined();
+  const pr = await app.idb('kv', 'profiles');
+  expect(pr.list.every(p => !('uid' in p))).toBe(true);
+});
+
+test('dọn rác không gửi yêu cầu nào tới Google Drive (dữ liệu trên Drive không bị đụng tới)', async ({ app, page }) => {
+  const hits = [];
+  page.on('request', r => { if (/script\.google|googleapis\.com\/.*exec/.test(r.url())) hits.push(r.url()); });
+  await app.seed({ state: state({ settings: { drvUrl: 'https://script.google.com/macros/s/X/exec', drvKey: 'x' }, drv: { id: 'hv1', m: 'k' } }) });
+  await app.flushed();
+  expect(hits).toEqual([]);
 });
