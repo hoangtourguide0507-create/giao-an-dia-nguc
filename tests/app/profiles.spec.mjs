@@ -17,7 +17,7 @@ test('HLV thêm học viên (sao chép giáo án + ảnh máy), chuyển qua l�
   await app.click('prof-create');
   await expect(app.toast()).toHaveText('Nhập tên người tập');
   await app.sheet().locator('[data-act="qpick-p"][data-v="Vợ"]').click();
-  await page.locator('#f-pfrom').selectOption('p1');
+  await page.locator('#f-pfrom').selectOption('sl:tu-tap');
   await app.click('prof-create');
   await expect(app.toast()).toHaveText('Đang xem: Vợ');
   const pr = await app.profiles();
@@ -40,12 +40,12 @@ test('HLV thêm học viên (sao chép giáo án + ảnh máy), chuyển qua l�
   expect((await app.profiles()).list[1].name).toBe('Lan');
   /* chuyển về người đầu: lịch sử còn nguyên */
   await page.locator('.who').click();
-  await app.sheet().locator('[data-act="switch-profile"][data-id="p1"]').click();
+  await app.sheet().locator('[data-act="switch-profile"][data-id="sl:tu-tap"]').click();
   await expect(app.toast()).toHaveText('Đang xem: Tôi');
   expect((await app.state()).sessions).toHaveLength(1);
   /* bấm lại người đang xem chỉ đóng bảng */
   await page.locator('.who').click();
-  await app.sheet().locator('[data-act="switch-profile"][data-id="p1"]').click();
+  await app.sheet().locator('[data-act="switch-profile"][data-id="sl:tu-tap"]').click();
   await expect(page.locator('#sheet')).toBeHidden();
 });
 
@@ -55,7 +55,7 @@ test('HLV sao chép giáo án từ học viên khác (thêm / thay toàn bộ), 
   await registerHlv(app, hub);
   await page.locator('.who').click();
   await app.click('prof-copy');
-  await page.locator('#f-cfrom').selectOption('p1');
+  await page.locator('#f-cfrom').selectOption('sl:tu-tap');
   await app.sheet().locator('[data-act="prof-copy-go"][data-m="add"]').click();
   await expect(app.toast()).toContainText('Đã chép 2 ngày tập');
   await expect.poll(async () => (await app.state()).days.length).toBe(3);
@@ -69,7 +69,7 @@ test('HLV sao chép giáo án từ học viên khác (thêm / thay toàn bộ), 
   await expect(app.sheet()).toContainText('Xoá hồ sơ Em?');
   await app.click('confirm-ok');
   await expect(app.toast()).toHaveText('Đã xoá hồ sơ Em');
-  expect((await app.profiles()).list.map(p => p.id)).toEqual(['p1']);
+  expect((await app.profiles()).list.map(p => p.id)).toEqual(['sl:tu-tap']);
 });
 
 
