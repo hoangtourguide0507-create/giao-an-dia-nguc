@@ -248,7 +248,7 @@ Máy chủ Apps Script (`drive/Code.gs`), liên kết `GAL1`, tài khoản tên 
 - Lỗi giữa chừng: bước (1) lưu `map` trước khi đẩy buổi, nên thử lại không tạo thẻ thứ hai; bước (3) không chạy nếu (1) hoặc (2) lỗi.
 - Ảnh: chưa đồng bộ (chờ thiết kế gắn ảnh vào bài tập; xem BR-28.6).
 - Không đè giáo án trống (BR-28.7): `planH[mã]` phải được đặt **trước** khi học viên vào `map` (`hubAdopt`) và **cùng lúc** với `selfMade` (`hubSelfMake`), vì `save()` gọi `hubPushPlans` bất kỳ lúc nào. `planTargets` chỉ gồm hồ sơ HLV khi `selfMade`. `hubPushPlans` bỏ qua (và ghi `planH`) giáo án trống của mục chưa từng đồng bộ. `hubEnsure` bật cờ `hubEnsuring` trước mọi lần chờ mạng.
-- Hồ sơ HLV sau khi cài lại (BR-28.8): `hubSelfResolve()` chạy đầu `hubEnsure`, trước `hubSelfMake`. Nếu `settings.sync.self` chưa có: chọn `hlvSelf()` (hồ sơ “Tôi”), không có thì hồ sơ `p1` chưa gắn thẻ (`map`), không có nữa mới tạo hồ sơ “Tôi” mới; ghi `sync.self` để đổi tên hồ sơ không làm mất liên kết. Buổi tập và giáo án của `sl:tu-tap` về hồ sơ đó qua `hubPullSelf` như cũ.
+- Hồ sơ HLV sau khi cài lại (BR-28.8): `hubSelfResolve()` chạy đầu `hubEnsure`, trước `hubSelfMake`. Nếu `settings.sync.self` chưa có: chọn `hlvSelf()` (hồ sơ “Tôi”), không có thì hồ sơ `p1` còn trống và chưa gắn thẻ (`map`); không có nữa thì để nguyên (không tạo hồ sơ mới); ghi `sync.self` để đổi tên hồ sơ không làm mất liên kết. Buổi tập và giáo án của `sl:tu-tap` về hồ sơ đó qua `hubPullSelf` như cũ.
 
 ## 8. File sao lưu
 > **ĐÃ BỎ (PA-36, 23/10/2026)**: file sao lưu và khôi phục đã gỡ (PA-36). Không còn định dạng file `so-ta`/`gadn-sync` nào được đọc. Mục này giữ lại để tra cứu dữ liệu cũ.
