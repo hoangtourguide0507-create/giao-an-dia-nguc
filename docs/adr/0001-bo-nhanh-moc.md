@@ -44,3 +44,4 @@ Mỗi lần chủ repo duyệt một PA, mốc được lưu bằng một nhánh
 | v18 | `36654ec` | 2026-10-22 | Duyệt PA-32: chia sẻ kết quả buổi tập với PT bằng link và QR (gộp cùng nhánh `claude/share-workout-results-pt-dwu3x9`) |
 | v19 | `49252cf` | 2026-10-22 | Duyệt PA-33: máy chủ đồng bộ `/s/*` (push-server; app chưa dùng) |
 | v20 | `43d1531` | 2026-10-22 | Duyệt PA-33b: passkey khôi phục trên máy trống; ảnh máy tập `/s/anh/*` có hạn mức (push-server; app chưa dùng) |
+| v21 | `c7fcfe2` | 2026-10-23 | Duyệt PA-36: gỡ sao lưu/khôi phục bằng file, chia sẻ với PT, nhắc sao lưu; đồng bộ HLV ⇄ học viên qua máy chủ Cloudflare (PA-34, PA-35 Drive đã gỡ) |
