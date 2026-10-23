@@ -1702,7 +1702,7 @@ const initials = n => String(n).trim().split(/\s+/).map(w => w[0]).slice(-2).joi
 const clone = o => JSON.parse(JSON.stringify(o));
 const globalsOf = st => { const g = {}; GLOBAL_KEYS.forEach(k => { if (st.settings[k] !== undefined) g[k] = st.settings[k]; }); return g; };
 let profT = null;
-function saveProfiles() { clearTimeout(profT); LDB.put('kv', 'profiles', clone(profiles)); if (Cloud.ok && Cloud.meta) Cloud.enqueue(() => Cloud.meta.set({ ...clone(profiles), updatedAt: Date.now() })); }
+function saveProfiles() { if (hubRole() === 'hlv') hubEnsureSoon(); clearTimeout(profT); LDB.put('kv', 'profiles', clone(profiles)); if (Cloud.ok && Cloud.meta) Cloud.enqueue(() => Cloud.meta.set({ ...clone(profiles), updatedAt: Date.now() })); }
 async function profState(pid) { if (pid === profiles.active) return state; const x = await LDB.get('kv', stateKey(pid)); return x && Array.isArray(x.days) ? x : null; }
 /* PA-28: video riêng của bài (khoá vid:*) nằm cùng kho photos nhưng không đi theo đồng bộ/sao lưu ảnh nên tách riêng */
 const vidIdsOf = st => (st.days || []).flatMap(d => d.exercises.flatMap(e => [e, ...(e.alts || [])].map(x => x.vid).filter(Boolean)));
@@ -4310,7 +4310,7 @@ async function hubRegister(body) {
   state.settings.sync = { s: J.s, hk: J.k };
   const r = await hubCall('/s/tv', null, 'GET');
   if (r.s !== 200) { state.settings.sync = {}; save(); toast('Mã HLV không đúng hoặc máy chủ chưa sẵn sàng'); return false; }
-  save(); closeSheet(); render(true); toast('Đã đăng ký làm HLV'); return true;
+  save(); closeSheet(); render(true); toast('Đã đăng ký làm HLV'); hubEnsureSoon(); return true;
 }
 /* đọc mã từ camera, ô dán, hoặc ảnh: trả true nếu là mã của máy chủ mới */
 async function hubCode(text) {
@@ -4423,6 +4423,22 @@ function hubCardHtml() {
     <div class="row"><button class="btn gold" data-act="hub-reg">Quét mã QR</button><button class="btn" data-act="hub-restore">Khôi phục bằng Face ID</button></div></div>`;
   return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã đăng ký làm HLV. Thêm học viên bằng thẻ QR; thẻ dùng được lâu dài.</p>
     <div class="row"><button class="btn gold" data-act="hub-add">Thêm học viên</button><button class="btn" data-act="hub-migrate">Chuyển học viên có sẵn</button><button class="btn" data-act="hub-reg">Quét mã</button><button class="btn ghost" data-act="hub-unlink">Ngắt đăng ký trên máy này</button></div></div>`;
+}
+/* HLV: mọi học viên trong danh sách phải có thẻ QR. Hồ sơ tên “Tôi” là hồ sơ tự tập của HLV, không tính là học viên.
+   Tự tạo học viên trên máy chủ cho hồ sơ nào chưa có; mất mạng thì thử lại khi có mạng, khi mở app, và mỗi 20 giây. */
+let hubEnsureT = 0, hubEnsuring = false;
+function hubEnsureSoon() { clearTimeout(hubEnsureT); hubEnsureT = setTimeout(hubEnsure, 800); }
+async function hubEnsure() {
+  if (hubRole() !== 'hlv' || hubEnsuring || !navigator.onLine) return;
+  const sy = state.settings.sync; sy.map = sy.map || {};
+  const self = profiles.list.find(p => /^tôi$/i.test(p.name.trim())), linked = new Set(Object.values(sy.map));
+  const todo = profiles.list.filter(p => !(self && p.id === self.id) && !linked.has(p.id));
+  if (!todo.length) return;
+  hubEnsuring = true;
+  try {
+    for (const p of todo) { const c = await hubNewCard(p.name); state.settings.sync.map = { ...state.settings.sync.map, [c.id]: p.id }; linked.add(p.id); save(); }
+  } catch (e) { /* mất mạng hoặc máy chủ lỗi: lần sau thử lại */ }
+  finally { hubEnsuring = false; }
 }
 function hubAddSheet() {
   openSheet(`<h3 class="sh-title">Thêm học viên</h3><p class="sh-text">Tạo thẻ QR cho học viên. Thẻ không hết hạn và dùng lại được, nên hãy cất giữ cẩn thận.</p>
@@ -4901,8 +4917,11 @@ const handlers = {
   'hub-card-show': async t => {
     const sy = state.settings.sync || {}, hvId = Object.keys(sy.map || {}).find(k => sy.map[k] === t.dataset.id);
     const p = profiles.list.find(x => x.id === t.dataset.id);
-    if (hubRole() !== 'hlv' || !hvId || !p) { toast('Học viên này chưa có thẻ QR. Bấm Thêm học viên để tạo.'); return; }
-    hubCardsSheet([{ name: p.name, code: hubCodeOf(hvId, await hubKey(hvId, 0)) }]);
+    if (hubRole() !== 'hlv' || !p) return;
+    if (!hvId) { await hubEnsure(); }
+    const id2 = Object.keys(state.settings.sync.map || {}).find(k => state.settings.sync.map[k] === t.dataset.id);
+    if (!id2) { toast('Chưa tạo được thẻ QR cho học viên này. Kiểm tra mạng và thử lại.'); return; }
+    hubCardsSheet([{ name: p.name, code: hubCodeOf(id2, await hubKey(id2, 0)) }]);
   },
   'hub-pk-add': () => hubPasskeyAdd(),
   'hub-migrate': () => hubMigrateSheet(),
@@ -5128,8 +5147,8 @@ async function purgeStored() {
   LDB.get('kv', 'exdbPack').then(p => { ui.pack = p || false; if (ui.tab === 'today' || ui.tab === 'more') render(true); }).catch(() => { ui.pack = false; });
   connectCloud(saved && Array.isArray(saved.days) ? saved : null);
   if (!location.hash.startsWith('#nhap=')) maybeWeekPlan();
-      setTimeout(() => { hubFlush(); hubPull(); hubPushPlans(); hubSubscribe(); }, 1600); window.addEventListener('online', () => { hubFlush(); hubPull(); hubPushPlans(); });
-  setInterval(() => { if (document.visibilityState === 'visible') { hubPull(); hubFlush(); } }, 20000);
+      setTimeout(() => { hubFlush(); hubPull(); hubPushPlans(); hubSubscribe(); hubEnsure(); }, 1600); window.addEventListener('online', () => { hubFlush(); hubPull(); hubPushPlans(); hubEnsure(); });
+  setInterval(() => { if (document.visibilityState === 'visible') { hubPull(); hubFlush(); hubEnsure(); } }, 20000);
   setTimeout(() => pushRegister(), 3000);
   if (state.settings.notify) currentPushSub().then(async sub => {
     /* PA-23: đã cho phép thông báo mà máy chưa nối máy chủ thì tự nối, không cần dán địa chỉ */

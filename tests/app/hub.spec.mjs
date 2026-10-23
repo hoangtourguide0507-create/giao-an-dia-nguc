@@ -196,11 +196,9 @@ test('BR-24.4 · máy chưa bật Face ID cho học viên nào: khôi phục b�
 
 test('BR-24.17 · chuyển học viên có sẵn sang máy chủ mới: thẻ QR; học viên nối máy nhận giáo án HLV và giữ buổi cũ', async ({ app, hub, device }) => {
   const P = basicPlan();
-  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) } });
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) } });
   await registerHlv(app, hub);
-  await app.more('drive'); await app.click('hub-migrate');
-  await app.click('hub-migrate-go');
-  const code = await app.page.locator('#hub-code-0').inputValue();
+  const code = await autoCard(app, hub, 'p2');
   await app.page.keyboard.press('Escape');
   const i = JSON.parse(Buffer.from(code.split('.')[1], 'base64url').toString()).i;
   expect((await app.state()).settings.sync.map[i]).toBe('p2');
@@ -218,10 +216,9 @@ test('BR-24.17 · chuyển học viên có sẵn sang máy chủ mới: thẻ QR
 
 test('BR-24.9 · HLV đổi giáo án → học viên nhận trong vòng 20 giây; học viên hoàn tác được', async ({ app, hub, device }) => {
   const P = basicPlan();
-  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) } });
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) } });
   await registerHlv(app, hub);
-  await app.more('drive'); await app.click('hub-migrate'); await app.click('hub-migrate-go');
-  const code = await app.page.locator('#hub-code-0').inputValue();
+  const code = await autoCard(app, hub, 'p2');
   await app.page.keyboard.press('Escape');
   const hv = await device();
   await hv.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Lan', color: 0 }] }, states: { p1: state({ days: [], settings: { pushServer: hub.url } }) } });
@@ -237,13 +234,19 @@ test('BR-24.9 · HLV đổi giáo án → học viên nhận trong vòng 20 giâ
   await expect.poll(async () => (await hv.state()).days.map(x => x.name), { timeout: 5000 }).toEqual(P.days.map(x => x.name));
 });
 
+/* thẻ của học viên được tạo tự động (mọi học viên đều có thẻ): đợi máy HLV ghi nhận, rồi tính mã từ khoá HLV như máy HLV làm */
+async function autoCard(app, hub, pid) {
+  let hvId = null;
+  await expect.poll(async () => { const m = (await app.state()).settings.sync?.map || {}; hvId = Object.keys(m).find(k => m[k] === pid) || null; return !!hvId; }, { timeout: 15000 }).toBe(true);
+  const k = crypto.createHmac('sha256', hub.hk).update(`gadn-hv:${hvId}:0`).digest('base64url').slice(0, 32);
+  return 'GAV1.' + Buffer.from(JSON.stringify({ s: hub.url, i: hvId, k })).toString('base64url');
+}
 /* HLV chuyển Lan sang máy chủ mới; máy Lan đã có giáo án riêng (localDays) rồi nối máy */
 async function lanWithOwnPlan(app, hub, device, localDays) {
   const P = basicPlan();
-  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) } });
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) } });
   await registerHlv(app, hub);
-  await app.more('drive'); await app.click('hub-migrate'); await app.click('hub-migrate-go');
-  const code = await app.page.locator('#hub-code-0').inputValue(); await app.page.keyboard.press('Escape');
+  const code = await autoCard(app, hub, 'p2');
   const hv = await device();
   await hv.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Lan', color: 0 }] }, states: { p1: state({ days: localDays, settings: { pushServer: hub.url } }) } });
   await hv.more('drive'); await fakeCamera(hv.page, code); await hv.click('hub-reg');
@@ -302,18 +305,16 @@ test('BR-24.5 · khôi phục từ máy chủ thay buổi trên máy, có thể 
   await expect.poll(async () => (await hv.state()).sessions.map(x => x.id), { timeout: 5000 }).toEqual([done.id]);
 });
 
-test('BR-24.2 · Phòng HLV: nút “Thẻ QR” của học viên mở đúng thẻ; máy chủ nhận mã đó', async ({ app, hub }) => {
+test('BR-24.2 · Phòng HLV: nút “Thẻ QR” của học viên mở đúng thẻ (thẻ có sẵn, không cần bấm gì thêm); máy chủ nhận mã đó', async ({ app, hub }) => {
   const P = basicPlan();
-  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }], coach: { on: true, name: 'Hoàng' } }, states: { p1: state(), p2: state({ days: P.days }) } });
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }], coach: { on: true, name: 'Tôi' } }, states: { p1: state(), p2: state({ days: P.days }) } });
   await registerHlv(app, hub);
-  await app.more('drive'); await app.click('hub-migrate'); await app.click('hub-migrate-go');
-  const code = await app.page.locator('#hub-code-0').inputValue(); await app.page.keyboard.press('Escape');
+  const code = await autoCard(app, hub, 'p2');
   await app.tab('more');
   await app.view().locator('[data-act="hub-card-show"][data-id="p2"]').click();
   await expect(app.sheet()).toContainText('Lan');
-  const shown = await app.page.locator('#hub-code-0').inputValue();
-  expect(shown).toBe(code);
-  const { i, k } = JSON.parse(Buffer.from(shown.split('.')[1], 'base64url').toString());
+  expect(await app.page.locator('#hub-code-0').inputValue()).toBe(code);
+  const { i, k } = JSON.parse(Buffer.from(code.split('.')[1], 'base64url').toString());
   expect((await hub.req('/s/noi', 'POST', { i, k, tb: 'iPhone Lan' })).s).toBe(200);
 });
 
@@ -325,4 +326,12 @@ test('BR-24.2 · mã liên kết Drive cũ (GAL1) quét được thì báo rõ l
   await fakeCamera(hv.page, 'GAL1.ab12.1.1.' + Buffer.from('{"u":"x"}').toString('base64url'));
   await hv.click('hub-reg');
   await expect(hv.toast()).toContainText('kiểu gửi cũ');
+});
+
+test('BR-24.2 · học viên mới xuất hiện trên máy HLV (sau khi đã đăng ký) tự có thẻ, không cần bấm gì', async ({ app, hub }) => {
+  await seedHlv(app); await registerHlv(app, hub);
+  const sync = (await app.state()).settings.sync;
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p3', name: 'Minh', color: 2 }] }, state: state({ settings: { sync } }) });
+  const code = await autoCard(app, hub, 'p3');
+  expect(code.startsWith('GAV1.')).toBe(true);
 });
