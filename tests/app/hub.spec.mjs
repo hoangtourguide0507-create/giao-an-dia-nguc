@@ -274,3 +274,29 @@ test('BR-24.9 · máy học viên có giáo án riêng khác HLV: chọn giữ g
   await expect(hv.view()).not.toContainText('Giáo án khác với HLV');
   expect((await hv.state()).days.map(x => x.name)).toEqual(local.map(x => x.name));
 });
+
+test('BR-24.15 · máy học viên hiện trạng thái đã gửi xong sau khi buổi lên máy chủ', async ({ app, hub, device }) => {
+  const { hv } = await lanTrains(app, hub, device);
+  await expect(hv.view()).toContainText('Đã gửi xong');
+});
+
+test('BR-24.6 · học viên xoá buổi → máy HLV cũng xoá buổi đó (trừ khi buổi đã được sửa sau đó)', async ({ app, hub, device }) => {
+  const { hv, done } = await lanTrains(app, hub, device);
+  const pid = (await app.profiles()).list.find(p => p.name === 'Lan').id;
+  await app.page.reload();
+  await expect.poll(async () => (await app.idb('kv', 'state:' + pid))?.sessions?.map(x => x.id), { timeout: 45000 }).toEqual([done.id]);
+  /* xoá sau lúc buổi kết thúc (như khi người dùng xoá thật) */
+  await hv.page.evaluate(id => { const s = window.__sota.state; s.syncDel = s.syncDel || { s: {}, e: {} }; s.syncDel.s[id] = Date.now() + 86400000; s.sessions = []; }, done.id);
+  await expect.poll(async () => (await app.idb('kv', 'state:' + pid))?.sessions?.map(x => x.id), { timeout: 60000 }).toEqual([]);
+});
+
+test('BR-24.5 · khôi phục từ máy chủ thay buổi trên máy, có thể hoàn tác', async ({ app, hub, device }) => {
+  const { hv, done } = await lanTrains(app, hub, device);
+  await hv.click('hub-restore-manual');
+  await hv.click('confirm-ok');
+  await expect.poll(async () => (await hv.state()).sessions.map(x => x.id), { timeout: 10000 }).toEqual([done.id]);
+  await expect(hv.view()).toContainText('Hoàn tác khôi phục');
+  await hv.click('hub-restore-undo');
+  await expect.poll(async () => (await hv.state()).sync.undo, { timeout: 5000 }).toBeFalsy();
+  await expect.poll(async () => (await hv.state()).sessions.map(x => x.id), { timeout: 5000 }).toEqual([done.id]);
+});

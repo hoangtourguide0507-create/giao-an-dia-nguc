@@ -4614,9 +4614,25 @@ async function hubPair(body) {
 }
 /* nối máy học viên (bằng thẻ hoặc passkey): lưu khoá, rồi kéo lại buổi đã gửi trước đó (khôi phục khi máy trống) */
 async function hubJoin(s, i, dk, ten) {
-  state.settings.sync = { s, i, dk, ten };
-  save(); closeSheet(); render(true); toast(`Đã nối với HLV · ${ten}`); hubFlushSoon();
+  state.settings.sync = { s, i, dk, ten, at: Date.now() };   /* at: buổi trước lúc này là lịch sử (backfill) */
+  save(); closeSheet(); render(true); toast(`Đã nối với HLV · ${ten}`); hubFlushSoon(); hubSubscribe();
   await hubRestoreSelf(); return true;
+}
+/* đăng ký nhận thông báo đẩy với máy chủ đồng bộ. HLV: buổi mới của học viên. Học viên: giáo án đổi. Tắt công tắc thì huỷ */
+async function hubSubscribe() {
+  if (!hubRole() || inArtifact) return;
+  const sub = await currentPushSub().catch(() => null); if (!sub) return;
+  await hubCall('/s/dk', { sub, off: state.settings.nSync === false }).catch(() => {});
+}
+/* khôi phục thủ công (BR-24.5): buổi trên máy được thay bằng bản trên máy chủ; bản cũ giữ trong state.sync.undo để hoàn tác */
+async function hubRestoreManual() {
+  const sy = state.settings.sync;
+  const r = await hubCall('/s/doi?hv=' + encodeURIComponent(sy.i) + '&since=0', null, 'GET');
+  if (r.s !== 200) { toast('Không kết nối được máy chủ. Thử lại khi có mạng.'); return; }
+  state.sync = state.sync || { sent: {} }; state.sync.undo = { sessions: clone(state.sessions), sent: clone(state.sync.sent) };
+  state.sessions = []; state.sync.sent = {};
+  for (const rec of r.j.recs) if (rec.k.startsWith('buoi:')) await hubApplySession(profiles.active, rec);
+  save(); render(true); toast('Đã khôi phục từ máy chủ · có thể hoàn tác');
 }
 async function hubRestoreSelf() {
   const sy = state.settings.sync; if (hubRole() !== 'hv') return;
@@ -4655,20 +4671,38 @@ async function hubPasskeyRestore() {
 const hubRev = s => s.finishedAt || s.startedAt;
 let hubT = 0, hubBusy = false;
 function hubFlushSoon() { clearTimeout(hubT); hubT = setTimeout(hubFlush, 1500); }
+/* gửi buổi đã tập và buổi đã xoá. Thông báo "vừa tập xong" chỉ cho buổi mới; buổi trước khi nối máy đi kèm backfill, không báo */
 async function hubFlush() {
   if (hubRole() !== 'hv' || hubBusy || !navigator.onLine) return;
-  state.sync = state.sync || { sent: {} }; const sent = state.sync.sent;
+  const sy = state.settings.sync; state.sync = state.sync || { sent: {}, gone: {} };
+  const sent = state.sync.sent, gone = state.sync.gone = state.sync.gone || {};
   const todo = state.sessions.filter(x => x.finishedAt && sent[x.id] !== hubRev(x)).slice(0, 20);
-  if (!todo.length) return;
+  const dels = Object.entries(syncDelOf(state).s).filter(([id, t]) => gone[id] !== t).slice(0, 20);
+  if (!todo.length && !dels.length) return;
   hubBusy = true;
+  const recs = todo.map(x => ({ k: 'buoi:' + x.id, id: x.id, t: hubRev(x), vai: 'hv', d: JSON.stringify(x) }))
+    .concat(dels.map(([id, t]) => ({ k: 'buoi:' + id, id, t, vai: 'hv', xoa: 1, d: '{}' })));
+  const fresh = todo.filter(x => !sy.at || hubRev(x) >= sy.at), last = fresh[fresh.length - 1];
+  const ev = last && fresh.length <= 3 ? { title: `${sy.ten || 'Học viên'} vừa tập xong`, body: `${last.dayName} · ${last.entries.length} bài · ${last.entries.reduce((a, e) => a + e.sets.length, 0)} set`, tag: 'buoi-' + last.id } : null;
   try {
-    const r = await hubCall('/s/ghi', { hv: state.settings.sync.i, recs: todo.map(x => ({ k: 'buoi:' + x.id, id: x.id, t: hubRev(x), vai: 'hv', d: JSON.stringify(x) })) });
-    if (r.s === 200) { for (const x of todo) sent[x.id] = hubRev(x); save(); }
-  } catch (e) { /* mất mạng: lần sau thử lại */ } finally { hubBusy = false; }
+    const r = await hubCall('/s/ghi', { hv: sy.i, recs, ev, backfill: !fresh.length });
+    if (r.s === 200) {
+      for (const x of todo) sent[x.id] = hubRev(x); for (const [id, t] of dels) gone[id] = t;
+      sy.lastOk = Date.now(); save();   /* lưu lại: save() gọi hubFlush lần nữa, lúc đó không còn gì để gửi */
+      if (ui.tab === 'more') render(true);   /* cập nhật dòng trạng thái đang hiện */
+    } else sy.lastErr = Date.now();
+  } catch (e) { sy.lastErr = Date.now(); }   /* mất mạng: thử lại khi mở app, khi có mạng, hoặc mỗi 20 giây */
+  finally { hubBusy = false; }
 }
 function hubCardHtml() {
-  if (hubRole() === 'hv') return hubConflictHtml() + `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã nối với HLV ${esc(state.settings.sync.ten || '')}. Buổi tập đã lưu tự gửi lên máy chủ.</p>
-    <div class="row"><button class="btn gold" data-act="hub-pk-add">Bật khôi phục bằng Face ID</button>${state.sync && state.sync.prevDays ? '<button class="btn" data-act="hub-plan-undo">Hoàn tác giáo án</button>' : ''}<button class="btn ghost" data-act="hub-unlink">Ngắt kết nối trên máy này</button></div></div>`;
+  if (hubRole() === 'hv') {
+    const sy = state.settings.sync, sent = (state.sync && state.sync.sent) || {};
+    const pend = state.sessions.filter(x => x.finishedAt && sent[x.id] !== hubRev(x)).length;
+    const stLine = sy.lastErr && (!sy.lastOk || sy.lastErr > sy.lastOk) ? 'Chưa gửi được: không liên lạc được máy chủ. Sẽ thử lại tự động.'
+      : pend ? `Chờ gửi ${pend} buổi.` : sy.lastOk ? `Đã gửi xong · lần cuối lúc ${hhmm(sy.lastOk)}.` : 'Chưa gửi buổi nào.';
+    return hubConflictHtml() + `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã nối với HLV ${esc(sy.ten || '')}. ${stLine}</p>
+    <div class="row"><button class="btn gold" data-act="hub-pk-add">Bật khôi phục bằng Face ID</button><button class="btn" data-act="hub-restore-manual">Khôi phục từ máy chủ</button>${state.sync && state.sync.undo ? '<button class="btn" data-act="hub-restore-undo">Hoàn tác khôi phục</button>' : ''}${state.sync && state.sync.prevDays ? '<button class="btn" data-act="hub-plan-undo">Hoàn tác giáo án</button>' : ''}<button class="btn ghost" data-act="hub-unlink">Ngắt kết nối trên máy này</button></div></div>`;
+  }
   if (!hubOn()) return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>HLV: quét mã QR HLV để đăng ký (chỉ làm một lần). Học viên: quét thẻ học viên của HLV.</p>
     <div class="row"><button class="btn gold" data-act="hub-reg">Quét mã QR</button><button class="btn" data-act="hub-restore">Khôi phục bằng Face ID</button></div></div>`;
   return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã đăng ký làm HLV. Thêm học viên bằng thẻ QR; thẻ dùng được lâu dài.</p>
@@ -4715,7 +4749,7 @@ async function hubMigrateGo() {
       cards.push({ name: p.name, code: c.code });
     }
   } catch (e) { toast(e.message); }
-  save(); await hubPushPlans();
+  save(); await hubPushPlans(true);
   if (cards.length) hubCardsSheet(cards);
 }
 function hubCardsSheet(cards) {
@@ -4755,14 +4789,16 @@ const planKey = plan => { const strip = e => ({ ...e, currentKg: undefined, kgSe
 /* giáo án HLV → học viên: HLV gửi khi giáo án đổi; học viên nhận bằng cùng động cơ gộp của Drive (syncMerge). Lưu bản cũ để hoàn tác. */
 let hubPlanT = 0;
 function hubPlanSoon() { clearTimeout(hubPlanT); hubPlanT = setTimeout(hubPushPlans, 1500); }
-async function hubPushPlans() {
+/* quiet: gửi giáo án lần đầu khi chuyển học viên, không báo */
+async function hubPushPlans(quiet) {
   if (hubRole() !== 'hlv') return;
   const sy = state.settings.sync, H = sy.planH || {};
   for (const [hvId, pid] of Object.entries(sy.map || {})) {
     const st = await profState(pid); if (!st) continue;
     const plan = await serPlan(st, false, {}), h = planKey(plan);
     if (H[hvId] === h) continue;
-    const r = await hubCall('/s/ghi', { hv: hvId, recs: [{ k: 'plan@hlv', id: 'plan', t: Date.now(), vai: 'hlv', d: JSON.stringify({ plan }) }] });
+    const ev = quiet ? null : { title: 'HLV vừa cập nhật giáo án', body: 'Mở app để xem bản mới', tag: 'plan' };
+    const r = await hubCall('/s/ghi', { hv: hvId, recs: [{ k: 'plan@hlv', id: 'plan', t: Date.now(), vai: 'hlv', d: JSON.stringify({ plan }) }], ev, backfill: !!quiet });
     if (r.s === 200) { H[hvId] = h; sy.planH = H; save(); }
   }
 }
@@ -4817,15 +4853,21 @@ function hubConflictHtml() {
 }
 /* chỉ nhận bản mới hơn bản đã có; buổi của hồ sơ đang mở được ghi qua state để không bị ghi đè */
 async function hubApplySession(pid, rec) {
-  /* dữ liệu từ máy khác: làm sạch như gói đồng bộ Drive (cleanPkg) trước khi ghi */
-  let s = null; try { s = cleanPkg({ app: 'gadn-sync', role: 'student', sessions: [JSON.parse(rec.d)] }).sessions[0]; } catch (e) {}
-  if (!s) return;
   const st = pid === profiles.active ? state : await profState(pid); if (!st) return;
-  st.sessions = st.sessions || [];
-  const i = st.sessions.findIndex(x => x.id === s.id);
-  if (i >= 0 && hubRev(st.sessions[i]) >= rec.t) return;
-  if (i >= 0) st.sessions[i] = s; else st.sessions.push(s);
-  st.sync = st.sync || { sent: {} }; st.sync.sent[s.id] = rec.t;
+  st.sessions = st.sessions || []; st.sync = st.sync || { sent: {} };
+  if (rec.xoa) {   /* buổi đã bị xoá bên kia: xoá ở đây, trừ khi buổi này đã được sửa sau đó */
+    const j = st.sessions.findIndex(x => x.id === rec.id);
+    if (j < 0 || hubRev(st.sessions[j]) > rec.t) return;
+    st.sessions.splice(j, 1);
+  } else {
+    /* dữ liệu từ máy khác: làm sạch như gói đồng bộ Drive (cleanPkg) trước khi ghi */
+    let s = null; try { s = cleanPkg({ app: 'gadn-sync', role: 'student', sessions: [JSON.parse(rec.d)] }).sessions[0]; } catch (e) {}
+    if (!s) return;
+    const i = st.sessions.findIndex(x => x.id === s.id);
+    if (i >= 0 && hubRev(st.sessions[i]) >= rec.t) return;
+    if (i >= 0) st.sessions[i] = s; else st.sessions.push(s);
+    st.sync.sent[s.id] = rec.t;
+  }
   if (pid === profiles.active) { save(); render(true); return; }
   st.updatedAt = Date.now(); await LDB.put('kv', stateKey(pid), clone(st));
 }
@@ -5208,6 +5250,8 @@ const handlers = {
   'hub-migrate-go': () => hubMigrateGo(),
   'hub-conflict-remote': async () => { const c = state.sync && state.sync.conflict; if (c) await applyRemotePlan(c.plan, c.t); toast('Đã dùng giáo án của HLV'); },
   'hub-conflict-local': async () => { state.sync.conflict = null; state.sync.planBase = planKey(await serPlan(state, false, {})); save(); render(true); toast('Đã giữ giáo án trên máy này'); },
+  'hub-restore-manual': () => confirmSheet({ title: 'Khôi phục từ máy chủ?', text: `Buổi tập trên máy này sẽ được thay bằng bản đã gửi lên máy chủ.Buổi chưa gửi trên máy này sẽ mất. Bạn có thể hoàn tác ngay sau đó.`, ok: 'Khôi phục', danger: true, onOk: () => hubRestoreManual() }),
+  'hub-restore-undo': () => { const u = state.sync && state.sync.undo; if (!u) return; state.sessions = u.sessions; state.sync.sent = u.sent; state.sync.undo = null; save(); render(true); toast('Đã hoàn tác khôi phục'); },
   'hub-plan-undo': () => { if (!state.sync || !state.sync.prevDays) return; state.days = state.sync.prevDays; state.sync.prevDays = null; save(); render(true); toast('Đã hoàn tác giáo án'); },
   'hub-restore': () => hubPasskeyRestore(),
   'hub-add-go': () => hubAddGo(),
@@ -5403,7 +5447,7 @@ document.addEventListener('change', async e => {
     for (const f of files) { try { const id = await storePhoto(f); ui.draft.photos.push(id); ui.draft.added.push(id); } catch (err) { toast('Không đọc được ảnh, thử lại'); } }
     const y = $('#sheet-body').scrollTop; exSheet(); $('#sheet-body').scrollTop = y;
   }
-  if (t.id === 'n-remind' || t.id === 'n-weekly' || t.id === 'n-drive') { state.settings[{ 'n-remind': 'nRemind', 'n-weekly': 'nWeekly', 'n-drive': 'nSync' }[t.id]] = t.checked; save(); render(true); pushRegSoon(); return; }
+  if (t.id === 'n-remind' || t.id === 'n-weekly' || t.id === 'n-drive') { state.settings[{ 'n-remind': 'nRemind', 'n-weekly': 'nWeekly', 'n-drive': 'nSync' }[t.id]] = t.checked; save(); hubSubscribe(); render(true); pushRegSoon(); return; }
   if (t.id === 'n-time') { state.settings.nTime = t.value || '17:30'; save(); pushRegSoon(); return; }
   if (t.id === 'notify-t') {
     if (!t.checked) { cancelPush(); state.settings.notify = false; save(); render(true); return; }
@@ -5490,8 +5534,8 @@ setInterval(() => { const el = $('#elapsed'); if (el && state.active) { el.textC
   if (!location.hash.startsWith('#nhap=')) maybeWeekPlan();
   window.addEventListener('hashchange', shareHash);
   shareHash();
-  setTimeout(() => { hubFlush(); hubPull(); hubPushPlans(); }, 1600); window.addEventListener('online', () => { hubFlush(); hubPull(); hubPushPlans(); });
-  setInterval(() => { if (document.visibilityState === 'visible') hubPull(); }, 20000);
+  setTimeout(() => { hubFlush(); hubPull(); hubPushPlans(); hubSubscribe(); }, 1600); window.addEventListener('online', () => { hubFlush(); hubPull(); hubPushPlans(); });
+  setInterval(() => { if (document.visibilityState === 'visible') { hubPull(); hubFlush(); } }, 20000);
   setTimeout(() => pushRegister(), 3000);
   if (state.settings.notify) currentPushSub().then(async sub => {
     /* PA-23: đã cho phép thông báo mà máy chưa nối máy chủ thì tự nối, không cần dán địa chỉ */

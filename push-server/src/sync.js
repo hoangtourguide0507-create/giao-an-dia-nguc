@@ -174,7 +174,8 @@ function doi(ctx, u, auth) {
 
 async function dkSub(ctx, q, auth) {
   if (!okSub(q.sub)) return fail(400, 'Thiếu đăng ký thông báo');
-  await ctx.saveSub(q.sub, { who: auth.role === 'h' ? 'hlv' : 'hv:' + auth.hv });
+  /* off: học viên/HLV tắt thông báo đồng bộ — máy không còn nhận tin nào của phòng này */
+  await ctx.saveSub(q.sub, { who: q.off ? '' : auth.role === 'h' ? 'hlv' : 'hv:' + auth.hv });
   return json({ ok: true });
 }
 

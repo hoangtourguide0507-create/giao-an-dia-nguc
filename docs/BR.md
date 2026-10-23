@@ -262,7 +262,7 @@ Test: `tests/app/share.spec.mjs`, `tests/app/session.spec.mjs`, `tests/app/progr
 - **BR-23.12 Chưa làm**: chia sẻ ảnh học viên chụp; gửi tự động; chia sẻ nhiều ngày một link; đồng bộ ngược từ PT sang học viên; bật/tắt "Đừng hỏi lại" trong Cài đặt (hiện chỉ đặt từ bảng gợi ý).
 
 ## BR-24 Máy chủ đồng bộ mới (PA-34, đang làm theo bước)
-> Trạng thái: **bước 1 (PA-34.1)** HLV đăng ký và thêm học viên; **bước 2 (PA-34.2)** học viên nối máy bằng thẻ và buổi tập tự gửi; **bước 3 (PA-34.3)** máy HLV kéo buổi tập về đúng hồ sơ học viên (thông báo đẩy để bước 3b); **bước 4 (PA-34.4)** khôi phục khi máy trống bằng Face ID hoặc thẻ học viên; **bước 5 (PA-34.5)** chuyển học viên có sẵn sang máy chủ mới và giáo án HLV → học viên. Khôi phục thủ công có Hoàn tác (BR-24.5) và thông báo đẩy để bước sau. Các bước còn lại ghi trong [epics/2026-10-22.md](epics/2026-10-22.md), hạng mục 4.
+> Trạng thái: **bước 1 (PA-34.1)** HLV đăng ký và thêm học viên; **bước 2 (PA-34.2)** học viên nối máy bằng thẻ và buổi tập tự gửi; **bước 3 (PA-34.3)** máy HLV kéo buổi tập về đúng hồ sơ học viên (thông báo đẩy để bước 3b); **bước 4 (PA-34.4)** khôi phục khi máy trống bằng Face ID hoặc thẻ học viên; **bước 5 (PA-34.5)** chuyển học viên có sẵn và giáo án HLV → học viên; **PA-34.6** thông báo đẩy, xoá buổi, khôi phục thủ công có hoàn tác (BR-24.5), trạng thái gửi (BR-24.15). Các bước còn lại ghi trong [epics/2026-10-22.md](epics/2026-10-22.md), hạng mục 4.
 - **BR-24.1** HLV đăng ký bằng mã QR HLV (`GAH1`): quét bằng camera, dán mã hoặc chọn ảnh. Mã sai hoặc máy chủ không nhận thì báo "Mã HLV không đúng" và không lưu khoá. Khoá chỉ nằm trên máy này. *Test:* `tests/app/hub.spec.mjs`.
 - **BR-24.2** HLV thêm học viên: nhập tên → hiện thẻ QR (`GAV1`) có mã học viên và khoá riêng, cùng ô mã để sao chép. Thẻ dùng được lâu dài; hai học viên trùng tên có hai mã khác nhau. *Test:* `tests/app/hub.spec.mjs`.
 - **BR-24.3** Học viên nối máy: quét thẻ `GAV1` của HLV (camera, dán mã, hoặc ảnh) → máy chủ cấp khoá riêng cho máy này, app ghi nhận và báo "Đã nối với HLV · <tên>". Tối đa 5 máy mỗi học viên (máy thứ 6 đẩy máy cũ nhất). *Test:* `tests/app/hub.spec.mjs`.
@@ -283,6 +283,9 @@ Test: `tests/app/share.spec.mjs`, `tests/app/session.spec.mjs`, `tests/app/progr
 | Giáo án khi nối máy lần đầu, máy đã có giáo án riêng | Khác nhau, chưa có bản đã thống nhất | **Hỏi người dùng** như trên |
 
 So sánh giáo án bỏ qua mức tạ hiện tại (đổi mỗi buổi tập, không phải thay đổi giáo án). *Test:* `tests/app/hub.spec.mjs`.
-- **Chưa làm**: xoá buổi trên một máy không được đồng bộ sang máy kia (máy kia vẫn giữ buổi đó).
+- **Xoá buổi** (PA-34.6): học viên xoá buổi thì máy HLV cũng xoá, trừ khi buổi đã được sửa sau lần xoá (so thời điểm: xoá sau thời điểm sửa thì xoá). *Test:* `tests/app/hub.spec.mjs`. Lưu ý: so sánh theo đồng hồ của hai máy, lệch giờ lớn có thể sai thứ tự.
+- **BR-24.5 Khôi phục thủ công**: *Khôi phục từ máy chủ* thay buổi trên máy bằng bản đã gửi (có xác nhận, nói rõ buổi chưa gửi sẽ mất). *Hoàn tác khôi phục* trả lại như cũ. *Test:* `tests/app/hub.spec.mjs`.
+- **BR-24.15 Trạng thái gửi**: máy học viên hiện *Đã gửi xong · lần cuối lúc …*, *Chờ gửi N buổi*, hoặc *Chưa gửi được: không liên lạc được máy chủ*. *Test:* `tests/app/hub.spec.mjs`.
+- **BR-24.7 Thông báo đẩy** (PA-34.6): học viên tập xong → HLV nhận "<tên> vừa tập xong · <buổi> · n bài · m set"; giáo án đổi → học viên nhận "HLV vừa cập nhật giáo án". Buổi trước khi nối máy (lịch sử) không báo. Tắt công tắc *Học viên tập xong / HLV cập nhật giáo án* thì máy đó không nhận nữa. Máy chủ gửi qua Web Push; kiểm trong bộ test máy chủ (`tests/test_hub_sync.mjs`). **Chưa kiểm trên iPhone thật.**
 - Ngắt đăng ký trên máy này chỉ xoá khoá trên máy, không xoá dữ liệu trên máy chủ.
 
