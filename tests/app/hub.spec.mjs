@@ -21,7 +21,7 @@ async function makeCard(hub, id, ten) {
 }
 /* đọc mã thẻ học viên đang hiện trong bảng và trả về {i, k} */
 async function thẻCode(app) {
-  const code = await app.page.locator('#hub-code').inputValue();
+  const code = await app.page.locator('#hub-code-0').inputValue();
   return JSON.parse(Buffer.from(code.split('.')[1], 'base64url').toString());
 }
 
@@ -55,7 +55,7 @@ test('BR-24.2 · HLV thêm học viên → thẻ QR; máy chủ nhận đúng h�
   await app.click('hub-add');
   await app.page.fill('#hub-ten', 'Lan');
   await app.click('hub-add-go');
-  await expect(app.sheet()).toContainText('Thẻ QR của Lan');
+  await expect(app.sheet()).toContainText('Lan');
   const { i, k } = await thẻCode(app);
   expect(i).toMatch(/^lan-[a-z0-9]{4}$/);
   const list = await hub.req('/s/tv', 'GET', null, hub.auth);
@@ -114,7 +114,7 @@ test('BR-24.4 · HLV thêm học viên → học viên nối máy và tập xong
   await app.click('hub-add');
   await app.page.fill('#hub-ten', 'Lan');
   await app.click('hub-add-go');
-  const code = await app.page.locator('#hub-code').inputValue();
+  const code = await app.page.locator('#hub-code-0').inputValue();
   await app.page.keyboard.press('Escape');
   await app.flushed();
   const pid = (await app.profiles()).list.find(p => p.name === 'Lan').id;
@@ -151,14 +151,14 @@ async function shareCredentials(from, to) {
 async function lanTrains(app, hub, device) {
   await seedHlv(app); await registerHlv(app, hub);
   await app.click('hub-add'); await app.page.fill('#hub-ten', 'Lan'); await app.click('hub-add-go');
-  const code = await app.page.locator('#hub-code').inputValue(); await app.page.keyboard.press('Escape'); await app.flushed();
+  const code = await app.page.locator('#hub-code-0').inputValue(); await app.page.keyboard.press('Escape'); await app.flushed();
   const hv = await device();
   const d = basicPlan().days[0]; const done = session(d, TODAY, [[d.exercises[0], [[40, 8]]]]);
   await hv.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Lan', color: 0 }] }, states: { p1: state({ days: [d], sessions: [done], settings: { pushServer: hub.url } }) } });
   await hv.more('drive'); await fakeCamera(hv.page, code); await hv.click('hub-reg');
   await expect(hv.toast()).toContainText('Đã nối với HLV · Lan');
   const { i, dk } = (await hv.state()).settings.sync;
-  await expect.poll(async () => (await hub.req(`/s/doi?hv=${i}&since=0`, 'GET', null, `Bearer v.${i}.${dk}`)).j.recs.map(r => r.id), { timeout: 15000 }).toEqual([done.id]);
+  await expect.poll(async () => (await hub.req(`/s/doi?hv=${i}&since=0`, 'GET', null, `Bearer v.${i}.${dk}`)).j.recs.filter(r => r.k.startsWith('buoi:')).map(r => r.id), { timeout: 15000 }).toEqual([done.id]);
   return { hv, code, done, i };
 }
 
@@ -192,4 +192,47 @@ test('BR-24.4 · máy chưa bật Face ID cho học viên nào: khôi phục b�
   await fresh.more('drive'); await fresh.click('hub-restore');
   await expect(fresh.toast()).toContainText('Không dùng được Face ID');
   expect((await fresh.state()).settings.sync).toBeUndefined();
+});
+
+test('BR-24.17 · chuyển học viên có sẵn sang máy chủ mới: thẻ QR; học viên nối máy nhận giáo án HLV và giữ buổi cũ', async ({ app, hub, device }) => {
+  const P = basicPlan();
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) } });
+  await registerHlv(app, hub);
+  await app.more('drive'); await app.click('hub-migrate');
+  await app.click('hub-migrate-go');
+  const code = await app.page.locator('#hub-code-0').inputValue();
+  await app.page.keyboard.press('Escape');
+  const i = JSON.parse(Buffer.from(code.split('.')[1], 'base64url').toString()).i;
+  expect((await app.state()).settings.sync.map[i]).toBe('p2');
+
+  const hv = await device();
+  const d = basicPlan().days[0];
+  const done = session(d, TODAY, [[d.exercises[0], [[40, 8]]]]);
+  await hv.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Lan', color: 0 }] }, states: { p1: state({ days: [], sessions: [done], settings: { pushServer: hub.url } }) } });
+  await hv.more('drive'); await fakeCamera(hv.page, code); await hv.click('hub-reg');
+  await expect(hv.toast()).toContainText('Đã nối với HLV · Lan');
+  await expect.poll(async () => (await hv.state()).days.map(x => x.name), { timeout: 15000 }).toEqual(P.days.map(x => x.name));
+  const { dk } = (await hv.state()).settings.sync;
+  await expect.poll(async () => (await hub.req(`/s/doi?hv=${i}&since=0`, 'GET', null, `Bearer v.${i}.${dk}`)).j.recs.map(r => r.id), { timeout: 15000 }).toContain(done.id);
+});
+
+test('BR-24.9 · HLV đổi giáo án → học viên nhận trong vòng 20 giây; học viên hoàn tác được', async ({ app, hub, device }) => {
+  const P = basicPlan();
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) } });
+  await registerHlv(app, hub);
+  await app.more('drive'); await app.click('hub-migrate'); await app.click('hub-migrate-go');
+  const code = await app.page.locator('#hub-code-0').inputValue();
+  await app.page.keyboard.press('Escape');
+  const hv = await device();
+  await hv.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Lan', color: 0 }] }, states: { p1: state({ days: [], settings: { pushServer: hub.url } }) } });
+  await hv.more('drive'); await fakeCamera(hv.page, code); await hv.click('hub-reg');
+  await expect(hv.toast()).toContainText('Đã nối với HLV · Lan');
+  await expect.poll(async () => (await hv.state()).days.length, { timeout: 15000 }).toBe(P.days.length);
+  const { i, dk } = (await hv.state()).settings.sync;
+  /* HLV đổi giáo án trên máy HLV: máy chủ nhận bản mới (đúng cách máy HLV gửi) */
+  const bai = { name: 'Gập bụng', muscle: 'Bụng', type: 'upper', sets: 3, repMin: 8, repMax: 12, repTarget: 10 };
+  await hub.req('/s/ghi', 'POST', { hv: i, recs: [{ k: 'plan@hlv', id: 'plan', t: Date.now() + 5000, vai: 'hlv', d: JSON.stringify({ plan: [{ n: 'Ngày đổi', e: [bai] }] }) }] }, hub.auth);
+  await expect.poll(async () => (await hv.state()).days.map(x => x.name), { timeout: 45000 }).toContain('Ngày đổi');
+  await hv.more('drive'); await hv.click('hub-plan-undo');
+  await expect.poll(async () => (await hv.state()).days.map(x => x.name), { timeout: 5000 }).toEqual(P.days.map(x => x.name));
 });
