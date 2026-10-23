@@ -246,6 +246,7 @@ Máy chủ Apps Script (`drive/Code.gs`), liên kết `GAL1`, tài khoản tên 
 - Đổi hồ sơ HLV (`hubSelfPick`): (1) hồ sơ HLV cũ có dữ liệu → `hubNewCard` (lưu `map[mới] = cũ`) rồi `hubPushSessionsTo(mới, cũ)` (`/s/ghi` từng lô 20 buổi, `backfill`); (2) học viên được chọn → `/s/tv/xoa`; (3) `/s/tv/xoa sl:tu-tap`; (4) cục bộ: `sy.self = pid`, `selfSeq = 0`, bỏ `planH[HLV_SELF]`, `switchProfile(pid)`, đặt lại `sent/gone` của hồ sơ mới; hồ sơ cũ trống thì xoá (ảnh, `LDB` kv, `profiles.list`).
 - Lỗi giữa chừng: bước (1) lưu `map` trước khi đẩy buổi, nên thử lại không tạo thẻ thứ hai; bước (3) không chạy nếu (1) hoặc (2) lỗi.
 - Ảnh: chưa đồng bộ (chờ thiết kế gắn ảnh vào bài tập; xem BR-28.6).
+- Không đè giáo án trống (BR-28.7): `planH[mã]` phải được đặt **trước** khi học viên vào `map` (`hubAdopt`) và **cùng lúc** với `selfMade` (`hubSelfMake`), vì `save()` gọi `hubPushPlans` bất kỳ lúc nào. `planTargets` chỉ gồm hồ sơ HLV khi `selfMade`. `hubPushPlans` bỏ qua (và ghi `planH`) giáo án trống của mục chưa từng đồng bộ. `hubEnsure` bật cờ `hubEnsuring` trước mọi lần chờ mạng.
 
 ## 8. File sao lưu
 > **ĐÃ BỎ (PA-36, 23/10/2026)**: file sao lưu và khôi phục đã gỡ (PA-36). Không còn định dạng file `so-ta`/`gadn-sync` nào được đọc. Mục này giữ lại để tra cứu dữ liệu cũ.
