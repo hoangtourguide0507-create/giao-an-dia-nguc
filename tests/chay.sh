@@ -10,7 +10,7 @@ import re; s = open('../index.html', encoding='utf-8').read(); m = max(re.findal
 PY
 node --check /tmp/gadn-main.js || { echo "LỖI CÚ PHÁP index.html"; exit 1; }
 FAIL=0
-LIST=${*:-sync form focus pa10 pa11 pa14 pa18 pa19 pa20 pa22 pa23}
+LIST=${*:-sync form focus pa10 pa11 pa14 pa20 pa22 pa23}
 for t in $LIST; do
   out=$(python3 test_$t.py 2>&1); p=$(grep -c '^PASS' <<<"$out"); f=$(grep '^FAIL\|pageerror\|^Traceback\|Error:' <<<"$out"); [ "$p" = 0 ] && [ -z "$f" ] && f='không có kiểm tra nào chạy xong'
   if [ -n "$f" ]; then echo "✗ $t ($p đạt)"; echo "$f" | sed 's/^/    /'; FAIL=1; else echo "✓ $t ($p đạt)"; fi
@@ -19,6 +19,5 @@ if [ $# -eq 0 ]; then
   node test_push_server.mjs | grep -q FAIL && { echo "✗ push-server"; FAIL=1; } || echo "✓ push-server"
   node test_hub_sync.mjs 2>/dev/null | grep -q FAIL && { echo "✗ hub-sync (máy chủ đồng bộ)"; FAIL=1; } || echo "✓ hub-sync (máy chủ đồng bộ)"
   node test_hub_pa33b.mjs 2>/dev/null | grep -q FAIL && { echo "✗ hub-passkey-anh"; FAIL=1; } || echo "✓ hub-passkey-anh"
-  node test_drive_gas.js | grep -q FAIL && { echo "✗ drive/Code.gs"; FAIL=1; } || echo "✓ drive/Code.gs"
 fi
 exit $FAIL

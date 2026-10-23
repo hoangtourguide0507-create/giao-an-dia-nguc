@@ -188,16 +188,7 @@ Test: `tests/app/drive.spec.mjs` (mã kiểu cũ bị từ chối), `tests/app/e
 - **BR-13.3** Link cũ `#nhap=<mã>` không còn nhập giáo án.
 
 ## BR-14 Đồng bộ HLV ⇄ học viên qua Google Drive
-Test: `tests/app/drive.spec.mjs`, `tests/app/account.spec.mjs`, `tests/app/syncfile.spec.mjs`, `tests/app/edge.spec.mjs`; máy chủ: `tests/test_drive_gas.js` (xem SA §7)
-
-- **BR-14.1 Mô hình**: HLV tự triển khai một máy chủ Google Apps Script (`drive/Code.gs`, hướng dẫn `drive/HUONG-DAN-TRIEN-KHAI.md`) lưu dữ liệu vào thư mục `GiaoAnDiaNguc` trên Drive của HLV. Mỗi học viên có một hồ sơ trên Drive, gồm phần HLV gửi xuống (giáo án, mức tạ) và phần học viên gửi lên (buổi tập, số đo…). Hai máy cùng vai thì báo lỗi.
-- **BR-14.2 Cách liên kết một học viên**: (a) **tài khoản đăng nhập** — cách chính, BR-21; (b) **mã liên kết `GAL1`** — HLV bấm "☁ Mã liên kết" trên thẻ học viên → *Gửi mã qua Zalo* (bảng chia sẻ hoặc sao chép; không sao chép được thì hiện ô để tự sao chép), hiện mã QR, hoặc lưu ảnh mã; học viên **dán mã / quét camera / chọn ảnh mã** → xem trước → *Liên kết*. Mã dán vào máy HLV, mã hỏng hoặc thiếu trang bị từ chối rõ ràng. HLV chưa cài Drive bấm mã liên kết thì được dẫn tới Tài khoản & đồng bộ.
-- **BR-14.3 Quản lý liên kết**: "Đồng bộ ngay"; *ngắt liên kết* (dữ liệu trên máy giữ nguyên, ngừng đồng bộ); *cấp mã mới* thì mã cũ hết hiệu lực. Kiểu cũ **MÃ HLV** (không đăng nhập): nhập link máy chủ + MÃ HLV 32 ký tự để kết nối, vẫn dùng song song với tài khoản.
-- **BR-14.4 Tự động**: máy HLV tự đưa **mọi hồ sơ** lên Drive (mỗi người một liên kết); đồng bộ chạy khi mở app, khi quay lại app, và 20 giây sau lần lưu gần nhất (tối thiểu 15 giây một lần; bỏ qua khi đang tập hoặc đang mở bảng); có nút "Đồng bộ ngay". Trạng thái hiện ở Tài khoản & đồng bộ và dòng phụ của mục: *Đang đồng bộ… · Đồng bộ lần cuối … · Lỗi: …* (lỗi mạng thì báo và thử lại được).
-- **BR-14.5 Học viên → HLV**: máy HLV giữ cấu trúc giáo án của HLV; nhận buổi tập, mức tạ mới hơn, bài học viên tự thêm; học viên xoá bài tự thêm thì HLV xoá theo.
-- **BR-14.6 HLV → học viên**: giáo án dựng lại theo HLV nhưng **giữ mã bài cũ** (lịch sử và bài học viên tự thêm không mất); bài HLV bỏ thì bỏ; ảnh máy tập đi kèm theo mã băm nội dung, không nhân đôi khi nhận lại; đồng bộ ảnh qua Drive thật chạy được (mã ảnh chỉ gồm chữ, số, `_`; mã cũ có dấu `.` tự được đổi sang mã mới, PA-25). HLV dùng 2 máy: máy kia gửi bản mới hơn thì gộp về trước khi gửi, không ghi đè.
-- **BR-14.7 Gộp buổi tập**: theo mã (bản sửa sau thắng); buổi **trùng** (cùng ngày + tên buổi, khác mã) → chọn Giữ máy này / máy kia / cả hai (mặc định bản nhiều set hơn). Xoá có ghi dấu (giữ 180 ngày) để máy kia xoá theo. Mức tạ theo buổi mới nhất (bỏ deload) trừ khi có mức tự nhập mới hơn. Đang tập dở thì không gộp. Có xem trước kết quả và **Hoàn tác** lần gộp gần nhất khi gộp thủ công qua file `gadn-sync` (BR-15.4).
-- **BR-14.8 Thông báo**: khi giáo án HLV đổi → báo học viên; khi học viên tập xong → báo HLV (cần máy chủ thông báo, BR-22).
+> **ĐÃ BỎ (PA-35, 23/10/2026)**: đồng bộ Google Drive và mã liên kết `GAL1` đã gỡ khỏi app và khỏi repo (`drive/` đã xoá). Thay bằng [BR-24](#br-24-máy-chủ-đồng-bộ-mới-pa-34).
 
 ## BR-15 Sao lưu & khôi phục
 Test: `tests/app/backup.spec.mjs`, `tests/app/misc.spec.mjs`
@@ -243,14 +234,7 @@ Test: `tests/app/misc.spec.mjs`, `tests/app/backup.spec.mjs`, `tests/app/syncfil
 - **BR-20.2** Đọc được mọi định dạng file sao lưu cũ (BR-15.2); mọi định dạng mã gửi cũ được nhận diện và báo rõ là không còn dùng (BR-13.2).
 
 ## BR-21 Tài khoản đăng nhập (HLV và học viên)
-Test: `tests/app/account.spec.mjs`, `tests/app/drive.spec.mjs` (máy chủ thật `drive/Code.gs` chạy trong `tests/gas_server.js`)
-
-- **BR-21.1 HLV tạo tài khoản lần đầu**: Tài khoản & đồng bộ → *Tạo tài khoản HLV lần đầu* → dán link máy chủ (`https://script.google.com/…/exec`) + MÃ HLV (32 ký tự), tên HLV, tên đăng nhập, mật khẩu. Kiểm tra nhập liệu (thiếu trường, link sai, mật khẩu < 6 ký tự, tên đăng nhập không hợp lệ). Xong: tự bật chế độ HLV, đăng nhập, **đưa mọi hồ sơ trên máy lên Drive**. HLV quên mật khẩu: tạo lại bằng MÃ HLV.
-- **BR-21.2 Quản lý học viên** (Phòng HLV → Tài khoản & đồng bộ → Quản lý học viên): danh sách học viên trên Drive; *＋ Thêm học viên* (tên → gợi ý tên đăng nhập không dấu và mật khẩu); *Cấp tài khoản* cho học viên đã có hồ sơ; *Đặt lại mật khẩu* (máy học viên đang đăng nhập bị đăng xuất); *Khoá / Mở khoá* (dữ liệu giữ nguyên); *Gửi cho học viên* (tên đăng nhập, mật khẩu, link app và link máy chủ).
-- **BR-21.3 Học viên đăng nhập**: tên đăng nhập + mật khẩu (+ link máy chủ nhập 1 lần). Sai mật khẩu bị từ chối; sai liên tiếp 8 lần thì tạm khoá tên đăng nhập 15 phút. Đăng nhập xong nhận giáo án HLV soạn; tập xong HLV tự nhận buổi. Máy đang bật chế độ HLV hoặc đang tập dở thì không đăng nhập; học viên đã có hồ sơ liên kết tài khoản khác thì tạo hồ sơ mới cho tài khoản này.
-- **BR-21.4 Đổi máy**: HLV đăng nhập trên máy mới → tự bật chế độ HLV, lấy lại mọi hồ sơ + giáo án + buổi tập từ Drive, bỏ hồ sơ trống mặc định. Học viên đổi máy chỉ cần đăng nhập lại.
-- **BR-21.5 Phiên**: mỗi lần đăng nhập cấp một phiên cho máy đó; HLV đặt lại mật khẩu hoặc khoá tài khoản thì phiên hết hạn → máy học viên báo "Phiên đăng nhập đã hết hạn… Đăng nhập lại", **giữ nguyên dữ liệu**, ngừng đồng bộ. Học viên tự đổi mật khẩu được; *Đăng xuất* gỡ phiên (dữ liệu trên máy giữ nguyên).
-- **BR-21.6 Bảo mật phía máy chủ**: mật khẩu chỉ lưu dạng băm có muối; mã bí mật học viên lưu dạng băm; MÃ HLV đổi được (`doiMaHLV`). Chi tiết: SA §7.
+> **ĐÃ BỎ (PA-35, 23/10/2026)**: tài khoản đăng nhập bằng tên và mật khẩu (qua Apps Script) đã gỡ. Thay bằng mã HLV `GAH1` và thẻ học viên `GAV1` ở [BR-24](#br-24-máy-chủ-đồng-bộ-mới-pa-34).
 
 ## BR-22 Thông báo
 Test: `tests/app/notify.spec.mjs`, `tests/app/rest.spec.mjs`, `tests/test_push_server.mjs`
@@ -287,5 +271,18 @@ Test: `tests/app/share.spec.mjs`, `tests/app/session.spec.mjs`, `tests/app/progr
 - **BR-24.4 (khôi phục khi máy trống)** Học viên bật *Khôi phục bằng Face ID* trên máy đã nối. Máy trống (vừa xoá dữ liệu) chọn *Khôi phục bằng Face ID* → máy chủ kiểm chữ ký passkey và cấp khoá máy mới → app kéo lại toàn bộ buổi đã gửi. Không có Face ID thì quét lại thẻ học viên cho kết quả giống hệt. Face ID không dùng được hoặc chưa bật thì báo lỗi, không nối máy. *Test:* `tests/app/hub.spec.mjs`.
 - **BR-24.9** Giáo án HLV → học viên: máy HLV gửi giáo án của mỗi học viên khi giáo án đổi; máy học viên nhận trong vòng 20 giây (kéo định kỳ) và gộp bằng cùng động cơ với Drive (`syncMerge`). Học viên hoàn tác được giáo án vừa nhận (*Hoàn tác giáo án*). *Test:* `tests/app/hub.spec.mjs`.
 - **BR-24.17 (chuyển học viên có sẵn)** HLV chọn các hồ sơ học viên đang có (*Chuyển học viên có sẵn*): mỗi người được cấp một thẻ QR và hồ sơ giữ nguyên. Học viên quét thẻ thì nhận giáo án của HLV và buổi đã tập cũ được gửi lên. *Test:* `tests/app/hub.spec.mjs`.
+- **BR-24.18 Xung đột giữa máy này và máy chủ** (PA-35): tự gộp khi có thể; hỏi người dùng khi không thể.
+
+| Dữ liệu | Khi xung đột | Cách xử lý |
+|---|---|---|
+| Buổi tập có cùng mã | Hai bên có bản khác nhau | Bản có thời điểm mới hơn thắng (tự động) |
+| Hai buổi khác mã, cùng ngày và tên buổi | Trùng buổi | Giữ cả hai, không xoá (tự động) |
+| Mức tạ của cùng một bài | Hai bên đều có | Mức có thời điểm mới hơn thắng (tự động) |
+| Giáo án | Chỉ HLV đổi | Áp dụng bản của HLV (tự động) |
+| Giáo án | Cả máy này và HLV đều đổi so với lần đồng bộ trước | **Hỏi người dùng**: bảng so sánh (số ngày, số bài, ngày chỉ có ở một bên, bài khác số lượng) và hai lựa chọn: *Dùng giáo án HLV* (có hoàn tác) hoặc *Giữ giáo án máy này* |
+| Giáo án khi nối máy lần đầu, máy đã có giáo án riêng | Khác nhau, chưa có bản đã thống nhất | **Hỏi người dùng** như trên |
+
+So sánh giáo án bỏ qua mức tạ hiện tại (đổi mỗi buổi tập, không phải thay đổi giáo án). *Test:* `tests/app/hub.spec.mjs`.
+- **Chưa làm**: xoá buổi trên một máy không được đồng bộ sang máy kia (máy kia vẫn giữ buổi đó).
 - Ngắt đăng ký trên máy này chỉ xoá khoá trên máy, không xoá dữ liệu trên máy chủ.
 

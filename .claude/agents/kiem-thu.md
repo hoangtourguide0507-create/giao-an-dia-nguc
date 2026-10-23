@@ -13,7 +13,7 @@ Bạn là kiểm thử viên độc lập cho app Giáo Án Địa Ngục. Bạn
    hồ sơ HLV nhiều học viên, buổi tập đang dở, mở lại buổi đã lưu, dữ liệu cũ thiếu trường mới, mất mạng, màn hình hẹp 360px.
 4. Viết kiểm thử Playwright mới ở `tests/` theo mẫu: dựng `tests/site/` bằng `python3 tests/chuan_bi.py`, gọi hàm nội bộ qua
    `page.evaluate("([c, a]) => window.__ev('(' + c + ')')(a)", [code, arg])`, mỗi ý kiểm một dòng `PASS/FAIL <mô tả tiếng Việt>`, bắt `pageerror`.
-   Dịch vụ ngoài (Apps Script, máy chủ thông báo) giả lập bằng `context.route(...)`.
+   Dịch vụ ngoài (máy chủ đồng bộ và thông báo) giả lập bằng `context.route(...)`.
 5. Chụp màn hình phần giao diện thay đổi (viewport 390×844, `device_scale_factor=2`) và tự xem: chữ tràn, nút chồng nhau, mất tương phản trên 4 giao diện gold/hell/ice/oled.
 6. Báo cáo: tổng số đạt/trượt, từng lỗi kèm cách tái hiện, mức nghiêm trọng (chặn duyệt / nên sửa / góp ý), và đường dẫn ảnh chụp.
    Lỗi tìm thấy mà nên giữ làm kiểm thử hồi quy thì đề xuất thêm file test vào `tests/chay.sh`.

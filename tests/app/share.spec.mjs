@@ -48,17 +48,17 @@ async function quickSave(app, dayId) {
 }
 
 /* ===== BR-23.4 userid ===== */
-test('userid: hồ sơ có mã Drive dùng mã Drive; hồ sơ khác dùng mã hồ sơ; p1 nhận mã ngẫu nhiên; giữ ổn định khi tải lại', async ({ app }) => {
+test('userid: hồ sơ học viên dùng mã hồ sơ; p1 nhận mã ngẫu nhiên; giữ ổn định khi tải lại', async ({ app }) => {
   const P = basicPlan();
   await app.seed({
     profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }, { id: 'p3', name: 'Minh', color: 2 }] },
-    states: { p1: state({ days: P.days, sessions: [session(P.chest, TODAY, [[P.bench, [[40, 10]]]])] }), p2: state({ days: P.days, drv: { id: 'hvLan123', m: 'x' } }), p3: state({ days: P.days }) },
+    states: { p1: state({ days: P.days, sessions: [session(P.chest, TODAY, [[P.bench, [[40, 10]]]])] }), p2: state({ days: P.days }), p3: state({ days: P.days }) },
   });
   await copyLink(app, TODAY);
   const u1 = (await app.profiles()).list.map(p => p.uid);
   expect(u1[0]).toBeTruthy();
   expect(u1[0]).not.toBe('p1');
-  expect(u1[1]).toBe('hvLan123');
+  expect(u1[1]).toBe('p2');
   expect(u1[2]).toBe('p3');
   await app.reload();
   await copyLink(app, TODAY);
@@ -251,7 +251,6 @@ test('PT quét QR bằng camera trong app → mở xem trước', async ({ app, 
   const hoang = await copyLink(app, TODAY);
   await app.seed({ state: state(), profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] } });
   await fakeCamera(page, hoang);
-  await app.more('drive');
   await app.click('qr-scan');
   await expect(app.sheet()).toContainText('Kết quả của Hoàng', { timeout: 15000 });
 });
@@ -263,7 +262,6 @@ test('PT tải ảnh có QR (ảnh chụp màn hình) → mở xem trước', as
   await openShare(app, TODAY);
   const png = Buffer.from((await page.locator('#share-qr').evaluate(c => c.toDataURL('image/png'))).split(',')[1], 'base64');
   await app.seed({ state: state(), profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] } });
-  await app.more('drive');
   await app.click('qr-scan');
   await page.setInputFiles('#img-in', { name: 'ket-qua.png', mimeType: 'image/png', buffer: png });
   await expect(app.sheet()).toContainText('Kết quả của Hoàng', { timeout: 15000 });

@@ -236,3 +236,41 @@ test('BR-24.9 · HLV đổi giáo án → học viên nhận trong vòng 20 giâ
   await hv.more('drive'); await hv.click('hub-plan-undo');
   await expect.poll(async () => (await hv.state()).days.map(x => x.name), { timeout: 5000 }).toEqual(P.days.map(x => x.name));
 });
+
+/* HLV chuyển Lan sang máy chủ mới; máy Lan đã có giáo án riêng (localDays) rồi nối máy */
+async function lanWithOwnPlan(app, hub, device, localDays) {
+  const P = basicPlan();
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) } });
+  await registerHlv(app, hub);
+  await app.more('drive'); await app.click('hub-migrate'); await app.click('hub-migrate-go');
+  const code = await app.page.locator('#hub-code-0').inputValue(); await app.page.keyboard.press('Escape');
+  const hv = await device();
+  await hv.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Lan', color: 0 }] }, states: { p1: state({ days: localDays, settings: { pushServer: hub.url } }) } });
+  await hv.more('drive'); await fakeCamera(hv.page, code); await hv.click('hub-reg');
+  await expect(hv.toast()).toContainText('Đã nối với HLV · Lan');
+  return { hv, P };
+}
+
+test('BR-24.9 · máy học viên có giáo án riêng khác HLV: hỏi người dùng kèm bảng so sánh; chọn giáo án HLV thì áp dụng', async ({ app, hub, device }) => {
+  const P = basicPlan();
+  const local = P.days.map((d, i) => (i === 0 ? { ...d, name: 'Ngày của tôi' } : d));
+  const { hv } = await lanWithOwnPlan(app, hub, device, local);
+  await expect(hv.view()).toContainText('Giáo án khác với HLV');
+  await expect(hv.view()).toContainText('Chỉ có trên máy này');
+  await expect(hv.view()).toContainText('Ngày của tôi');
+  await hv.click('hub-conflict-remote');
+  await expect.poll(async () => (await hv.state()).days.map(x => x.name), { timeout: 5000 }).toContain(P.days[0].name);
+  expect((await hv.state()).sync.conflict).toBeFalsy();
+  expect((await hv.state()).days.map(x => x.name)).not.toContain('Ngày của tôi');
+  expect((await hv.state()).sync.prevDays.map(x => x.name)).toEqual(local.map(x => x.name));
+});
+
+test('BR-24.9 · máy học viên có giáo án riêng khác HLV: chọn giữ giáo án máy này thì không bị ghi đè', async ({ app, hub, device }) => {
+  const P = basicPlan();
+  const local = P.days.map((d, i) => (i === 0 ? { ...d, name: 'Ngày của tôi' } : d));
+  const { hv } = await lanWithOwnPlan(app, hub, device, local);
+  await expect(hv.view()).toContainText('Giáo án khác với HLV');
+  await hv.click('hub-conflict-local');
+  await expect(hv.view()).not.toContainText('Giáo án khác với HLV');
+  expect((await hv.state()).days.map(x => x.name)).toEqual(local.map(x => x.name));
+});

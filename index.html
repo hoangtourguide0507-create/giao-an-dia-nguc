@@ -1056,21 +1056,6 @@ body.restflash::after{content:"";position:fixed;inset:0;pointer-events:none;z-in
 .eff button[aria-pressed="true"].f{background:var(--down);border-color:var(--down);color:#fff}
 .effl{color:var(--fg-2);font-weight:600}
 
-/* ===== PA-15: đồng bộ Google Drive ===== */
-.drv .st,#drv-st{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;margin:8px 0 0}
-.drv .st i,#drv-st i{width:9px;height:9px;border-radius:50%;background:var(--muted);flex:none}
-#drv-st.ok i,.drv .st.ok i{background:var(--up)} #drv-st.err i,.drv .st.err i{background:var(--down)} #drv-st.busy i,.drv .st.busy i{background:var(--gold)}
-.acc h3 .ico{width:20px;height:20px;color:var(--gold)} .acc h3{display:flex;align-items:center;gap:8px}
-.acc-warn{color:var(--down);font-weight:700;font-size:13px;margin:8px 0 0}
-.acc-more{margin-top:6px} .acc-more .btn{font-size:12px}
-.acc-sv{margin-top:10px;font-size:13px} .acc-sv summary{cursor:pointer;color:var(--fg-2);font-weight:700;padding:4px 0} .acc-sv .inp{margin-top:6px}
-.acc-list{display:flex;flex-direction:column;gap:8px;margin:12px 0}
-.acc-tv{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface-2)}
-.acc-tv.off{opacity:.6} .acc-tv-b{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
-.acc-cred{display:flex;flex-direction:column;gap:8px;margin:14px 0;padding:14px;border:1px solid rgb(var(--acc-rgb) / .45);border-radius:var(--r-sm);background:var(--surface-2)}
-.acc-cred div{display:flex;justify-content:space-between;gap:12px} .acc-cred span{color:var(--muted);font-size:13px} .acc-cred b{font-size:17px;letter-spacing:.02em;user-select:all}
-.drv .inp{margin-top:6px}
-.drv .row{margin-top:10px}
 
 /* ===== PA-16: thông báo của app (Web Push) ===== */
 .ncard .dows{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
@@ -1708,7 +1693,7 @@ const freshState = () => ({ v: 3, days: [], sessions: [], body: [], bodyPhotos: 
 let state = freshState();
 let profiles = { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] };
 const PCOLORS = ['#d9b45b', '#6ea8ff', '#ff86b4', '#5fdc9b', '#c79bff', '#ffa45c'];
-const GLOBAL_KEYS = ['skin', 'notify', 'alertMethod', 'ntfyTopic', 'pushServer', 'pushKey', 'restAlert', 'shortcutName', 'alertV17', 'sfx', 'haptics', 'eff', 'drvUrl', 'drvKey', 'drvSv', 'acc', 'sync', 'nRemind', 'nDays', 'nTime', 'nWeekly', 'nDrive', 'fxOff', 'animOff', 'lastBackupAt', 'lastBackupSess', 'backupSkipAt'];
+const GLOBAL_KEYS = ['skin', 'notify', 'alertMethod', 'ntfyTopic', 'pushServer', 'pushKey', 'restAlert', 'shortcutName', 'alertV17', 'sfx', 'haptics', 'eff', 'sync', 'nRemind', 'nDays', 'nTime', 'nWeekly', 'nSync','fxOff', 'animOff', 'lastBackupAt', 'lastBackupSess', 'backupSkipAt'];
 const stateKey = pid => pid === 'p1' ? 'state' : 'state:' + pid;
 const curProf = () => profiles.list.find(p => p.id === profiles.active) || profiles.list[0];
 const multi = () => profiles.list.length > 1;
@@ -1740,7 +1725,7 @@ function loadState(s) {
   state.settings.skin22 = 1;
 }
 let saveT = null;
-function save() { state.updatedAt = Date.now(); clearTimeout(saveT); saveT = setTimeout(flush, 300); if (!DRV.self) drvSoon(); if (hubRole() === 'hv') hubFlushSoon(); if (hubRole() === 'hlv') hubPlanSoon(); }
+function save() { state.updatedAt = Date.now(); clearTimeout(saveT); saveT = setTimeout(flush, 300); if (hubRole() === 'hv') hubFlushSoon(); if (hubRole() === 'hlv') hubPlanSoon(); }
 function flush(now) { clearTimeout(saveT); saveT = null; LDB.put('kv', stateKey(profiles.active), clone(state)); Cloud.sync(now); }
 
 /* ---------- truy vấn ---------- */
@@ -2246,7 +2231,7 @@ function onboarding() {
     <p class="sub">Tạo các ngày tập, điền mức tạ đang tập, chụp ảnh máy. Mỗi tuần app nhắc bạn nên lên bao nhiêu kg cho từng bài.</p>
     <div class="stack" style="margin-top:18px"><button class="btn gold big" data-act="onb-new">Tạo ngày tập đầu tiên</button>
     <button class="btn big" data-act="onb-sample">Dùng giáo án mẫu 4 ngày</button>
-    <button class="btn ghost big" data-act="qr-scan">Quét mã liên kết HLV gửi</button></div></section>`;
+    <button class="btn ghost big" data-act="qr-scan">Quét mã QR HLV hoặc thẻ học viên</button></div></section>`;
 }
 const EXDB_MUS=["chest", "shoulders", "biceps", "triceps", "forearms", "abdominals", "quadriceps", "hamstrings", "glutes", "calves", "lats", "middle back", "lower back", "traps", "adductors", "abductors", "neck"];const EXDB_EQ=["barbell", "dumbbell", "other", "body only", "cable", "", "machine", "kettlebells", "bands", "medicine ball", "exercise ball", "foam roll", "e-z curl bar"];const EXDB=[["3_4_Sit-Up","3/4 Sit-Up",3,"f","",2],["90_90_Hamstring","90/90 Hamstring",3,"h","j",1],["Ab_Crunch_Machine","Ab Crunch Machine",6,"f","",2],["Ab_Roller","Ab Roller",2,"f","b",2],["Adductor","Adductor",11,"o","",3],["Adductor_Groin","Adductor/Groin",5,"o","",3],["Advanced_Kettlebell_Windmill","Advanced Kettlebell Windmill",7,"f","ihb",1],["Air_Bike","Air Bike",3,"f","",2],["All_Fours_Quad_Stretch","All Fours Quad Stretch",3,"g","g",3],["Alternate_Hammer_Curl","Alternate Hammer Curl",1,"c","e",2],["Alternate_Heel_Touchers","Alternate Heel Touchers",3,"f","",2],["Alternate_Incline_Dumbbell_Curl","Alternate Incline Dumbbell Curl",1,"c","e",2],["Alternate_Leg_Diagonal_Bound","Alternate Leg Diagonal Bound",5,"g","pojih",1],["Alternating_Cable_Shoulder_Press","Alternating Cable Shoulder Press",4,"b","d",1],["Alternating_Deltoid_Raise","Alternating Deltoid Raise",1,"b","",1],["Alternating_Floor_Press","Alternating Floor Press",7,"a","fbd",1],["Alternating_Hang_Clean","Alternating Hang Clean",7,"h","cjeimn",2],["Alternating_Kettlebell_Press","Alternating Kettlebell Press",7,"b","d",1],["Alternating_Kettlebell_Row","Alternating Kettlebell Row",7,"l","ck",2],["Alternating_Renegade_Row","Alternating Renegade Row",7,"l","fcakd",2],["Ankle_Circles","Ankle Circles",5,"j","",2],["Ankle_On_The_Knee","Ankle On The Knee",5,"i","",3],["Anterior_Tibialis-SMR","Anterior Tibialis-SMR",2,"j","",3],["Anti-Gravity_Press","Anti-Gravity Press",0,"b","lnd",1],["Arm_Circles","Arm Circles",5,"b","n",1],["Arnold_Dumbbell_Press","Arnold Dumbbell Press",1,"b","d",1],["Around_The_Worlds","Around The Worlds",1,"a","b",1],["Atlas_Stone_Trainer","Atlas Stone Trainer",2,"m","ceihg",2],["Atlas_Stones","Atlas Stones",2,"m","focjeihlgn",2],["Axle_Deadlift","Axle Deadlift",2,"m","eihlgn",2],["Back_Flyes_-_With_Bands","Back Flyes - With Bands",8,"b","ld",2],["Backward_Drag","Backward Drag",2,"g","jeihm",2],["Backward_Medicine_Ball_Throw","Backward Medicine Ball Throw",9,"b","",1],["Balance_Board","Balance Board",2,"j","hg",0],["Ball_Leg_Curl","Ball Leg Curl",10,"h","ji",2],["Band_Assisted_Pull-Up","Band Assisted Pull-Up",2,"k","fel",0],["Band_Good_Morning","Band Good Morning",8,"h","im",2],["Band_Good_Morning_Pull_Through","Band Good Morning (Pull Through)",8,"h","im",2],["Band_Hip_Adductions","Band Hip Adductions",8,"o","",2],["Band_Pull_Apart","Band Pull Apart",8,"b","ln",2],["Band_Skull_Crusher","Band Skull Crusher",8,"d","",1],["Barbell_Ab_Rollout","Barbell Ab Rollout",0,"f","mb",2],["Barbell_Ab_Rollout_-_On_Knees","Barbell Ab Rollout - On Knees",0,"f","mb",2],["Barbell_Bench_Press_-_Medium_Grip","Barbell Bench Press - Medium Grip",0,"a","bd",1],["Barbell_Curl","Barbell Curl",0,"c","e",2],["Barbell_Curls_Lying_Against_An_Incline","Barbell Curls Lying Against An Incline",0,"c","",2],["Barbell_Deadlift","Barbell Deadlift",0,"m","jeihklgn",2],["Barbell_Full_Squat","Barbell Full Squat",0,"g","jihm",1],["Barbell_Glute_Bridge","Barbell Glute Bridge",0,"i","jh",1],["Barbell_Guillotine_Bench_Press","Barbell Guillotine Bench Press",0,"a","bd",1],["Barbell_Hack_Squat","Barbell Hack Squat",0,"g","jeh",1],["Barbell_Hip_Thrust","Barbell Hip Thrust",0,"i","jh",1],["Barbell_Incline_Bench_Press_-_Medium_Grip","Barbell Incline Bench Press - Medium Grip",0,"a","bd",1],["Barbell_Incline_Shoulder_Raise","Barbell Incline Shoulder Raise",0,"b","a",1],["Barbell_Lunge","Barbell Lunge",0,"g","jih",1],["Barbell_Rear_Delt_Row","Barbell Rear Delt Row",0,"b","ckl",2],["Barbell_Rollout_from_Bench","Barbell Rollout from Bench",0,"f","ihkb",2],["Barbell_Seated_Calf_Raise","Barbell Seated Calf Raise",0,"j","",1],["Barbell_Shoulder_Press","Barbell Shoulder Press",0,"b","ad",1],["Barbell_Shrug","Barbell Shrug",0,"n","",2],["Barbell_Shrug_Behind_The_Back","Barbell Shrug Behind The Back",0,"n","el",2],["Barbell_Side_Bend","Barbell Side Bend",0,"f","m",2],["Barbell_Side_Split_Squat","Barbell Side Split Squat",0,"g","jhm",1],["Barbell_Squat","Barbell Squat",0,"g","jihm",1],["Barbell_Squat_To_A_Bench","Barbell Squat To A Bench",0,"g","jihm",1],["Barbell_Step_Ups","Barbell Step Ups",0,"g","jihg",1],["Barbell_Walking_Lunge","Barbell Walking Lunge",0,"g","jih",1],["Battling_Ropes","Battling Ropes",2,"b","ae",1],["Bear_Crawl_Sled_Drags","Bear Crawl Sled Drags",2,"g","jih",1],["Behind_Head_Chest_Stretch","Behind Head Chest Stretch",2,"a","b",3],["Bench_Dips","Bench Dips",3,"d","ab",1],["Bench_Jump","Bench Jump",3,"g","jih",1],["Bench_Press_-_Powerlifting","Bench Press - Powerlifting",0,"d","aekb",1],["Bench_Press_-_With_Bands","Bench Press - With Bands",8,"a","bd",1],["Bench_Press_with_Chains","Bench Press with Chains",0,"d","akb",1],["Bench_Sprint","Bench Sprint",2,"g","jih",1],["Bent-Arm_Barbell_Pullover","Bent-Arm Barbell Pullover",0,"k","akbd",2],["Bent-Arm_Dumbbell_Pullover","Bent-Arm Dumbbell Pullover",1,"a","kbd",1],["Bent-Knee_Hip_Raise","Bent-Knee Hip Raise",3,"f","",2],["Bent_Over_Barbell_Row","Bent Over Barbell Row",0,"l","ckb",2],["Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench","Bent Over Dumbbell Rear Delt Raise With Head On Bench",1,"b","",2],["Bent_Over_Low-Pulley_Side_Lateral","Bent Over Low-Pulley Side Lateral",4,"b","mln",2],["Bent_Over_One-Arm_Long_Bar_Row","Bent Over One-Arm Long Bar Row",0,"l","ckmn",2],["Bent_Over_Two-Arm_Long_Bar_Row","Bent Over Two-Arm Long Bar Row",0,"l","ck",2],["Bent_Over_Two-Dumbbell_Row","Bent Over Two-Dumbbell Row",1,"l","ckb",2],["Bent_Over_Two-Dumbbell_Row_With_Palms_In","Bent Over Two-Dumbbell Row With Palms In",1,"l","ck",2],["Bent_Press","Bent Press",7,"f","ihmgbd",2],["Bicycling","Bicycling",2,"g","jih",0],["Bicycling_Stationary","Bicycling, Stationary",6,"g","jih",0],["Board_Press","Board Press",0,"d","aekb",1],["Body-Up","Body-Up",3,"d","fe",1],["Body_Tricep_Press","Body Tricep Press",3,"d","",1],["Bodyweight_Flyes","Bodyweight Flyes",12,"a","fbd",1],["Bodyweight_Mid_Row","Bodyweight Mid Row",2,"l","ck",2],["Bodyweight_Squat","Bodyweight Squat",3,"g","ih",1],["Bodyweight_Walking_Lunge","Bodyweight Walking Lunge",5,"g","jih",1],["Bosu_Ball_Cable_Crunch_With_Side_Bends","Bosu Ball Cable Crunch With Side Bends",4,"f","",2],["Bottoms-Up_Clean_From_The_Hang_Position","Bottoms-Up Clean From The Hang Position",7,"e","cb",2],["Bottoms_Up","Bottoms Up",3,"f","",2],["Box_Jump_Multiple_Response","Box Jump (Multiple Response)",2,"h","pojig",1],["Box_Skip","Box Skip",2,"h","pojig",1],["Box_Squat","Box Squat",0,"g","ojihm",1],["Box_Squat_with_Bands","Box Squat with Bands",0,"g","pojihm",1],["Box_Squat_with_Chains","Box Squat with Chains",0,"g","pojihm",1],["Brachialis-SMR","Brachialis-SMR",11,"c","",3],["Bradford_Rocky_Presses","Bradford/Rocky Presses",0,"b","d",1],["Butt-Ups","Butt-Ups",3,"f","",2],["Butt_Lift_Bridge","Butt Lift (Bridge)",3,"i","h",1],["Butterfly","Butterfly",6,"a","",2],["Cable_Chest_Press","Cable Chest Press",4,"a","bd",1],["Cable_Crossover","Cable Crossover",4,"a","b",1],["Cable_Crunch","Cable Crunch",4,"f","",2],["Cable_Deadlifts","Cable Deadlifts",4,"g","eihm",2],["Cable_Hammer_Curls_-_Rope_Attachment","Cable Hammer Curls - Rope Attachment",4,"c","",2],["Cable_Hip_Adduction","Cable Hip Adduction",4,"g","",2],["Cable_Incline_Pushdown","Cable Incline Pushdown",4,"k","",2],["Cable_Incline_Triceps_Extension","Cable Incline Triceps Extension",4,"d","",1],["Cable_Internal_Rotation","Cable Internal Rotation",4,"b","",2],["Cable_Iron_Cross","Cable Iron Cross",4,"a","",1],["Cable_Judo_Flip","Cable Judo Flip",4,"f","",2],["Cable_Lying_Triceps_Extension","Cable Lying Triceps Extension",4,"d","",1],["Cable_One_Arm_Tricep_Extension","Cable One Arm Tricep Extension",4,"d","",1],["Cable_Preacher_Curl","Cable Preacher Curl",4,"c","e",2],["Cable_Rear_Delt_Fly","Cable Rear Delt Fly",4,"b","",2],["Cable_Reverse_Crunch","Cable Reverse Crunch",4,"f","",2],["Cable_Rope_Overhead_Triceps_Extension","Cable Rope Overhead Triceps Extension",4,"d","",1],["Cable_Rope_Rear-Delt_Rows","Cable Rope Rear-Delt Rows",4,"b","cl",2],["Cable_Russian_Twists","Cable Russian Twists",4,"f","",2],["Cable_Seated_Crunch","Cable Seated Crunch",4,"f","",2],["Cable_Seated_Lateral_Raise","Cable Seated Lateral Raise",4,"b","ln",2],["Cable_Shoulder_Press","Cable Shoulder Press",4,"b","d",1],["Cable_Shrugs","Cable Shrugs",4,"n","",2],["Cable_Wrist_Curl","Cable Wrist Curl",4,"e","",2],["Calf-Machine_Shoulder_Shrug","Calf-Machine Shoulder Shrug",6,"n","",2],["Calf_Press","Calf Press",6,"j","",1],["Calf_Press_On_The_Leg_Press_Machine","Calf Press On The Leg Press Machine",6,"j","",1],["Calf_Raise_On_A_Dumbbell","Calf Raise On A Dumbbell",1,"j","",1],["Calf_Raises_-_With_Bands","Calf Raises - With Bands",8,"j","",1],["Calf_Stretch_Elbows_Against_Wall","Calf Stretch Elbows Against Wall",5,"j","",3],["Calf_Stretch_Hands_Against_Wall","Calf Stretch Hands Against Wall",5,"j","",3],["Calves-SMR","Calves-SMR",11,"j","",3],["Car_Deadlift","Car Deadlift",2,"g","eihmn",2],["Car_Drivers","Car Drivers",0,"b","e",1],["Carioca_Quick_Step","Carioca Quick Step",5,"o","fpjihg",0],["Cat_Stretch","Cat Stretch",5,"m","ln",3],["Catch_and_Overhead_Throw","Catch and Overhead Throw",9,"k","fab",1],["Chain_Handle_Extension","Chain Handle Extension",2,"d","",1],["Chain_Press","Chain Press",2,"a","bd",1],["Chair_Leg_Extended_Stretch","Chair Leg Extended Stretch",2,"h","o",3],["Chair_Lower_Back_Stretch","Chair Lower Back Stretch",5,"k","m",3],["Chair_Squat","Chair Squat",6,"g","jih",1],["Chair_Upper_Body_Stretch","Chair Upper Body Stretch",2,"b","ca",3],["Chest_And_Front_Of_Shoulder_Stretch","Chest And Front Of Shoulder Stretch",2,"a","b",3],["Chest_Push_from_3_point_stance","Chest Push from 3 point stance",9,"a","fbd",1],["Chest_Push_multiple_response","Chest Push (multiple response)",9,"a","fbd",1],["Chest_Push_single_response","Chest Push (single response)",9,"a","fbd",1],["Chest_Push_with_Run_Release","Chest Push with Run Release",9,"a","fbd",1],["Chest_Stretch_on_Stability_Ball","Chest Stretch on Stability Ball",10,"a","",3],["Childs_Pose","Child's Pose",5,"m","il",3],["Chin-Up","Chin-Up",3,"k","cel",2],["Chin_To_Chest_Stretch","Chin To Chest Stretch",5,"q","n",3],["Circus_Bell","Circus Bell",2,"b","eihmnd",1],["Clean","Clean",0,"h","jeimgbn",2],["Clean_Deadlift","Clean Deadlift",0,"h","eimlgn",2],["Clean_Pull","Clean Pull",0,"g","eihmn",2],["Clean_Shrug","Clean Shrug",0,"n","eb",2],["Clean_and_Jerk","Clean and Jerk",0,"b","fihmgnd",1],["Clean_and_Press","Clean and Press",0,"b","fjihmlgbnd",1],["Clean_from_Blocks","Clean from Blocks",0,"g","jihbn",2],["Clock_Push-Up","Clock Push-Up",3,"a","bd",1],["Close-Grip_Barbell_Bench_Press","Close-Grip Barbell Bench Press",0,"d","ab",1],["Close-Grip_Dumbbell_Press","Close-Grip Dumbbell Press",1,"d","ab",1],["Close-Grip_EZ-Bar_Curl_with_Band","Close-Grip EZ-Bar Curl with Band",12,"c","e",2],["Close-Grip_EZ-Bar_Press","Close-Grip EZ-Bar Press",12,"d","ab",1],["Close-Grip_EZ_Bar_Curl","Close-Grip EZ Bar Curl",0,"c","e",2],["Close-Grip_Front_Lat_Pulldown","Close-Grip Front Lat Pulldown",4,"k","clb",2],["Close-Grip_Push-Up_off_of_a_Dumbbell","Close-Grip Push-Up off of a Dumbbell",3,"d","fab",1],["Close-Grip_Standing_Barbell_Curl","Close-Grip Standing Barbell Curl",0,"c","e",2],["Cocoons","Cocoons",3,"f","",2],["Conans_Wheel","Conan's Wheel",2,"g","fcjembn",0],["Concentration_Curls","Concentration Curls",1,"c","e",2],["Cross-Body_Crunch","Cross-Body Crunch",3,"f","",2],["Cross_Body_Hammer_Curl","Cross Body Hammer Curl",1,"c","e",2],["Cross_Over_-_With_Bands","Cross Over - With Bands",8,"a","cb",1],["Crossover_Reverse_Lunge","Crossover Reverse Lunge",5,"m","fpihg",2],["Crucifix","Crucifix",2,"b","e",3],["Crunch_-_Hands_Overhead","Crunch - Hands Overhead",3,"f","",2],["Crunch_-_Legs_On_Exercise_Ball","Crunch - Legs On Exercise Ball",3,"f","",2],["Crunches","Crunches",3,"f","",2],["Cuban_Press","Cuban Press",1,"b","n",1],["Dancers_Stretch","Dancer's Stretch",5,"m","pi",3],["Dead_Bug","Dead Bug",3,"f","",2],["Deadlift_with_Bands","Deadlift with Bands",0,"m","eihlgn",2],["Deadlift_with_Chains","Deadlift with Chains",0,"m","eihlgn",2],["Decline_Barbell_Bench_Press","Decline Barbell Bench Press",0,"a","bd",1],["Decline_Close-Grip_Bench_To_Skull_Crusher","Decline Close-Grip Bench To Skull Crusher",0,"d","ab",1],["Decline_Crunch","Decline Crunch",3,"f","",2],["Decline_Dumbbell_Bench_Press","Decline Dumbbell Bench Press",1,"a","bd",1],["Decline_Dumbbell_Flyes","Decline Dumbbell Flyes",1,"a","",1],["Decline_Dumbbell_Triceps_Extension","Decline Dumbbell Triceps Extension",1,"d","",1],["Decline_EZ_Bar_Triceps_Extension","Decline EZ Bar Triceps Extension",0,"d","",1],["Decline_Oblique_Crunch","Decline Oblique Crunch",3,"f","",2],["Decline_Push-Up","Decline Push-Up",5,"a","bd",1],["Decline_Reverse_Crunch","Decline Reverse Crunch",3,"f","",2],["Decline_Smith_Press","Decline Smith Press",6,"a","bd",1],["Deficit_Deadlift","Deficit Deadlift",0,"m","eihlgn",2],["Depth_Jump_Leap","Depth Jump Leap",2,"g","pojih",1],["Dip_Machine","Dip Machine",6,"d","ab",1],["Dips_-_Chest_Version","Dips - Chest Version",2,"a","bd",1],["Dips_-_Triceps_Version","Dips - Triceps Version",3,"d","ab",1],["Donkey_Calf_Raises","Donkey Calf Raises",2,"j","",1],["Double_Kettlebell_Alternating_Hang_Clean","Double Kettlebell Alternating Hang Clean",7,"h","cjeimgn",2],["Double_Kettlebell_Jerk","Double Kettlebell Jerk",7,"b","jgd",1],["Double_Kettlebell_Push_Press","Double Kettlebell Push Press",7,"b","jgd",1],["Double_Kettlebell_Snatch","Double Kettlebell Snatch",7,"b","ihg",2],["Double_Kettlebell_Windmill","Double Kettlebell Windmill",7,"f","ihbd",2],["Double_Leg_Butt_Kick","Double Leg Butt Kick",3,"g","pojih",1],["Downward_Facing_Balance","Downward Facing Balance",10,"i","fh",3],["Drag_Curl","Drag Curl",0,"c","e",2],["Drop_Push","Drop Push",2,"a","bd",1],["Dumbbell_Alternate_Bicep_Curl","Dumbbell Alternate Bicep Curl",1,"c","e",2],["Dumbbell_Bench_Press","Dumbbell Bench Press",1,"a","bd",1],["Dumbbell_Bench_Press_with_Neutral_Grip","Dumbbell Bench Press with Neutral Grip",1,"a","bd",1],["Dumbbell_Bicep_Curl","Dumbbell Bicep Curl",1,"c","e",2],["Dumbbell_Clean","Dumbbell Clean",1,"h","jeimgbn",2],["Dumbbell_Floor_Press","Dumbbell Floor Press",1,"d","ab",1],["Dumbbell_Flyes","Dumbbell Flyes",1,"a","",1],["Dumbbell_Incline_Row","Dumbbell Incline Row",1,"l","cekb",2],["Dumbbell_Incline_Shoulder_Raise","Dumbbell Incline Shoulder Raise",1,"b","d",1],["Dumbbell_Lunges","Dumbbell Lunges",1,"g","jih",1],["Dumbbell_Lying_One-Arm_Rear_Lateral_Raise","Dumbbell Lying One-Arm Rear Lateral Raise",1,"b","l",2],["Dumbbell_Lying_Pronation","Dumbbell Lying Pronation",1,"e","",2],["Dumbbell_Lying_Rear_Lateral_Raise","Dumbbell Lying Rear Lateral Raise",1,"b","",2],["Dumbbell_Lying_Supination","Dumbbell Lying Supination",1,"e","",2],["Dumbbell_One-Arm_Shoulder_Press","Dumbbell One-Arm Shoulder Press",1,"b","d",1],["Dumbbell_One-Arm_Triceps_Extension","Dumbbell One-Arm Triceps Extension",1,"d","",1],["Dumbbell_One-Arm_Upright_Row","Dumbbell One-Arm Upright Row",1,"b","cn",2],["Dumbbell_Prone_Incline_Curl","Dumbbell Prone Incline Curl",1,"c","",2],["Dumbbell_Raise","Dumbbell Raise",1,"b","c",2],["Dumbbell_Rear_Lunge","Dumbbell Rear Lunge",1,"g","jih",1],["Dumbbell_Scaption","Dumbbell Scaption",1,"b","n",1],["Dumbbell_Seated_Box_Jump","Dumbbell Seated Box Jump",1,"g","jih",1],["Dumbbell_Seated_One-Leg_Calf_Raise","Dumbbell Seated One-Leg Calf Raise",1,"j","",1],["Dumbbell_Shoulder_Press","Dumbbell Shoulder Press",1,"b","d",1],["Dumbbell_Shrug","Dumbbell Shrug",1,"n","",2],["Dumbbell_Side_Bend","Dumbbell Side Bend",1,"f","",2],["Dumbbell_Squat","Dumbbell Squat",1,"g","jihm",1],["Dumbbell_Squat_To_A_Bench","Dumbbell Squat To A Bench",1,"g","jihm",1],["Dumbbell_Step_Ups","Dumbbell Step Ups",1,"g","jih",1],["Dumbbell_Tricep_Extension_-Pronated_Grip","Dumbbell Tricep Extension -Pronated Grip",1,"d","",1],["Dynamic_Back_Stretch","Dynamic Back Stretch",5,"k","",2],["Dynamic_Chest_Stretch","Dynamic Chest Stretch",5,"a","l",2],["EZ-Bar_Curl","EZ-Bar Curl",12,"c","",2],["EZ-Bar_Skullcrusher","EZ-Bar Skullcrusher",12,"d","e",1],["Elbow_Circles","Elbow Circles",5,"b","n",2],["Elbow_to_Knee","Elbow to Knee",3,"f","",2],["Elbows_Back","Elbows Back",5,"a","b",3],["Elevated_Back_Lunge","Elevated Back Lunge",0,"g","ih",1],["Elevated_Cable_Rows","Elevated Cable Rows",4,"k","ln",2],["Elliptical_Trainer","Elliptical Trainer",6,"g","jih",0],["Exercise_Ball_Crunch","Exercise Ball Crunch",10,"f","",2],["Exercise_Ball_Pull-In","Exercise Ball Pull-In",10,"f","",2],["Extended_Range_One-Arm_Kettlebell_Floor_Press","Extended Range One-Arm Kettlebell Floor Press",7,"a","bd",1],["External_Rotation","External Rotation",1,"b","",2],["External_Rotation_with_Band","External Rotation with Band",8,"b","",2],["External_Rotation_with_Cable","External Rotation with Cable",4,"b","",2],["Face_Pull","Face Pull",4,"b","l",2],["Farmers_Walk","Farmer's Walk",2,"e","fihmgn",0],["Fast_Skipping","Fast Skipping",3,"g","pojih",1],["Finger_Curls","Finger Curls",0,"e","",2],["Flat_Bench_Cable_Flyes","Flat Bench Cable Flyes",4,"a","",1],["Flat_Bench_Leg_Pull-In","Flat Bench Leg Pull-In",3,"f","",2],["Flat_Bench_Lying_Leg_Raise","Flat Bench Lying Leg Raise",3,"f","",2],["Flexor_Incline_Dumbbell_Curls","Flexor Incline Dumbbell Curls",1,"c","",2],["Floor_Glute-Ham_Raise","Floor Glute-Ham Raise",5,"h","ji",2],["Floor_Press","Floor Press",0,"d","ab",1],["Floor_Press_with_Chains","Floor Press with Chains",0,"d","ab",1],["Flutter_Kicks","Flutter Kicks",3,"i","h",2],["Foot-SMR","Foot-SMR",2,"j","",3],["Forward_Drag_with_Press","Forward Drag with Press",2,"a","jihgbd",1],["Frankenstein_Squat","Frankenstein Squat",0,"g","fjih",1],["Freehand_Jump_Squat","Freehand Jump Squat",3,"g","jih",1],["Frog_Hops","Frog Hops",5,"g","jih",1],["Frog_Sit-Ups","Frog Sit-Ups",3,"f","",2],["Front_Barbell_Squat","Front Barbell Squat",0,"g","jih",1],["Front_Barbell_Squat_To_A_Bench","Front Barbell Squat To A Bench",0,"g","jih",1],["Front_Box_Jump","Front Box Jump",2,"h","pojig",1],["Front_Cable_Raise","Front Cable Raise",4,"b","",1],["Front_Cone_Hops_or_hurdle_hops","Front Cone Hops (or hurdle hops)",2,"g","pojih",1],["Front_Dumbbell_Raise","Front Dumbbell Raise",1,"b","",1],["Front_Incline_Dumbbell_Raise","Front Incline Dumbbell Raise",1,"b","",1],["Front_Leg_Raises","Front Leg Raises",3,"h","",2],["Front_Plate_Raise","Front Plate Raise",2,"b","",1],["Front_Raise_And_Pullover","Front Raise And Pullover",0,"a","kbd",2],["Front_Squat_Clean_Grip","Front Squat (Clean Grip)",0,"g","fih",1],["Front_Squats_With_Two_Kettlebells","Front Squats With Two Kettlebells",7,"g","ji",1],["Front_Two-Dumbbell_Raise","Front Two-Dumbbell Raise",1,"b","",1],["Full_Range-Of-Motion_Lat_Pulldown","Full Range-Of-Motion Lat Pulldown",4,"k","clb",2],["Gironda_Sternum_Chins","Gironda Sternum Chins",2,"k","cl",2],["Glute_Ham_Raise","Glute Ham Raise",6,"h","ji",2],["Glute_Kickback","Glute Kickback",3,"i","h",1],["Goblet_Squat","Goblet Squat",7,"g","jihb",1],["Good_Morning","Good Morning",0,"h","fim",1],["Good_Morning_off_Pins","Good Morning off Pins",0,"h","fim",1],["Gorilla_Chin_Crunch","Gorilla Chin/Crunch",3,"f","ck",2],["Groin_and_Back_Stretch","Groin and Back Stretch",5,"o","",3],["Groiners","Groiners",3,"o","",2],["Hack_Squat","Hack Squat",6,"g","jih",1],["Hammer_Curls","Hammer Curls",1,"c","",2],["Hammer_Grip_Incline_DB_Bench_Press","Hammer Grip Incline DB Bench Press",1,"a","bd",1],["Hamstring-SMR","Hamstring-SMR",11,"h","",3],["Hamstring_Stretch","Hamstring Stretch",5,"h","",3],["Handstand_Push-Ups","Handstand Push-Ups",3,"b","d",1],["Hang_Clean","Hang Clean",0,"g","jeihmbn",2],["Hang_Clean_-_Below_the_Knees","Hang Clean - Below the Knees",0,"g","jeihmbn",2],["Hang_Snatch","Hang Snatch",0,"h","fjeimgbn",2],["Hang_Snatch_-_Below_Knees","Hang Snatch - Below Knees",0,"h","fjeimgbn",2],["Hanging_Bar_Good_Morning","Hanging Bar Good Morning",0,"h","fim",1],["Hanging_Leg_Raise","Hanging Leg Raise",3,"f","",2],["Hanging_Pike","Hanging Pike",3,"f","",2],["Heaving_Snatch_Balance","Heaving Snatch Balance",0,"g","feihbd",1],["Heavy_Bag_Thrust","Heavy Bag Thrust",2,"a","fbd",1],["High_Cable_Curls","High Cable Curls",4,"c","",2],["Hip_Circles_prone","Hip Circles (prone)",3,"p","o",2],["Hip_Extension_with_Bands","Hip Extension with Bands",8,"i","h",1],["Hip_Flexion_with_Band","Hip Flexion with Band",8,"g","",2],["Hip_Lift_with_Band","Hip Lift with Band",8,"i","jh",1],["Hug_A_Ball","Hug A Ball",10,"m","ji",3],["Hug_Knees_To_Chest","Hug Knees To Chest",5,"m","i",3],["Hurdle_Hops","Hurdle Hops",2,"h","pojih",1],["Hyperextensions_Back_Extensions","Hyperextensions (Back Extensions)",2,"m","ih",2],["Hyperextensions_With_No_Hyperextension_Bench","Hyperextensions With No Hyperextension Bench",3,"m","ih",2],["IT_Band_and_Glute_Stretch","IT Band and Glute Stretch",2,"p","",3],["Iliotibial_Tract-SMR","Iliotibial Tract-SMR",11,"p","",3],["Inchworm","Inchworm",3,"h","",0],["Incline_Barbell_Triceps_Extension","Incline Barbell Triceps Extension",0,"d","e",1],["Incline_Bench_Pull","Incline Bench Pull",0,"l","kb",2],["Incline_Cable_Chest_Press","Incline Cable Chest Press",4,"a","bd",1],["Incline_Cable_Flye","Incline Cable Flye",4,"a","b",1],["Incline_Dumbbell_Bench_With_Palms_Facing_In","Incline Dumbbell Bench With Palms Facing In",1,"a","bd",1],["Incline_Dumbbell_Curl","Incline Dumbbell Curl",1,"c","",2],["Incline_Dumbbell_Flyes","Incline Dumbbell Flyes",1,"a","b",1],["Incline_Dumbbell_Flyes_-_With_A_Twist","Incline Dumbbell Flyes - With A Twist",1,"a","b",1],["Incline_Dumbbell_Press","Incline Dumbbell Press",1,"a","bd",1],["Incline_Hammer_Curls","Incline Hammer Curls",1,"c","",2],["Incline_Inner_Biceps_Curl","Incline Inner Biceps Curl",1,"c","",0],["Incline_Push-Up","Incline Push-Up",3,"a","bd",1],["Incline_Push-Up_Close-Grip","Incline Push-Up Close-Grip",3,"d","ab",1],["Incline_Push-Up_Depth_Jump","Incline Push-Up Depth Jump",2,"a","bd",1],["Incline_Push-Up_Medium","Incline Push-Up Medium",3,"a","fbd",1],["Incline_Push-Up_Reverse_Grip","Incline Push-Up Reverse Grip",3,"a","fbd",1],["Incline_Push-Up_Wide","Incline Push-Up Wide",3,"a","fbd",1],["Intermediate_Groin_Stretch","Intermediate Groin Stretch",2,"h","",3],["Intermediate_Hip_Flexor_and_Quad_Stretch","Intermediate Hip Flexor and Quad Stretch",2,"g","",3],["Internal_Rotation_with_Band","Internal Rotation with Band",8,"b","",0],["Inverted_Row","Inverted Row",5,"l","k",2],["Inverted_Row_with_Straps","Inverted Row with Straps",2,"l","ck",2],["Iron_Cross","Iron Cross",1,"b","aihmgn",1],["Iron_Crosses_stretch","Iron Crosses (stretch)",5,"g","",2],["Isometric_Chest_Squeezes","Isometric Chest Squeezes",3,"a","bd",3],["Isometric_Neck_Exercise_-_Front_And_Back","Isometric Neck Exercise - Front And Back",3,"q","",3],["Isometric_Neck_Exercise_-_Sides","Isometric Neck Exercise - Sides",3,"q","",3],["Isometric_Wipers","Isometric Wipers",3,"a","fbd",1],["JM_Press","JM Press",0,"d","ab",1],["Jackknife_Sit-Up","Jackknife Sit-Up",3,"f","",2],["Janda_Sit-Up","Janda Sit-Up",3,"f","",2],["Jefferson_Squats","Jefferson Squats",0,"g","jihmn",1],["Jerk_Balance","Jerk Balance",0,"b","ihgd",1],["Jerk_Dip_Squat","Jerk Dip Squat",0,"g","fj",1],["Jogging_Treadmill","Jogging, Treadmill",6,"g","ih",0],["Keg_Load","Keg Load",2,"m","fcjeihlgbn",2],["Kettlebell_Arnold_Press","Kettlebell Arnold Press",7,"b","d",1],["Kettlebell_Dead_Clean","Kettlebell Dead Clean",7,"h","jimgn",2],["Kettlebell_Figure_8","Kettlebell Figure 8",7,"f","hb",2],["Kettlebell_Hang_Clean","Kettlebell Hang Clean",7,"h","jimbn",2],["Kettlebell_One-Legged_Deadlift","Kettlebell One-Legged Deadlift",7,"h","im",2],["Kettlebell_Pass_Between_The_Legs","Kettlebell Pass Between The Legs",7,"f","ihb",2],["Kettlebell_Pirate_Ships","Kettlebell Pirate Ships",7,"b","f",1],["Kettlebell_Pistol_Squat","Kettlebell Pistol Squat",7,"g","jihb",1],["Kettlebell_Seated_Press","Kettlebell Seated Press",7,"b","d",1],["Kettlebell_Seesaw_Press","Kettlebell Seesaw Press",7,"b","d",1],["Kettlebell_Sumo_High_Pull","Kettlebell Sumo High Pull",7,"n","oihgb",2],["Kettlebell_Thruster","Kettlebell Thruster",7,"b","gd",1],["Kettlebell_Turkish_Get-Up_Lunge_style","Kettlebell Turkish Get-Up (Lunge style)",7,"b","fhgd",1],["Kettlebell_Turkish_Get-Up_Squat_style","Kettlebell Turkish Get-Up (Squat style)",7,"b","fjhgd",1],["Kettlebell_Windmill","Kettlebell Windmill",7,"f","ihbd",2],["Kipping_Muscle_Up","Kipping Muscle Up",2,"k","fcelbnd",2],["Knee_Across_The_Body","Knee Across The Body",5,"i","pm",3],["Knee_Circles","Knee Circles",3,"j","hg",2],["Knee_Hip_Raise_On_Parallel_Bars","Knee/Hip Raise On Parallel Bars",2,"f","",2],["Knee_Tuck_Jump","Knee Tuck Jump",3,"h","pojig",1],["Kneeling_Arm_Drill","Kneeling Arm Drill",5,"b","f",2],["Kneeling_Cable_Crunch_With_Alternating_Oblique_Twists","Kneeling Cable Crunch With Alternating Oblique Twists",4,"f","",2],["Kneeling_Cable_Triceps_Extension","Kneeling Cable Triceps Extension",4,"d","",1],["Kneeling_Forearm_Stretch","Kneeling Forearm Stretch",5,"e","",3],["Kneeling_High_Pulley_Row","Kneeling High Pulley Row",4,"k","cl",2],["Kneeling_Hip_Flexor","Kneeling Hip Flexor",5,"g","g",3],["Kneeling_Jump_Squat","Kneeling Jump Squat",0,"i","jhg",1],["Kneeling_Single-Arm_High_Pulley_Row","Kneeling Single-Arm High Pulley Row",4,"k","cl",2],["Kneeling_Squat","Kneeling Squat",0,"i","fhm",1],["Landmine_180s","Landmine 180's",0,"f","imb",2],["Landmine_Linear_Jammer","Landmine Linear Jammer",0,"b","fjahgd",1],["Lateral_Bound","Lateral Bound",3,"o","pjihg",1],["Lateral_Box_Jump","Lateral Box Jump",2,"o","pjihg",1],["Lateral_Cone_Hops","Lateral Cone Hops",2,"o","pjihg",1],["Lateral_Raise_-_With_Bands","Lateral Raise - With Bands",8,"b","",1],["Latissimus_Dorsi-SMR","Latissimus Dorsi-SMR",11,"k","",3],["Leg-Over_Floor_Press","Leg-Over Floor Press",7,"a","bd",1],["Leg-Up_Hamstring_Stretch","Leg-Up Hamstring Stretch",5,"h","",1],["Leg_Extensions","Leg Extensions",6,"g","",1],["Leg_Lift","Leg Lift",3,"i","h",1],["Leg_Press","Leg Press",6,"g","jih",1],["Leg_Pull-In","Leg Pull-In",3,"f","",2],["Leverage_Chest_Press","Leverage Chest Press",6,"a","bd",1],["Leverage_Deadlift","Leverage Deadlift",6,"g","ih",2],["Leverage_Decline_Chest_Press","Leverage Decline Chest Press",6,"a","bd",1],["Leverage_High_Row","Leverage High Row",6,"l","k",2],["Leverage_Incline_Chest_Press","Leverage Incline Chest Press",6,"a","bd",1],["Leverage_Iso_Row","Leverage Iso Row",6,"k","cl",2],["Leverage_Shoulder_Press","Leverage Shoulder Press",6,"b","d",1],["Leverage_Shrug","Leverage Shrug",6,"n","e",2],["Linear_3-Part_Start_Technique","Linear 3-Part Start Technique",5,"h","jg",1],["Linear_Acceleration_Wall_Drill","Linear Acceleration Wall Drill",5,"h","jig",0],["Linear_Depth_Jump","Linear Depth Jump",2,"g","jih",1],["Log_Lift","Log Lift",2,"b","faihmlgnd",1],["London_Bridges","London Bridges",2,"k","cel",2],["Looking_At_Ceiling","Looking At Ceiling",5,"g","",3],["Low_Cable_Crossover","Low Cable Crossover",4,"a","b",1],["Low_Cable_Triceps_Extension","Low Cable Triceps Extension",4,"d","",1],["Low_Pulley_Row_To_Neck","Low Pulley Row To Neck",4,"b","cln",2],["Lower_Back-SMR","Lower Back-SMR",11,"m","",3],["Lower_Back_Curl","Lower Back Curl",3,"f","",3],["Lunge_Pass_Through","Lunge Pass Through",7,"h","jig",1],["Lunge_Sprint","Lunge Sprint",6,"g","jih",1],["Lying_Bent_Leg_Groin","Lying Bent Leg Groin",2,"o","",3],["Lying_Cable_Curl","Lying Cable Curl",4,"c","",2],["Lying_Cambered_Barbell_Row","Lying Cambered Barbell Row",0,"l","ckn",2],["Lying_Close-Grip_Bar_Curl_On_High_Pulley","Lying Close-Grip Bar Curl On High Pulley",4,"c","",2],["Lying_Close-Grip_Barbell_Triceps_Extension_Behind_The_Head","Lying Close-Grip Barbell Triceps Extension Behind The Head",0,"d","",1],["Lying_Close-Grip_Barbell_Triceps_Press_To_Chin","Lying Close-Grip Barbell Triceps Press To Chin",12,"d","",1],["Lying_Crossover","Lying Crossover",3,"p","",3],["Lying_Dumbbell_Tricep_Extension","Lying Dumbbell Tricep Extension",1,"d","ab",1],["Lying_Face_Down_Plate_Neck_Resistance","Lying Face Down Plate Neck Resistance",2,"q","",2],["Lying_Face_Up_Plate_Neck_Resistance","Lying Face Up Plate Neck Resistance",2,"q","",2],["Lying_Glute","Lying Glute",3,"i","p",3],["Lying_Hamstring","Lying Hamstring",2,"h","j",3],["Lying_High_Bench_Barbell_Curl","Lying High Bench Barbell Curl",0,"c","",2],["Lying_Leg_Curls","Lying Leg Curls",6,"h","",2],["Lying_Machine_Squat","Lying Machine Squat",6,"g","jih",1],["Lying_One-Arm_Lateral_Raise","Lying One-Arm Lateral Raise",1,"b","",2],["Lying_Prone_Quadriceps","Lying Prone Quadriceps",3,"g","",0],["Lying_Rear_Delt_Raise","Lying Rear Delt Raise",1,"b","",2],["Lying_Supine_Dumbbell_Curl","Lying Supine Dumbbell Curl",1,"c","",2],["Lying_T-Bar_Row","Lying T-Bar Row",6,"l","ck",2],["Lying_Triceps_Press","Lying Triceps Press",12,"d","",1],["Machine_Bench_Press","Machine Bench Press",6,"a","bd",1],["Machine_Bicep_Curl","Machine Bicep Curl",6,"c","",2],["Machine_Preacher_Curls","Machine Preacher Curls",6,"c","",2],["Machine_Shoulder_Military_Press","Machine Shoulder (Military) Press",6,"b","d",1],["Machine_Triceps_Extension","Machine Triceps Extension",6,"d","",1],["Medicine_Ball_Chest_Pass","Medicine Ball Chest Pass",9,"a","bd",1],["Medicine_Ball_Full_Twist","Medicine Ball Full Twist",9,"f","b",2],["Medicine_Ball_Scoop_Throw","Medicine Ball Scoop Throw",9,"b","fhg",1],["Middle_Back_Shrug","Middle Back Shrug",1,"l","",2],["Middle_Back_Stretch","Middle Back Stretch",5,"l","fkm",3],["Mixed_Grip_Chin","Mixed Grip Chin",2,"l","ck",2],["Monster_Walk","Monster Walk",8,"p","",2],["Mountain_Climbers","Mountain Climbers",5,"g","ahb",2],["Moving_Claw_Series","Moving Claw Series",5,"h","jg",0],["Muscle_Snatch","Muscle Snatch",0,"h","imgbd",2],["Muscle_Up","Muscle Up",2,"k","fcelbnd",2],["Narrow_Stance_Hack_Squats","Narrow Stance Hack Squats",6,"g","jih",1],["Narrow_Stance_Leg_Press","Narrow Stance Leg Press",6,"g","jih",1],["Narrow_Stance_Squats","Narrow Stance Squats",0,"g","jihm",1],["Natural_Glute_Ham_Raise","Natural Glute Ham Raise",3,"h","jim",2],["Neck-SMR","Neck-SMR",2,"q","",3],["Neck_Press","Neck Press",0,"a","bd",1],["Oblique_Crunches","Oblique Crunches",3,"f","",2],["Oblique_Crunches_-_On_The_Floor","Oblique Crunches - On The Floor",3,"f","",2],["Olympic_Squat","Olympic Squat",0,"g","jih",1],["On-Your-Back_Quad_Stretch","On-Your-Back Quad Stretch",2,"g","",3],["On_Your_Side_Quad_Stretch","On Your Side Quad Stretch",5,"g","",3],["One-Arm_Dumbbell_Row","One-Arm Dumbbell Row",1,"l","ckb",2],["One-Arm_Flat_Bench_Dumbbell_Flye","One-Arm Flat Bench Dumbbell Flye",1,"a","",1],["One-Arm_High-Pulley_Cable_Side_Bends","One-Arm High-Pulley Cable Side Bends",4,"f","",2],["One-Arm_Incline_Lateral_Raise","One-Arm Incline Lateral Raise",1,"b","",1],["One-Arm_Kettlebell_Clean","One-Arm Kettlebell Clean",7,"h","imbn",2],["One-Arm_Kettlebell_Clean_and_Jerk","One-Arm Kettlebell Clean and Jerk",7,"b","",1],["One-Arm_Kettlebell_Floor_Press","One-Arm Kettlebell Floor Press",7,"a","d",1],["One-Arm_Kettlebell_Jerk","One-Arm Kettlebell Jerk",7,"b","jgd",1],["One-Arm_Kettlebell_Military_Press_To_The_Side","One-Arm Kettlebell Military Press To The Side",7,"b","d",1],["One-Arm_Kettlebell_Para_Press","One-Arm Kettlebell Para Press",7,"b","d",1],["One-Arm_Kettlebell_Push_Press","One-Arm Kettlebell Push Press",7,"b","jgd",1],["One-Arm_Kettlebell_Row","One-Arm Kettlebell Row",7,"l","ck",2],["One-Arm_Kettlebell_Snatch","One-Arm Kettlebell Snatch",7,"b","jihmnd",2],["One-Arm_Kettlebell_Split_Jerk","One-Arm Kettlebell Split Jerk",7,"b","ihgd",1],["One-Arm_Kettlebell_Split_Snatch","One-Arm Kettlebell Split Snatch",7,"b","hg",2],["One-Arm_Kettlebell_Swings","One-Arm Kettlebell Swings",7,"h","jimb",2],["One-Arm_Long_Bar_Row","One-Arm Long Bar Row",0,"l","ck",2],["One-Arm_Medicine_Ball_Slam","One-Arm Medicine Ball Slam",9,"f","kb",2],["One-Arm_Open_Palm_Kettlebell_Clean","One-Arm Open Palm Kettlebell Clean",7,"h","eimgb",2],["One-Arm_Overhead_Kettlebell_Squats","One-Arm Overhead Kettlebell Squats",7,"g","jihb",1],["One-Arm_Side_Deadlift","One-Arm Side Deadlift",0,"g","fjihmn",2],["One-Arm_Side_Laterals","One-Arm Side Laterals",1,"b","",1],["One-Legged_Cable_Kickback","One-Legged Cable Kickback",4,"i","h",1],["One_Arm_Against_Wall","One Arm Against Wall",5,"k","",3],["One_Arm_Chin-Up","One Arm Chin-Up",2,"l","cek",2],["One_Arm_Dumbbell_Bench_Press","One Arm Dumbbell Bench Press",1,"a","bd",1],["One_Arm_Dumbbell_Preacher_Curl","One Arm Dumbbell Preacher Curl",1,"c","",2],["One_Arm_Floor_Press","One Arm Floor Press",0,"d","ab",1],["One_Arm_Lat_Pulldown","One Arm Lat Pulldown",4,"k","cl",2],["One_Arm_Pronated_Dumbbell_Triceps_Extension","One Arm Pronated Dumbbell Triceps Extension",1,"d","",1],["One_Arm_Supinated_Dumbbell_Triceps_Extension","One Arm Supinated Dumbbell Triceps Extension",1,"d","",1],["One_Half_Locust","One Half Locust",5,"g","fca",3],["One_Handed_Hang","One Handed Hang",2,"k","c",3],["One_Knee_To_Chest","One Knee To Chest",5,"i","hm",3],["One_Leg_Barbell_Squat","One Leg Barbell Squat",0,"g","jih",1],["Open_Palm_Kettlebell_Clean","Open Palm Kettlebell Clean",7,"h","imgb",2],["Otis-Up","Otis-Up",2,"f","abd",2],["Overhead_Cable_Curl","Overhead Cable Curl",4,"c","",2],["Overhead_Lat","Overhead Lat",2,"k","d",3],["Overhead_Slam","Overhead Slam",9,"k","",2],["Overhead_Squat","Overhead Squat",0,"g","fjihmbd",1],["Overhead_Stretch","Overhead Stretch",5,"f","aekd",3],["Overhead_Triceps","Overhead Triceps",3,"d","k",3],["Pallof_Press","Pallof Press",4,"f","abd",2],["Pallof_Press_With_Rotation","Pallof Press With Rotation",4,"f","abd",2],["Palms-Down_Dumbbell_Wrist_Curl_Over_A_Bench","Palms-Down Dumbbell Wrist Curl Over A Bench",1,"e","",2],["Palms-Down_Wrist_Curl_Over_A_Bench","Palms-Down Wrist Curl Over A Bench",0,"e","",2],["Palms-Up_Barbell_Wrist_Curl_Over_A_Bench","Palms-Up Barbell Wrist Curl Over A Bench",0,"e","",2],["Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench","Palms-Up Dumbbell Wrist Curl Over A Bench",1,"e","",2],["Parallel_Bar_Dip","Parallel Bar Dip",2,"d","ab",1],["Pelvic_Tilt_Into_Bridge","Pelvic Tilt Into Bridge",5,"m","",3],["Peroneals-SMR","Peroneals-SMR",11,"j","",3],["Peroneals_Stretch","Peroneals Stretch",2,"j","",3],["Physioball_Hip_Bridge","Physioball Hip Bridge",10,"i","h",1],["Pin_Presses","Pin Presses",0,"d","aeklb",1],["Piriformis-SMR","Piriformis-SMR",11,"i","",3],["Plank","Plank",3,"f","",3],["Plate_Pinch","Plate Pinch",2,"e","",3],["Plate_Twist","Plate Twist",2,"f","",2],["Platform_Hamstring_Slides","Platform Hamstring Slides",2,"h","i",2],["Plie_Dumbbell_Squat","Plie Dumbbell Squat",1,"g","fjih",1],["Plyo_Kettlebell_Pushups","Plyo Kettlebell Pushups",7,"a","bd",1],["Plyo_Push-up","Plyo Push-up",3,"a","bd",1],["Posterior_Tibialis_Stretch","Posterior Tibialis Stretch",2,"j","",3],["Power_Clean","Power Clean",0,"h","jeimlgbnd",2],["Power_Clean_from_Blocks","Power Clean from Blocks",0,"h","g",2],["Power_Jerk","Power Jerk",0,"g","fjihbd",1],["Power_Partials","Power Partials",1,"b","",1],["Power_Snatch","Power Snatch",0,"h","jimgbnd",2],["Power_Snatch_from_Blocks","Power Snatch from Blocks",0,"g","jeihmbnd",2],["Power_Stairs","Power Stairs",2,"h","ojimgbn",2],["Preacher_Curl","Preacher Curl",0,"c","",2],["Preacher_Hammer_Dumbbell_Curl","Preacher Hammer Dumbbell Curl",1,"c","e",2],["Press_Sit-Up","Press Sit-Up",0,"f","abd",1],["Prone_Manual_Hamstring","Prone Manual Hamstring",5,"h","",3],["Prowler_Sprint","Prowler Sprint",2,"h","jaigb",1],["Pull_Through","Pull Through",4,"i","hm",2],["Pullups","Pullups",3,"k","cl",2],["Push-Up_Wide","Push-Up Wide",3,"a","fbd",0],["Push-Ups_-_Close_Triceps_Position","Push-Ups - Close Triceps Position",3,"d","ab",1],["Push-Ups_With_Feet_Elevated","Push-Ups With Feet Elevated",3,"a","bd",1],["Push-Ups_With_Feet_On_An_Exercise_Ball","Push-Ups With Feet On An Exercise Ball",10,"a","bd",1],["Push_Press","Push Press",0,"b","gd",1],["Push_Press_-_Behind_the_Neck","Push Press - Behind the Neck",0,"b","jgd",1],["Push_Up_to_Side_Plank","Push Up to Side Plank",3,"a","fbd",1],["Pushups","Pushups",3,"a","bd",1],["Pushups_Close_and_Wide_Hand_Positions","Pushups (Close and Wide Hand Positions)",3,"a","bd",1],["Pyramid","Pyramid",10,"m","b",3],["Quad_Stretch","Quad Stretch",2,"g","",3],["Quadriceps-SMR","Quadriceps-SMR",11,"g","",3],["Quick_Leap","Quick Leap",2,"g","jh",1],["Rack_Delivery","Rack Delivery",0,"b","en",2],["Rack_Pull_with_Bands","Rack Pull with Bands",0,"m","eihgn",2],["Rack_Pulls","Rack Pulls",0,"m","eihn",2],["Rear_Leg_Raises","Rear Leg Raises",3,"g","",1],["Recumbent_Bike","Recumbent Bike",6,"g","jih",0],["Return_Push_from_Stance","Return Push from Stance",9,"b","ad",1],["Reverse_Band_Bench_Press","Reverse Band Bench Press",0,"d","aeklb",1],["Reverse_Band_Box_Squat","Reverse Band Box Squat",0,"g","pojeihm",1],["Reverse_Band_Deadlift","Reverse Band Deadlift",0,"m","pojihg",2],["Reverse_Band_Power_Squat","Reverse Band Power Squat",0,"g","ojihm",1],["Reverse_Band_Sumo_Deadlift","Reverse Band Sumo Deadlift",0,"h","pojeimgn",2],["Reverse_Barbell_Curl","Reverse Barbell Curl",0,"c","e",2],["Reverse_Barbell_Preacher_Curls","Reverse Barbell Preacher Curls",12,"c","e",2],["Reverse_Cable_Curl","Reverse Cable Curl",4,"c","e",2],["Reverse_Crunch","Reverse Crunch",3,"f","",2],["Reverse_Flyes","Reverse Flyes",1,"b","",2],["Reverse_Flyes_With_External_Rotation","Reverse Flyes With External Rotation",1,"b","",2],["Reverse_Grip_Bent-Over_Rows","Reverse Grip Bent-Over Rows",0,"l","ckb",2],["Reverse_Grip_Triceps_Pushdown","Reverse Grip Triceps Pushdown",4,"d","",1],["Reverse_Hyperextension","Reverse Hyperextension",6,"h","ji",2],["Reverse_Machine_Flyes","Reverse Machine Flyes",6,"b","",2],["Reverse_Plate_Curls","Reverse Plate Curls",2,"c","e",2],["Reverse_Triceps_Bench_Press","Reverse Triceps Bench Press",0,"d","ab",1],["Rhomboids-SMR","Rhomboids-SMR",11,"l","n",3],["Rickshaw_Carry","Rickshaw Carry",2,"e","fjihmgn",0],["Rickshaw_Deadlift","Rickshaw Deadlift",2,"g","eihmn",2],["Ring_Dips","Ring Dips",2,"d","ab",1],["Rocket_Jump","Rocket Jump",3,"g","jh",1],["Rocking_Standing_Calf_Raise","Rocking Standing Calf Raise",0,"j","",1],["Rocky_Pull-Ups_Pulldowns","Rocky Pull-Ups/Pulldowns",2,"k","clb",2],["Romanian_Deadlift","Romanian Deadlift",0,"h","jim",2],["Romanian_Deadlift_from_Deficit","Romanian Deadlift from Deficit",0,"h","eimn",2],["Rope_Climb","Rope Climb",2,"k","celb",2],["Rope_Crunch","Rope Crunch",4,"f","",2],["Rope_Jumping","Rope Jumping",2,"g","jh",0],["Rope_Straight-Arm_Pulldown","Rope Straight-Arm Pulldown",4,"k","",2],["Round_The_World_Shoulder_Stretch","Round The World Shoulder Stretch",2,"b","ca",3],["Rowing_Stationary","Rowing, Stationary",6,"g","cjihml",0],["Runners_Stretch","Runner's Stretch",5,"h","j",3],["Running_Treadmill","Running, Treadmill",6,"g","jih",0],["Russian_Twist","Russian Twist",3,"f","m",2],["Sandbag_Load","Sandbag Load",2,"g","fcjeihmlbn",2],["Scapular_Pull-Up","Scapular Pull-Up",5,"n","kl",2],["Scissor_Kick","Scissor Kick",3,"f","",2],["Scissors_Jump","Scissors Jump",3,"g","ih",1],["Seated_Band_Hamstring_Curl","Seated Band Hamstring Curl",2,"h","",2],["Seated_Barbell_Military_Press","Seated Barbell Military Press",0,"b","d",1],["Seated_Barbell_Twist","Seated Barbell Twist",0,"f","",2],["Seated_Bent-Over_One-Arm_Dumbbell_Triceps_Extension","Seated Bent-Over One-Arm Dumbbell Triceps Extension",1,"d","",1],["Seated_Bent-Over_Rear_Delt_Raise","Seated Bent-Over Rear Delt Raise",1,"b","",2],["Seated_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension","Seated Bent-Over Two-Arm Dumbbell Triceps Extension",1,"d","",1],["Seated_Biceps","Seated Biceps",3,"c","ab",3],["Seated_Cable_Rows","Seated Cable Rows",4,"l","ckb",2],["Seated_Cable_Shoulder_Press","Seated Cable Shoulder Press",4,"b","d",1],["Seated_Calf_Raise","Seated Calf Raise",6,"j","",1],["Seated_Calf_Stretch","Seated Calf Stretch",5,"j","hm",3],["Seated_Close-Grip_Concentration_Barbell_Curl","Seated Close-Grip Concentration Barbell Curl",0,"c","",2],["Seated_Dumbbell_Curl","Seated Dumbbell Curl",1,"c","",2],["Seated_Dumbbell_Inner_Biceps_Curl","Seated Dumbbell Inner Biceps Curl",1,"c","",2],["Seated_Dumbbell_Palms-Down_Wrist_Curl","Seated Dumbbell Palms-Down Wrist Curl",1,"e","",2],["Seated_Dumbbell_Palms-Up_Wrist_Curl","Seated Dumbbell Palms-Up Wrist Curl",1,"e","",2],["Seated_Dumbbell_Press","Seated Dumbbell Press",1,"b","d",1],["Seated_Flat_Bench_Leg_Pull-In","Seated Flat Bench Leg Pull-In",3,"f","",2],["Seated_Floor_Hamstring_Stretch","Seated Floor Hamstring Stretch",5,"h","j",3],["Seated_Front_Deltoid","Seated Front Deltoid",3,"b","a",3],["Seated_Glute","Seated Glute",3,"i","o",3],["Seated_Good_Mornings","Seated Good Mornings",0,"m","i",2],["Seated_Hamstring","Seated Hamstring",5,"h","j",3],["Seated_Hamstring_and_Calf_Stretch","Seated Hamstring and Calf Stretch",2,"h","j",3],["Seated_Head_Harness_Neck_Resistance","Seated Head Harness Neck Resistance",2,"q","",2],["Seated_Leg_Curl","Seated Leg Curl",6,"h","",2],["Seated_Leg_Tucks","Seated Leg Tucks",3,"f","",2],["Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl","Seated One-Arm Dumbbell Palms-Down Wrist Curl",1,"e","",2],["Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl","Seated One-Arm Dumbbell Palms-Up Wrist Curl",1,"e","",2],["Seated_One-arm_Cable_Pulley_Rows","Seated One-arm Cable Pulley Rows",4,"l","ckn",2],["Seated_Overhead_Stretch","Seated Overhead Stretch",5,"f","",3],["Seated_Palm-Up_Barbell_Wrist_Curl","Seated Palm-Up Barbell Wrist Curl",0,"e","",2],["Seated_Palms-Down_Barbell_Wrist_Curl","Seated Palms-Down Barbell Wrist Curl",0,"e","",2],["Seated_Side_Lateral_Raise","Seated Side Lateral Raise",1,"b","",1],["Seated_Triceps_Press","Seated Triceps Press",1,"d","",1],["Seated_Two-Arm_Palms-Up_Low-Pulley_Wrist_Curl","Seated Two-Arm Palms-Up Low-Pulley Wrist Curl",4,"e","",2],["See-Saw_Press_Alternating_Side_Press","See-Saw Press (Alternating Side Press)",1,"b","fd",1],["Shotgun_Row","Shotgun Row",4,"k","cl",2],["Shoulder_Circles","Shoulder Circles",5,"b","n",2],["Shoulder_Press_-_With_Bands","Shoulder Press - With Bands",8,"b","d",1],["Shoulder_Raise","Shoulder Raise",5,"b","k",2],["Shoulder_Stretch","Shoulder Stretch",5,"b","",2],["Side-Lying_Floor_Stretch","Side-Lying Floor Stretch",5,"k","",3],["Side_Bridge","Side Bridge",3,"f","b",3],["Side_Hop-Sprint","Side Hop-Sprint",2,"g","pojh",1],["Side_Jackknife","Side Jackknife",3,"f","",2],["Side_Lateral_Raise","Side Lateral Raise",1,"b","",1],["Side_Laterals_to_Front_Raise","Side Laterals to Front Raise",1,"b","n",1],["Side_Leg_Raises","Side Leg Raises",3,"o","",2],["Side_Lying_Groin_Stretch","Side Lying Groin Stretch",5,"o","h",3],["Side_Neck_Stretch","Side Neck Stretch",5,"q","",3],["Side_Standing_Long_Jump","Side Standing Long Jump",5,"g","jih",1],["Side_To_Side_Chins","Side To Side Chins",2,"k","celb",2],["Side_Wrist_Pull","Side Wrist Pull",5,"b","ek",3],["Side_to_Side_Box_Shuffle","Side to Side Box Shuffle",2,"g","pojh",1],["Single-Arm_Cable_Crossover","Single-Arm Cable Crossover",4,"a","",1],["Single-Arm_Linear_Jammer","Single-Arm Linear Jammer",0,"b","ad",1],["Single-Arm_Push-Up","Single-Arm Push-Up",3,"a","bd",1],["Single-Cone_Sprint_Drill","Single-Cone Sprint Drill",2,"g","jih",1],["Single-Leg_High_Box_Squat","Single-Leg High Box Squat",2,"g","ih",1],["Single-Leg_Hop_Progression","Single-Leg Hop Progression",2,"g","pojh",1],["Single-Leg_Lateral_Hop","Single-Leg Lateral Hop",2,"g","pojh",1],["Single-Leg_Leg_Extension","Single-Leg Leg Extension",6,"g","",1],["Single-Leg_Stride_Jump","Single-Leg Stride Jump",2,"g","pojh",1],["Single_Dumbbell_Raise","Single Dumbbell Raise",1,"b","en",0],["Single_Leg_Butt_Kick","Single Leg Butt Kick",3,"g","jh",1],["Single_Leg_Glute_Bridge","Single Leg Glute Bridge",3,"i","h",1],["Single_Leg_Push-off","Single Leg Push-off",2,"g","jh",1],["Sit-Up","Sit-Up",3,"f","",2],["Sit_Squats","Sit Squats",5,"g","pih",1],["Skating","Skating",2,"g","pojih",0],["Sled_Drag_-_Harness","Sled Drag - Harness",2,"g","jih",1],["Sled_Overhead_Backward_Walk","Sled Overhead Backward Walk",2,"b","jlg",2],["Sled_Overhead_Triceps_Extension","Sled Overhead Triceps Extension",2,"d","",1],["Sled_Push","Sled Push",2,"g","jaihd",1],["Sled_Reverse_Flye","Sled Reverse Flye",2,"b","",2],["Sled_Row","Sled Row",2,"l","ck",2],["Sledgehammer_Swings","Sledgehammer Swings",2,"f","jeklb",2],["Smith_Incline_Shoulder_Raise","Smith Incline Shoulder Raise",0,"b","a",1],["Smith_Machine_Behind_the_Back_Shrug","Smith Machine Behind the Back Shrug",6,"n","b",2],["Smith_Machine_Bench_Press","Smith Machine Bench Press",6,"a","bd",1],["Smith_Machine_Bent_Over_Row","Smith Machine Bent Over Row",6,"l","ckb",2],["Smith_Machine_Calf_Raise","Smith Machine Calf Raise",6,"j","",1],["Smith_Machine_Close-Grip_Bench_Press","Smith Machine Close-Grip Bench Press",6,"d","ab",1],["Smith_Machine_Decline_Press","Smith Machine Decline Press",6,"a","bd",0],["Smith_Machine_Hang_Power_Clean","Smith Machine Hang Power Clean",6,"h","imgbn",2],["Smith_Machine_Hip_Raise","Smith Machine Hip Raise",6,"f","",2],["Smith_Machine_Incline_Bench_Press","Smith Machine Incline Bench Press",6,"a","bd",1],["Smith_Machine_Leg_Press","Smith Machine Leg Press",6,"g","jih",1],["Smith_Machine_One-Arm_Upright_Row","Smith Machine One-Arm Upright Row",6,"b","cn",2],["Smith_Machine_Overhead_Shoulder_Press","Smith Machine Overhead Shoulder Press",6,"b","d",1],["Smith_Machine_Pistol_Squat","Smith Machine Pistol Squat",6,"g","jih",1],["Smith_Machine_Reverse_Calf_Raises","Smith Machine Reverse Calf Raises",6,"j","",1],["Smith_Machine_Squat","Smith Machine Squat",6,"g","jihm",1],["Smith_Machine_Stiff-Legged_Deadlift","Smith Machine Stiff-Legged Deadlift",6,"h","im",2],["Smith_Machine_Upright_Row","Smith Machine Upright Row",6,"n","clb",2],["Smith_Single-Leg_Split_Squat","Smith Single-Leg Split Squat",6,"g","jih",1],["Snatch","Snatch",0,"g","cihmbnd",2],["Snatch_Balance","Snatch Balance",0,"g","jihbd",1],["Snatch_Deadlift","Snatch Deadlift",0,"h","eihmgn",2],["Snatch_Pull","Snatch Pull",0,"h","jimgn",2],["Snatch_Shrug","Snatch Shrug",0,"n","eb",2],["Snatch_from_Blocks","Snatch from Blocks",0,"g","jeihmbnd",2],["Speed_Band_Overhead_Triceps","Speed Band Overhead Triceps",8,"d","",1],["Speed_Box_Squat","Speed Box Squat",0,"g","jih",1],["Speed_Squats","Speed Squats",0,"g","jihm",1],["Spell_Caster","Spell Caster",1,"f","ib",2],["Spider_Crawl","Spider Crawl",3,"f","abd",2],["Spider_Curl","Spider Curl",12,"c","",2],["Spinal_Stretch","Spinal Stretch",5,"l","kmqn",3],["Split_Clean","Split Clean",0,"g","jeihmbn",2],["Split_Jerk","Split Jerk",0,"g","ihbd",1],["Split_Jump","Split Jump",3,"g","jih",1],["Split_Snatch","Split Snatch",0,"h","jeihmgbnd",2],["Split_Squat_with_Dumbbells","Split Squat with Dumbbells",1,"g","ih",1],["Split_Squats","Split Squats",5,"h","jig",1],["Squat_Jerk","Squat Jerk",0,"g","jihbd",1],["Squat_with_Bands","Squat with Bands",0,"g","ojihm",1],["Squat_with_Chains","Squat with Chains",0,"g","ojihm",1],["Squat_with_Plate_Movers","Squat with Plate Movers",0,"g","pojih",1],["Squats_-_With_Bands","Squats - With Bands",8,"g","jihm",1],["Stairmaster","Stairmaster",6,"g","jih",0],["Standing_Alternating_Dumbbell_Press","Standing Alternating Dumbbell Press",1,"b","d",1],["Standing_Barbell_Calf_Raise","Standing Barbell Calf Raise",0,"j","",1],["Standing_Barbell_Press_Behind_Neck","Standing Barbell Press Behind Neck",0,"b","d",1],["Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension","Standing Bent-Over One-Arm Dumbbell Triceps Extension",1,"d","b",1],["Standing_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension","Standing Bent-Over Two-Arm Dumbbell Triceps Extension",1,"d","",1],["Standing_Biceps_Cable_Curl","Standing Biceps Cable Curl",4,"c","",2],["Standing_Biceps_Stretch","Standing Biceps Stretch",2,"c","ab",3],["Standing_Bradford_Press","Standing Bradford Press",0,"b","d",1],["Standing_Cable_Chest_Press","Standing Cable Chest Press",4,"a","bd",1],["Standing_Cable_Lift","Standing Cable Lift",4,"f","b",2],["Standing_Cable_Wood_Chop","Standing Cable Wood Chop",4,"f","b",2],["Standing_Calf_Raises","Standing Calf Raises",6,"j","",1],["Standing_Concentration_Curl","Standing Concentration Curl",1,"c","e",2],["Standing_Dumbbell_Calf_Raise","Standing Dumbbell Calf Raise",1,"j","",1],["Standing_Dumbbell_Press","Standing Dumbbell Press",1,"b","d",1],["Standing_Dumbbell_Reverse_Curl","Standing Dumbbell Reverse Curl",1,"c","e",2],["Standing_Dumbbell_Straight-Arm_Front_Delt_Raise_Above_Head","Standing Dumbbell Straight-Arm Front Delt Raise Above Head",1,"b","",1],["Standing_Dumbbell_Triceps_Extension","Standing Dumbbell Triceps Extension",1,"d","",1],["Standing_Dumbbell_Upright_Row","Standing Dumbbell Upright Row",1,"n","cb",2],["Standing_Elevated_Quad_Stretch","Standing Elevated Quad Stretch",2,"g","",3],["Standing_Front_Barbell_Raise_Over_Head","Standing Front Barbell Raise Over Head",0,"b","",1],["Standing_Gastrocnemius_Calf_Stretch","Standing Gastrocnemius Calf Stretch",5,"j","h",3],["Standing_Hamstring_and_Calf_Stretch","Standing Hamstring and Calf Stretch",2,"h","",3],["Standing_Hip_Circles","Standing Hip Circles",3,"p","o",2],["Standing_Hip_Flexors","Standing Hip Flexors",5,"g","",3],["Standing_Inner-Biceps_Curl","Standing Inner-Biceps Curl",1,"c","",2],["Standing_Lateral_Stretch","Standing Lateral Stretch",5,"f","",3],["Standing_Leg_Curl","Standing Leg Curl",6,"h","",2],["Standing_Long_Jump","Standing Long Jump",3,"g","jih",1],["Standing_Low-Pulley_Deltoid_Raise","Standing Low-Pulley Deltoid Raise",4,"b","e",1],["Standing_Low-Pulley_One-Arm_Triceps_Extension","Standing Low-Pulley One-Arm Triceps Extension",4,"d","ab",1],["Standing_Military_Press","Standing Military Press",0,"b","d",1],["Standing_Olympic_Plate_Hand_Squeeze","Standing Olympic Plate Hand Squeeze",2,"e","c",3],["Standing_One-Arm_Cable_Curl","Standing One-Arm Cable Curl",4,"c","",2],["Standing_One-Arm_Dumbbell_Curl_Over_Incline_Bench","Standing One-Arm Dumbbell Curl Over Incline Bench",1,"c","",2],["Standing_One-Arm_Dumbbell_Triceps_Extension","Standing One-Arm Dumbbell Triceps Extension",1,"d","ab",1],["Standing_Overhead_Barbell_Triceps_Extension","Standing Overhead Barbell Triceps Extension",0,"d","b",1],["Standing_Palm-In_One-Arm_Dumbbell_Press","Standing Palm-In One-Arm Dumbbell Press",1,"b","d",1],["Standing_Palms-In_Dumbbell_Press","Standing Palms-In Dumbbell Press",1,"b","d",1],["Standing_Palms-Up_Barbell_Behind_The_Back_Wrist_Curl","Standing Palms-Up Barbell Behind The Back Wrist Curl",0,"e","",2],["Standing_Pelvic_Tilt","Standing Pelvic Tilt",5,"m","i",3],["Standing_Rope_Crunch","Standing Rope Crunch",4,"f","",2],["Standing_Soleus_And_Achilles_Stretch","Standing Soleus And Achilles Stretch",5,"j","",3],["Standing_Toe_Touches","Standing Toe Touches",5,"h","j",3],["Standing_Towel_Triceps_Extension","Standing Towel Triceps Extension",3,"d","",1],["Standing_Two-Arm_Overhead_Throw","Standing Two-Arm Overhead Throw",9,"b","ak",2],["Star_Jump","Star Jump",3,"g","jihb",1],["Step-up_with_Knee_Raise","Step-up with Knee Raise",3,"i","hg",1],["Step_Mill","Step Mill",6,"g","jih",0],["Stiff-Legged_Barbell_Deadlift","Stiff-Legged Barbell Deadlift",0,"h","im",2],["Stiff-Legged_Dumbbell_Deadlift","Stiff-Legged Dumbbell Deadlift",1,"h","im",2],["Stiff_Leg_Barbell_Good_Morning","Stiff Leg Barbell Good Morning",0,"m","ih",1],["Stomach_Vacuum","Stomach Vacuum",3,"f","",3],["Straight-Arm_Dumbbell_Pullover","Straight-Arm Dumbbell Pullover",1,"a","kbd",2],["Straight-Arm_Pulldown","Straight-Arm Pulldown",4,"k","",2],["Straight_Bar_Bench_Mid_Rows","Straight Bar Bench Mid Rows",0,"l","ck",2],["Straight_Raises_on_Incline_Bench","Straight Raises on Incline Bench",0,"b","n",1],["Stride_Jump_Crossover","Stride Jump Crossover",2,"g","pojh",1],["Sumo_Deadlift","Sumo Deadlift",0,"h","oeimlgn",2],["Sumo_Deadlift_with_Bands","Sumo Deadlift with Bands",0,"h","oeimlgn",2],["Sumo_Deadlift_with_Chains","Sumo Deadlift with Chains",0,"h","poeimlgn",2],["Superman","Superman",3,"m","ih",3],["Supine_Chest_Throw","Supine Chest Throw",9,"d","ab",1],["Supine_One-Arm_Overhead_Throw","Supine One-Arm Overhead Throw",9,"f","akb",2],["Supine_Two-Arm_Overhead_Throw","Supine Two-Arm Overhead Throw",9,"f","akb",2],["Suspended_Fallout","Suspended Fallout",2,"f","amb",2],["Suspended_Push-Up","Suspended Push-Up",2,"a","bd",1],["Suspended_Reverse_Crunch","Suspended Reverse Crunch",2,"f","",2],["Suspended_Row","Suspended Row",2,"l","ck",2],["Suspended_Split_Squat","Suspended Split Squat",2,"g","pojih",1],["Svend_Press","Svend Press",2,"a","ebd",1],["T-Bar_Row_with_Handle","T-Bar Row with Handle",0,"l","ck",2],["Tate_Press","Tate Press",1,"d","ab",1],["The_Straddle","The Straddle",5,"h","oj",3],["Thigh_Abductor","Thigh Abductor",6,"p","i",1],["Thigh_Adductor","Thigh Adductor",6,"o","ih",2],["Tire_Flip","Tire Flip",2,"g","jaeihmbnd",2],["Toe_Touchers","Toe Touchers",3,"f","",2],["Torso_Rotation","Torso Rotation",10,"f","",2],["Trail_Running_Walking","Trail Running/Walking",5,"g","jih",0],["Trap_Bar_Deadlift","Trap Bar Deadlift",2,"g","ih",2],["Tricep_Dumbbell_Kickback","Tricep Dumbbell Kickback",1,"d","",1],["Tricep_Side_Stretch","Tricep Side Stretch",5,"d","b",3],["Triceps_Overhead_Extension_with_Rope","Triceps Overhead Extension with Rope",4,"d","",1],["Triceps_Pushdown","Triceps Pushdown",4,"d","",1],["Triceps_Pushdown_-_Rope_Attachment","Triceps Pushdown - Rope Attachment",4,"d","",1],["Triceps_Pushdown_-_V-Bar_Attachment","Triceps Pushdown - V-Bar Attachment",4,"d","",1],["Triceps_Stretch","Triceps Stretch",5,"d","k",3],["Tuck_Crunch","Tuck Crunch",3,"f","",2],["Two-Arm_Dumbbell_Preacher_Curl","Two-Arm Dumbbell Preacher Curl",1,"c","",2],["Two-Arm_Kettlebell_Clean","Two-Arm Kettlebell Clean",7,"b","jihmn",2],["Two-Arm_Kettlebell_Jerk","Two-Arm Kettlebell Jerk",7,"b","jgd",1],["Two-Arm_Kettlebell_Military_Press","Two-Arm Kettlebell Military Press",7,"b","d",1],["Two-Arm_Kettlebell_Row","Two-Arm Kettlebell Row",7,"l","ck",2],["Underhand_Cable_Pulldowns","Underhand Cable Pulldowns",4,"k","clb",2],["Upper_Back-Leg_Grab","Upper Back-Leg Grab",5,"h","ml",3],["Upper_Back_Stretch","Upper Back Stretch",5,"l","l",3],["Upright_Barbell_Row","Upright Barbell Row",0,"b","n",2],["Upright_Cable_Row","Upright Cable Row",4,"n","b",2],["Upright_Row_-_With_Bands","Upright Row - With Bands",8,"n","b",2],["Upward_Stretch","Upward Stretch",5,"b","ak",3],["V-Bar_Pulldown","V-Bar Pulldown",4,"k","clb",2],["V-Bar_Pullup","V-Bar Pullup",3,"k","clb",2],["Vertical_Swing","Vertical Swing",1,"h","igb",2],["Walking_Treadmill","Walking, Treadmill",6,"g","jih",0],["Weighted_Ball_Hyperextension","Weighted Ball Hyperextension",10,"m","ihl",2],["Weighted_Ball_Side_Bend","Weighted Ball Side Bend",10,"f","",2],["Weighted_Bench_Dip","Weighted Bench Dip",2,"d","ab",1],["Weighted_Crunches","Weighted Crunches",9,"f","",2],["Weighted_Jump_Squat","Weighted Jump Squat",0,"g","jihm",1],["Weighted_Pull_Ups","Weighted Pull Ups",2,"k","cl",2],["Weighted_Sissy_Squat","Weighted Sissy Squat",0,"g","jih",1],["Weighted_Sit-Ups_-_With_Bands","Weighted Sit-Ups - With Bands",2,"f","",2],["Weighted_Squat","Weighted Squat",2,"g","jih",1],["Wide-Grip_Barbell_Bench_Press","Wide-Grip Barbell Bench Press",0,"a","bd",1],["Wide-Grip_Decline_Barbell_Bench_Press","Wide-Grip Decline Barbell Bench Press",0,"a","bd",1],["Wide-Grip_Decline_Barbell_Pullover","Wide-Grip Decline Barbell Pullover",0,"a","bd",2],["Wide-Grip_Lat_Pulldown","Wide-Grip Lat Pulldown",4,"k","clb",2],["Wide-Grip_Pulldown_Behind_The_Neck","Wide-Grip Pulldown Behind The Neck",4,"k","clb",2],["Wide-Grip_Rear_Pull-Up","Wide-Grip Rear Pull-Up",3,"k","clb",2],["Wide-Grip_Standing_Barbell_Curl","Wide-Grip Standing Barbell Curl",0,"c","",2],["Wide_Stance_Barbell_Squat","Wide Stance Barbell Squat",0,"g","jihm",1],["Wide_Stance_Stiff_Legs","Wide Stance Stiff Legs",0,"h","oim",2],["Wind_Sprints","Wind Sprints",3,"f","",2],["Windmills","Windmills",5,"p","ihm",2],["Worlds_Greatest_Stretch","World's Greatest Stretch",5,"h","jig",3],["Wrist_Circles","Wrist Circles",3,"e","",2],["Wrist_Roller","Wrist Roller",2,"e","b",2],["Wrist_Rotations_with_Straight_Bar","Wrist Rotations with Straight Bar",0,"e","",2],["Yoke_Walk","Yoke Walk",2,"g","fpojihm",0],["Zercher_Squats","Zercher Squats",0,"g","jih",1],["Zottman_Curl","Zottman Curl",1,"c","e",2],["Zottman_Preacher_Curl","Zottman Preacher Curl",1,"c","e",2]];
 /* Hình minh hoạ: Free Exercise DB (Unlicense / public domain) — github.com/yuhonas/free-exercise-db */
@@ -2863,15 +2848,10 @@ setTimeout(() => tixStars(), 500);
 /* ===== PA-16: nhắc lịch tập, nhắc cuối tuần, tin mới từ Drive (Web Push) ===== */
 const NDOW = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 const nDays = () => Array.isArray(state.settings.nDays) ? state.settings.nDays : [];
-async function drvTopic(D, side) { const b = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(D.m + ':' + D.id + ':' + side))); return b64u(b).slice(0, 32); }
-async function drvTopics() {
-  if (coach()) { const out = []; for (const x of profiles.list) { const st = await profState(x.id); if (st && st.drv && st.drv.id && st.drv.m) out.push(await drvTopic(st.drv, 'hlv')); } return out; }
-  return state.drv && state.drv.id && state.drv.m ? [await drvTopic(state.drv, 'hv')] : [];
-}
 function pushRules() {
   const S = state.settings, R = [];
   if (S.nRemind !== false && nDays().length) for (const dw of nDays()) R.push({ dow: dw, hm: S.nTime || '17:30', title: 'Đến giờ tập rồi 💪', body: `${curProf().name} ơi, mở Giáo Án Địa Ngục xem buổi hôm nay và mức tạ cần đẩy.`, tag: 'remind' });
-  if (S.nWeekly !== false) R.push({ dow: 0, hm: '20:00', title: 'Cuối tuần rồi', body: 'Nhập cân nặng, số đo tuần này' + (state.drv && state.drv.id || drvCo() ? '.' : ' và tải bản sao lưu dữ liệu.'), tag: 'weekly' });
+  if (S.nWeekly !== false) R.push({ dow: 0, hm: '20:00', title: 'Cuối tuần rồi', body: 'Nhập cân nặng, số đo tuần này.', tag: 'weekly' });
   return R;
 }
 let pushRegT = null;
@@ -2879,15 +2859,10 @@ function pushRegSoon() { clearTimeout(pushRegT); pushRegT = setTimeout(() => pus
 async function pushRegister(force) {
   try {
     if (inArtifact || !pushBase() || !(await currentPushSub())) return false;
-    const tzOff = new Date().getTimezoneOffset(), topics = state.settings.nDrive === false ? [] : await drvTopics(), rules = pushRules();
+    const tzOff = new Date().getTimezoneOffset(), topics = [], rules = pushRules();
     const h = strHash(JSON.stringify([pushBase(), pushSub.endpoint, topics, rules, tzOff, ymd()])); if (!force && h === (await LDB.get('kv', 'pushRegH'))) return true;
     await pushCall('/sub', { topics, tzOff }); await pushCall('/remind', { rules, tzOff }); await LDB.put('kv', 'pushRegH', h); return true;
   } catch (e) { return false; }
-}
-/* báo cho máy bên kia khi có dữ liệu mới qua Drive */
-async function pushNotify(topic, title, body) {
-  if (!pushBase() || state.settings.nDrive === false) return;
-  try { const sub = await currentPushSub().catch(() => null); await fetch(pushBase() + '/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ topic, title, body, tag: 'drive', from: sub ? sub.endpoint : '' }), keepalive: true }); } catch (e) {}
 }
 async function pushTestNow() { const r = await pushCall('/test', {}); if (!r.ok || r.r !== 'ok') throw new Error(r.loi || r.r || 'lỗi'); }
 function notifCardHtml(st) {
@@ -2901,7 +2876,7 @@ function notifCardHtml(st) {
   h += `<label class="toggle" style="margin-top:6px"><span>Báo hết giờ nghỉ giữa set</span><input type="checkbox" id="notify-t" ${S.notify ? 'checked' : ''}></label>
     <div class="row" style="margin-top:6px"><button class="btn" data-act="notif-local-test">Thử thông báo</button></div>
     <p class="small muted" style="margin:8px 0 0">${sub ? 'Có máy chủ thông báo: báo đúng giờ kể cả khi khoá màn hình.' : 'Chưa có máy chủ: app báo khi đang mở hoặc vừa chuyển sang app khác. iPhone khoá màn hình sẽ dừng app, lúc đó cần máy chủ thông báo bên dưới.'}</p>
-    <details class="wpkeep" ${pushBase() ? 'open' : ''} style="margin-top:12px"><summary>Khi khoá màn hình · nhắc lịch tập · dữ liệu mới từ Drive</summary>
+    <details class="wpkeep" ${pushBase() ? 'open' : ''} style="margin-top:12px"><summary>Khi khoá màn hình · nhắc lịch tập</summary>
     <p class="small muted" style="margin:8px 0 0">iPhone không cho app web tự chạy khi đã khoá màn hình hay đóng app. Muốn có thông báo lúc đó, điện thoại phải nhận "thông báo đẩy" từ một máy chủ. App dùng máy chủ miễn phí trên Cloudflare, HLV cài 1 lần (<a href="${PUSH_GUIDE}" target="_blank" rel="noopener">hướng dẫn</a>), học viên quét mã liên kết là tự có.</p>
     <label class="f full" style="margin-top:8px">Máy chủ thông báo<input class="inp" data-bind="setting" data-k="pushServer" placeholder="${esc(PUSH_SERVER || 'https://gadn-push.<tên>.workers.dev')}" value="${esc(S.pushServer || '')}" autocomplete="off" autocapitalize="off"></label>
     <div class="row" style="margin-top:10px"><button class="btn gold" data-act="push-on">${sub ? 'Đăng ký lại' : 'Kết nối máy chủ'}</button>${sub ? '<button class="btn" data-act="push-try">Gửi thử</button>' : ''}</div>
@@ -2909,8 +2884,8 @@ function notifCardHtml(st) {
   if (sub) h += `<label class="toggle" style="margin-top:14px"><span>Nhắc lịch tập</span><input type="checkbox" id="n-remind" ${S.nRemind !== false ? 'checked' : ''}></label>
     ${S.nRemind !== false ? `<div class="dows">${[1, 2, 3, 4, 5, 6, 0].map(d => `<button type="button" data-act="n-day" data-d="${d}" aria-pressed="${nDays().includes(d)}">${NDOW[d]}</button>`).join('')}</div>
     <label class="f" style="margin-top:8px;max-width:180px">Giờ nhắc<input class="inp" type="time" id="n-time" value="${esc(S.nTime || '17:30')}"></label>` : ''}
-    <label class="toggle" style="margin-top:12px"><span>Tối Chủ nhật: nhắc nhập số đo${drvCo() || (state.drv && state.drv.id) ? '' : ' & sao lưu'}</span><input type="checkbox" id="n-weekly" ${S.nWeekly !== false ? 'checked' : ''}></label>
-    <label class="toggle"><span>${coach() ? 'Học viên tập xong (qua Drive)' : 'HLV cập nhật giáo án (qua Drive)'}</span><input type="checkbox" id="n-drive" ${S.nDrive !== false ? 'checked' : ''}></label>`;
+    <label class="toggle" style="margin-top:12px"><span>Tối Chủ nhật: nhắc nhập số đo</span><input type="checkbox" id="n-weekly" ${S.nWeekly !== false ? 'checked' : ''}></label>
+    <label class="toggle"><span>${coach() ? 'Học viên tập xong' : 'HLV cập nhật giáo án'}</span><input type="checkbox" id="n-drive" ${S.nSync !== false ? 'checked' : ''}></label>`;
   return h + `</details></div>`;
 }
 
@@ -3766,7 +3741,7 @@ function viewMore() {
   const co = coach();
   /* mỗi mục cài đặt là một trang con; trang Tài khoản chỉ còn danh mục */
   const SEC = {
-    drive: ['Tài khoản & đồng bộ', () => hubCardHtml() + accCardHtml() + syncCardHtml()],
+    drive: ['Đồng bộ với HLV', () => hubCardHtml() + syncCardHtml()],
     pack: ['Thư viện hình hướng dẫn', () => packCard()],
     backup: ['Sao lưu & khôi phục', () => `<div class="card set-card"><h3>Sao lưu dữ liệu</h3><p>${multi() ? 'Tải file dữ liệu của <b>một người</b> (để gửi riêng cho người đó) hoặc của cả máy.' : 'Tải dữ liệu (gồm ảnh máy tập và ảnh body) thành một file để cất giữ, hoặc chuyển sang máy khác.'}</p>
     <div class="row"><button class="btn" data-act="backup">${multi() ? 'Tải file của 1 người' : 'Tải file sao lưu'}</button><label class="btn" for="restore-file">Khôi phục từ file</label><input type="file" id="restore-file" hidden></div></div>`],
@@ -3804,8 +3779,8 @@ function viewMore() {
   const p = curProf(), n = (p.name || st.name || '').trim() || 'Bạn', today = ymd();
   let streak = 0; for (let k = 0; k < 104; k++) { const d = weekDaysOf(-k); if (state.sessions.some(x => x.date >= d[0] && x.date <= d[6])) streak++; else if (k) break; }
   const vol4 = state.sessions.filter(x => x.date >= addDays(today, -27)).reduce((a, x) => a + sessStats(x).vol, 0) / 1000;
-  const D = state.drv, np = 'Notification' in window ? Notification.permission : 'none';
-  const drvLine = DRV.st === 'busy' ? 'Đang đồng bộ…' : DRV.st === 'err' ? (accHet() ? 'Phiên hết hạn · đăng nhập lại' : 'Lỗi đồng bộ · bấm để xem') : D && D.at ? 'Đồng bộ ' + ago(ymd(new Date(D.at))) + ' lúc ' + hhmm(D.at) : st.acc && st.acc.u ? 'Chưa đồng bộ lần nào' : 'Chưa đăng nhập';
+  const np = 'Notification' in window ? Notification.permission : 'none';
+  const syncLine = hubRole() === 'hv' ? 'Đã nối với HLV ' + esc(state.settings.sync.ten || '') : hubRole() === 'hlv' ? 'HLV · ' + Object.keys(state.settings.sync.map || {}).length + ' học viên' : 'Chưa nối máy chủ';
   const row = (k, ic, t, sub, cls) => `<button type="button" class="grow" data-act="more-sec" data-k="${k}"><span class="gi ${cls || ''}">${ICON[ic]}</span><span class="gt"><b>${t}</b><span>${sub}</span></span>${ICON.chevR}</button>`;
   return `<section class="sec"><div class="sec-head" style="margin-bottom:14px"><h2 class="h1">${co ? 'Cài đặt' : 'Tài khoản'}</h2>${co ? `<button class="btn sm" data-act="tab" data-tab="more">${ICON.chevL} Phòng HLV</button>` : ''}</div>
   <div class="card acc-prof"><div class="ap-top"><span class="avatar ${multi() ? 'pcol' : ''}" style="${multi() ? `--pc:${PCOLORS[p.color % PCOLORS.length]}` : ''}">${esc(initials(n))}</span><span class="t"><b>${esc(n)}</b><span>${co ? `Hồ sơ đang xem · HLV ${esc(co.name)}` : multi() ? `${profiles.list.length} người tập trên máy này` : 'Người tập'}</span></span><button class="btn sm" data-act="profiles">Đổi</button></div>
@@ -3816,7 +3791,7 @@ function viewMore() {
     : `<p>Bạn kèm người khác tập? Bật chế độ HLV: bạn là huấn luyện viên, mỗi học viên có giáo án, mức tạ, lịch sử và số đo riêng. Một bảng theo dõi cả nhóm: ai lỡ buổi, ai cần lên tạ, ai đang đau.</p>
     <div class="row"><button class="btn gold" data-act="coach-setup">Bật chế độ HLV</button><button class="btn" data-act="profiles">${ICON.users} Người tập (${profiles.list.length})</button></div>`}</div>
   <div class="gh">Đồng bộ & dữ liệu</div><div class="card grp">
-    ${row('drive', 'cloud', 'Tài khoản & đồng bộ', (st.acc && st.acc.u ? `Đăng nhập ${esc(st.acc.u)} · ` : '') + drvLine, D && D.at && DRV.st !== 'err' ? 'ok' : DRV.st === 'err' ? 'bad' : '')}
+    ${row('drive', 'cloud', 'Đồng bộ với HLV', syncLine, hubRole() ? 'ok' : '')}
     ${row('backup', 'save', 'Sao lưu & khôi phục', st.lastBackupAt ? 'Lần cuối ' + ago(ymd(new Date(st.lastBackupAt))) : 'Chưa tải bản sao lưu nào')}
     ${row('pack', 'book', 'Thư viện hình hướng dẫn', ui.pack ? `Đã tải ${ui.pack.n} hình · xem được khi không có mạng` : 'Chưa tải · khoảng 20 MB')}
   </div>
@@ -3926,14 +3901,14 @@ function viewCoach() {
   const todo = [];
   for (const r of rows) { const c = r.c, nm = esc(r.p.name);
     if (c.active) todo.push(['up', '▶', `${nm} đang tập`, 'Mở để ghi set cùng học viên', r.p.id]);
-    if (c.gap == null && c.nDays) todo.push(['gold', '!', `${nm} chưa tập buổi nào`, 'Gửi mã liên kết Drive để học viên nhận giáo án', r.p.id, 'share']);
+    if (c.gap == null && c.nDays) todo.push(['gold', '!', `${nm} chưa tập buổi nào`, 'Đưa thẻ QR để học viên nối máy và nhận giáo án', r.p.id, 'share']);
     else if (c.gap >= 4) todo.push(['red', c.gap, `Nhắc ${nm}: ${c.gap} ngày chưa tập`, c.last ? `Lần cuối ${esc(c.last.dayName)} · ${dm(c.last.date)}` : '', r.p.id]);
     if (c.pains.length) todo.push(['red', '⚠', `${nm} đang đau ${c.pains.map(x => esc(x.area.toLowerCase())).join(', ')}`, 'App đã tự giảm tạ / bỏ bài liên quan', r.p.id]);
     if (c.rot) todo.push(['gold', '⟳', `${nm}: ${c.rot} ô bài nên đổi`, 'Đã giữ bài chính hơn 6 tuần', r.p.id]);
     if (!c.wpOk && c.nDays && c.total) todo.push(['gold', '✎', `Duyệt kế hoạch tuần cho ${nm}`, 'Chọn trọng tâm và mức tạ tuần này', r.p.id, 'plan']);
   }
   h += `<div class="sec-head" style="margin-top:6px"><h3 class="h">Việc cần làm</h3><span class="chip">${todo.length}</span></div>`;
-  h += todo.length ? todo.slice(0, 8).map(([k, ic, t, sub, id, act]) => `<button type="button" class="todo" data-act="${act === 'share' ? 'coach-share' : act === 'plan' ? 'coach-plan' : 'switch-profile'}" data-id="${id}"><span class="ti ${k}">${ic}</span><span style="min-width:0"><b>${t}</b><span class="s">${sub}</span></span><span class="go">›</span></button>`).join('')
+  h += todo.length ? todo.slice(0, 8).map(([k, ic, t, sub, id, act]) => `<button type="button" class="todo" data-act="${act === 'plan' ? 'coach-plan' : 'switch-profile'}" data-id="${id}"><span class="ti ${k}">${ic}</span><span style="min-width:0"><b>${t}</b><span class="s">${sub}</span></span><span class="go">›</span></button>`).join('')
     : '<div class="empty" style="padding:16px">Không có gì cần xử lý. Đội đang tập tốt.</div>';
   // bảng xếp hạng
   const lb = ui.lb || 'vol', val = c => lb === 'n7' ? c.n7 : lb === 'vol' ? c.vol7 : c.up28;
@@ -4032,7 +4007,7 @@ async function qrScanSheet(mode) {
         if (r && r.data.includes('#cs=')) { qrStop(); shareReceive(r.data.slice(r.data.indexOf('#cs=') + 4)); return; }
         if (r && /^GA[QSPL][12]\./.test(r.data)) { const [kind, id, i, n, body] = r.data.split('.'); if (id !== msg) { kindIn = kind; msg = id; for (const k in got) delete got[k]; need = +n; } got[i] = body;
           const have = Object.keys(got).length; $('#qr-st').textContent = need > 1 ? `Đã nhận ${have}/${need} trang…` : 'Đã nhận';
-          if (have >= need) { const body2 = Array.from({ length: need }, (_, k) => got[k + 1]).join(''); qrStop(); if (kindIn === 'GAL1') drvLinkReceive(body2); else oldCode(); return; } } }
+          if (have >= need) { const body2 = Array.from({ length: need }, (_, k) => got[k + 1]).join(''); qrStop(); if (kindIn === 'GAL1') hubCode(body2); else toast(OLD_CODE); return; } } }
       ui.qrRaf = setTimeout(tick, 90);
     };
     $('#qr-st').textContent = 'Giữ mã QR trong khung, cách khoảng 20–30 cm'; tick();
@@ -4336,163 +4311,10 @@ async function syncPreview(pid) {
 /* ===== PA-15: tự đồng bộ qua thư mục Google Drive (Apps Script làm máy chủ) =====
    Máy HLV: đọc phía 'hv' (học viên gửi lên) → gộp; gửi phía 'hlv' (giáo án + mọi buổi tập).
    Máy học viên: đọc phía 'hlv' → gộp; gửi phía 'hv'. Dùng lại đúng cách gộp của đồng bộ QR. */
-const DRV = { busy: false, t: null, last: 0, self: false, st: '', err: '', at: 0 };
-async function drvCall(url, body) {
-  const ctl = new AbortController(), to = setTimeout(() => ctl.abort(), 45000);
-  try {
-    const r = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body), redirect: 'follow', signal: ctl.signal });
-    if (!r.ok) throw new Error('Máy chủ trả lỗi ' + r.status);
-    let j; try { j = await r.json(); } catch (e) { throw new Error('Link Apps Script chưa đúng hoặc chưa cho "Bất kỳ ai" truy cập'); }
-    if (!j.ok && !j.xungDot) throw new Error(j.loi || 'Máy chủ báo lỗi'); return j;
-  } finally { clearTimeout(to); }
-}
-const drvOkUrl = u => /^https:\/\/script\.google(usercontent)?\.com\/.+\/exec(\?.*)?$/.test(String(u || '').trim());
-const drvCo = () => !!coach() && !!state.settings.drvUrl && !!state.settings.drvKey;
-function drvCred(st) { const D = st && st.drv; if (!D || !D.id) return null; return coach() ? (drvCo() ? { url: state.settings.drvUrl, ma: state.settings.drvKey } : null) : (D.u && D.m ? { url: D.u, ma: D.m } : null); }
-async function drvStore(pid, st) {
-  if (pid === profiles.active) { const g = globalsOf(state); DRV.self = true; loadState(st); Object.assign(state.settings, g); save(); DRV.self = false; }
-  else { st.updatedAt = Date.now(); await LDB.put('kv', stateKey(pid), clone(st)); }
-}
-function drvSetDrv(pid, patch) { return (async () => { if (pid === profiles.active) { state.drv = { ...(state.drv || {}), ...patch }; DRV.self = true; save(); DRV.self = false; return; } const st = await profState(pid); if (!st) return; st.drv = { ...(st.drv || {}), ...patch }; await LDB.put('kv', stateKey(pid), clone(st)); })(); }
 /* ảnh máy tập: mã băm → ảnh trên máy này */
-async function drvLocalPhotos(st) { const m = new Map(); for (const d of st.days || []) for (const e of d.exercises || []) for (const x of [e, ...(e.alts || [])]) for (const id of x.photos || []) { const h = await photoHash(id); if (h && !m.has(h)) m.set(h, id); } return m; }
-const drvPlanHashes = plan => { const out = new Set(); for (const d of plan || []) for (const o of d.e || []) for (const x of [o, ...(o.l || [])]) for (const h of x.ph || []) out.add(h); return out; };
-async function drvPushPhotos(cr, id, pkg, st) {
-  const need = [...drvPlanHashes(pkg.plan)]; if (!need.length) return;
-  const key = 'drvUp:' + cr.url, old = (await LDB.get('kv', key)) || [], up = new Set(old.map(normHash));
-  if (old.some(h => h !== normHash(h))) await LDB.put('kv', key, [...up]); /* PA-25: đổi mã cũ đã lưu */
-  const ask = need.filter(h => !up.has(h)); if (!ask.length) return;
-  const { thieu } = await drvCall(cr.url, { a: 'anh.co', ma: cr.ma, id, ds: ask }); const loc = await drvLocalPhotos(st);
-  let batch = {}, size = 0;
-  const send = async () => { if (!size) return; await drvCall(cr.url, { a: 'anh.day', ma: cr.ma, id, anh: batch }); batch = {}; size = 0; };
-  for (const h of thieu) { const pid = loc.get(h); if (!pid) continue; const v = await DB.get('photos', pid); if (typeof v !== 'string' || !v.startsWith('data:image/')) continue; if (size + v.length > 4e6) await send(); batch[h] = v; size += v.length; }
-  await send(); ask.forEach(h => up.add(h)); await LDB.put('kv', key, [...up].slice(-3000));
-}
-async function drvPullPhotos(cr, id, P, st) {
-  const need = drvPlanHashes(P.plan); if (!need.size) return; const loc = await drvLocalPhotos(st); let ds = [...need].filter(h => !loc.has(h) && !P.photos[h]);
-  for (let k = 0; k < 6 && ds.length; k++) { const r = await drvCall(cr.url, { a: 'anh.lay', ma: cr.ma, id, ds }); Object.assign(P.photos, r.anh || {}); ds = r.con || []; }
-}
 /* đồng bộ 1 hồ sơ: kéo phía bên kia → gộp → gửi phía mình nếu có thay đổi */
-async function drvSyncOne(pid) {
-  let st = await syncStateOf(pid); const cr = drvCred(st); if (!cr) return null;
-  if (st.active) return { skip: 'active' };
-  const co = !!coach(), seenK = co ? 'hvSeen' : 'hlvSeen', out = { pid, got: null }; let D = st.drv;
-  const K = await drvCall(cr.url, { a: 'keo', ma: cr.ma, id: D.id, biet: { hv: co ? D.hvSeen || 0 : D.hvRev || 0, hlv: co ? D.hlvRev || 0 : D.hlvSeen || 0 } });
-  const them = co ? K.hv : K.hlv, mine = co ? K.hlv : K.hv;
-  /* PA-21: HLV đăng nhập trên máy mới → lấy lại giáo án + buổi tập của hồ sơ từ phía HLV đã lưu trên Drive.
-     Cũng dùng khi HLV dùng 2 máy: máy kia vừa gửi bản mới hơn → gộp về trước khi gửi, không ghi đè lẫn nhau. */
-  let srvH = '';
-  if (co && (D.restore || (K.hlv && K.hlv.goi && K.hlv.rev > (D.hlvRev || 0)))) {
-    if (K.hlv && K.hlv.goi) {
-      const g = clone(K.hlv.goi); g.at = 0; srvH = strHash(JSON.stringify(g));
-      const P = cleanPkg(K.hlv.goi); await drvPullPhotos(cr, D.id, P, st);
-      const res = await syncMerge(st, { ...P, role: 'coach' }, {});
-      for (const [nid, v, h] of res.newPhotos) { await DB.put('photos', nid, v); photoCache.set(nid, v); photoHashCache.set(nid, h); }
-      st = res.st; delete st.coachLink; out.got = res.R;
-    }
-    D = { ...D, restore: false, hlvRev: K.hlv ? K.hlv.rev : 0 }; st.drv = D;
-  }
-  if (them && them.goi && them.rev > (D[seenK] || 0)) {
-    const P = cleanPkg(them.goi);
-    if (P.role === (co ? 'coach' : 'student')) throw new Error('Dữ liệu trên Drive cùng vai với máy này');
-    await drvPullPhotos(cr, D.id, P, st);
-    const res = await syncMerge(st, P, {});
-    for (const [nid, v, h] of res.newPhotos) { await DB.put('photos', nid, v); photoCache.set(nid, v); photoHashCache.set(nid, h); }
-    st = res.st; out.got = res.R;
-  }
-  st.drv = { ...D, [seenK]: them ? them.rev : (D[seenK] || 0), at: Date.now() };
-  await drvStore(pid, st);
-  const { pkg } = await syncPack(pid, { full: true }); pkg.at = 0; const h = strHash(JSON.stringify(pkg)); pkg.at = Date.now();
-  const myRev = mine ? mine.rev : 0;
-  if (co && srvH && h === srvH) await drvSetDrv(pid, { sentH: h, hlvRev: myRev, at: Date.now() });
-  else if (h !== D.sentH || myRev !== (co ? D.hlvRev || 0 : D.hvRev || 0)) {
-    await drvPushPhotos(cr, D.id, pkg, st);
-    let r = await drvCall(cr.url, { a: 'day', ma: cr.ma, id: D.id, vai: co ? 'hlv' : 'hv', rev: myRev, goi: pkg });
-    if (r.xungDot) r = await drvCall(cr.url, { a: 'day', ma: cr.ma, id: D.id, vai: co ? 'hlv' : 'hv', rev: r.rev, goi: pkg });
-    const planH = strHash(JSON.stringify(pkg.plan || null)), nS = (pkg.sessions || []).length, last = [...(pkg.sessions || [])].sort((a, b) => b.startedAt - a.startedAt)[0];
-    if (co && pkg.plan && D.nP && planH !== D.nP) pushNotify(await drvTopic(D, 'hv'), `HLV ${(coach() || {}).name || ''} vừa cập nhật giáo án`.replace(/\s+/g, ' '), 'Mở app để nhận giáo án và mức tạ mới.');
-    if (!co && D.nS != null && nS > D.nS && last) pushNotify(await drvTopic(D, 'hlv'), `${D.n || pkg.name || 'Học viên'} vừa tập xong ${last.dayName || ''}`.trim(), `${last.entries.reduce((a, en) => a + en.sets.length, 0)} set · ${dm(last.date)}. Mở Phòng HLV để xem.`);
-    await drvSetDrv(pid, { sentH: h, [co ? 'hlvRev' : 'hvRev']: r.rev, at: Date.now(), ...(co ? (pkg.plan ? { nP: planH } : {}) : { nS }) }); out.sent = true;
-  }
-  return out;
-}
 /* PA-18: máy HLV tự đưa MỌI hồ sơ lên Drive, không cần bấm từng người */
-async function drvEnsureAll() {
-  if (!drvCo()) return 0; let n = 0;
-  for (const x of profiles.list) {
-    let st = await profState(x.id); if (st && st.drv && st.drv.id) continue;
-    const r = await drvCall(state.settings.drvUrl, { a: 'tv.them', ma: state.settings.drvKey, ten: x.name || 'Người tập' });
-    const D = { id: r.id, m: r.ma, hvSeen: 0, hlvRev: 0, sentH: '' };
-    if (x.id === profiles.active) { state.drv = D; DRV.self = true; save(); DRV.self = false; }
-    else { if (!st) { st = freshState(); st.settings.name = x.name || ''; } st.drv = D; st.updatedAt = Date.now(); await LDB.put('kv', stateKey(x.id), clone(st)); }
-    n++;
-  }
-  if (n) pushRegSoon();
-  return n;
-}
-function drvSoon() { clearTimeout(DRV.t); DRV.t = setTimeout(() => drvAuto(), 20000); }
 /* tự chạy: khi mở app, quay lại app, 20 giây sau lần lưu gần nhất. Bỏ qua khi đang mở bảng chọn hoặc đang tập. */
-async function drvAuto(force) {
-  if (DRV.busy || !navigator.onLine) return; if (!force && Date.now() - DRV.last < 15000) return;
-  if (!force && document.querySelector('.sheet:not([hidden])')) { drvSoon(); return; }
-  const pids = coach() ? profiles.list.map(x => x.id) : [profiles.active];
-  DRV.busy = true; DRV.last = Date.now(); DRV.st = 'busy'; drvPaint(); const got = [];
-  try {
-    if (coach()) await drvEnsureAll();
-    for (const pid of pids) { const r = await drvSyncOne(pid); if (r && r.got && (r.got.newS || r.got.updS || r.got.kg || r.got.newEx || r.got.updEx || r.got.dropEx)) got.push(r); }
-    DRV.st = 'ok'; DRV.err = ''; DRV.at = Date.now();
-  } catch (e) { DRV.st = 'err'; DRV.err = String(e && e.message || e); }
-  finally { DRV.busy = false; }
-  ui.coachData = null; drvPaint();
-  if (got.length) { render(true); const nm = r => (profiles.list.find(x => x.id === r.pid) || {}).name || '';
-    toast(coach() ? '☁ Drive: ' + got.map(r => `${nm(r)}${r.got.newS ? ` +${r.got.newS} buổi` : ' cập nhật'}`).join(', ') : `☁ Đã nhận từ HLV${got[0].got.newEx || got[0].got.updEx || got[0].got.dropEx ? ': giáo án mới' : ''}${got[0].got.newS ? `, ${got[0].got.newS} buổi tập` : ''}`); }
-  else if (force) toast(DRV.st === 'ok' ? '☁ Đã đồng bộ với Google Drive' : '☁ Chưa đồng bộ được: ' + DRV.err);
-}
-function drvStatusHtml(st) {
-  const D = st && st.drv, k = DRV.st === 'busy' ? 'busy' : DRV.st === 'err' ? 'err' : D && D.at ? 'ok' : '';
-  const t = DRV.st === 'busy' ? 'Đang đồng bộ…' : DRV.st === 'err' ? 'Lỗi: ' + esc(DRV.err) : D && D.at ? 'Đồng bộ lần cuối ' + ago(ymd(new Date(D.at))) + ' lúc ' + hhmm(D.at) : 'Chưa đồng bộ lần nào';
-  return `<div class="st ${k}" id="drv-st"><i></i><span>${t}</span></div>`;
-}
-function drvPaint() { const el = $('#drv-st'); if (el) el.outerHTML = drvStatusHtml(state); }
-function drvCardHtml() {
-  const co = coach(), S = state.settings, D = state.drv;
-  if (co) return `<div class="card set-card drv"><h3>☁ Đồng bộ Google Drive</h3><p>Dán link Ứng dụng web của Apps Script và MÃ HLV (xem Nhật ký thực thi khi chạy hàm caiDat). App tự đưa mọi hồ sơ lên Drive và tự đồng bộ khi mở app, sau mỗi lần lưu.</p>
-    <label class="f full">Link Ứng dụng web<input class="inp" id="drv-url" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(S.drvUrl || '')}" autocomplete="off" autocapitalize="off"></label>
-    <label class="f full" style="margin-top:8px">MÃ HLV<input class="inp" id="drv-key" placeholder="32 ký tự" value="${esc(S.drvKey || '')}" autocomplete="off" autocapitalize="off"></label>
-    <div class="row"><button class="btn gold" data-act="drv-save">Kiểm tra & lưu</button>${drvCo() ? '<button class="btn" data-act="drv-now">Đồng bộ ngay</button>' : ''}</div>
-    ${drvCo() ? `<div class="small muted" style="margin-top:14px;font-weight:700">Mã liên kết · gửi 1 lần cho mỗi máy</div><div class="row" style="flex-wrap:wrap">${profiles.list.map(x => `<button class="btn sm" data-act="drv-hv" data-id="${x.id}">☁ ${esc(x.name)}</button>`).join('')}</div>
-    <p class="small muted" style="margin:8px 0 0">Mọi hồ sơ trên máy này (kể cả của bạn) tự lưu lên Drive. Học viên nhập mã của mình 1 lần là máy họ và máy bạn tự cập nhật cho nhau. Bạn dùng thêm iPad hay máy khác thì quét mã của chính bạn.</p>` : ''}${drvCo() ? `<div class="st ${DRV.st === 'err' ? 'err' : DRV.at ? 'ok' : ''}" id="drv-st"><i></i><span>${DRV.st === 'busy' ? 'Đang đồng bộ…' : DRV.st === 'err' ? 'Lỗi: ' + esc(DRV.err) : DRV.at ? 'Đã đồng bộ lúc ' + hhmm(DRV.at) : 'Tự đồng bộ khi mở app và sau mỗi lần lưu'}</span></div>` : ''}</div>`;
-  if (D && D.id) return `<div class="card set-card drv"><h3>☁ Đồng bộ Google Drive</h3><p>Máy này đã liên kết với HLV qua Google Drive. App tự đồng bộ khi mở app và sau mỗi lần lưu.</p>${drvStatusHtml(state)}
-    <div class="row"><button class="btn gold" data-act="drv-now">Đồng bộ ngay</button><button class="btn ghost" data-act="drv-unlink">Ngắt liên kết</button></div></div>`;
-  return `<div class="card set-card drv"><h3>☁ Đồng bộ Google Drive</h3><p>HLV gửi cho bạn <b>mã liên kết</b> (mã QR hoặc tin nhắn). Quét hoặc dán 1 lần, từ đó giáo án và buổi tập tự đồng bộ.</p>
-    <div class="row"><button class="btn gold" data-act="qr-scan">⌗ Quét mã liên kết</button><button class="btn" data-act="qr-paste">${ICON.paste} Dán mã</button></div></div>`;
-}
-const drvCode = (url, id, ma, name, cn) => 'GAL1.' + Math.random().toString(36).slice(2, 6) + '.1.1.' + b64u(new TextEncoder().encode(JSON.stringify({ u: url, i: id, m: ma, n: name, c: cn || '', ...(pushBase() ? { p: pushBase() } : {}) })));
-async function drvHvSheet(pid) {
-  const p = profiles.list.find(x => x.id === pid), st = await syncStateOf(pid); if (!p || !st) return; ui.drvPid = pid;
-  if (!drvCo()) { openSheet(`<h3 class="sh-title">Chưa cài Google Drive</h3><p class="sh-text">Vào Cài đặt → <b>Đồng bộ Google Drive</b>, dán link Apps Script và MÃ HLV trước.</p><div class="sh-actions"><button class="btn gold" data-act="tab" data-tab="settings">Mở Cài đặt</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`); return; }
-  const D = st.drv;
-  if (D && D.id && !D.m) { accTvSheet(); return; }
-  if ((!D || !D.id) && !ui.drvMaking) { ui.drvMaking = true; openSheet(`<h3 class="sh-title">☁ ${esc(p.name)}</h3><p class="sh-text">Đang tạo chỗ lưu trên Drive…</p>`);
-    try { await drvEnsureAll(); } catch (e) { toast('Không tạo được: ' + (e && e.message || e)); } ui.drvMaking = false; return drvHvSheet(pid); }
-  if (!D || !D.id) { openSheet(`<h3 class="sh-title">Kết nối ${esc(p.name)} với Google Drive</h3><p class="sh-text">App tạo cho ${esc(p.name)} một chỗ lưu riêng trong thư mục Drive của bạn và một <b>mã liên kết</b>. Học viên quét mã 1 lần, từ đó giáo án bạn sửa và buổi tập họ ghi tự đồng bộ hai chiều.</p>
-      <div class="sh-actions"><button class="btn gold big" data-act="drv-new" data-id="${pid}">Tạo mã liên kết</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`); return; }
-  ui.drvCode = drvCode(state.settings.drvUrl, D.id, D.m, p.name, (coach() || {}).name);
-  openSheet(`<h3 class="sh-title">☁ ${esc(p.name)} · Google Drive</h3><p class="sh-text">Máy của ${esc(p.name)} mở app → tab Tôi → <b>Quét mã liên kết</b> (hoặc dán mã bạn gửi qua Zalo). Chỉ cần làm 1 lần, sau đó hai máy tự cập nhật cho nhau.</p>
-    <div class="qrbox"><canvas id="qr-c"></canvas><span class="pg" id="qr-pg"></span></div>
-    ${drvStatusHtml(st)}
-    <div class="sh-actions"><button class="btn gold" data-act="drv-copy">${ICON.share} Gửi mã qua Zalo</button><button class="btn" data-act="drv-now" data-id="${pid}">Đồng bộ ngay</button>
-    <button class="btn ghost" data-act="drv-rekey" data-id="${pid}">Cấp mã mới (mã cũ hết hiệu lực)</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>
-    <p class="small muted" style="margin:8px 0 0">Ai có mã này đều xem và ghi được dữ liệu của ${esc(p.name)}. Lộ mã hoặc học viên đổi máy thì bấm Cấp mã mới.</p>`);
-  const c = $('#qr-c'); if (c) drawQR(c, ui.drvCode);
-}
-async function drvLinkReceive(body) {
-  let L; try { L = JSON.parse(new TextDecoder().decode(unb64u(body))); if (!drvOkUrl(L.u) || !L.i || !L.m) throw 0; } catch (e) { toast('Mã liên kết không đọc được'); return; }
-  if (coach()) { toast('Đây là mã cho máy học viên. Máy HLV không cần quét.'); return; }
-  ui.drvIn = L;
-  openSheet(`<h3 class="sh-title">Liên kết Google Drive</h3><p class="sh-text">Liên kết hồ sơ <b>${esc(curProf().name)}</b> trên máy này với dữ liệu <b>${esc(L.n || 'học viên')}</b>${L.c ? ` của HLV <b>${esc(L.c)}</b>` : ''}. Giáo án sẽ theo bản của HLV, lịch sử tập trên máy này được giữ nguyên và gửi lên cho HLV.</p>
-    <div class="sh-actions"><button class="btn gold big" data-act="drv-link">Liên kết & đồng bộ</button><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
-}
 /* ===== PA-32: chia sẻ kết quả buổi tập với PT (BR-23) =====
    Link #cs=<mã> chỉ chứa các bài đã tập của MỘT ngày. Gói nhị phân: byte đầu = phiên bản (1) + 128 nếu đã nén deflate-raw. */
 const SH_VER = 1, SH_EF = ['e', 'm', 'h', 'f'], SH_EPOCH = Date.UTC(2020, 0, 1) / 864e5, SH_MAX_LINK = 700;
@@ -4615,7 +4437,7 @@ async function ensureUids() {
   for (const p of profiles.list) {
     if (p.uid) continue;
     const st = await profState(p.id);
-    p.uid = (st && st.drv && st.drv.id) || (p.id !== 'p1' ? p.id : uid()); ch = true;
+    p.uid = p.id !== 'p1' ? p.id : uid(); ch = true;
   }
   if (ch) saveProfiles();
 }
@@ -4698,138 +4520,6 @@ async function shareCreate() {
   shIn.pid = id; await shareApply();
 }
 
-/* ===== PA-21: tài khoản đăng nhập (tên + mật khẩu) =====
-   HLV và học viên đăng nhập bằng tài khoản trên máy chủ Apps Script; mỗi máy nhận một "phiên" dùng thay mã liên kết.
-   HLV: phiên nằm ở settings.drvKey (như MÃ HLV). Học viên: phiên nằm ở state.drv.m (như mã liên kết). */
-const DRV_MAC_DINH = ''; /* link Ứng dụng web cố định của máy chủ (để trống: nhập 1 lần ở màn đăng nhập) */
-const accSv = () => DRV_MAC_DINH || state.settings.drvSv || state.settings.drvUrl || (state.drv && state.drv.u) || '';
-const accHet = () => DRV.st === 'err' && /thu hồi|Cần mã HLV|hết hạn|đăng nhập lại/i.test(DRV.err);
-const accPw = () => { const a = 'abcdefghjkmnpqrstuvwxyz23456789', r = crypto.getRandomValues(new Uint8Array(8)); return [...r].map(x => a[x % a.length]).join(''); };
-const accSlug = n => String(n || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'd').toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '').slice(0, 20);
-function accCardHtml() {
-  const A = state.settings.acc, D = state.drv, het = accHet();
-  const warn = het ? `<p class="acc-warn">Phiên đăng nhập đã hết hạn (mật khẩu vừa được đổi hoặc đặt lại). Đăng nhập lại để tiếp tục đồng bộ.</p><div class="row"><button class="btn gold" data-act="acc-relogin">Đăng nhập lại</button></div>` : '';
-  if (A && A.vai === 'hlv' && drvCo()) return `<div class="card set-card drv acc"><h3>${ICON.users} Tài khoản HLV</h3><p>Đang đăng nhập <b>${esc(A.u)}</b> · HLV <b>${esc((coach() || {}).name || A.ten || '')}</b>. Mọi hồ sơ trên máy này (kể cả của bạn) tự đồng bộ qua Google Drive.</p>${warn}${het ? '' : drvStatusHtml(state)}
-    ${het ? '' : `<div class="row"><button class="btn gold" data-act="acc-tv">Quản lý học viên</button><button class="btn" data-act="drv-now">Đồng bộ ngay</button></div>`}
-    <div class="row"><button class="btn sm" data-act="acc-pw">Đổi mật khẩu</button><button class="btn sm ghost" data-act="acc-out">Đăng xuất</button></div></div>`;
-  if (A && A.vai === 'hv' && D && D.id && D.m) return `<div class="card set-card drv acc"><h3>${ICON.users} Tài khoản</h3><p>Đang đăng nhập <b>${esc(A.u)}</b>${A.hlv ? ` · HLV <b>${esc(A.hlv)}</b>` : ''}. Giáo án và buổi tập tự đồng bộ với HLV.</p>${warn}${het ? '' : drvStatusHtml(state)}
-    <div class="row">${het ? '' : '<button class="btn gold" data-act="drv-now">Đồng bộ ngay</button>'}<button class="btn sm" data-act="acc-pw">Đổi mật khẩu</button><button class="btn sm ghost" data-act="acc-out">Đăng xuất</button></div></div>`;
-  const sv = accSv(), legacy = drvCo() || (D && D.id && D.m);
-  return `<div class="card set-card drv acc"><h3>${ICON.users} Đăng nhập</h3><p>${coach() ? 'Đăng nhập tài khoản HLV để mọi hồ sơ tự đồng bộ qua Google Drive, dùng được trên nhiều máy.' : 'Đăng nhập bằng tài khoản HLV cấp cho bạn. Giáo án và buổi tập sẽ tự đồng bộ với HLV, đổi máy chỉ cần đăng nhập lại.'}</p>
-    <label class="f full">Tên đăng nhập<input class="inp" id="acc-u" value="${esc(A && A.u || '')}" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
-    <label class="f full" style="margin-top:8px">Mật khẩu<input class="inp" id="acc-p" type="password" autocomplete="current-password"></label>
-    ${DRV_MAC_DINH ? '' : `<details class="acc-sv"${sv ? '' : ' open'}><summary>Link máy chủ${sv ? ' · đã lưu' : ' · nhập 1 lần'}</summary><input class="inp" id="acc-sv" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(sv)}" autocomplete="off" autocapitalize="off" spellcheck="false"><p class="fhint">Hỏi HLV link này (kết thúc bằng /exec).</p></details>`}
-    <div class="row"><button class="btn gold" data-act="acc-login">Đăng nhập</button></div>
-    <div class="row acc-more"><button class="btn sm ghost" data-act="acc-hlv-new">Tạo tài khoản HLV lần đầu</button>${coach() ? '' : '<button class="btn sm ghost" data-act="qr-scan">⌗ Quét mã liên kết</button>'}</div></div>
-    ${legacy ? drvCardHtml() : ''}`;
-}
-/* đăng nhập xong: gắn phiên vào máy này */
-async function accApply(url, r) {
-  state.settings.drvSv = url;
-  if (r.vai === 'hlv') {
-    if (!coach()) { profiles.coach = { ...(profiles.coach || {}), name: r.ten || 'HLV', on: true, dismiss: true }; saveProfiles(); }
-    state.settings.drvUrl = url; state.settings.drvKey = r.ma; state.settings.acc = { vai: 'hlv', u: r.u, ten: r.ten || '' }; save();
-    toast('☁ Đã đăng nhập HLV · đang lấy dữ liệu học viên…'); render(true);
-    try { await accRoster(true); } catch (e) { toast('Chưa lấy được danh sách học viên: ' + (e && e.message || e)); }
-    DRV.last = 0; await drvAuto(true); render(true); return;
-  }
-  if (coach()) { toast('Máy này đang bật chế độ HLV. Tắt chế độ HLV rồi mới đăng nhập tài khoản học viên.'); return; }
-  if (state.active) { toast('Kết thúc buổi tập đang dở rồi đăng nhập'); return; }
-  /* tìm hồ sơ đã gắn với tài khoản này; không có thì dùng hồ sơ đang mở (nếu chưa gắn ai), hoặc tạo hồ sơ mới */
-  let pid = null;
-  for (const x of profiles.list) { const st = await profState(x.id); if (st && st.drv && st.drv.id === r.id) { pid = x.id; break; } }
-  if (!pid && state.drv && state.drv.id) {
-    pid = 'p' + uid(); const ns = freshState(); ns.settings.name = r.ten; ns.updatedAt = Date.now(); await LDB.put('kv', stateKey(pid), ns);
-    const used = profiles.list.map(p => p.color); let color = 0; while (used.includes(color) && color < PCOLORS.length - 1) color++;
-    profiles.list.push({ id: pid, name: String(r.ten || 'Tôi').slice(0, 30), color }); saveProfiles();
-  }
-  if (pid && pid !== profiles.active) await switchProfile(pid);
-  const old = state.drv && state.drv.id === r.id ? state.drv : { hlvSeen: 0, hvRev: 0, sentH: '' };
-  state.drv = { ...old, u: url, id: r.id, m: r.ma, n: String(r.ten || '').slice(0, 40) };
-  state.settings.acc = { vai: 'hv', u: r.u, ten: r.ten || '', hlv: r.hlv || '' };
-  DRV.self = true; save(); DRV.self = false; DRV.st = ''; DRV.err = ''; render(true); pushRegSoon();
-  toast(`Xin chào ${r.ten || ''} · đang đồng bộ…`.replace(/\s+·/, ' ·')); DRV.last = 0; await drvAuto(true); render(true);
-}
-/* HLV: mỗi học viên trên Drive có 1 hồ sơ trên máy này (máy mới thì tạo và lấy lại dữ liệu) */
-async function accRoster(login) {
-  if (!drvCo()) return [];
-  const { ds } = await drvCall(state.settings.drvUrl, { a: 'tv.ds', ma: state.settings.drvKey, gon: true });
-  const have = new Map(), empty = [];
-  for (const x of profiles.list) { const st = await profState(x.id); if (st && st.drv && st.drv.id) have.set(st.drv.id, x.id); else if (!st || (!(st.days || []).length && !(st.sessions || []).length && !(st.body || []).length && !st.active)) empty.push(x.id); }
-  let made = [];
-  for (const t of ds) {
-    if (have.has(t.id)) continue;
-    const id = 'p' + uid(), ns = freshState(); ns.settings.name = t.ten; ns.drv = { id: t.id, hvSeen: 0, hlvRev: 0, sentH: '', restore: true }; ns.updatedAt = Date.now();
-    await LDB.put('kv', stateKey(id), ns); profiles.list.push({ id, name: String(t.ten || 'Học viên').slice(0, 30), color: profiles.list.length % PCOLORS.length }); have.set(t.id, id); made.push(id);
-  }
-  if (made.length) {
-    saveProfiles();
-    /* máy mới: bỏ hồ sơ trống mặc định, chuyển sang hồ sơ của chính HLV */
-    if (login && empty.length) {
-      const nm = ((coach() || {}).name || '').trim().toLowerCase(), mine = made.find(id => (profiles.list.find(p => p.id === id).name || '').trim().toLowerCase() === nm) || made[0];
-      if (empty.includes(profiles.active)) await switchProfile(mine);
-      for (const id of empty) if (id !== profiles.active) { LDB.del('kv', stateKey(id)); profiles.list = profiles.list.filter(p => p.id !== id); }
-      saveProfiles();
-    }
-  }
-  return ds.map(t => ({ ...t, pid: have.get(t.id) || null }));
-}
-async function accTvSheet() {
-  if (!drvCo()) { toast('Đăng nhập tài khoản HLV trước'); return; }
-  openSheet(`<h3 class="sh-title">Quản lý học viên</h3><p class="sh-text">Đang tải danh sách…</p>`);
-  let ds; try { ds = await accRoster(false); } catch (e) { openSheet(`<h3 class="sh-title">Quản lý học viên</h3><p class="sh-text">Không tải được: ${esc(e && e.message || e)}</p><div class="sh-actions"><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`); return; }
-  const me = ((coach() || {}).name || '').trim().toLowerCase();
-  const row = t => (t.ten || '').trim().toLowerCase() === me && !t.u ? `<div class="acc-tv"><div><b>${esc(t.ten)}</b> <span class="small muted">(bạn)</span><div class="small muted">Đồng bộ theo tài khoản HLV</div></div></div>` : `<div class="acc-tv${t.tat ? ' off' : ''}"><div><b>${esc(t.ten)}</b>${(t.ten || '').trim().toLowerCase() === me ? ' <span class="small muted">(bạn)</span>' : ''}<div class="small muted">${t.u ? '@' + esc(t.u) : 'Chưa có tài khoản'}${t.tat ? ' · đang khoá' : ''}</div></div>
-    <div class="acc-tv-b"><button class="btn sm${t.u ? '' : ' gold'}" data-act="acc-tv-set" data-id="${t.id}">${t.u ? 'Đặt lại mật khẩu' : 'Cấp tài khoản'}</button>${t.u ? `<button class="btn sm ghost" data-act="acc-tv-lock" data-id="${t.id}" data-v="${t.tat ? 'mo' : 'khoa'}">${t.tat ? 'Mở khoá' : 'Khoá'}</button>` : ''}</div></div>`;
-  ui.accDs = ds; render(true);
-  openSheet(`<h3 class="sh-title">Quản lý học viên</h3><p class="sh-text">Học viên đăng nhập bằng tài khoản bạn cấp, dữ liệu tự đồng bộ với máy bạn. Hồ sơ của bạn không cần tài khoản riêng.</p>
-    <div class="acc-list">${ds.map(row).join('') || '<p class="small muted">Chưa có học viên.</p>'}</div>
-    <div class="sh-actions"><button class="btn gold big" data-act="acc-tv-add">＋ Thêm học viên</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`);
-}
-function accTvForm(t) {
-  const isNew = !t;
-  openSheet(`<h3 class="sh-title">${isNew ? 'Thêm học viên' : (t.u ? 'Đặt lại mật khẩu · ' : 'Cấp tài khoản · ') + esc(t.ten)}</h3>
-    ${isNew ? `<label class="f full" style="margin-top:12px">Tên học viên<input class="inp" id="tv-ten" maxlength="30" placeholder="Ví dụ: Lan"></label>` : ''}
-    <label class="f full" style="margin-top:8px">Tên đăng nhập<input class="inp" id="tv-u" value="${esc(t ? t.u || accSlug(t.ten) : '')}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ví dụ: lan.nguyen"></label>
-    <p class="fhint">Chữ không dấu, số, dấu chấm hoặc gạch · 3–30 ký tự.</p>
-    <label class="f full" style="margin-top:8px">Mật khẩu${isNew || !t.u ? '' : ' mới'}<input class="inp" id="tv-p" value="${accPw()}" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-    <p class="fhint">Ít nhất 6 ký tự. Học viên tự đổi được sau khi đăng nhập.${t && t.u ? ' Máy học viên đang đăng nhập sẽ phải đăng nhập lại.' : ''}</p>
-    <div class="sh-actions"><button class="btn gold big" data-act="${isNew ? 'acc-tv-add-go' : 'acc-tv-set-go'}"${t ? ` data-id="${t.id}"` : ''}>${isNew ? 'Tạo học viên' : 'Lưu tài khoản'}</button><button class="btn ghost" data-act="acc-tv">Quay lại</button></div>`);
-  if (isNew) { const n = $('#tv-ten'), u = $('#tv-u'); n.addEventListener('input', () => { if (!u.dataset.touched) u.value = accSlug(n.value); }); u.addEventListener('input', () => { u.dataset.touched = 1; }); }
-}
-function accCredSheet(ten, u, mk) {
-  const link = location.origin + location.pathname.replace(/index\.html$/, '');
-  ui.accCred = `Giáo Án Địa Ngục\nMở app: ${link}\nTên đăng nhập: ${u}\nMật khẩu: ${mk}\nVào tab Tôi → Đăng nhập.${DRV_MAC_DINH ? '' : `\nLink máy chủ: ${state.settings.drvUrl}`}`;
-  openSheet(`<h3 class="sh-title">Tài khoản của ${esc(ten)}</h3><p class="sh-text">Gửi thông tin này cho ${esc(ten)}. Học viên mở app → tab Tôi → <b>Đăng nhập</b>.</p>
-    <div class="acc-cred"><div><span>Tên đăng nhập</span><b>${esc(u)}</b></div><div><span>Mật khẩu</span><b>${esc(mk)}</b></div></div>
-    <div class="sh-actions"><button class="btn gold big" data-act="acc-copy">${ICON.share} Gửi cho học viên</button><button class="btn ghost" data-act="acc-tv">Xong</button></div>`);
-}
-function accPwSheet() {
-  openSheet(`<h3 class="sh-title">Đổi mật khẩu</h3>
-    <label class="f full" style="margin-top:12px">Mật khẩu hiện tại<input class="inp" id="pw-cu" type="password" autocomplete="current-password"></label>
-    <label class="f full" style="margin-top:8px">Mật khẩu mới<input class="inp" id="pw-moi" type="password" autocomplete="new-password"></label>
-    <label class="f full" style="margin-top:8px">Nhập lại mật khẩu mới<input class="inp" id="pw-moi2" type="password" autocomplete="new-password"></label>
-    <p class="fhint">Các máy khác đang đăng nhập tài khoản này sẽ phải đăng nhập lại.</p>
-    <div class="sh-actions"><button class="btn gold big" data-act="acc-pw-go">Đổi mật khẩu</button><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
-}
-function accHlvNewSheet() {
-  const sv = accSv(), key = state.settings.drvKey && state.settings.drvKey.length === 32 ? state.settings.drvKey : '';
-  openSheet(`<h3 class="sh-title">Tạo tài khoản HLV</h3><p class="sh-text">Làm 1 lần sau khi cài máy chủ Apps Script. MÃ HLV xem trong Nhật ký thực thi khi chạy hàm <b>caiDat</b>. Quên mật khẩu HLV cũng làm lại ở đây.</p>
-    ${DRV_MAC_DINH ? '' : `<label class="f full">Link Ứng dụng web<input class="inp" id="hn-sv" value="${esc(sv)}" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" autocapitalize="off" spellcheck="false"></label>`}
-    <label class="f full" style="margin-top:8px">MÃ HLV<input class="inp" id="hn-key" value="${esc(key)}" placeholder="32 ký tự" autocomplete="off" autocapitalize="off" spellcheck="false"></label>
-    <label class="f full" style="margin-top:8px">Tên HLV<input class="inp" id="hn-ten" maxlength="30" value="${esc((coach() || {}).name || '')}" placeholder="Ví dụ: Hoàng"></label>
-    <label class="f full" style="margin-top:8px">Tên đăng nhập<input class="inp" id="hn-u" autocomplete="username" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="ví dụ: hoang"></label>
-    <label class="f full" style="margin-top:8px">Mật khẩu<input class="inp" id="hn-p" type="password" autocomplete="new-password"></label>
-    <label class="f full" style="margin-top:8px">Nhập lại mật khẩu<input class="inp" id="hn-p2" type="password" autocomplete="new-password"></label>
-    <div class="sh-actions"><button class="btn gold big" data-act="acc-hlv-go">Tạo tài khoản & đăng nhập</button><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
-}
-/* đăng xuất cục bộ (không gọi máy chủ): dùng khi phiên đã hết hạn */
-function accDrop() {
-  const A = state.settings.acc;
-  if (A && A.vai === 'hlv') { state.settings.drvKey = ''; }
-  else if (state.drv) delete state.drv;
-  state.settings.acc = A ? { u: A.u } : null; DRV.st = ''; DRV.err = ''; save();
-}
 async function syncApply() {
   const P = ui.syncIn, pid = ui.syncTo; if (!P || !pid) return;
   const prev = await syncStateOf(pid) || freshState(); if (prev.active) return;
@@ -4884,6 +4574,7 @@ const slugName = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace
 /* ---------- PA-34.1 · máy chủ đồng bộ mới: HLV đăng ký bằng QR HLV, thêm học viên bằng thẻ QR vĩnh viễn ----------
    Mã QR HLV (GAH1) chứa địa chỉ máy chủ và khoá HLV; khoá chỉ lưu trên máy này (settings.sync.hk). Thẻ học viên (GAV1)
    có khoá k = HMAC-SHA256(khoá HLV, "gadn-hv:<mã>:<epoch>"), nên HLV tính lại được bất cứ lúc nào, không cần lưu. */
+const OLD_CODE = 'Mã này là kiểu gửi cũ, không còn dùng. Quét mã QR HLV hoặc thẻ học viên trong Tài khoản → Đồng bộ với HLV.';
 const hubOn = () => !!hubRole();
 /* hlv: máy có khoá HLV · hv: máy học viên đã nối bằng thẻ · '': chưa nối */
 function hubRole() { const sy = state.settings.sync || {}; return sy.hk ? 'hlv' : sy.dk ? 'hv' : ''; }
@@ -4976,7 +4667,7 @@ async function hubFlush() {
   } catch (e) { /* mất mạng: lần sau thử lại */ } finally { hubBusy = false; }
 }
 function hubCardHtml() {
-  if (hubRole() === 'hv') return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã nối với HLV ${esc(state.settings.sync.ten || '')}. Buổi tập đã lưu tự gửi lên máy chủ.</p>
+  if (hubRole() === 'hv') return hubConflictHtml() + `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã nối với HLV ${esc(state.settings.sync.ten || '')}. Buổi tập đã lưu tự gửi lên máy chủ.</p>
     <div class="row"><button class="btn gold" data-act="hub-pk-add">Bật khôi phục bằng Face ID</button>${state.sync && state.sync.prevDays ? '<button class="btn" data-act="hub-plan-undo">Hoàn tác giáo án</button>' : ''}<button class="btn ghost" data-act="hub-unlink">Ngắt kết nối trên máy này</button></div></div>`;
   if (!hubOn()) return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>HLV: quét mã QR HLV để đăng ký (chỉ làm một lần). Học viên: quét thẻ học viên của HLV.</p>
     <div class="row"><button class="btn gold" data-act="hub-reg">Quét mã QR</button><button class="btn" data-act="hub-restore">Khôi phục bằng Face ID</button></div></div>`;
@@ -5059,6 +4750,8 @@ async function hubPull() {
     if (r.j.seq > (sy.seq || 0)) { sy.seq = r.j.seq; save(); }
   } catch (e) { /* mất mạng: lần sau kéo tiếp */ } finally { hubPulling = false; }
 }
+/* khoá so sánh giáo án: bỏ mức tạ hiện tại (đổi mỗi buổi tập, không phải thay đổi giáo án) */
+const planKey = plan => { const strip = e => ({ ...e, currentKg: undefined, kgSetAt: undefined, l: (e.l || []).map(strip) }); return strHash(JSON.stringify(plan.map(d => ({ n: d.n, e: (d.e || []).map(strip) })))); };
 /* giáo án HLV → học viên: HLV gửi khi giáo án đổi; học viên nhận bằng cùng động cơ gộp của Drive (syncMerge). Lưu bản cũ để hoàn tác. */
 let hubPlanT = 0;
 function hubPlanSoon() { clearTimeout(hubPlanT); hubPlanT = setTimeout(hubPushPlans, 1500); }
@@ -5067,20 +4760,60 @@ async function hubPushPlans() {
   const sy = state.settings.sync, H = sy.planH || {};
   for (const [hvId, pid] of Object.entries(sy.map || {})) {
     const st = await profState(pid); if (!st) continue;
-    const plan = await serPlan(st, false, {}), h = strHash(JSON.stringify(plan));
+    const plan = await serPlan(st, false, {}), h = planKey(plan);
     if (H[hvId] === h) continue;
     const r = await hubCall('/s/ghi', { hv: hvId, recs: [{ k: 'plan@hlv', id: 'plan', t: Date.now(), vai: 'hlv', d: JSON.stringify({ plan }) }] });
     if (r.s === 200) { H[hvId] = h; sy.planH = H; save(); }
   }
 }
+/* Giáo án: so 3 phía — bản đã thống nhất lần trước (planBase), bản trên máy, bản trên máy chủ.
+   Chỉ khi cả máy này và HLV cùng đổi thì hỏi người dùng (xem hubConflictHtml). Buổi tập không cần hỏi: xem hubApplySession. */
 async function hubApplyPlan(rec) {
   let J = null; try { J = JSON.parse(rec.d); } catch (e) {}
   if (!J || !Array.isArray(J.plan)) return;
-  let P = null; try { P = cleanPkg({ app: 'gadn-sync', role: 'coach', link: {}, plan: J.plan, sessions: [], del: {} }); } catch (e) { return; }
+  const sy = state.settings.sync; state.sync = state.sync || { sent: {} };
+  const localH = planKey(await serPlan(state, false, {})), remoteH = planKey(J.plan);
+  if (localH === remoteH) { state.sync.planBase = localH; sy.planT = rec.t; save(); return; }
+  /* máy trống (chưa có giáo án), hoặc chưa từng thống nhất và máy không đổi: nhận thẳng */
+  if (!state.days.length || (state.sync.planBase === localH)) { await applyRemotePlan(J.plan, rec.t); return; }
+  /* cả hai bên đều khác bản đã thống nhất (hoặc chưa thống nhất lần nào và máy đã có giáo án): hỏi người dùng */
+  state.sync.conflict = { plan: J.plan, t: rec.t };
+  sy.planT = rec.t; save(); render(true);
+}
+/* áp giáo án của HLV vào máy (gộp như Drive trước đây), lưu bản cũ để hoàn tác, và ghi nhận bản đã thống nhất */
+async function applyRemotePlan(plan, t) {
+  let P = null; try { P = cleanPkg({ app: 'gadn-sync', role: 'coach', link: {}, plan, sessions: [], del: {} }); } catch (e) { return; }
   const { st } = await syncMerge(state, P, {});
-  state.sync = state.sync || { sent: {} }; state.sync.prevDays = clone(state.days);
-  state.days = st.days; state.settings.sync.planT = rec.t;
+  state.sync = state.sync || { sent: {} }; state.sync.prevDays = clone(state.days); state.sync.conflict = null;
+  state.days = st.days; state.settings.sync.planT = t;
+  state.sync.planBase = planKey(await serPlan(state, false, {}));
   save(); render(true);
+}
+/* tóm tắt giáo án để người dùng so sánh: số ngày, số bài, tên ngày chỉ có ở một bên, ngày có cùng tên nhưng khác số bài */
+function planCompare(localDays, remotePlan) {
+  const L = localDays.map(d => ({ n: d.name, a: d.exercises.length })), R = remotePlan.map(d => ({ n: d.n, a: (d.e || []).length }));
+  const ln = new Set(L.map(x => x.n)), rn = new Set(R.map(x => x.n));
+  return {
+    local: { days: L.length, ex: L.reduce((a, x) => a + x.a, 0) }, remote: { days: R.length, ex: R.reduce((a, x) => a + x.a, 0) },
+    onlyLocal: L.filter(x => !rn.has(x.n)).map(x => x.n), onlyRemote: R.filter(x => !ln.has(x.n)).map(x => x.n),
+    diffEx: L.filter(x => rn.has(x.n) && R.find(y => y.n === x.n).a !== x.a).map(x => `${x.n} (${x.a} ↔ ${R.find(y => y.n === x.n).a} bài)`)
+  };
+}
+function hubConflictHtml() {
+  const c = state.sync && state.sync.conflict; if (!c) return '';
+  const k = planCompare(state.days, c.plan), list = a => a.length ? a.map(esc).join(', ') : '—';
+  return `<div class="card set-card"><h3>Giáo án khác với HLV</h3>
+    <p>Giáo án trên máy này và giáo án HLV vừa cập nhật đều đã đổi so với lần đồng bộ trước. Chọn bản giữ lại:</p>
+    <table class="cmp" style="width:100%;font-size:13px;margin:10px 0;border-collapse:collapse">
+      <tr><th style="text-align:left"></th><th style="text-align:left">Máy này</th><th style="text-align:left">HLV</th></tr>
+      <tr><td>Số ngày tập</td><td>${k.local.days}</td><td>${k.remote.days}</td></tr>
+      <tr><td>Số bài</td><td>${k.local.ex}</td><td>${k.remote.ex}</td></tr>
+      <tr><td>Chỉ có trên máy này</td><td colspan="2">${list(k.onlyLocal)}</td></tr>
+      <tr><td>Chỉ có ở HLV</td><td colspan="2">${list(k.onlyRemote)}</td></tr>
+      <tr><td>Khác số bài</td><td colspan="2">${list(k.diffEx)}</td></tr>
+    </table>
+    <p class="small muted">Dùng giáo án HLV: các ngày và bài theo giáo án HLV thay cho bản trên máy; bài bạn tự thêm được giữ lại; lịch sử tập và mức tạ được giữ. Bạn có thể hoàn tác sau đó. Giữ giáo án máy này: giữ nguyên bản trên máy; bản của HLV không áp dụng cho đến khi HLV cập nhật lần nữa.</p>
+    <div class="row"><button class="btn gold" data-act="hub-conflict-remote">Dùng giáo án HLV</button><button class="btn" data-act="hub-conflict-local">Giữ giáo án máy này</button></div></div>`;
 }
 /* chỉ nhận bản mới hơn bản đã có; buổi của hồ sơ đang mở được ghi qua state để không bị ghi đè */
 async function hubApplySession(pid, rec) {
@@ -5106,11 +4839,10 @@ async function receiveQrImage(files) {
   const J = joinQrParts(texts);
   if (!J.kind) { toast('Không tìm thấy mã QR trong ảnh đã chọn'); return; }
   if (!J.ok) { toast(`Còn thiếu trang ${J.missing.slice(0, 8).join(', ')}${J.missing.length > 8 ? '…' : ''} trên tổng ${J.n}. Chụp thêm các trang đó rồi chọn lại tất cả ảnh.`); return; }
-  if (J.kind === 'GAL1') { await drvLinkReceive(J.body); return; }
-  oldCode();
+  if (J.kind === 'GAL1') { await hubCode(J.body); return; }
+  toast(OLD_CODE);
 }
 /* PA-19: giáo án và dữ liệu chỉ đi qua Google Drive; mã QR / tin nhắn kiểu cũ không còn dùng */
-function oldCode() { toast('Mã này là kiểu gửi cũ, không còn dùng. Giáo án và dữ liệu giờ tự đồng bộ qua Google Drive: chỉ cần mã liên kết HLV gửi.'); }
 /* sao chép / chia sẻ mã văn bản 1 chạm qua Zalo/Messenger & đọc mã từ bộ nhớ tạm */
 async function copyOrShareCode(text, label) {
   let copied = false;
@@ -5134,10 +4866,10 @@ async function handleCodeText(raw) {
   if (parts && parts.length) {
     const J = joinQrParts(parts);
     if (!J.ok) { toast(`Mã nhiều phần đang thiếu trang ${J.missing.join(', ')}/${J.n}`); return false; }
-    if (J.kind === 'GAL1') { await drvLinkReceive(J.body); return true; }
-    oldCode(); return false;
+    if (J.kind === 'GAL1') { await hubCode(J.body); return true; }
+    toast(OLD_CODE); return false;
   }
-  if (/SOTA[12]z?\.[A-Za-z0-9_-]+/.test(txt) || (txt.startsWith('{') && txt.includes('"gadn-sync"'))) { oldCode(); return false; }
+  if (/SOTA[12]z?\.[A-Za-z0-9_-]+/.test(txt) || (txt.startsWith('{') && txt.includes('"gadn-sync"'))) { toast(OLD_CODE); return false; }
   toast('Không tìm thấy mã liên kết trong nội dung vừa dán');
   return false;
 }
@@ -5469,77 +5201,18 @@ const handlers = {
   'sync-to': t => syncPreview(t.dataset.id),
   'sync-pick': t => { ui.syncChoices = { ...(ui.syncChoices || {}), [t.dataset.id]: t.dataset.v }; syncPreview(ui.syncTo); },
   'sync-apply': () => syncApply(),
-  'acc-login': async t => {
-    const u = ($('#acc-u').value || '').trim(), mk = $('#acc-p').value || '', url = (DRV_MAC_DINH || ($('#acc-sv') ? $('#acc-sv').value : '') || accSv()).trim();
-    if (!u || !mk) { toast('Nhập tên đăng nhập và mật khẩu'); return; }
-    if (!drvOkUrl(url)) { toast('Link máy chủ phải dạng https://script.google.com/macros/s/…/exec'); return; }
-    t.disabled = true; try { const r = await drvCall(url, { a: 'dn', u, mk }); await accApply(url, r); } catch (e) { toast(String(e && e.message || e)); } t.disabled = false; },
-  'acc-relogin': () => { accDrop(); render(true); setTimeout(() => { const p = $('#acc-p'); if (p) p.focus(); }, 50); },
-  'acc-hlv-new': () => accHlvNewSheet(),
-  'acc-hlv-go': async t => {
-    const url = (DRV_MAC_DINH || $('#hn-sv').value || '').trim(), k = ($('#hn-key').value || '').trim(), ten = ($('#hn-ten').value || '').trim(), u = ($('#hn-u').value || '').trim(), p1 = $('#hn-p').value || '', p2 = $('#hn-p2').value || '';
-    if (!drvOkUrl(url)) { toast('Link phải dạng https://script.google.com/macros/s/…/exec'); return; } if (k.length < 16) { toast('MÃ HLV chưa đúng'); return; }
-    if (!ten) { toast('Nhập tên HLV'); return; } if (p1.length < 6) { toast('Mật khẩu cần ít nhất 6 ký tự'); return; } if (p1 !== p2) { toast('Hai lần nhập mật khẩu chưa khớp'); return; }
-    t.disabled = true; try { const r = await drvCall(url, { a: 'hlv.tao', ma: k, u, mk: p1, ten }); if (coach()) { profiles.coach.name = r.ten; saveProfiles(); } closeSheet(); await accApply(url, r); } catch (e) { toast(String(e && e.message || e)); t.disabled = false; } },
-  'acc-pw': () => accPwSheet(),
-  'acc-pw-go': async t => {
-    const cu = $('#pw-cu').value || '', m1 = $('#pw-moi').value || '', m2 = $('#pw-moi2').value || '', A = state.settings.acc || {};
-    if (m1.length < 6) { toast('Mật khẩu mới cần ít nhất 6 ký tự'); return; } if (m1 !== m2) { toast('Hai lần nhập mật khẩu mới chưa khớp'); return; }
-    const hlv = A.vai === 'hlv', url = hlv ? state.settings.drvUrl : state.drv.u;
-    t.disabled = true; try { const r = await drvCall(url, { a: 'mk.doi', ma: hlv ? state.settings.drvKey : state.drv.m, id: hlv ? undefined : state.drv.id, mkCu: cu, mkMoi: m1 });
-      if (hlv) state.settings.drvKey = r.ma; else state.drv.m = r.ma; DRV.self = true; save(); DRV.self = false; closeSheet(); render(true); toast('Đã đổi mật khẩu'); } catch (e) { toast(String(e && e.message || e)); t.disabled = false; } },
-  'acc-out': () => confirmSheet({ title: 'Đăng xuất?', text: 'Dữ liệu trên máy này vẫn giữ nguyên, chỉ ngừng tự đồng bộ. Đăng nhập lại là đồng bộ tiếp.', ok: 'Đăng xuất', danger: true, onOk: async () => {
-    const A = state.settings.acc || {}, hlv = A.vai === 'hlv', url = hlv ? state.settings.drvUrl : state.drv && state.drv.u, ma = hlv ? state.settings.drvKey : state.drv && state.drv.m;
-    try { if (url && ma) await drvCall(url, { a: 'dx', ma, id: state.drv && state.drv.id }); } catch (e) {}
-    accDrop(); closeSheet(); render(true); toast('Đã đăng xuất'); } }),
-  'acc-tv': () => accTvSheet(),
-  'acc-tv-add': () => accTvForm(null),
-  'acc-tv-set': t => accTvForm((ui.accDs || []).find(x => x.id === t.dataset.id)),
-  'acc-tv-add-go': async t => {
-    const ten = ($('#tv-ten').value || '').trim().slice(0, 30), u = ($('#tv-u').value || '').trim(), mk = ($('#tv-p').value || '').trim();
-    if (!ten) { toast('Nhập tên học viên'); return; } if (mk.length < 6) { toast('Mật khẩu cần ít nhất 6 ký tự'); return; }
-    t.disabled = true; try {
-      const r = await drvCall(state.settings.drvUrl, { a: 'tv.them', ma: state.settings.drvKey, ten, u, mk });
-      const id = 'p' + uid(), ns = freshState(); ns.settings.name = ten; ns.drv = { id: r.id, m: r.ma, hvSeen: 0, hlvRev: 0, sentH: '' }; ns.updatedAt = Date.now(); await LDB.put('kv', stateKey(id), ns);
-      const used = profiles.list.map(p => p.color); let color = 0; while (used.includes(color) && color < PCOLORS.length - 1) color++;
-      profiles.list.push({ id, name: ten, color }); saveProfiles(); render(true); pushRegSoon(); accCredSheet(ten, r.u, mk); drvAuto(true);
-    } catch (e) { toast(String(e && e.message || e)); t.disabled = false; } },
-  'acc-tv-set-go': async t => {
-    const T = (ui.accDs || []).find(x => x.id === t.dataset.id), u = ($('#tv-u').value || '').trim(), mk = ($('#tv-p').value || '').trim(); if (!T) return;
-    if (mk.length < 6) { toast('Mật khẩu cần ít nhất 6 ký tự'); return; }
-    t.disabled = true; try { const r = await drvCall(state.settings.drvUrl, { a: 'tv.tk', ma: state.settings.drvKey, id: T.id, u, mk }); T.u = r.u; accCredSheet(T.ten, r.u, mk); } catch (e) { toast(String(e && e.message || e)); t.disabled = false; } },
-  'acc-tv-lock': async t => { const T = (ui.accDs || []).find(x => x.id === t.dataset.id); if (!T) return; const khoa = t.dataset.v === 'khoa';
-    const go = async () => { try { await drvCall(state.settings.drvUrl, { a: khoa ? 'tv.tat' : 'tv.bat', ma: state.settings.drvKey, id: T.id }); toast(khoa ? `Đã khoá ${T.ten}` : `Đã mở khoá ${T.ten}`); } catch (e) { toast(String(e && e.message || e)); } await accTvSheet(); };
-    if (khoa) confirmSheet({ title: `Khoá tài khoản ${esc(T.ten)}?`, text: 'Học viên không đăng nhập và không đồng bộ được nữa. Dữ liệu vẫn giữ nguyên, mở khoá là dùng lại.', ok: 'Khoá', danger: true, onOk: go }); else go(); },
-  'acc-copy': () => copyOrShareCode(ui.accCred, 'Tài khoản Giáo Án Địa Ngục'),
-  'hub-reg': () => qrScanSheet('hub'),
+                              'hub-reg': () => qrScanSheet('hub'),
   'hub-add': () => hubAddSheet(),
   'hub-pk-add': () => hubPasskeyAdd(),
   'hub-migrate': () => hubMigrateSheet(),
   'hub-migrate-go': () => hubMigrateGo(),
+  'hub-conflict-remote': async () => { const c = state.sync && state.sync.conflict; if (c) await applyRemotePlan(c.plan, c.t); toast('Đã dùng giáo án của HLV'); },
+  'hub-conflict-local': async () => { state.sync.conflict = null; state.sync.planBase = planKey(await serPlan(state, false, {})); save(); render(true); toast('Đã giữ giáo án trên máy này'); },
   'hub-plan-undo': () => { if (!state.sync || !state.sync.prevDays) return; state.days = state.sync.prevDays; state.sync.prevDays = null; save(); render(true); toast('Đã hoàn tác giáo án'); },
   'hub-restore': () => hubPasskeyRestore(),
   'hub-add-go': () => hubAddGo(),
   'hub-unlink': () => confirmSheet({ title: 'Ngắt kết nối trên máy này?', text: 'Chỉ xoá khoá trên máy này. Dữ liệu trên máy chủ vẫn giữ nguyên; quét lại thẻ để nối lại.', ok: 'Ngắt', danger: true, onOk: () => { state.settings.sync = {}; save(); render(true); toast('Đã ngắt kết nối trên máy này'); } }),
-  'drv-hv': t => drvHvSheet(t.dataset.id),
-  'coach-share': t => drvHvSheet(t.dataset.id),
-  'drv-save': async t => { const u = ($('#drv-url').value || '').trim(), k = ($('#drv-key').value || '').trim();
-    if (!drvOkUrl(u)) { toast('Link phải dạng https://script.google.com/macros/s/…/exec'); return; } if (k.length < 16) { toast('MÃ HLV chưa đúng'); return; }
-    t.disabled = true; try { const r = await drvCall(u, { a: 'ping', ma: k }); if (r.vai !== 'hlv') throw new Error('MÃ HLV không đúng'); state.settings.drvUrl = u; state.settings.drvKey = k; save(); render(true); toast('☁ Đã kết nối · đang đưa mọi hồ sơ lên Drive…'); DRV.last = 0; await drvAuto(true); render(true); }
-    catch (e) { toast('Không kết nối được: ' + (e && e.message || e)); } t.disabled = false; },
-  'drv-now': async t => { if (t.dataset.id) closeSheet(); await drvAuto(true); render(true); },
-  'drv-new': async t => { const pid = t.dataset.id, p = profiles.list.find(x => x.id === pid); t.disabled = true;
-    try { const r = await drvCall(state.settings.drvUrl, { a: 'tv.them', ma: state.settings.drvKey, ten: p ? p.name : 'Học viên' }); await drvSetDrv(pid, { id: r.id, m: r.ma, hvSeen: 0, hlvRev: 0, sentH: '' }); await drvHvSheet(pid); drvAuto(true); pushRegSoon(); }
-    catch (e) { toast('Không tạo được: ' + (e && e.message || e)); t.disabled = false; } },
-  'drv-rekey': async t => { const pid = t.dataset.id, st = await syncStateOf(pid); if (!st || !st.drv) return;
-    try { const r = await drvCall(state.settings.drvUrl, { a: 'tv.doima', ma: state.settings.drvKey, id: st.drv.id }); await drvSetDrv(pid, { m: r.ma }); await drvHvSheet(pid); pushRegSoon(); toast('Đã cấp mã mới · gửi lại cho học viên'); }
-    catch (e) { toast('Không cấp được: ' + (e && e.message || e)); } },
-  'drv-copy': () => copyOrShareCode(ui.drvCode, 'Mã liên kết Google Drive'),
-  'drv-link': async () => { const L = ui.drvIn; if (!L) return; if (state.active) { toast('Kết thúc buổi tập đang dở rồi liên kết'); return; }
-    state.drv = { u: L.u.trim(), id: L.i, m: L.m, n: String(L.n || '').slice(0, 40), hlvSeen: 0, hvRev: 0, sentH: '' }; if (L.p && /^https:\/\//.test(L.p) && !state.settings.pushServer) state.settings.pushServer = L.p; DRV.self = true; save(); DRV.self = false; ui.drvIn = null; closeSheet(); render(true); pushRegSoon();
-    toast('Đang đồng bộ lần đầu…'); await drvAuto(true); render(true); },
-  'drv-unlink': () => confirmSheet({ title: 'Ngắt liên kết Google Drive?', text: 'Dữ liệu trên máy này vẫn giữ nguyên, chỉ ngừng tự đồng bộ. Muốn liên kết lại thì quét mã HLV gửi.', ok: 'Ngắt liên kết', danger: true, onOk: () => { delete state.drv; save(); closeSheet(); render(true); toast('Đã ngắt liên kết Drive'); } }),
-  'sync-undo': () => syncUndo(),
+                'sync-undo': () => syncUndo(),
   'restore-one-new': () => restoreOneApply(null, true),
   'restore-one-into': t => confirmSheet({ title: `Thay dữ liệu của ${esc((profiles.list.find(x => x.id === t.dataset.id) || {}).name || '')}?`, text: 'Giáo án, buổi tập, số đo của hồ sơ này sẽ được thay bằng dữ liệu trong file. Hồ sơ khác giữ nguyên. Có thể hoàn tác ngay sau đó.', ok: 'Thay dữ liệu', danger: true, onOk: () => restoreOneApply(t.dataset.id, false) }),
   'qr-close': () => { clearInterval(ui.qrT); qrStop(); closeSheet(); },
@@ -5730,7 +5403,7 @@ document.addEventListener('change', async e => {
     for (const f of files) { try { const id = await storePhoto(f); ui.draft.photos.push(id); ui.draft.added.push(id); } catch (err) { toast('Không đọc được ảnh, thử lại'); } }
     const y = $('#sheet-body').scrollTop; exSheet(); $('#sheet-body').scrollTop = y;
   }
-  if (t.id === 'n-remind' || t.id === 'n-weekly' || t.id === 'n-drive') { state.settings[{ 'n-remind': 'nRemind', 'n-weekly': 'nWeekly', 'n-drive': 'nDrive' }[t.id]] = t.checked; save(); render(true); pushRegSoon(); return; }
+  if (t.id === 'n-remind' || t.id === 'n-weekly' || t.id === 'n-drive') { state.settings[{ 'n-remind': 'nRemind', 'n-weekly': 'nWeekly', 'n-drive': 'nSync' }[t.id]] = t.checked; save(); render(true); pushRegSoon(); return; }
   if (t.id === 'n-time') { state.settings.nTime = t.value || '17:30'; save(); pushRegSoon(); return; }
   if (t.id === 'notify-t') {
     if (!t.checked) { cancelPush(); state.settings.notify = false; save(); render(true); return; }
@@ -5790,7 +5463,7 @@ document.addEventListener('change', async e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('#viewer').hidden) handlers['viewer-close'](); else if (!$('#sheet').hidden) handlers['close-sheet'](); } });
 document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'hidden') { if (saveT) flush(true); else Cloud.sync(true); return; }
-  setTimeout(() => drvAuto(), 800); hubFlushSoon(); hubPull();
+  hubFlushSoon(); hubPull();
   if (state.active && ui.tab === 'today') requestWake();
   if (rest.pending || (!rest.fired && rest.end && Date.now() >= rest.end)) { rest.pending = false; if (!rest.fired) tickRest(); else { initAudio(); beep(); showAlarm(); } }
   if (inArtifact && !Cloud.ok && syncStatus === 'retry') { connectCloud(state); return; }
@@ -5817,7 +5490,6 @@ setInterval(() => { const el = $('#elapsed'); if (el && state.active) { el.textC
   if (!location.hash.startsWith('#nhap=')) maybeWeekPlan();
   window.addEventListener('hashchange', shareHash);
   shareHash();
-  setTimeout(() => drvAuto(), 1500);
   setTimeout(() => { hubFlush(); hubPull(); hubPushPlans(); }, 1600); window.addEventListener('online', () => { hubFlush(); hubPull(); hubPushPlans(); });
   setInterval(() => { if (document.visibilityState === 'visible') hubPull(); }, 20000);
   setTimeout(() => pushRegister(), 3000);
@@ -5827,7 +5499,7 @@ setInterval(() => { const el = $('#elapsed'); if (el && state.active) { el.textC
     if (ui.tab === 'more') render(true);
   }).catch(() => {});
   const h = location.hash;
-  if (h.startsWith('#nhap=')) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} oldCode(); }
+  if (h.startsWith('#nhap=')) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} toast(OLD_CODE); }
   if ('serviceWorker' in navigator && location.protocol === 'https:' && document.documentElement.dataset.pwa === '1') { navigator.serviceWorker.register('sw.js').catch(() => {}); }
 })();
 window.__sota = { share: { decode: shDecode }, suggest, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
