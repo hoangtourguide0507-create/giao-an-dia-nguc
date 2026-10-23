@@ -199,15 +199,17 @@ test('PA-29 (VD-06): BMI từ chiều cao và cân nặng gần nhất; thiếu 
   await expect(app.view().locator('.bmi')).toContainText('Nhập cân nặng');
 });
 
-test('PA-29 (VD-12): chữ ảnh body nói đúng việc ảnh được đẩy lên tài khoản Claude khi chạy trong claude.ai', async ({ app }) => {
+test('PA-29 (VD-12) · PA-41: chữ ảnh body chỉ nói ảnh lưu trên máy này (không còn đẩy lên tài khoản Claude)', async ({ app }) => {
   await app.goto();
   await app.tab('photos');
   const t0 = await app.view().textContent();
   expect(t0).not.toContain('chỉ lưu trên máy này');
-  expect(t0).toContain('tài khoản Claude');
+  expect(t0).toContain('Ảnh body lưu trên máy này');
+  expect(t0).not.toContain('tài khoản Claude');
   await app.seed({ state: state({ bodyPhotos: [{ id: 'a', date: '2026-09-01', t: 1, pose: 'Trước', photoId: 'xa' }] }), photos: { xa: PHOTO } });
   await app.tab('photos');
   const t1 = await app.view().textContent();
   expect(t1).not.toContain('chỉ lưu trên máy này');
-  expect(t1).toContain('tài khoản Claude');
+  expect(t1).toContain('Ảnh body lưu trên máy này');
+  expect(t1).not.toContain('tài khoản Claude');
 });
