@@ -239,6 +239,14 @@ Máy chủ Apps Script (`drive/Code.gs`), liên kết `GAL1`, tài khoản tên 
 - `PUSH_SERVER` đổi sang `https://gadn-push.sakutara.workers.dev` (worker mới của HLV). Hai file test giữ địa chỉ cũ cũng đổi theo.
 - Gửi buổi: `hubFlush` lấy các buổi có `finishedAt` mà `state.sync.sent[id] !== hubRev(buổi)` (`hubRev = finishedAt || startedAt`), gửi tối đa 20 buổi bằng `POST /s/ghi` (`k = buoi:<id>`, `d` là JSON của buổi), rồi đánh dấu đã gửi. Chạy khi `save()` (debounce 1,5 s), khi mở app (1,6 s), khi hiện lại app và khi có mạng (`online`). Lỗi mạng thì giữ nguyên để lần sau thử lại.
 
+### 7.9 Hồ sơ tập của HLV trên máy chủ (PA-44)
+- Bản duy nhất: `tv.id = 'tu-tap'`, `kieu = 'sl'` → khoá `sl:tu-tap`, tạo một lần bởi `hubSelfMake` (`/s/tv/them`, 409 coi như đã có) và đánh dấu `settings.sync.selfMade`. Máy chủ không đổi: vẫn chỉ HLV ghi/đọc được `sl:`, không báo đẩy cho `sl:`.
+- Máy HLV đẩy: buổi tập qua `hubFlush` khi hồ sơ HLV là hồ sơ đang mở (`hid = HLV_SELF`); giáo án qua `planTargets(sy)` (học viên theo `map` + `[HLV_SELF, hồ sơ HLV]`). `hubSelfMake` đặt `planH[HLV_SELF]` = giáo án trống nếu hồ sơ trống, để máy trống không đè giáo án trên máy chủ.
+- Máy HLV kéo: `hubPullSelf` (gọi trong `hubSync`) đọc `GET /s/doi?hv=sl:tu-tap&since=settings.sync.selfSeq`. Buổi → `hubApplySession(pid)` (đúng cả khi hồ sơ không mở). Giáo án: `hubSelfPlan` → hồ sơ trống thì `hubAdoptPlan`; hồ sơ có dữ liệu và đang mở thì `hubApplyPlan`; không mở thì lưu `settings.sync.selfPlan` và áp dụng khi mở (`hubPullSelf`).
+- Đổi hồ sơ HLV (`hubSelfPick`): (1) hồ sơ HLV cũ có dữ liệu → `hubNewCard` (lưu `map[mới] = cũ`) rồi `hubPushSessionsTo(mới, cũ)` (`/s/ghi` từng lô 20 buổi, `backfill`); (2) học viên được chọn → `/s/tv/xoa`; (3) `/s/tv/xoa sl:tu-tap`; (4) cục bộ: `sy.self = pid`, `selfSeq = 0`, bỏ `planH[HLV_SELF]`, `switchProfile(pid)`, đặt lại `sent/gone` của hồ sơ mới; hồ sơ cũ trống thì xoá (ảnh, `LDB` kv, `profiles.list`).
+- Lỗi giữa chừng: bước (1) lưu `map` trước khi đẩy buổi, nên thử lại không tạo thẻ thứ hai; bước (3) không chạy nếu (1) hoặc (2) lỗi.
+- Ảnh: chưa đồng bộ (chờ thiết kế gắn ảnh vào bài tập; xem BR-28.6).
+
 ## 8. File sao lưu
 > **ĐÃ BỎ (PA-36, 23/10/2026)**: file sao lưu và khôi phục đã gỡ (PA-36). Không còn định dạng file `so-ta`/`gadn-sync` nào được đọc. Mục này giữ lại để tra cứu dữ liệu cũ.
 

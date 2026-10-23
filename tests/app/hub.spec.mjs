@@ -296,7 +296,8 @@ test('BR-24.2 · học viên mới xuất hiện trên máy HLV (sau khi đã đ
 });
 
 /* Hồ sơ HLV (Tài khoản → Hồ sơ HLV): chọn hồ sơ tự tập của HLV */
-test('Hồ sơ HLV · hồ sơ trống: chọn không cần xác nhận; thẻ của hồ sơ đó bị thu hồi; hồ sơ HLV cũ thành học viên và có thẻ', async ({ app, hub }) => {
+/* BR-28.5 (PA-44): hồ sơ HLV cũ đang trống thì xoá khỏi máy khi đổi hồ sơ HLV, không tạo thẻ học viên */
+test('Hồ sơ HLV · hồ sơ trống: chọn không cần xác nhận; thẻ của học viên được chọn bị thu hồi; hồ sơ HLV cũ trống bị xoá, không thành học viên', async ({ app, hub }) => {
   await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state() } });
   await registerHlv(app, hub);
   await autoCard(app, hub, 'p2');
@@ -305,11 +306,10 @@ test('Hồ sơ HLV · hồ sơ trống: chọn không cần xác nhận; thẻ c
   await app.page.locator('[data-act="hub-self-pick"][data-id="p2"]').click();
   await app.click('hub-self-go');
   await expect.poll(async () => (await app.state()).settings.sync.self, { timeout: 5000 }).toBe('p2');
-  await expect.poll(async () => Object.values((await app.state()).settings.sync.map || {}), { timeout: 8000 }).toContain('p1');
+  await expect.poll(async () => (await app.profiles()).list.map(p => p.id), { timeout: 8000 }).toEqual(['p2']);
   const sy = (await app.state()).settings.sync;
-  expect(Object.values(sy.map)).not.toContain('p2');
-  const lanId = Object.keys(sy.map).find(k => sy.map[k] === 'p1');
-  expect((await hub.req('/s/tv', 'GET', null, hub.auth)).j.hv.map(x => x.id)).toContain(lanId);
+  expect(Object.values(sy.map || {})).not.toContain('p2');
+  expect((await hub.req('/s/tv', 'GET', null, hub.auth)).j.hv.filter(x => x.kieu === 'hv')).toHaveLength(0);
 });
 
 test('Hồ sơ HLV · hồ sơ đang có dữ liệu: phải quét đúng mã QR HLV mới đổi được; mã sai thì không đổi', async ({ app, hub }) => {
@@ -386,4 +386,71 @@ test('BR-24.25 · nối lại bằng thẻ mới: báo lỗi mất, dữ liệu 
   const { i: j, dk } = (await hv.state()).settings.sync; expect(j).toBe('lan-moi1');
   await expect.poll(async () => (await hub.req(`/s/doi?hv=${j}&since=0`, 'GET', null, `Bearer v.${j}.${dk}`)).j.recs.filter(r => r.k.startsWith('buoi:')).map(r => r.id), { timeout: 15000 }).toEqual([done.id]);
   expect((await hv.state()).sessions.map(s => s.id)).toEqual([done.id]);
+});
+
+/* BR-28 · PA-44: hồ sơ tập của HLV có một bản duy nhất trên máy chủ (sl:tu-tap), đọc bằng khoá HLV */
+const selfRecs = async (hub, prefix = '') => (await hub.req('/s/doi?hv=sl:tu-tap&since=0', 'GET', null, hub.auth)).j.recs.filter(r => r.k.startsWith(prefix));
+const hvRecords = async hub => (await hub.req('/s/tv', 'GET', null, hub.auth)).j.hv.filter(x => x.kieu === 'hv');
+
+test('BR-28.1 · HLV có buổi tập và giáo án trong hồ sơ tập → máy chủ nhận vào hồ sơ tập của HLV (sl:tu-tap)', async ({ app, hub }) => {
+  const P = basicPlan(), d = P.days[0];
+  const done = session(d, TODAY, [[d.exercises[0], [[40, 8]]]]);
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] }, states: { p1: state({ days: P.days, sessions: [done] }) } });
+  await registerHlv(app, hub);
+  await expect.poll(async () => (await selfRecs(hub, 'buoi:')).map(r => r.id), { timeout: 15000 }).toEqual([done.id]);
+  await expect.poll(async () => (await selfRecs(hub, 'plan@hlv')).length, { timeout: 15000 }).toBe(1);
+  expect(await hvRecords(hub)).toHaveLength(0);   // không tạo học viên cho hồ sơ tập
+});
+
+test('BR-28.1 · máy HLV thứ hai đăng nhập bằng cùng QR HLV: hồ sơ tập có buổi tập và giáo án từ máy chủ', async ({ app, hub, device }) => {
+  const P = basicPlan(), d = P.days[0];
+  const done = session(d, TODAY, [[d.exercises[0], [[40, 8]]]]);
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] }, states: { p1: state({ days: P.days, sessions: [done] }) } });
+  await registerHlv(app, hub);
+  await expect.poll(async () => (await selfRecs(hub, 'buoi:')).map(r => r.id), { timeout: 15000 }).toEqual([done.id]);
+  const b = await device();
+  await b.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] }, states: { p1: state() } });
+  await registerHlv(b, hub);
+  await expect.poll(async () => (await b.state()).sessions.map(x => x.id), { timeout: 20000 }).toEqual([done.id]);
+  expect((await b.state()).days.map(x => x.name)).toEqual(P.days.map(x => x.name));
+  expect(await hvRecords(hub)).toHaveLength(0);
+});
+
+/* BR-28.4 (PA-44): đổi hồ sơ HLV khi hồ sơ HLV cũ có dữ liệu → hồ sơ cũ thành học viên có thẻ, buổi tập của nó chuyển lên học viên mới;
+   học viên được chọn mất thẻ và dữ liệu trên máy chủ (BR-24.20); hồ sơ được chọn trở thành hồ sơ tập của HLV và đang mở */
+test('BR-28.4 · đổi hồ sơ HLV có dữ liệu: buổi tập của hồ sơ HLV cũ chuyển lên học viên mới, học viên được chọn bị gỡ khỏi máy chủ', async ({ app, hub }) => {
+  const P = basicPlan(), d = P.days[0];
+  const done = session(d, TODAY, [[d.exercises[0], [[40, 8]]]]);
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state({ days: P.days, sessions: [done] }), p2: state() } });
+  await registerHlv(app, hub);
+  await autoCard(app, hub, 'p2');
+  await expect.poll(async () => (await selfRecs(hub, 'buoi:')).map(r => r.id), { timeout: 15000 }).toEqual([done.id]);
+  await app.tab('more');
+  await app.click('hub-self-open');
+  await app.page.locator('[data-act="hub-self-pick"][data-id="p2"]').click();
+  await expect(app.sheet()).toContainText('cần xác nhận bằng mã QR HLV');
+  await fakeCamera(app.page, hubQR(hub));
+  await app.click('hub-self-auth');
+  await expect.poll(async () => (await app.state()).settings.sync.self, { timeout: 8000 }).toBe('p2');
+  await expect.poll(async () => (await app.profiles()).active, { timeout: 8000 }).toBe('p2');
+  /* hồ sơ HLV cũ “Tôi” thành học viên mới: có đúng buổi tập của nó trên máy chủ */
+  await expect.poll(async () => {
+    const hv = await hvRecords(hub); const toi = hv.find(x => x.ten === 'Tôi'); if (!toi) return null;
+    return (await hub.req(`/s/doi?hv=${toi.id}&since=0`, 'GET', null, hub.auth)).j.recs.filter(r => r.k.startsWith('buoi:')).map(r => r.id);
+  }, { timeout: 15000 }).toEqual([done.id]);
+  expect((await hvRecords(hub)).map(x => x.ten)).toEqual(['Tôi']);   // Lan không còn là học viên
+  expect(await selfRecs(hub, 'buoi:')).toEqual([]);                  // Lan chưa có buổi tập
+});
+
+/* BR-28.5 (PA-44): hồ sơ HLV cũ trống thì xoá khỏi máy khi đổi hồ sơ HLV */
+test('BR-28.5 · đổi hồ sơ HLV khi hồ sơ HLV cũ trống: hồ sơ cũ bị xoá khỏi máy, không tạo thẻ học viên', async ({ app, hub }) => {
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state() } });
+  await registerHlv(app, hub);
+  await autoCard(app, hub, 'p2');
+  await app.tab('more');
+  await app.click('hub-self-open');
+  await app.page.locator('[data-act="hub-self-pick"][data-id="p2"]').click();
+  await app.click('hub-self-go');
+  await expect.poll(async () => (await app.profiles()).list.map(p => p.id), { timeout: 8000 }).toEqual(['p2']);
+  expect(await hvRecords(hub)).toHaveLength(0);
 });
