@@ -354,7 +354,8 @@ test('BR-24.24 · máy HLV trống đăng nhập bằng QR HLV: tự có hồ s�
   await expect.poll(async () => (await fresh.profiles()).list.map(p => p.name), { timeout: 20000 }).toContain('Lan');
   const pid = (await fresh.profiles()).list.find(p => p.name === 'Lan').id;
   await expect.poll(async () => (await fresh.idb('kv', 'state:' + pid))?.sessions?.map(x => x.id), { timeout: 30000 }).toContain(done.id);
-  expect((await fresh.idb('kv', 'state:' + pid)).days.map(x => x.name)).toEqual(P.days.map(x => x.name));
+  /* giáo án và buổi tập về trong cùng lượt kéo nhưng không cùng thứ tự: chờ đến khi giáo án có */
+  await expect.poll(async () => (await fresh.idb('kv', 'state:' + pid))?.days?.map(x => x.name), { timeout: 30000 }).toEqual(P.days.map(x => x.name));
   /* học viên đã có thẻ: máy mới nhận thẻ có sẵn, không tạo thẻ thứ hai */
   await fresh.page.waitForTimeout(3000);
   expect((await hub.req('/s/tv', 'GET', null, hub.auth)).j.hv.filter(x => x.kieu === 'hv')).toHaveLength(1);

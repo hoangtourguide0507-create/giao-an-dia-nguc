@@ -4325,13 +4325,13 @@ let hubEnsureT = 0, hubEnsuring = false;
 function hubEnsureSoon() { clearTimeout(hubEnsureT); hubEnsureT = setTimeout(hubEnsure, 800); }
 async function hubEnsure() {
   if (hubRole() !== 'hlv' || hubEnsuring || hubAdopting || !navigator.onLine) return;
-  await hubSelfMake();
-  const sy = state.settings.sync; sy.map = sy.map || {};
-  const selfId = hlvSelf(), linked = new Set(Object.values(sy.map));
-  const todo = profiles.list.filter(p => !(selfId && p.id === selfId) && !linked.has(p.id));
-  if (!todo.length) return;
+  /* cờ bật trước mọi lần chờ mạng, để hai lần gọi gần nhau không cùng tạo thẻ cho một hồ sơ */
   hubEnsuring = true;
   try {
+    await hubSelfMake();
+    const sy = state.settings.sync; sy.map = sy.map || {};
+    const selfId = hlvSelf(), linked = new Set(Object.values(sy.map));
+    const todo = profiles.list.filter(p => !(selfId && p.id === selfId) && !linked.has(p.id));
     for (const p of todo) { const c = await hubNewCard(p.name); state.settings.sync.map = { ...state.settings.sync.map, [c.id]: p.id }; linked.add(p.id); save(); }
   } catch (e) { /* mất mạng hoặc máy chủ lỗi: lần sau thử lại */ }
   finally { hubEnsuring = false; }
@@ -4471,6 +4471,8 @@ async function hubLinkProfile(hvId, ten) {
 /* HLV: học viên đã có trên máy chủ mà máy này chưa có hồ sơ (máy HLV mới hoặc trống, hoặc học viên thêm từ máy HLV khác):
    tạo hồ sơ, gắn thẻ có sẵn (không tạo thẻ mới), rồi kéo lại từ đầu để nhận giáo án và toàn bộ buổi đã tập. */
 let hubAdopting = false;
+/* tăng mỗi khi nối học viên mới và đặt lại con trỏ: lượt kéo đang chạy thấy thế hệ đổi thì dừng, không ghi đè con trỏ */
+let hubCursorGen = 0;
 async function hubAdopt() {
   if (hubRole() !== 'hlv' || hubAdopting || !navigator.onLine) return;
   hubAdopting = true;
@@ -4485,7 +4487,7 @@ async function hubAdopt() {
       sy.planH = sy.planH || {}; sy.planH[t.id] = planKey(await serPlan(await profState(pid), false, {}));
       added = true;
     }
-    if (added) { sy.seq = 0; save(); }
+    if (added) { sy.seq = 0; hubCursorGen++; save(); setTimeout(hubPull, 600); }   /* kéo lại từ đầu ngay, không chờ chu kỳ 20 giây */
   } catch (e) { /* mất mạng: lần sau thử lại */ } finally { hubAdopting = false; }
 }
 /* giáo án của học viên vừa nhận về máy HLV: chỉ nhận khi hồ sơ trên máy này còn chưa có ngày tập nào, không đè giáo án HLV đang sửa */
@@ -4508,18 +4510,26 @@ async function hubPull() {
   const sy = state.settings.sync; hubPulling = true;
   try {
     /* máy chủ trả tối đa một trang (con = còn nữa): kéo tiếp từ bản ghi cuối, không nhảy tới cuối kẻo mất bản ghi */
+    let mine = sy.seq || 0; const gen = hubCursorGen;
     for (let trang = 0, con = true; con && trang < 50; trang++) {
-      const r = await hubCall(role === 'hlv' ? '/s/doi?since=' + (sy.seq || 0) : '/s/doi?hv=' + encodeURIComponent(sy.i) + '&since=' + (sy.seq || 0), null, 'GET');
+      const r = await hubCall(role === 'hlv' ? '/s/doi?since=' + mine : '/s/doi?hv=' + encodeURIComponent(sy.i) + '&since=' + mine, null, 'GET');
       if (hubGate(r) || r.s !== 200) return;
+      /* bản ghi của học viên chưa có trên máy này (vừa nối, chưa nhận hồ sơ): dừng con trỏ ngay trước nó để lượt sau thử lại, không bỏ qua */
+      let giu = 0;
       for (const rec of r.j.recs) {
         if (role === 'hv') { if (rec.k === 'plan@hlv' && rec.t > (sy.planT || 0)) await hubApplyPlan(rec); }
         else if (rec.k.startsWith('buoi:') && sy.map && sy.map[rec.hv]) await hubApplySession(sy.map[rec.hv], rec);
         else if (rec.k === 'plan@hlv' && sy.map && sy.map[rec.hv]) await hubAdoptPlan(sy.map[rec.hv], rec);
         else if (rec.k === 'dau@hv' && sy.map && sy.map[rec.hv]) await hubApplyPain(sy.map[rec.hv], rec);
+        if (role === 'hlv' && !giu && !(sy.map && sy.map[rec.hv])) giu = rec.seq;
+        if (giu) break;
       }
-      con = !!r.j.con && r.j.recs.length > 0;
-      const next = con ? r.j.recs[r.j.recs.length - 1].seq : r.j.seq;
-      if (next > (sy.seq || 0)) { sy.seq = next; save(); }
+      con = !giu && !!r.j.con && r.j.recs.length > 0;
+      let next = con ? r.j.recs[r.j.recs.length - 1].seq : r.j.seq;
+      if (giu) next = Math.min(next, giu - 1);
+      /* hubAdopt đặt lại con trỏ khi vừa nối học viên mới: lượt này dừng, lượt sau đọc lại từ con trỏ mới (không ghi đè) */
+      if (hubCursorGen !== gen) { setTimeout(hubPull, 500); return; }
+      if (next > mine) { mine = next; sy.seq = next; save(); }
     }
   } catch (e) { /* mất mạng: lần sau kéo tiếp */ } finally { hubPulling = false; }
 }
