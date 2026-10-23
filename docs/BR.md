@@ -157,8 +157,8 @@ Test: `tests/app/body.spec.mjs`, `tests/app/home.spec.mjs`
 ## BR-11 Tài khoản & cài đặt cá nhân
 Test: `tests/app/settings.spec.mjs`, `tests/app/misc.spec.mjs`, `tests/app/backup.spec.mjs`
 
-- **BR-11.0 Trang Tài khoản** (mục cuối thanh dưới): thẻ hồ sơ (tên, số buổi đã tập, số tuần liên tục, tấn tạ 4 tuần), thẻ **Vai trên máy này** (BR-25: HLV → số học viên và nút *Học viên*; HV → đã nối với HLV; chưa có vai → nút *Đồng bộ với HLV*), rồi danh mục bốn nhóm; bấm một dòng mở **trang con**, nút ‹ quay lại danh mục (đổi mục dưới thanh rồi quay lại luôn về danh mục).
-  - *Đồng bộ & dữ liệu*: Tài khoản & đồng bộ (BR-14, BR-21) · Sao lưu & khôi phục (BR-15) · Thư viện hình hướng dẫn (BR-16.4).
+- **BR-11.0 Trang Tài khoản** (mục cuối thanh dưới): thẻ hồ sơ (tên, số buổi đã tập, số tuần liên tục, tấn tạ 4 tuần), rồi theo vai của máy (BR-26): chưa có vai → khối **Đăng nhập** (BR-26.5); HLV → khối máy chủ đồng bộ và mục **Học viên** với thẻ QR từng người (BR-26.1); HV → trạng thái nối với HLV; rồi danh mục các nhóm; bấm một dòng mở **trang con**, nút ‹ quay lại danh mục (đổi mục dưới thanh rồi quay lại luôn về danh mục).
+  - *Đồng bộ & dữ liệu*: trạng thái lưu trữ tài khoản Claude (BR-14, BR-21) · Sao lưu & khôi phục (BR-15) · Thư viện hình hướng dẫn (BR-16.4). Mục *Đồng bộ với HLV* đã bỏ (BR-26.4).
   - *Tập luyện*: Nhịp nghỉ & nhịp rep (BR-11.3) · Lưu ý form khi tập (BR-11.4) · Chỉ số cơ thể (BR-11.5) · Thông báo (BR-22).
   - *Giao diện*: Giao diện & hiệu ứng (BR-11.1/11.2) · Cài lên màn hình (BR-19.1; ẩn khi đã chạy toàn màn hình hoặc trong claude.ai).
   - *Khác*: Xoá dữ liệu (BR-11.7).
@@ -284,3 +284,13 @@ Trước đây có hai thứ chồng nhau: *chế độ HLV* (công tắc tự b
 - **BR-25.4 HLV thấy cùng lúc cả hai bộ tính năng**: Trang chủ của HLV có khối **Phòng HLV** (tổng quan đội, việc cần làm, bảng xếp hạng, thẻ học viên) ở đầu, rồi Trang chủ của hồ sơ đang xem. Thanh dưới luôn 5 mục: Trang chủ · Lịch tập · Tập · Tiến độ · Tài khoản. Tiến độ có nút Bảng HLV. Không còn công tắc chuyển đổi. *Test:* `vai.spec.mjs` ("cùng lúc"), `profiles.spec.mjs`.
 - **BR-25.5 Giới hạn 8 người** áp dụng cho máy HLV như trước (BR-12.1). *Test:* `vai.spec.mjs`.
 - **BR-25.6 Dữ liệu cũ** (mig30): máy đang có trường chế độ HLV (`profiles.coach`) nhưng chưa có khoá HLV: trường đó được bỏ một lần khi mở app, **mọi hồ sơ được giữ**. Nếu còn nhiều hồ sơ, Trang chủ báo "Quét mã QR HLV để làm HLV…". *Test:* `vai.spec.mjs` ("dữ liệu cũ").
+
+## BR-26 Tài khoản HLV: thẻ QR học viên, đăng nhập bằng QR hoặc mã — PA-39
+Test: `tests/app/taikhoan.spec.mjs`, `tests/app/hub.spec.mjs`, `tests/app/vai.spec.mjs`, `tests/app/profiles.spec.mjs`
+
+- **BR-26.1 Thẻ QR học viên**: mục *Học viên* trong Tài khoản (chỉ máy HLV) liệt kê mọi học viên trên máy (BR-25.5). Chạm một học viên → sheet *Thẻ QR của học viên*: ảnh QR của mã `GAV1` và mã chữ. Học viên chưa có thẻ thì chạm để tạo thẻ mới trên máy chủ; thẻ là thông tin lưu lâu dài, dùng để nhận dạng học viên. *Test:* `taikhoan.spec.mjs`.
+- **BR-26.2 Chia sẻ**: sheet thẻ có *Chia sẻ ảnh QR* (file PNG qua bảng chia sẻ của máy), *Chia sẻ mã* (chữ `GAV1`, qua bảng chia sẻ) và *Sao chép mã*. Máy không có bảng chia sẻ file thì tải ảnh về; không có bảng chia sẻ chữ thì chép mã vào bộ nhớ tạm. *Test:* `taikhoan.spec.mjs`.
+- **BR-26.3 Bỏ "Vai trên máy này"**: thẻ này không còn ở Tài khoản; vai hiện qua khối đăng nhập (chưa có vai), khối máy chủ (HLV, HV). *Test:* `taikhoan.spec.mjs`.
+- **BR-26.4 Bỏ "Đồng bộ với HLV"**: dòng này và trang con *Đồng bộ với HLV* đã gỡ; nút *Đồng bộ với HLV* trong banner đổi thành *Quét mã QR* (mở quét mã). *Test:* `taikhoan.spec.mjs`.
+- **BR-26.5 Đăng nhập** (máy chưa có vai): khối đầu Tài khoản có *Quét mã QR* (camera, chọn ảnh, dán từ bộ nhớ tạm; nhận `GAH1` hoặc `GAV1`), *Khôi phục bằng Face ID* và *Hoặc dán mã* (ô chữ nhận `GAH1.…` hoặc `GAV1.…`). Mã sai báo "Không tìm thấy mã liên kết" hoặc "Mã HLV không đúng" và không lưu gì. *Test:* `taikhoan.spec.mjs`.
+- **BR-26.6** Máy đã có vai không thấy khối Đăng nhập. Không có nút đăng xuất trong khối này. *Test:* `taikhoan.spec.mjs`.

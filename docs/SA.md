@@ -56,7 +56,7 @@ Script chính là một IIFE, chia thành các khối (tiêu đề `/* ---------
 | Tab Lịch tập | khối `viewPlan` | `viewPlan` (biểu đồ nhỏ `svg.spk` trên thẻ bài khi ≥ 2 buổi), các bảng sửa bài/ngày/kho bài/tạ đơn/xoay vòng, nén ảnh `compressImage`, `hydratePhotos` |
 | Tab Tiến độ | khối `viewWeek` | `periodStats`, `progTabs` (Sức mạnh / Cơ thể / Ảnh), `tonTix`, `viewWeek`, `progressSheet`, `sessionSheet`, biểu đồ SVG `drawLine` |
 | Cơ thể & ảnh | khối `viewBody` | `bRange`, `bodyVerdict`, `viewBody`, ảnh trước/sau, đọc EXIF (hiển thị trong Tiến độ) |
-| Tab Tài khoản | khối `viewMore` | `viewMore` (thẻ hồ sơ + danh mục `row()` → trang con `SEC[...]`: drive, backup, pack, pace, form, height, notif, skin, install, wipe) |
+| Tab Tài khoản | khối `viewMore` | `viewMore` (thẻ hồ sơ + khối Đăng nhập hoặc khối máy chủ (`loginCardHtml` / `hubCardHtml`) + mục Học viên có thẻ QR (`hlvStudentsHtml`) + danh mục `row()` → trang con `SEC[...]`: backup, pack, pace, form, height, notif, skin, install, wipe) |
 | Người tập & HLV | khối `profStats` | `profStats`, `withState`, `coachData/coachRich`, `viewTeam` (Phòng HLV, đầu Trang chủ của HLV), `studentsOf`, kế hoạch tuần (`wpBuild`, `weekPlanSheet`), các bảng hồ sơ |
 | Đồng bộ, Drive, tài khoản | khối `DRV` … `acc*` | Động cơ gộp dùng chung (`syncPack`, `cleanPkg`, `syncMerge`, `syncApply`, `syncUndo`, `syncReceive` cho file `gadn-sync`); Drive: `DRV`, `drvCall`, `drvSyncOne`, `drvEnsureAll`, `drvAuto/drvSoon`, ảnh (`drvLocalPhotos/drvPushPhotos/drvPullPhotos`), mã liên kết `drvCode/drvLinkReceive`; tài khoản: `accCardHtml`, `accApply`, `accRoster`, `accTvSheet/accTvForm`, `accHet`; QR: `qrScanSheet`, `decodeQrImage`, `joinQrParts`, `handleCodeText`, `oldCode`, `copyOrShareCode`; khôi phục file 1 người |
 | File, sheet, toast | cuối khối đồng bộ | `saveFile` (claude.ai downloads hoặc `<a download>`), `openSheet/closeSheet/confirmSheet`, `toast` |
@@ -220,7 +220,7 @@ Máy chủ Apps Script (`drive/Code.gs`), liên kết `GAL1`, tài khoản tên 
 - Kiểm thử: `tests/test_hub_sync.mjs` (49 kiểm tra, PA-33) và `tests/test_hub_pa33b.mjs` (34 kiểm tra: passkey gồm chữ ký thật do khoá P-256 giả lập ký theo DER, ảnh, hạn mức), đều chạy đúng `push-server/src/index.js` với SQLite thật (`node:sqlite`), được gọi trong `bash tests/chay.sh`.
 
 ### 7.8 Máy chủ đồng bộ mới trong app (PA-34.1)
-- Mục *Tài khoản & đồng bộ* có thêm thẻ *Máy chủ đồng bộ mới* (`hubCardHtml`). Khoá HLV lưu ở `settings.sync = { s, hk }` (`sync` thuộc `GLOBAL_KEYS`).
+- Tài khoản có thẻ *Máy chủ đồng bộ mới* (`hubCardHtml`, khi đã có vai) hoặc khối *Đăng nhập* (`loginCardHtml`, khi chưa có vai). Thẻ QR học viên: `hubCardsSheet` vẽ ảnh bằng `qrDataUrl` (thư viện qrcode nhúng), chia sẻ bằng `hubShareImg` / `hubShareCode` (Web Share API, dự phòng tải file hoặc chép mã). Khoá HLV lưu ở `settings.sync = { s, hk }` (`sync` thuộc `GLOBAL_KEYS`).
 - `hubCode` nhận `GAH1` (đăng ký HLV) từ camera (`qrScanSheet`), ô dán (`handleCodeText`) và ảnh (`receiveQrImage`); `GAV1` trên máy HLV chỉ báo chưa dùng ở đây.
 - Khoá học viên: `k = base64url(HMAC-SHA256(hk, "gadn-hv:<mã>:<epoch>"))[0:32]`, `skh = base64url(SHA-256(k))` gửi lên `/s/tv/them`. `epoch` hiện luôn 0; đổi mã (PA sau) sẽ tăng `epoch`.
 - Gọi máy chủ: `hubCall(path, body, method)` với `Authorization: Bearer h.<hk>`.

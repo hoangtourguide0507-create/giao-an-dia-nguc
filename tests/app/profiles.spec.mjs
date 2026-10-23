@@ -74,9 +74,9 @@ test('HLV sao chép giáo án từ học viên khác (thêm / thay toàn bộ), 
 
 
 async function registerHlv(app, hub) {
-  await app.more('drive');
+  await app.tab('more');
   await fakeCamera(app.page, hubQR(hub));
-  await app.click('hub-reg');
+  await app.click('qr-scan');
   await expect(app.toast()).toContainText('Đã đăng ký làm HLV');
 }
 
@@ -113,9 +113,9 @@ test('BR-25.4 · HLV: Phòng HLV ở Trang chủ (việc cần làm, duyệt k�
   await expect(app.sheet()).toContainText('Bảng HLV');
   await expect(app.sheet().locator('.coach')).toHaveCount(2);
   await app.closeSheet();
-  /* Tài khoản ghi vai HLV, không có chỗ bật chế độ */
+  /* Tài khoản có mục Học viên với thẻ QR, không có chỗ bật chế độ */
   await app.tab('more');
-  await expect(app.view()).toContainText('HLV · 2 học viên');
+  await expect(app.view()).toContainText('Thẻ QR · chạm để xem và chia sẻ');
   await expect(app.view()).not.toContainText('Bật chế độ HLV');
 });
 

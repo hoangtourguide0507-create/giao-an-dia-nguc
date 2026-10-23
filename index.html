@@ -2113,7 +2113,7 @@ function viewToday() { return state.active ? viewSession(state.active) : viewHom
 /* việc cần làm: gom các thẻ nhắc thành một thẻ lật ngang trên Trang chủ, đủ cả trong chuông */
 function todoItems() {
   const out = [];
-  if (hubRole() === '' && multi()) out.push(`<div class="banner"><span class="bi">${ICON.users}</span><div><b>Máy này có ${profiles.list.length} hồ sơ</b><p>Quét mã QR HLV để làm HLV và quản lý học viên. Các hồ sơ đã có vẫn được giữ trên máy.</p><div class="row"><button class="btn sm gold" data-act="more-sec" data-k="drive">Đồng bộ với HLV</button></div></div></div>`);
+  if (hubRole() === '' && multi()) out.push(`<div class="banner"><span class="bi">${ICON.users}</span><div><b>Máy này có ${profiles.list.length} hồ sơ</b><p>Quét mã QR HLV để làm HLV và quản lý học viên. Các hồ sơ đã có vẫn được giữ trên máy.</p><div class="row"><button class="btn sm gold" data-act="qr-scan">Quét mã QR</button></div></div></div>`);
   const wp = wpBanner(); if (wp && wp.includes('class="banner')) out.push(wp);
   for (const h of [deloadBanner(), recoveryHint(), bodyPhotoBanner(), packBanner()]) if (h) out.push(h);
   if (allExFull().some(x => x.ex.muscle === 'Khác')) out.push(`<div class="banner"><span class="bi">?</span><div><b>Có bài đang để nhóm cơ “Khác”</b><p>Các bài này không được tính độ hồi phục. Gán đúng nhóm cơ để gợi ý buổi tập chính xác.</p><button class="btn sm gold" data-act="other-open">Gán nhóm cơ</button></div></div>`);
@@ -3728,7 +3728,6 @@ function viewMore() {
   const sk = st.skin || 'amber';
   /* mỗi mục cài đặt là một trang con; trang Tài khoản chỉ còn danh mục */
   const SEC = {
-    drive: ['Đồng bộ với HLV', () => hubCardHtml() + syncCardHtml()],
     pack: ['Thư viện hình hướng dẫn', () => packCard()],
     pace: ['Nhịp nghỉ & nhịp rep', () => `<div class="card set-card"><h3>Nhịp tập</h3>
     <div class="small muted" style="margin-top:6px;font-weight:700">Thời gian mỗi rep · set 10 rep ≈ ${setSec(10)} giây</div>
@@ -3765,19 +3764,16 @@ function viewMore() {
   let streak = 0; for (let k = 0; k < 104; k++) { const d = weekDaysOf(-k); if (state.sessions.some(x => x.date >= d[0] && x.date <= d[6])) streak++; else if (k) break; }
   const vol4 = state.sessions.filter(x => x.date >= addDays(today, -27)).reduce((a, x) => a + sessStats(x).vol, 0) / 1000;
   const np = 'Notification' in window ? Notification.permission : 'none';
-  const syncLine = hubRole() === 'hv' ? 'Đã nối với HLV ' + esc(state.settings.sync.ten || '') : hubRole() === 'hlv' ? 'HLV · ' + Object.keys(state.settings.sync.map || {}).length + ' học viên' : 'Chưa nối máy chủ';
   const row = (k, ic, t, sub, cls) => `<button type="button" class="grow" data-act="more-sec" data-k="${k}"><span class="gi ${cls || ''}">${ICON[ic]}</span><span class="gt"><b>${t}</b><span>${sub}</span></span>${ICON.chevR}</button>`;
   return `<section class="sec"><div class="sec-head" style="margin-bottom:14px"><h2 class="h1">Tài khoản</h2></div>
   <div class="card acc-prof"><div class="ap-top"><span class="avatar ${multi() ? 'pcol' : ''}" style="${multi() ? `--pc:${PCOLORS[p.color % PCOLORS.length]}` : ''}">${esc(initials(n))}</span><span class="t"><b>${esc(n)}</b><span>${isHlv() ? 'Hồ sơ đang xem · vai HLV' : multi() ? `${profiles.list.length} người tập trên máy này` : 'Người tập'}</span></span><button class="btn sm" data-act="profiles">Đổi</button></div>
     <div class="ap-stats"><div><b>${state.sessions.length}</b><span>buổi đã tập</span></div><div><b>${streak}</b><span>tuần liên tục</span></div><div><b>${fmt(vol4, vol4 >= 10 ? 1 : 2)}t</b><span>tạ 4 tuần</span></div></div></div>
-  <div class="card set-card coachcard"><h3>${ICON.users} Vai trên máy này</h3>${isHlv()
-    ? `<p><b>HLV</b> · ${studentsOf().length} học viên trên máy này. Phòng HLV nằm ở Trang chủ.</p><div class="row"><button class="btn" data-act="profiles">${ICON.users} Học viên (${studentsOf().length})</button></div>`
-    : hubRole() === 'hv' ? `<p><b>HV</b> · máy này nối với HLV ${esc(state.settings.sync.ten || '')}. Chỉ có tính năng học viên.</p>`
-    : '<p>Chưa có vai. Quét mã QR HLV để làm HLV, hoặc quét thẻ học viên để nối máy với HLV.</p><div class="row"><button class="btn gold" data-act="more-sec" data-k="drive">Đồng bộ với HLV</button></div>'}</div>
+  ${hubRole() ? hubCardHtml() : loginCardHtml()}
+  ${isHlv() ? hlvStudentsHtml() : ''}
   <div class="gh">Đồng bộ & dữ liệu</div><div class="card grp">
-    ${row('drive', 'cloud', 'Đồng bộ với HLV', syncLine, hubRole() ? 'ok' : '')}
     ${row('pack', 'book', 'Thư viện hình hướng dẫn', ui.pack ? `Đã tải ${ui.pack.n} hình · xem được khi không có mạng` : 'Chưa tải · khoảng 20 MB')}
   </div>
+  ${syncCardHtml()}
   <div class="gh">Tập luyện</div><div class="card grp">
     ${row('pace', 'clock', 'Nhịp nghỉ & nhịp rep', `Nghỉ ${restMode().label.toLowerCase()} · set 10 rep ≈ ${setSec(10)} giây`)}
     ${row('form', 'alert', 'Lưu ý form khi tập', FORM_LV[formLv()].label)}
@@ -4278,7 +4274,7 @@ const slugName = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').replace
 /* ---------- PA-34.1 · máy chủ đồng bộ mới: HLV đăng ký bằng QR HLV, thêm học viên bằng thẻ QR vĩnh viễn ----------
    Mã QR HLV (GAH1) chứa địa chỉ máy chủ và khoá HLV; khoá chỉ lưu trên máy này (settings.sync.hk). Thẻ học viên (GAV1)
    có khoá k = HMAC-SHA256(khoá HLV, "gadn-hv:<mã>:<epoch>"), nên HLV tính lại được bất cứ lúc nào, không cần lưu. */
-const OLD_CODE = 'Mã này là kiểu gửi cũ, không còn dùng. Quét mã QR HLV hoặc thẻ học viên trong Tài khoản → Đồng bộ với HLV.';
+const OLD_CODE = 'Mã này là kiểu gửi cũ, không còn dùng. Quét mã QR HLV hoặc thẻ học viên, hoặc dán mã, trong Tài khoản → Đăng nhập.';
 const hubOn = () => !!hubRole();
 /* hlv: máy có khoá HLV · hv: máy học viên đã nối bằng thẻ · '': chưa nối */
 function hubRole() { const sy = state.settings.sync || {}; return sy.hk ? 'hlv' : sy.dk ? 'hv' : ''; }
@@ -4404,6 +4400,18 @@ async function hubFlush() {
   } catch (e) { sy.lastErr = Date.now(); }   /* mất mạng: thử lại khi mở app, khi có mạng, hoặc mỗi 20 giây */
   finally { hubBusy = false; }
 }
+/* BR-26.5: máy chưa có vai thấy khối đăng nhập: quét QR (camera, ảnh) hoặc dán mã GAH1/GAV1 */
+function loginCardHtml() {
+  return `<div class="card set-card" id="login"><h3>Đăng nhập</h3><p>HLV: quét mã QR HLV hoặc dán mã HLV. Học viên: quét thẻ QR của HLV hoặc dán mã thẻ.</p>
+    <div class="row"><button class="btn gold" data-act="qr-scan">Quét mã QR</button><button class="btn" data-act="hub-restore">Khôi phục bằng Face ID</button></div>
+    <details class="wpkeep" style="margin-top:10px"><summary>Hoặc dán mã</summary><div class="paste-box"><textarea class="inp" id="login-in" rows="2" placeholder="Dán mã GAH1… hoặc GAV1…"></textarea><button type="button" class="btn sm gold" data-act="login-go">Đăng nhập</button></div></details></div>`;
+}
+/* BR-26.1: HLV lấy và chia sẻ thẻ QR từng học viên; học viên chưa có thẻ thì bấm để tạo */
+function hlvStudentsHtml() {
+  const linked = new Set(Object.values((state.settings.sync || {}).map || {}));
+  const rows = studentsOf().map(p => `<button type="button" class="grow" data-act="hub-card-show" data-id="${p.id}"><span class="gi">${ICON.users}</span><span class="gt"><b>${esc(p.name)}</b><span>${linked.has(p.id) ? 'Thẻ QR · chạm để xem và chia sẻ' : 'Chưa có thẻ QR · chạm để tạo'}</span></span>${ICON.chevR}</button>`).join('');
+  return `<div class="gh">Học viên</div><div class="card grp">${rows || '<div class="empty">Chưa có học viên nào trên máy này.</div>'}</div>`;
+}
 function hubCardHtml() {
   if (hubRole() === 'hv') {
     const sy = state.settings.sync, sent = (state.sync && state.sync.sent) || {};
@@ -4413,8 +4421,6 @@ function hubCardHtml() {
     return hubConflictHtml() + `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã nối với HLV ${esc(sy.ten || '')}. ${stLine}</p>
     <div class="row"><button class="btn gold" data-act="hub-pk-add">Bật khôi phục bằng Face ID</button><button class="btn" data-act="hub-restore-manual">Khôi phục từ máy chủ</button>${state.sync && state.sync.undo ? '<button class="btn" data-act="hub-restore-undo">Hoàn tác khôi phục</button>' : ''}${state.sync && state.sync.prevDays ? '<button class="btn" data-act="hub-plan-undo">Hoàn tác giáo án</button>' : ''}<button class="btn ghost" data-act="hub-unlink">Ngắt kết nối trên máy này</button></div></div>`;
   }
-  if (!hubOn()) return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>HLV: quét mã QR HLV để đăng ký (chỉ làm một lần). Học viên: quét thẻ học viên của HLV.</p>
-    <div class="row"><button class="btn gold" data-act="hub-reg">Quét mã QR</button><button class="btn" data-act="hub-restore">Khôi phục bằng Face ID</button></div></div>`;
   return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã đăng ký làm HLV. Thêm học viên bằng thẻ QR; thẻ dùng được lâu dài.</p>
     <div class="row"><button class="btn gold" data-act="hub-add">Thêm học viên</button><button class="btn" data-act="hub-self-open">Hồ sơ HLV</button><button class="btn" data-act="hub-migrate">Chuyển học viên có sẵn</button><button class="btn" data-act="hub-reg">Quét mã</button><button class="btn ghost" data-act="hub-unlink">Ngắt đăng ký trên máy này</button></div></div>`;
 }
@@ -4525,9 +4531,34 @@ async function hubMigrateGo() {
   if (cards.length) hubCardsSheet(cards);
 }
 function hubCardsSheet(cards) {
+  ui.hubCards = cards;
   openSheet(`<h3 class="sh-title">Thẻ QR của học viên</h3><p class="sh-text">Cho từng học viên quét thẻ của mình bằng app. Thẻ dùng được lâu dài, nên hãy cất giữ cẩn thận.</p>
-    ${cards.map((c, n) => `<div class="eyebrow" style="margin:12px 0 6px">${esc(c.name)}</div><textarea class="inp" id="hub-code-${n}" rows="2" readonly style="font-family:ui-monospace,Menlo,monospace;font-size:11px">${esc(c.code)}</textarea><div class="sh-actions"><button class="btn" data-act="copy" data-t="hub-code-${n}">Sao chép mã</button></div>`).join('')}
+    ${cards.map((c, n) => `<div class="eyebrow" style="margin:12px 0 6px">${esc(c.name)}</div><div class="hqr"><img id="hub-qr-${n}" alt="Thẻ QR của ${esc(c.name)}" src="${qrDataUrl(c.code)}"></div><textarea class="inp" id="hub-code-${n}" rows="2" readonly style="font-family:ui-monospace,Menlo,monospace;font-size:11px">${esc(c.code)}</textarea><div class="sh-actions"><button class="btn gold" data-act="hub-share-img" data-n="${n}">Chia sẻ ảnh QR</button><button class="btn" data-act="hub-share-code" data-n="${n}">Chia sẻ mã</button><button class="btn" data-act="copy" data-t="hub-code-${n}">Sao chép mã</button></div>`).join('')}
     <div class="sh-actions"><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`);
+}
+/* ảnh QR của thẻ: vẽ bằng thư viện qrcode đã nhúng, không cần máy chủ */
+function qrDataUrl(text) { const q = qrcode(0, 'M'); q.addData(text); q.make(); return q.createDataURL(8, 4); }
+function qrPngBlob(text) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => { const cv = document.createElement('canvas'); cv.width = img.naturalWidth; cv.height = img.naturalHeight; cv.getContext('2d').drawImage(img, 0, 0); cv.toBlob(b => b ? res(b) : rej(new Error('png')), 'image/png'); };
+    img.onerror = rej; img.src = qrDataUrl(text);
+  });
+}
+async function shareOrCancel(data) { try { await navigator.share(data); } catch (e) { if (e && e.name !== 'AbortError') toast('Không chia sẻ được'); } }
+/* chia sẻ ảnh QR qua bảng chia sẻ của máy; máy không chia sẻ được file thì tải ảnh về */
+async function hubShareImg(n) {
+  const c = (ui.hubCards || [])[n]; if (!c) return;
+  const file = new File([await qrPngBlob(c.code)], `QR-${slugName(c.name)}.png`, { type: 'image/png' });
+  if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) { await shareOrCancel({ title: `Thẻ QR · ${c.name}`, files: [file] }); return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000); toast('Đã tải ảnh QR');
+}
+/* chia sẻ mã GAV1 dạng chữ; máy không có bảng chia sẻ thì chép mã vào bộ nhớ tạm */
+async function hubShareCode(n) {
+  const c = (ui.hubCards || [])[n]; if (!c) return;
+  if (navigator.share) { await shareOrCancel({ title: `Thẻ QR · ${c.name}`, text: c.code }); return; }
+  try { await navigator.clipboard.writeText(c.code); toast('Đã sao chép mã'); } catch (e) { toast('Không sao chép được mã'); }
 }
 /* PA-34.3: mỗi học viên trên máy chủ có một hồ sơ trên máy HLV; settings.sync.map = { mã học viên: mã hồ sơ } */
 async function hubLinkProfile(hvId, ten) {
@@ -4961,6 +4992,9 @@ const handlers = {
   'hub-self-pick': t => hubSelfPick(t.dataset.id),
   'hub-self-go': () => { if (ui.hubSelfGo) ui.hubSelfGo(); },
   'hub-self-auth': () => { closeSheet(); qrScanSheet('hub'); toast('Quét mã QR HLV để xác nhận'); },
+  'login-go': async () => { const el = $('#login-in'); if (!el || !el.value.trim()) { toast('Dán mã vào ô chữ trước'); return; } await handleCodeText(el.value); },
+  'hub-share-img': t => hubShareImg(+t.dataset.n),
+  'hub-share-code': t => hubShareCode(+t.dataset.n),
   'hub-card-show': async t => {
     const sy = state.settings.sync || {}, hvId = Object.keys(sy.map || {}).find(k => sy.map[k] === t.dataset.id);
     const p = profiles.list.find(x => x.id === t.dataset.id);

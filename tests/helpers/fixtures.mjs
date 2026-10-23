@@ -51,7 +51,7 @@ class App {
     if (name === 'today') { const active = await this.page.evaluate(() => !!window.__sota.state.active); await nav(active ? 'today' : 'home'); return; }
     await nav(name);
   }
-  /* mở một trang con trong Tài khoản: drive · pack · pace · form · height · notif · skin · install · wipe */
+  /* mở một trang con trong Tài khoản: pack · pace · form · height · notif · skin · install · wipe */
   async more(key) {
     await this.tab('more');
     await this.page.locator(`[data-act="more-sec"][data-k="${key}"]`).first().click();
