@@ -360,3 +360,30 @@ test('BR-24.24 · máy HLV trống đăng nhập bằng QR HLV: tự có hồ s�
   expect((await hub.req('/s/tv', 'GET', null, hub.auth)).j.hv.filter(x => x.kieu === 'hv')).toHaveLength(1);
   expect(Object.values((await fresh.state()).settings.sync.map)).toEqual([pid]);
 });
+
+// BR-24.25 · PA-43: máy chủ không còn công nhận máy học viên → báo lỗi hỗ trợ, nối lại không mất dữ liệu
+test('BR-24.25 · máy chủ từ chối máy học viên (thẻ bị thu hồi/máy chủ làm mới) → thẻ đồng bộ báo lỗi và có nút nối lại, không nói “sẽ thử lại tự động”', async ({ app, hub, device }) => {
+  const { hv, i } = await lanTrains(app, hub, device);
+  const x = await hub.req('/s/tv/xoa', 'POST', { id: i }, hub.auth); expect(x.s).toBe(200);
+  await hv.page.evaluate(() => window.dispatchEvent(new Event('online')));
+  await expect(hv.view()).toContainText('không còn công nhận máy này', { timeout: 15000 });
+  await expect(hv.view()).toContainText('Dữ liệu trên máy vẫn còn nguyên');
+  await expect(hv.view()).toContainText('Nhắn HLV');
+  await expect(hv.view()).not.toContainText('Sẽ thử lại tự động');
+  await expect(hv.page.locator('[data-act="hub-reg"]')).toBeVisible();
+  expect((await hv.state()).sessions.length).toBe(1);   // không mất gì trên máy
+});
+
+test('BR-24.25 · nối lại bằng thẻ mới: báo lỗi mất, dữ liệu trên máy giữ nguyên, buổi cũ gửi lại cho máy chủ', async ({ app, hub, device }) => {
+  const { hv, i, done } = await lanTrains(app, hub, device);
+  await hub.req('/s/tv/xoa', 'POST', { id: i }, hub.auth);
+  await hv.page.evaluate(() => window.dispatchEvent(new Event('online')));
+  await expect(hv.view()).toContainText('không còn công nhận máy này', { timeout: 15000 });
+  const card = await makeCard(hub, 'lan-moi1', 'Lan');
+  await fakeCamera(hv.page, card.code); await hv.click('hub-reg');
+  await expect(hv.toast()).toContainText('Đã nối với HLV · Lan');
+  await expect(hv.view()).not.toContainText('không còn công nhận máy này');
+  const { i: j, dk } = (await hv.state()).settings.sync; expect(j).toBe('lan-moi1');
+  await expect.poll(async () => (await hub.req(`/s/doi?hv=${j}&since=0`, 'GET', null, `Bearer v.${j}.${dk}`)).j.recs.filter(r => r.k.startsWith('buoi:')).map(r => r.id), { timeout: 15000 }).toEqual([done.id]);
+  expect((await hv.state()).sessions.map(s => s.id)).toEqual([done.id]);
+});
