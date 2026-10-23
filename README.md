@@ -18,7 +18,7 @@ Bộ thứ hai (hồi quy theo PA, gồm máy chủ đồng bộ và thông báo
 
 ### Quy tắc cho AI: test Playwright
 
-- AI chỉ **viết hoặc chạy** test Playwright (`tests/app/*.spec.mjs`, `tests/test_*.py`, `npm run test:app`, `bash tests/chay.sh`) khi đang chạy trên **môi trường local** (máy của chủ repo) hoặc **remote** (máy chủ riêng do chủ repo quản lý).
-- Trong **phiên cloud** (container tạm của claude.ai/code), AI **không viết và không chạy** test Playwright, vì chậm và nặng. Thay vào đó, AI nói rõ trong báo cáo rằng phần Playwright chưa chạy, và để chủ repo chạy trên local hoặc remote.
-- Quy tắc này chỉ áp dụng cho Playwright. Các kiểm tra nhẹ như `npm run check` và `npm run test:sw` vẫn chạy được trên cloud.
+- AI chỉ **viết hoặc chạy** test Playwright (`tests/app/*.spec.mjs`, `tests/test_*.py`, `npm run test:app`, `bash tests/chay.sh`) khi phiên đang chạy trên **môi trường local** (máy của chủ repo) hoặc **remote** (phiên chạy trên máy chủ, có thể tương tác qua điện thoại).
+- Trong **môi trường cloud** (container tạm của claude.ai/code), AI **không viết và không chạy** test Playwright, dù yêu cầu có nói gì. Báo cáo ghi rõ phần này chưa làm, để chủ repo làm trên local hoặc remote.
+- Quy tắc chỉ áp dụng cho Playwright. Các kiểm tra nhẹ như `npm run check` và `npm run test:sw` vẫn chạy được trên cloud.
 - Khi một yêu cầu cần test Playwright mà phiên đang ở cloud, AI ghi rõ điều đó ở đầu báo cáo, không tự thêm file test nào.
