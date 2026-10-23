@@ -199,7 +199,7 @@ test('PA-29 (VD-06): BMI từ chiều cao và cân nặng gần nhất; thiếu 
   await expect(app.view().locator('.bmi')).toContainText('Nhập cân nặng');
 });
 
-test('PA-29 (VD-12) · PA-40: chữ ảnh body chỉ nói ảnh lưu trên máy này (không còn đẩy lên tài khoản Claude)', async ({ app }) => {
+test('PA-29 (VD-12) · PA-41: chữ ảnh body chỉ nói ảnh lưu trên máy này (không còn đẩy lên tài khoản Claude)', async ({ app }) => {
   await app.goto();
   await app.tab('photos');
   const t0 = await app.view().textContent();

@@ -1,4 +1,4 @@
-// BR-18 (đã gỡ, PA-40): app chạy trong claude.ai không còn đồng bộ với tài khoản Claude; mọi dữ liệu chỉ nằm trên máy.
+// BR-18 (đã gỡ, PA-41): app chạy trong claude.ai không còn đồng bộ với tài khoản Claude; mọi dữ liệu chỉ nằm trên máy.
 import { test, expect } from '../helpers/fixtures.mjs';
 import { installCloud, cloudState } from '../helpers/cloud.mjs';
 import { state, basicPlan, session, addDays, TODAY, PHOTO } from '../helpers/data.mjs';
@@ -15,10 +15,10 @@ test('BR-18 · đã gỡ: trong claude.ai, lưu buổi tập và ảnh không gh
   expect((await cloudState(page)).log).toEqual([]);
 });
 
-test('BR-18 · đã gỡ: trang Tài khoản không có thẻ đồng bộ tài khoản Claude', async ({ app, page }) => {
+test('BR-18 · đã gỡ: trang Tài khoản không có trạng thái tài khoản Claude', async ({ app, page }) => {
   await installCloud(page);
   await app.seed({ state: state({ updatedAt: 5 }) });
   await app.tab('more');
-  await expect(app.view().locator('#sync')).toHaveCount(0);
+  await expect(app.view().locator('#sync h3')).toHaveText('Lưu trên máy này');   /* chỉ tiêu đề, không có trạng thái tài khoản (BR-27.8) */
   await expect(app.view()).not.toContainText('tài khoản Claude');
 });

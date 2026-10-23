@@ -134,12 +134,15 @@ async function ghi(ctx, q, auth) {
     const k = String(r.k || ''), id = String(r.id || ''), t = Number(r.t), d = String(r.d ?? '');
     if (!id || id.length > 80 || !Number.isFinite(t)) return fail(400, 'Bản ghi không hợp lệ');
     if ((k === 'plan@hlv' && !H) || (k === 'plan@hv' && H)) return fail(403, 'Bản ghi này thuộc phía khác');
-    if (!(k === 'plan@hlv' || k === 'plan@hv' || k === 'buoi:' + id)) return fail(400, 'Loại bản ghi không hợp lệ');
+    if (k === 'dau@hv' && (H || id !== 'dau')) return fail(403, 'Bản ghi này thuộc phía khác');   /* PA-40: học viên báo cơ còn đau, HLV chỉ đọc */
+    if (!(k === 'plan@hlv' || k === 'plan@hv' || k === 'dau@hv' || k === 'buoi:' + id)) return fail(400, 'Loại bản ghi không hợp lệ');
     if (d.length > (k.startsWith('plan@') ? MAX_PLAN : MAX_BUOI)) return fail(413, 'Bản ghi quá lớn');
     rows.push({ k, id, t, d, xoa: r.xoa ? 1 : 0 });
   }
 
   const role = H ? 'hlv' : 'hv', tuChoi = [], acc = [];
+  /* báo đau cơ chỉ giữ 24 giờ (BR-27.12): bản quá hạn bị xoá khi có bản mới */
+  if (rows.some(r => r.k === 'dau@hv')) sql.exec("DELETE FROM rec WHERE k = 'dau@hv' AND t < ?", Date.now() - 24 * 3600e3);
   for (const r of rows) {
     const cur = one(sql, 'SELECT k, id, t, d, xoa, vai FROM rec WHERE hv = ? AND k = ? AND id = ?', hv, r.k, r.id);
     if (cur && cur.t > r.t) { tuChoi.push({ k: r.k, id: r.id, cu: cur }); continue; }     // bản cũ hơn: trả bản hiện có để gộp

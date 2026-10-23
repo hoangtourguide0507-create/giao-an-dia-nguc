@@ -20,7 +20,7 @@ flowchart LR
   PUSH -->|Web Push| SW
 ```
 
-- **Không có backend của nhà phát triển.** Toàn bộ logic app chạy trên trình duyệt; dữ liệu ở IndexedDB của máy. Một máy chủ nhỏ **do HLV tự triển khai trên tài khoản Cloudflare của mình** (không bắt buộc): `push-server/` (đồng bộ HLV ⇄ học viên và thông báo đẩy, §7.6–§7.8). Không còn đồng bộ tài khoản Claude (đã bỏ, PA-40; §6, §10).
+- **Không có backend của nhà phát triển.** Toàn bộ logic app chạy trên trình duyệt; dữ liệu ở IndexedDB của máy. Một máy chủ nhỏ **do HLV tự triển khai trên tài khoản Cloudflare của mình** (không bắt buộc): `push-server/` (đồng bộ HLV ⇄ học viên và thông báo đẩy, §7.6–§7.8). Không còn đồng bộ tài khoản Claude (đã bỏ, PA-41; §6, §10).
 - **Phân phối**: GitHub Pages dựng từ `main` / `(root)`; tên miền riêng qua `CNAME`. Bản xem thử một nhánh: `https://raw.githack.com/hoangtourguide0507-create/giao-an-dia-nguc/<nhánh>/index.html`.
 - **Không có bước build.** Sửa `index.html` là phát hành; tăng `CACHE` trong `sw.js` để máy người dùng nhận bản mới.
 
@@ -81,7 +81,7 @@ Script chính là một IIFE, chia thành các khối (tiêu đề `/* ---------
 | | `exdbPack` | `{ n, at }` — đã tải thư viện hình |
 | | `drvUp:<link máy chủ>` | Danh sách mã băm ảnh đã đẩy lên Drive (≤ 3.000) |
 | | `pushRegH` | Băm lần đăng ký thông báo gần nhất (tránh đăng ký lặp) |
-| | ~~`syncUndo`~~, `undo`, `prevDays` | Đã bỏ (PA-40), dọn khi khởi động |
+| | ~~`syncUndo`~~, `undo`, `prevDays` | Đã bỏ (PA-41), dọn khi khởi động |
 | IndexedDB store `photos` | `<uid>` | Ảnh máy tập / ảnh body: data URL JPEG nén |
 | | `exdb:<gid>:<0\|1>` | Hình minh hoạ (JPEG nén từ GitHub, hoặc WebP từ gói offline) |
 | | `vid:<uid>` | Video của tôi (Blob). Dọn bằng `vidIdsOf` khi xoá hồ sơ/ngày/bài; "Xoá toàn bộ dữ liệu" xoá mọi khoá trừ `exdb:*` (PA-28) |
@@ -177,7 +177,7 @@ stateDiagram-v2
 
 ## 6. Lưu trữ (chỉ trên máy)
 
-Đồng bộ tài khoản Claude (`Cloud`, `reconcile`, `connectCloud`, `syncCardHtml`) đã gỡ hoàn toàn (PA-40, BR-18 đã bỏ). Dữ liệu và ảnh chỉ nằm trong IndexedDB của máy; `DB` đã thay bằng `LDB`.
+Đồng bộ tài khoản Claude (`Cloud`, `reconcile`, `connectCloud`, `syncCardHtml`) đã gỡ hoàn toàn (PA-41, BR-18 đã bỏ). Dữ liệu và ảnh chỉ nằm trong IndexedDB của máy; `DB` đã thay bằng `LDB`.
 
 - `save()` đặt `updatedAt`, ghi IndexedDB sau 300 ms (`flush`). Trang ẩn/`pagehide` → ghi ngay.
 - Đồng bộ với máy chủ Cloudflare `push-server/` (§7.8) chạy tự động qua `hubSync()` (BR-24.21): khi nối máy/đăng ký, khi mở app, khi có mạng, mỗi 20 giây khi app hiện; `save()` gọi `hubFlushSoon`/`hubPlanSoon` khi dữ liệu đổi.
@@ -227,9 +227,9 @@ Máy chủ Apps Script (`drive/Code.gs`), liên kết `GAL1`, tài khoản tên 
 - **PA-34.2**: `hubRole()` = `hlv` (có `settings.sync.hk`) hoặc `hv` (có `settings.sync.dk`, `i`, `ten`). Học viên quét `GAV1` → `hubPair` gọi `POST /s/noi` và lưu `settings.sync`. `hubCall` dùng `Bearer v.<mã>.<khoá máy>` cho học viên.
 - **PA-34.3** (máy HLV): `hubLinkProfile(mã, tên)` tạo hồ sơ cho học viên và ghi `settings.sync.map[mã] = mã hồ sơ`. `hubPull` gọi `GET /s/doi?since=<seq>` (chỉ HV, không `sl:`), đọc `buoi:` có `hv` trong `map`, rồi `hubApplySession` ghi buổi vào hồ sơ (bản mới hơn theo `hubRev`). Hồ sơ đang mở ghi qua `state`, các hồ sơ khác qua `LDB`. `settings.sync.seq` là số thứ tự đã kéo. Kéo khi mở app, khi có mạng, khi quay lại app, và mỗi 20 giây khi app hiện. Buổi nhận về được làm sạch bằng `cleanPkg` trước khi ghi. **Chưa làm**: thông báo đẩy cho HLV (bước 3b).
 - **PA-34.4** (khôi phục): `hubJoin(máy chủ, mã, khoá máy, tên)` lưu `settings.sync` rồi `hubRestoreSelf` kéo `GET /s/doi?hv=<mã>` và ghi các buổi vào hồ sơ đang mở (đánh dấu đã gửi). Thẻ học viên và passkey đều đi qua `hubJoin`. Passkey: `hubPasskeyAdd` (`navigator.credentials.create`, `rp.id = location.hostname`, gửi `/s/pk/dky`) và `hubPasskeyRestore` (`credentials.get` không cần `allowCredentials`, gửi `/s/pk/vao`). Máy trống dùng `pushBase()` làm địa chỉ máy chủ (cài đặt máy chủ thông báo, mặc định `PUSH_SERVER`).
-- **PA-34.5** (chuyển và giáo án): `hubPushPlans` gửi `plan@hlv` khi giáo án đổi (`serPlan`, `strHash` để bỏ qua khi không đổi, lưu `settings.sync.planH`). Máy học viên nhận bằng `hubApplyPlan` → `cleanPkg` → `syncMerge` (`settings.sync.planT` là thời điểm bản đã nhận). Máy HLV gửi giáo án khi `save()` (debounce 1,5 s) và khi mở app. *Chuyển học viên có sẵn* (`hubMigrateSheet`/`hubMigrateGo`) đã bỏ (PA-40); thẻ do `hubEnsure` tự cấp.
+- **PA-34.5** (chuyển và giáo án): `hubPushPlans` gửi `plan@hlv` khi giáo án đổi (`serPlan`, `strHash` để bỏ qua khi không đổi, lưu `settings.sync.planH`). Máy học viên nhận bằng `hubApplyPlan` → `cleanPkg` → `syncMerge` (`settings.sync.planT` là thời điểm bản đã nhận). Máy HLV gửi giáo án khi `save()` (debounce 1,5 s) và khi mở app. *Chuyển học viên có sẵn* (`hubMigrateSheet`/`hubMigrateGo`) đã bỏ (PA-41); thẻ do `hubEnsure` tự cấp.
 - **Xung đột (PA-35)**: giáo án được so bằng `planKey` (bỏ `currentKg`, `kgSetAt`). Ba phía: `state.sync.planBase` (bản đã thống nhất), máy này, bản HLV (`plan@hlv`). Trong `hubApplyPlan`: bằng nhau → chỉ ghi nhận; máy trống, hoặc máy chưa đổi so với `planBase` → `applyRemotePlan` (gộp như Drive, lưu `prevDays`); còn lại → `state.sync.conflict = {plan, t}` và hiện `hubConflictHtml` (bảng `planCompare`). Chọn HLV → `applyRemotePlan`; chọn máy này → `planBase = planKey(giáo án máy)`. Buổi tập: không hỏi, quy tắc ở BR-24.18.
-- **PA-34.6**: `hubFlush` gửi buổi (`buoi:<mã>`, `d` = JSON buổi), buổi đã xoá (`xoa:1`, từ `syncDel.s`, đánh dấu trong `state.sync.gone`); `ev` chỉ khi có buổi mới sau `settings.sync.at` (thời điểm nối máy), `backfill` khi không có buổi mới. `hubApplySession` xoá buổi khi bản xoá không cũ hơn bản đã sửa. Thông báo: `/s/dk` (`hubSubscribe`, `off` khi tắt công tắc). Khôi phục thủ công (`hubRestoreManual`) đã bỏ (PA-40). Đồng bộ định kỳ mỗi 20 giây khi app hiện qua `hubSync`.
+- **PA-34.6**: `hubFlush` gửi buổi (`buoi:<mã>`, `d` = JSON buổi), buổi đã xoá (`xoa:1`, từ `syncDel.s`, đánh dấu trong `state.sync.gone`); `ev` chỉ khi có buổi mới sau `settings.sync.at` (thời điểm nối máy), `backfill` khi không có buổi mới. `hubApplySession` xoá buổi khi bản xoá không cũ hơn bản đã sửa. Thông báo: `/s/dk` (`hubSubscribe`, `off` khi tắt công tắc). Khôi phục thủ công (`hubRestoreManual`) đã bỏ (PA-41). Đồng bộ định kỳ mỗi 20 giây khi app hiện qua `hubSync`.
 - **Hồ sơ HLV (BR-24.20)**: `settings.sync.self` = mã hồ sơ tự tập (không có thẻ); `hlvSelf()` trả về nó, mặc định là hồ sơ tên “Tôi”. `hubSelfPick` thu hồi thẻ của hồ sơ được chọn (`/s/tv/xoa`), xoá mục trong `settings.sync.map`, rồi `hubEnsureSoon`. Có dữ liệu → `ui.hubAuthNext` chờ mã QR HLV; `hubRegister` so khoá với `settings.sync.hk` trước khi chạy thao tác.
 - **Chưa làm (PA-34)**: học viên chưa tải trước dữ liệu bằng service worker khi nhận thông báo (dữ liệu được kéo khi mở app); kiểm trên iPhone thật.
 - Chưa làm trong 34.5: gửi `backfill` (để lịch sử không báo khi có thông báo đẩy, bước 3b); xem trước khác biệt giáo án khi nối lần đầu (hiện áp dụng luôn, có nút hoàn tác).
@@ -241,7 +241,7 @@ Máy chủ Apps Script (`drive/Code.gs`), liên kết `GAL1`, tài khoản tên 
 > **ĐÃ BỎ (PA-36, 23/10/2026)**: file sao lưu và khôi phục đã gỡ (PA-36). Không còn định dạng file `so-ta`/`gadn-sync` nào được đọc. Mục này giữ lại để tra cứu dữ liệu cũ.
 
 ### 3.4 Dọn dữ liệu rác (PA-37)
-`purgeJunk(st)` và `purgeStored()` (khởi động) xoá khoá của tính năng đã gỡ: `drv`, `coachLink`, `syncMark` trong hồ sơ; `acc`, `drvUrl`, `drvKey`, `drvSv`, `nDrive`, `lastBackupAt`, `lastBackupSess`, `backupSkipAt`, `shareNoAsk`, `alertV17`, `alertMethod`, `ntfyTopic`, `restAlert`, `shortcutName`, `remindTime`, `remindBefore`, `schedule` trong cài đặt; `uid` trong danh sách hồ sơ; khoá IndexedDB `drvUp:*` và `syncUndo`; trong hồ sơ `sync.undo` và `sync.prevDays` (PA-40, hoàn tác đã bỏ). Dữ liệu buổi tập, giáo án, số đo, ảnh không bị động đến.
+`purgeJunk(st)` và `purgeStored()` (khởi động) xoá khoá của tính năng đã gỡ: `drv`, `coachLink`, `syncMark` trong hồ sơ; `acc`, `drvUrl`, `drvKey`, `drvSv`, `nDrive`, `lastBackupAt`, `lastBackupSess`, `backupSkipAt`, `shareNoAsk`, `alertV17`, `alertMethod`, `ntfyTopic`, `restAlert`, `shortcutName`, `remindTime`, `remindBefore`, `schedule` trong cài đặt; `uid` trong danh sách hồ sơ; khoá IndexedDB `drvUp:*` và `syncUndo`; trong hồ sơ `sync.undo` và `sync.prevDays` (PA-41, hoàn tác đã bỏ). Dữ liệu buổi tập, giáo án, số đo, ảnh không bị động đến.
 
 ## 9. Offline & tài nguyên ngoài
 - `sw.js` (`CACHE = 'gadn-v53'`): `install` thêm `SHELL` (bỏ qua file lỗi) + `skipWaiting`; `activate` xoá cache khác tên + `clients.claim`; `fetch`: GET cùng nguồn — bỏ qua `.bin`; điều hướng = network-first, lưu `./index.html`, lỗi mạng trả bản lưu; còn lại cache-first rồi lưu. Font Google: trả bản lưu ngay + làm mới ngầm. `notificationclick`, `push` (hiện thông báo từ máy chủ thông báo). Service worker chỉ đăng ký khi `https:` và `<html data-pwa="1">`.
@@ -250,7 +250,7 @@ Máy chủ Apps Script (`drive/Code.gs`), liên kết `GAL1`, tài khoản tên 
 - Video YouTube: chỉ mở trang tìm kiếm (`<tên tiếng Anh> exercise proper form`), không nhúng.
 
 ## 10. Chạy trong claude.ai
-Không còn nhánh riêng cho claude.ai (PA-40): `inArtifact`, `Cloud` và thông báo "chỉ có trên app" đã gỡ. Mọi nơi chạy app đều lưu trên máy và đồng bộ qua máy chủ của HLV (§7.8). Xem BR-18 (đã bỏ).
+Không còn nhánh riêng cho claude.ai (PA-41): `inArtifact`, `Cloud` và thông báo "chỉ có trên app" đã gỡ. Mọi nơi chạy app đều lưu trên máy và đồng bộ qua máy chủ của HLV (§7.8). Xem BR-18 (đã bỏ).
 
 ## 11. Bảo mật & riêng tư
 - Chèn HTML luôn qua `esc()`; link video riêng chỉ mở khi bắt đầu `http(s)://`; `rel="noopener"`.
@@ -273,7 +273,7 @@ tests/
                      flushed); fixture gas (máy chủ Drive thật, §12.3) và device (thêm máy thứ hai/ba có dữ liệu riêng)
     data.mjs       – dựng dữ liệu mẫu đúng định dạng app (ex, day, session, state, basicPlan, jpegWithExif…)
     calc.mjs       – chạy hàm thuần của app (window.__sota) trên trạng thái dựng sẵn
-    cloud.mjs      – giả lập window.claude (db/user/downloads) lưu trong sessionStorage, dùng để kiểm tra app không ghi gì lên tài khoản (PA-40)
+    cloud.mjs      – giả lập window.claude (db/user/downloads) lưu trong sessionStorage, dùng để kiểm tra app không ghi gì lên tài khoản (PA-41)
     notify.mjs     – giả lập Notification, PushManager, service worker và máy chủ thông báo
   app/*.spec.mjs   – 21 file theo BR (dòng đầu mỗi file ghi mã BR)
   sw/sw.test.mjs   – test sw.js bằng node:test trong vm với self/caches/fetch giả
@@ -318,7 +318,7 @@ Các file `tests/test_<pa>.py` (`pa10 pa11 pa14 pa20 pa22`) cộng `tests/test_p
 | BR-15 Sao lưu | `backup.spec.mjs` |
 | BR-16 Hướng dẫn | `guide.spec.mjs` |
 | BR-17 Báo cáo tháng (đã bỏ) | — |
-| BR-18 (đã bỏ, PA-40) | `cloud.spec.mjs` (kiểm tra đã gỡ) |
+| BR-18 (đã bỏ, PA-41) | `cloud.spec.mjs` (kiểm tra đã gỡ) |
 | BR-19 Offline | `tests/sw/sw.test.mjs` |
 | BR-20 Dữ liệu cũ | `misc.spec.mjs` |
 | BR-21 Tài khoản đăng nhập | `account.spec.mjs`, `drive.spec.mjs` |
@@ -327,6 +327,20 @@ Các file `tests/test_<pa>.py` (`pa10 pa11 pa14 pa20 pa22`) cộng `tests/test_p
 
 ## 13. Chia sẻ kết quả buổi tập với PT (PA-32)
 > **ĐÃ BỎ (PA-36, 23/10/2026)**: đã gỡ (PA-36), thay bằng đồng bộ tự động qua máy chủ (§7.7–§7.8).
+
+## 13b. PA-40 (23/10/2026) — popup, đồng bộ theo ngày, lịch tập, báo cơ chưa phục hồi
+Bản đồ BR: BR-27.1–27.12 trong [BR.md](BR.md).
+
+- **Popup (BR-27.1–27.3).** `openSheet` thêm nút `.sheet-x` (`data-act="sheet-x"` → `closeSheet`); alarm có `.sheet-x` (`alarm-x` → `alarm-ok`). Lịch sử: `pushPop()` khi mở popup mới (sheet, trình xem ảnh), `popDone()` khi đóng bằng nút. Vì `history.back()` là bất đồng bộ, `popSkip` đếm các lần quay lại do app gọi, `popWant` giữ các lần mở popup xảy ra trong lúc đó để đẩy mục lịch sử sau (tránh chồng lệnh làm rơi về trang trước). Sự kiện `popstate`: còn `popSkip` thì bỏ qua; còn popup thì đóng popup trên cùng; không thì `ui.tab = 'home'`. Kéo xuống: `touchstart/touchmove/touchend` ở mức document, chỉ khi bắt đầu trong 90 px đầu hoặc trên `.grab/.sh-title/.vtop`; đóng khi kéo ≥ 90 px. Không kích hoạt trong `input/textarea/select/.cmp/.chart`.
+- **Chữ (BR-27.4).** `body,body *{user-select:none; -webkit-touch-callout:none}`; `input,textarea,select,[contenteditable="true"]` giữ `text`. Test `popup.spec.mjs` khoá CSS và kiểm tra nhấn đúp không chọn được chữ tiêu đề.
+- **Bỏ khôi phục / ngắt kết nối (BR-27.5).** Xoá `hubRestoreManual`, `hubPasskeyAdd`, `hubPasskeyRestore`, `hubAnon` và các handler `hub-pk-add`, `hub-restore`, `hub-restore-manual`, `hub-restore-undo`, `hub-unlink`. Giữ `hubRestoreSelf` (kéo buổi khi nối máy mới — đây là đồng bộ tự động, không phải khôi phục thủ công). `state.sync.undo` không còn được ghi; dữ liệu cũ không bị xoá.
+- **Gộp giáo án theo ngày (BR-27.6, Q9).** `hubApplyPlan` làm sạch cả hai phía bằng `cleanPlanOf` (cùng `cleanPkg` như gói Drive), so từng ngày theo `planDayHash` (chỉ tham số bài: tên, nhóm cơ, vùng, kiểu, set, rep, nghỉ, tạ mục tiêu… — không tính mã bài `i`, `fs`, mức tạ hiện tại). Ba phía: `state.sync.planDays` (băm từng ngày đã thống nhất), máy này, HLV. Một bên đổi → nhận; cả hai đổi → vào `state.sync.conflict = { plan, t, days }`, giữ bản máy này tới khi chọn. `hub-conflict-day` (`data-n`, `data-v=remote|local`) thay đúng ngày rồi cập nhật `planDays[n]` = băm bản HLV. `planBase` (băm cả giáo án) vẫn được ghi khi hai bên bằng nhau; hàm so sánh tổng hợp cũ `planCompare` đã bỏ.
+- **Thư viện hình (BR-27.7).** `packHv()` (`hubRole()==='hv'`): `packCard` và dòng Tài khoản chỉ hiện `packStatus()`; `pack-load` bị chặn cho HV; `packBanner` và nút trong sheet hướng dẫn ẩn cho HV.
+- **Thẻ "Lưu trên máy này" (BR-27.8).** `hubSynced()` = `settings.sync.lastOk` có hoặc `planH` có khoá. Trạng thái `device` + đã gửi → tiêu đề *Đã đồng bộ với server*, lớp `ok`; `device` chưa gửi → chỉ tiêu đề. Các trạng thái khác giữ nguyên.
+- **Lịch tập (BR-27.9–27.10).** `.pday-h .pmeta` nowrap. `primReady(d,last)` tách khỏi `dayRd`; `dayReady` = mức hồi phục thấp nhất của nhóm cơ chính (1 nếu ngày không có nhóm cơ). `viewPlan` sắp `order` theo `dayReady` giảm dần, giữ thứ tự gốc khi bằng nhau; màu ngày theo chỉ số gốc, số thứ tự theo vị trí hiển thị.
+- **Báo cơ chưa phục hồi (BR-27.11–27.12).** Dữ liệu `state.musclePain = [{ m, at }]` (mặc định `[]` trong `loadState`). `painLive(p)` = `now - at < 24 giờ`; `musclePainOf(m)`. UI: `.mpain` trong ngày đang mở, nút `data-act="mpain"` (`data-m`). Gửi: `hubPainSoon()` → `hubPainPush()` gửi `/s/ghi` với một bản `{k:'dau@hv', id:'dau', vai:'hv', d: JSON danh sách còn hạn}` — tách khỏi gửi buổi để lỗi không chặn buổi tập. Nhận: `hubPull` của HLV gọi `hubApplyPain(pid, rec)` ghi vào hồ sơ học viên tương ứng (`sy.map[hv]`), lọc theo 24 giờ.
+- **Máy chủ `push-server/src/sync.js`.** Nhận `dau@hv` (chỉ HV, id `dau`; HLV bị 403). Mỗi lần ghi có `dau@hv` thì xoá bản `dau@hv` có `t` cũ hơn 24 giờ. **Phải triển khai Worker này trước** để báo cơ tới được HLV; app cũ gặp 400/403 chỉ bỏ qua bước báo đau.
+- **Phiên bản.** `CACHE` trong `sw.js`: `gadn-v72`.
 
 ## 14. Phát hành
 1. Làm trên nhánh `pa-<số>-<tên>`; `npm run check` + `npm test` xanh; tăng `CACHE` trong `sw.js`.
