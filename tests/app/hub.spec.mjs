@@ -305,10 +305,12 @@ test('Hồ sơ HLV · hồ sơ trống: chọn không cần xác nhận; thẻ c
   await app.click('hub-self-open');
   await app.page.locator('[data-act="hub-self-pick"][data-id="p2"]').click();
   await app.click('hub-self-go');
-  await expect.poll(async () => (await app.state()).settings.sync.self, { timeout: 5000 }).toBe('p2');
-  await expect.poll(async () => (await app.profiles()).list.map(p => p.id), { timeout: 8000 }).toEqual(['p2']);
+  /* BR-28.9: hồ sơ được chọn (Lan) nhận id sl:tu-tap; “Tôi” trống bị xoá */
+  await expect.poll(async () => (await app.profiles()).list.map(p => p.id), { timeout: 8000 }).toEqual(['sl:tu-tap']);
+  expect((await app.profiles()).list[0].name).toBe('Lan');
   const sy = (await app.state()).settings.sync;
-  expect(Object.values(sy.map || {})).not.toContain('p2');
+  expect(sy.self).toBeUndefined();
+  expect(Object.values(sy.map || {})).toEqual([]);
   expect((await hub.req('/s/tv', 'GET', null, hub.auth)).j.hv.filter(x => x.kieu === 'hv')).toHaveLength(0);
 });
 
@@ -323,14 +325,19 @@ test('Hồ sơ HLV · hồ sơ đang có dữ liệu: phải quét đúng mã QR
   await fakeCamera(app.page, 'GAH1.' + Buffer.from(JSON.stringify({ s: hub.url, k: 'khoa-sai-hoan-toan' })).toString('base64url'));
   await app.click('hub-self-auth');
   await expect(app.toast()).toContainText('không khớp');
-  expect((await app.state()).settings.sync.self).toBe('p1');   /* vẫn là hồ sơ HLV ban đầu (“Tôi”), mã sai không đổi */
+  /* hồ sơ HLV vẫn là “Tôi” (đã mang id sl:tu-tap), mã sai không đổi */
+  expect((await app.profiles()).list.map(p => [p.id, p.name])).toEqual([['sl:tu-tap', 'Tôi'], ['p2', 'Lan']]);
   await app.page.keyboard.press('Escape');   /* đóng khung quét còn mở */
   await app.tab('more');
   await app.click('hub-self-open');
   await app.page.locator('[data-act="hub-self-pick"][data-id="p2"]').click();
   await fakeCamera(app.page, hubQR(hub));
   await app.click('hub-self-auth');
-  await expect.poll(async () => (await app.state()).settings.sync.self, { timeout: 8000 }).toBe('p2');
+  await expect.poll(async () => (await app.profiles()).list.find(p => p.id === 'sl:tu-tap')?.name, { timeout: 8000 }).toBe('Lan');
+  /* “Tôi” có dữ liệu thành học viên với id thường */
+  const L = (await app.profiles()).list;
+  expect(L).toHaveLength(2);
+  expect(L.find(p => p.id !== 'sl:tu-tap').name).toBe('Tôi');
 });
 
 /* BR-24.24 (PA-42): máy HLV trống đăng nhập bằng QR HLV thì tự có học viên của HLV */
@@ -395,6 +402,14 @@ test('BR-24.25 · nối lại bằng thẻ mới: báo lỗi mất, dữ liệu 
 
 /* BR-28 · PA-44: hồ sơ tập của HLV có một bản duy nhất trên máy chủ (sl:tu-tap), đọc bằng khoá HLV */
 const selfRecs = async (hub, prefix = '') => (await hub.req('/s/doi?hv=sl:tu-tap&since=0', 'GET', null, hub.auth)).j.recs.filter(r => r.k.startsWith(prefix));
+/* đổi tên hồ sơ đang xem bằng giao diện: chạm tên → Đổi tên */
+async function renameActive(app, name) {
+  await app.tab('home');
+  await app.page.locator('.who').click();
+  await app.click('prof-rename');
+  await app.page.fill('#f-prename', name);
+  await app.click('prof-rename-go');
+}
 const hvRecords = async hub => (await hub.req('/s/tv', 'GET', null, hub.auth)).j.hv.filter(x => x.kieu === 'hv');
 
 test('BR-28.1 · HLV có buổi tập và giáo án trong hồ sơ tập → máy chủ nhận vào hồ sơ tập của HLV (sl:tu-tap)', async ({ app, hub }) => {
@@ -424,20 +439,63 @@ test('BR-28.1 · máy HLV thứ hai đăng nhập bằng cùng QR HLV: hồ sơ 
   expect(JSON.parse((await selfRecs(hub, 'plan@hlv'))[0].d).plan.map(x => x.n)).toEqual(P.days.map(x => x.name));
 });
 
-/* BR-28.8: cài lại app, hồ sơ mặc định đã đổi tên (không còn là “Tôi”) vẫn nhận sl:tu-tap làm hồ sơ HLV, không tạo hồ sơ mới */
-test('BR-28.8 · máy HLV mới (hồ sơ mặc định đổi tên) tải sl:tu-tap làm hồ sơ HLV, không tạo hồ sơ thêm', async ({ app, hub, device }) => {
+/* BR-28.10: cài lại app → hồ sơ mặc định đổi id thành sl:tu-tap và nhận dữ liệu từ máy chủ; “Tôi” không còn là hồ sơ riêng */
+test('BR-28.10 · máy HLV mới: hồ sơ mặc định thành sl:tu-tap, nhận tên, buổi tập, giáo án từ máy chủ, không tạo hồ sơ thêm', async ({ app, hub, device }) => {
   const P = basicPlan(), d = P.days[0];
   const done = session(d, TODAY, [[d.exercises[0], [[40, 8]]]]);
   await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] }, states: { p1: state({ days: P.days, sessions: [done] }) } });
   await registerHlv(app, hub);
   await expect.poll(async () => (await selfRecs(hub, 'buoi:')).map(r => r.id), { timeout: 15000 }).toEqual([done.id]);
+  await expect.poll(async () => (await app.profiles()).list.map(p => p.id), { timeout: 10000 }).toEqual(['sl:tu-tap']);
+  await renameActive(app, 'Hoàng Long');
+  await expect.poll(async () => (await selfRecs(hub, 'ten@hlv')).map(r => r.d), { timeout: 15000 }).toEqual(['Hoàng Long']);
   const b = await device();
-  await b.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0 }] }, states: { p1: state() } });
+  await b.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] }, states: { p1: state() } });
   await registerHlv(b, hub);
   await expect.poll(async () => (await b.state()).sessions.map(x => x.id), { timeout: 20000 }).toEqual([done.id]);
-  expect((await b.profiles()).list.map(p => p.id)).toEqual(['p1']);
-  expect((await b.state()).settings.sync.self).toBe('p1');
+  await expect.poll(async () => (await b.profiles()).list.map(p => [p.id, p.name]), { timeout: 10000 }).toEqual([['sl:tu-tap', 'Hoàng Long']]);
+  expect((await b.profiles()).active).toBe('sl:tu-tap');
+  expect((await b.state()).settings.sync.self).toBeUndefined();
   expect(await hvRecords(hub)).toHaveLength(0);
+});
+
+/* BR-28.10: máy chủ chưa có sl:tu-tap, máy chỉ có học viên có dữ liệu → tạo hồ sơ mới id sl:tu-tap */
+test('BR-28.10 · không có hồ sơ phù hợp (p1 đã có dữ liệu, không tên “Tôi”): tạo hồ sơ mới sl:tu-tap, p1 vẫn là học viên', async ({ app, hub }) => {
+  const P = basicPlan();
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'An', color: 0 }] }, states: { p1: state({ days: P.days, sessions: [session(P.chest, TODAY, [[P.bench, [[40, 10]]]])] }) } });
+  await registerHlv(app, hub);
+  await expect.poll(async () => (await app.profiles()).list.map(p => p.id).sort(), { timeout: 15000 }).toEqual(['p1', 'sl:tu-tap']);
+  await expect.poll(async () => (await hvRecords(hub)).map(x => x.ten), { timeout: 15000 }).toEqual(['An']);
+});
+
+/* BR-28.11: đổi tên hồ sơ HLV ở máy này thì máy HLV khác nhận theo */
+test('BR-28.11 · đổi tên hồ sơ HLV → cập nhật lên máy chủ và sang máy HLV thứ hai', async ({ app, hub, device }) => {
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] }, states: { p1: state() } });
+  await registerHlv(app, hub);
+  const b = await device();
+  await b.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] }, states: { p1: state() } });
+  await registerHlv(b, hub);
+  await expect.poll(async () => (await b.profiles()).list.map(p => p.id), { timeout: 10000 }).toEqual(['sl:tu-tap']);
+  await renameActive(app, 'Long Đổi');
+  await expect.poll(async () => (await selfRecs(hub, 'ten@hlv')).map(r => r.d), { timeout: 15000 }).toEqual(['Long Đổi']);
+  await expect.poll(async () => (await b.profiles()).list[0].name, { timeout: 30000 }).toBe('Long Đổi');
+});
+
+/* BR-28.12: máy HLV cũ (hồ sơ HLV theo sync.self, id thường) được đổi id thành sl:tu-tap, dữ liệu giữ nguyên */
+test('BR-28.12 · máy HLV cũ: hồ sơ HLV (sync.self = p2) đổi id thành sl:tu-tap, buổi tập và học viên giữ nguyên', async ({ app, hub }) => {
+  const P = basicPlan(), d = P.days[0];
+  const done = session(d, TODAY, [[d.exercises[0], [[40, 8]]]]);
+  const card = await makeCard(hub, 'lan-7k3f', 'Lan');
+  const sync = { s: hub.url, hk: hub.hk, self: 'p2', map: { 'lan-7k3f': 'p1' } };
+  await app.seed({ profiles: { active: 'p2', list: [{ id: 'p1', name: 'Lan', color: 1 }, { id: 'p2', name: 'Hoàng', color: 0 }] },
+    states: { p1: state(), p2: state({ days: P.days, sessions: [done], settings: { sync } }) } });
+  await expect.poll(async () => (await app.profiles()).list.map(p => p.id).sort(), { timeout: 15000 }).toEqual(['p1', 'sl:tu-tap']);
+  expect((await app.profiles()).active).toBe('sl:tu-tap');
+  expect((await app.state()).sessions.map(x => x.id)).toEqual([done.id]);
+  expect((await app.state()).settings.sync.self).toBeUndefined();
+  expect((await app.state()).settings.sync.map).toEqual({ 'lan-7k3f': 'p1' });
+  await expect.poll(async () => (await selfRecs(hub, 'buoi:')).map(r => r.id), { timeout: 15000 }).toEqual([done.id]);
+  void card;
 });
 
 /* BR-28.4 (PA-44): đổi hồ sơ HLV khi hồ sơ HLV cũ có dữ liệu → hồ sơ cũ thành học viên có thẻ, buổi tập của nó chuyển lên học viên mới;
@@ -455,8 +513,8 @@ test('BR-28.4 · đổi hồ sơ HLV có dữ liệu: buổi tập của hồ s�
   await expect(app.sheet()).toContainText('cần xác nhận bằng mã QR HLV');
   await fakeCamera(app.page, hubQR(hub));
   await app.click('hub-self-auth');
-  await expect.poll(async () => (await app.state()).settings.sync.self, { timeout: 8000 }).toBe('p2');
-  await expect.poll(async () => (await app.profiles()).active, { timeout: 8000 }).toBe('p2');
+  await expect.poll(async () => (await app.profiles()).list.find(p => p.id === 'sl:tu-tap')?.name, { timeout: 8000 }).toBe('Lan');   // Lan mang id sl:tu-tap
+  await expect.poll(async () => (await app.profiles()).active, { timeout: 8000 }).toBe('sl:tu-tap');
   /* hồ sơ HLV cũ “Tôi” thành học viên mới: có đúng buổi tập của nó trên máy chủ */
   await expect.poll(async () => {
     const hv = await hvRecords(hub); const toi = hv.find(x => x.ten === 'Tôi'); if (!toi) return null;
@@ -475,6 +533,6 @@ test('BR-28.5 · đổi hồ sơ HLV khi hồ sơ HLV cũ trống: hồ sơ cũ 
   await app.click('hub-self-open');
   await app.page.locator('[data-act="hub-self-pick"][data-id="p2"]').click();
   await app.click('hub-self-go');
-  await expect.poll(async () => (await app.profiles()).list.map(p => p.id), { timeout: 8000 }).toEqual(['p2']);
+  await expect.poll(async () => (await app.profiles()).list.map(p => p.id), { timeout: 8000 }).toEqual(['sl:tu-tap']);
   expect(await hvRecords(hub)).toHaveLength(0);
 });

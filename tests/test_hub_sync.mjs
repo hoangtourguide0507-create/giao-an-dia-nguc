@@ -148,6 +148,11 @@ ok(sent.length === 1 && sent[0].url === subLan.endpoint, 'HLV đổi giáo án �
 ok((await api('/s/tv/them', { id: 'hlv-tu-tap', ten: 'HLV', kieu: 'sl', skh: shaFull(kLan) }, H)).s === 200, 'Tạo hồ sơ sao lưu một chiều của HLV');
 const slRec = await api('/s/ghi', { hv: 'sl:hlv-tu-tap', recs: [buoi('t1', T)], ev: { title: 'x', body: 'y', tag: 't1' } }, H);
 ok(slRec.s === 200 && sent.length === 1, 'HLV tự tập: ghi được, và không có thông báo');
+// BR-28.11: tên hồ sơ tập của HLV (ten@hlv): chỉ HLV ghi, chỉ vào hồ sơ sl:…
+ok((await api('/s/ghi', { hv: 'sl:hlv-tu-tap', recs: [{ k: 'ten@hlv', id: 'ten', t: T, vai: 'hlv', d: 'Hoàng' }] }, H)).s === 200, 'HLV ghi tên hồ sơ tập (ten@hlv) vào sl:…');
+ok((await doi('hv=sl:hlv-tu-tap&since=0', H)).j.recs.some(r => r.k === 'ten@hlv' && r.d === 'Hoàng'), 'Đọc lại được tên hồ sơ tập');
+ok((await api('/s/ghi', { hv: 'lan-7k3f', recs: [{ k: 'ten@hlv', id: 'ten', t: T, vai: 'hlv', d: 'X' }] }, H)).s === 403, 'ten@hlv không ghi được vào học viên thường → 403');
+ok((await api('/s/ghi', { hv: 'sl:hlv-tu-tap', recs: [{ k: 'ten@hlv', id: 'ten', t: T, vai: 'hlv', d: '   ' }] }, H)).s === 403, 'Tên trống → 403');
 ok(!(await doi('since=0', H)).j.recs.some(r => r.hv === 'sl:hlv-tu-tap'), 'Đọc mặc định của HLV không lẫn hồ sơ sao lưu');
 ok((await doi('hv=sl:hlv-tu-tap&since=0', H)).j.recs.some(r => r.id === 't1'), 'Khôi phục hồ sơ sao lưu: đọc được theo hv=sl:…');
 ok((await api('/s/tv', null, H, 'GET')).j.hv.find(x => x.id === 'hlv-tu-tap').kieu === 'sl', 'Hồ sơ sao lưu hiển thị đúng loại');

@@ -4328,7 +4328,7 @@ async function hubEnsure() {
   /* cờ bật trước mọi lần chờ mạng, để hai lần gọi gần nhau không cùng tạo thẻ cho một hồ sơ */
   hubEnsuring = true;
   try {
-    await hubSelfResolve();
+    if (!(await hubSelfResolve())) return;
     await hubSelfMake();
     const sy = state.settings.sync; sy.map = sy.map || {};
     const selfId = hlvSelf(), linked = new Set(Object.values(sy.map));
@@ -4337,27 +4337,65 @@ async function hubEnsure() {
   } catch (e) { /* mất mạng hoặc máy chủ lỗi: lần sau thử lại */ }
   finally { hubEnsuring = false; }
 }
-/* Hồ sơ tự tập của HLV: chọn trong Tài khoản. Mặc định là hồ sơ tên “Tôi” cho đến khi HLV chọn khác.
-   Hồ sơ này không có thẻ học viên. Nếu đang có dữ liệu (hồ sơ HLV hiện tại hoặc hồ sơ được chọn) thì phải xác nhận bằng mã QR HLV. */
-function hlvSelf() {
-  const sy = state.settings.sync || {};
-  if (sy.self !== undefined) return sy.self;
-  const p = profiles.list.find(x => /^tôi$/i.test(x.name.trim()));
-  return p ? p.id : null;
+/* Hồ sơ tự tập của HLV (BR-28.9): id cục bộ luôn là 'sl:tu-tap', cùng id với bản trên máy chủ. Hồ sơ này không có thẻ học viên.
+   Đổi hồ sơ HLV trong Tài khoản: nếu đang có dữ liệu (hồ sơ HLV hiện tại hoặc hồ sơ được chọn) thì phải xác nhận bằng mã QR HLV. */
+function hlvSelf() { return profiles.list.some(p => p.id === HLV_SELF) ? HLV_SELF : null; }
+/* đổi id một hồ sơ (dữ liệu giữ nguyên): ghi khoá mới trước, xoá khoá cũ sau, nên hỏng giữa chừng thì lần sau làm lại được. Đang tập dở thì không đổi */
+async function renameProfile(from, to) {
+  const p = profiles.list.find(x => x.id === from);
+  if (!p || profiles.list.some(x => x.id === to)) return false;
+  const st = from === profiles.active ? state : await LDB.get('kv', stateKey(from));
+  if (st && st.active) return false;
+  if (from === profiles.active) { clearTimeout(saveT); saveT = null; }
+  if (st) await LDB.put('kv', stateKey(to), clone(st));
+  p.id = to; if (profiles.active === from) profiles.active = to;
+  const sy = (state.settings || {}).sync;
+  if (sy && sy.map) for (const k of Object.keys(sy.map)) if (sy.map[k] === from) sy.map[k] = to;
+  await LDB.put('kv', 'profiles', clone(profiles));
+  await LDB.del('kv', stateKey(from));
+  if (sy) save();
+  return true;
 }
-/* BR-28.8: máy HLV chưa chọn hồ sơ HLV (cài lại) dùng hồ sơ có sẵn trên máy làm chỗ nhận sl:tu-tap từ máy chủ (hubPullSelf), không tạo hồ sơ thêm.
-   Ưu tiên hồ sơ “Tôi”, rồi hồ sơ mặc định p1 còn trống và chưa gắn thẻ học viên (đổi tên cũng không mất). Hồ sơ p1 đã có dữ liệu mà không tên “Tôi” là học viên như cũ.
-   Ghi vào sync.self để đổi tên không làm mất liên kết. */
+/* BR-28.10: máy HLV có hồ sơ HLV mang id sl:tu-tap. Máy mới/cài lại: hồ sơ “Tôi” (hoặc p1 còn trống, chưa gắn thẻ) đổi id thành sl:tu-tap rồi nhận dữ liệu
+   từ máy chủ (hubPullSelf). Máy cũ (BR-28.12): hồ sơ HLV theo sync.self (hoặc “Tôi”) đổi id, dữ liệu giữ. Không có hồ sơ nào phù hợp mới tạo hồ sơ mới.
+   Trả false khi chưa đổi được (đang tập dở): lần đồng bộ sau thử lại. */
+let hubResolving = false;
 async function hubSelfResolve() {
-  const sy = state.settings.sync; if (!sy || sy.self !== undefined) return;
-  let pid = hlvSelf();
-  if (!pid) {
+  const sy = state.settings.sync; if (!sy || hubRole() !== 'hlv' || hubResolving) return true;
+  if (hlvSelf()) { if (sy.self !== undefined) { delete sy.self; save(); } return true; }
+  hubResolving = true;
+  try {
     const mapped = new Set(Object.values(sy.map || {}));
-    const p1 = profiles.list.find(p => p.id === 'p1' && !mapped.has(p.id));
-    if (p1 && !hasData(p1.id === profiles.active ? state : await profState(p1.id))) pid = p1.id;
-  }
-  if (!pid || sy.self !== undefined) return;
-  sy.self = pid; save();
+    let cand = sy.self !== undefined && profiles.list.some(p => p.id === sy.self) ? sy.self : null;
+    if (!cand) { const t = profiles.list.find(p => /^tôi$/i.test(p.name.trim()) && !mapped.has(p.id)); cand = t ? t.id : null; }
+    if (!cand) { const p1 = profiles.list.find(p => p.id === 'p1' && !mapped.has(p.id)); if (p1 && !hasData(p1.id === profiles.active ? state : await profState(p1.id))) cand = p1.id; }
+    if (cand) { if (!(await renameProfile(cand, HLV_SELF))) return false; }
+    else {
+      profiles.list.push({ id: HLV_SELF, name: 'Tôi', color: profiles.list.length % PCOLORS.length });
+      const st = freshState(); st.settings.name = 'Tôi'; await LDB.put('kv', stateKey(HLV_SELF), clone(st)); saveProfiles();
+    }
+    delete state.settings.sync.self; save(); render(true);
+    return true;
+  } finally { hubResolving = false; }
+}
+/* BR-28.11: tên hồ sơ HLV đồng bộ qua bản ghi ten@hlv của sl:tu-tap. sync.tenD = tên đã thống nhất lần cuối, sync.tenT = thời điểm bản đó */
+function hubApplySelfName(rec) {
+  const sy = state.settings.sync, p = profiles.list.find(x => x.id === HLV_SELF), name = String(rec.d || '').trim().slice(0, 60);
+  if (!p || !name || !(rec.t > (sy.tenT || 0))) return;
+  if (sy.tenD !== undefined && p.name !== sy.tenD) return;   /* máy này vừa đổi tên chưa gửi: bản của máy này thắng */
+  sy.tenD = name; sy.tenT = rec.t; p.name = name;
+  if (profiles.active === HLV_SELF) state.settings.name = name;
+  saveProfiles(); save(); render(true);
+}
+async function hubSelfNameSync() {
+  const sy = state.settings.sync, p = profiles.list.find(x => x.id === HLV_SELF);
+  if (hubRole() !== 'hlv' || !sy.selfMade || !p || !navigator.onLine || hubHold()) return;
+  if (p.name === sy.tenD || (sy.tenD === undefined && p.name === 'Tôi')) return;
+  const t = Math.max(Date.now(), (sy.tenT || 0) + 1);
+  try {
+    const r = await hubCall('/s/ghi', { hv: HLV_SELF, recs: [{ k: 'ten@hlv', id: 'ten', t, vai: 'hlv', d: p.name }], backfill: true });
+    if (r.s === 200) { sy.tenD = p.name; sy.tenT = t; save(); }
+  } catch (e) { /* mất mạng hoặc máy chủ cũ: tên giữ trên máy, thử lại sau */ }
 }
 const hasData = st => !!st && ((st.days || []).length > 0 || (st.sessions || []).length > 0 || (st.body || []).length > 0);
 async function hubSelfOpen() {
@@ -4382,6 +4420,8 @@ async function hubSelfPick(pid) {
   if (cur && hasData(curSt)) lines.push(`“${curName}” sẽ thành học viên và được cấp thẻ QR mới; buổi tập của “${curName}” được chuyển lên học viên mới.`);
   else if (cur) lines.push(`“${curName}” đang trống nên sẽ bị xoá khỏi máy này.`);
   const go = async () => {
+    /* đang tập dở thì chưa đổi id được: báo trước khi làm gì trên máy chủ */
+    if ((curSt && curSt.active) || (pickSt && pickSt.active)) { toast('Đang có buổi tập dở. Kết thúc buổi tập rồi đổi hồ sơ HLV.'); return; }
     /* hồ sơ HLV cũ có dữ liệu: thành học viên có thẻ trước, rồi đẩy buổi tập lên (BR-28.4) */
     if (cur && hasData(curSt)) {
       let curHv = Object.keys(sy.map || {}).find(k => sy.map[k] === cur);
@@ -4397,14 +4437,17 @@ async function hubSelfPick(pid) {
     if (sy.selfMade) { const r = await hubCall('/s/tv/xoa', { id: HLV_SELF.slice(3) }); if (r.s !== 200) { toast('Không đổi được hồ sơ HLV. Thử lại khi có mạng.'); return; } }
     const sy2 = state.settings.sync;
     if (hvId) { delete (sy2.map || {})[hvId]; delete (sy2.planH || {})[hvId]; }
-    sy2.selfMade = false; sy2.selfSeq = 0; sy2.selfPlan = null; delete (sy2.planH || {})[HLV_SELF];
-    sy2.self = pid;
-    await switchProfile(pid);   /* hồ sơ mới đang mở để máy đẩy buổi tập và giáo án của nó */
+    sy2.selfMade = false; sy2.selfSeq = 0; sy2.selfPlan = null; delete (sy2.planH || {})[HLV_SELF]; delete sy2.tenD; delete sy2.tenT;
+    /* nhường id sl:tu-tap: hồ sơ HLV cũ đổi sang id thường (học viên nếu có dữ liệu, trống thì xoá sau), hồ sơ được chọn nhận id sl:tu-tap */
+    const oldId = cur ? uid() : null;
+    if (cur && !(await renameProfile(cur, oldId))) { toast('Không đổi được hồ sơ HLV. Thử lại.'); return; }
+    if (!(await renameProfile(pid, HLV_SELF))) { toast('Không đổi được hồ sơ HLV. Thử lại.'); return; }
+    await switchProfile(HLV_SELF);   /* hồ sơ mới đang mở để máy đẩy buổi tập và giáo án của nó */
     state.sync = { sent: {}, gone: {} };
     if (cur && !hasData(curSt)) {   /* hồ sơ HLV cũ trống: xoá luôn, không để lại */
       for (const id of photoIdsOf(curSt)) { LDB.del('photos', id); photoCache.delete(id); }
-      LDB.del('kv', stateKey(cur));
-      profiles.list = profiles.list.filter(p => p.id !== cur); saveProfiles();
+      LDB.del('kv', stateKey(oldId));
+      profiles.list = profiles.list.filter(p => p.id !== oldId); saveProfiles();
     }
     save(); closeSheet(); render(true); toast(`Đã chọn “${pickName}” làm hồ sơ HLV`); hubEnsureSoon(); hubSync();
   };
@@ -4543,7 +4586,7 @@ async function hubSelfMake() {
   const sy = state.settings.sync; if (!sy || sy.selfMade || hubRole() !== 'hlv' || !navigator.onLine) return;
   const id = HLV_SELF.slice(3), k = await hubKey(id, 0);
   const skh = b64u(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(k))));
-  const r = await hubCall('/s/tv/them', { id, kieu: 'sl', ten: 'Hồ sơ HLV', skh });
+  const r = await hubCall('/s/tv/them', { id, kieu: 'sl', ten: (profiles.list.find(x => x.id === HLV_SELF) || {}).name || 'Hồ sơ HLV', skh });
   if (r.s !== 200 && r.s !== 409) return;
   /* giáo án trống không đè lên bản trên máy chủ: đặt planH cùng lúc với selfMade, không có await xen giữa */
   const self = hlvSelf(), st = self ? await profState(self) : null;
@@ -4564,6 +4607,7 @@ async function hubPullSelf() {
       for (const rec of r.j.recs) {
         if (rec.k.startsWith('buoi:')) await hubApplySession(pid, rec);
         else if (rec.k === 'plan@hlv') await hubSelfPlan(pid, rec);
+        else if (rec.k === 'ten@hlv') hubApplySelfName(rec);
       }
       con = !!r.j.con && r.j.recs.length > 0;
       const next = con ? r.j.recs[r.j.recs.length - 1].seq : r.j.seq;
@@ -4590,7 +4634,7 @@ async function hubPushSessionsTo(hvId, pid) {
    Khi dữ liệu đổi thì save() gọi riêng hubFlushSoon/hubPlanSoon. Mỗi bước tự chống chạy chồng và thử lại khi mất mạng. */
 async function hubSync() {
   const role = hubRole(); if (!role) return;
-  if (role === 'hlv') { await hubAdopt(); await hubEnsure(); await hubPushPlans(); await hubPullSelf(); }
+  if (role === 'hlv') { await hubSelfResolve(); await hubAdopt(); await hubEnsure(); await hubPushPlans(); await hubPullSelf(); await hubSelfNameSync(); }
   await hubPull(); await hubFlush();
 }
 /* khoá so sánh giáo án: bỏ mức tạ hiện tại (đổi mỗi buổi tập, không phải thay đổi giáo án) */
@@ -4828,7 +4872,7 @@ const handlers = {
     await switchProfile(id);
   },
   'prof-rename': () => profRenameSheet(),
-  'prof-rename-go': () => { const n = ($('#f-prename').value || '').trim(); if (!n) { toast('Nhập tên'); return; } curProf().name = n; state.settings.name = n; saveProfiles(); save(); closeSheet(); render(true); toast('Đã đổi tên'); },
+  'prof-rename-go': () => { const n = ($('#f-prename').value || '').trim(); if (!n) { toast('Nhập tên'); return; } curProf().name = n; state.settings.name = n; saveProfiles(); save(); closeSheet(); render(true); toast('Đã đổi tên'); if (profiles.active === HLV_SELF) hubSelfNameSync(); },
   'prof-copy': () => profCopySheet(),
   'prof-copy-go': async t => {
     const src = await profState($('#f-cfrom').value); if (!src) return;
@@ -5179,7 +5223,7 @@ document.addEventListener('input', e => {
   if (b === 'set' && state.active) { const set = getSet(+t.dataset.e, t.dataset.s); if (set) { set[t.dataset.f] = num(t.value); if (t.dataset.f === 'kg') { refreshWarm(+t.dataset.e); const en2 = state.active.entries[+t.dataset.e]; if (isDrop(set)) set.m = 1; else if (syncDrops(en2)) en2.sets.forEach((d, k) => { if (d.dr) { const ip = $(`input[data-bind="set"][data-e="${t.dataset.e}"][data-s="${k}"][data-f="kg"]`); if (ip) ip.value = fmtIn(d.kg); } }); } save(); } }
   else if (b === 'note' && state.active) { state.active.entries[+t.dataset.e].note = t.value; save(); }
   else if (b === 'setting') { const k = t.dataset.k; state.settings[k] = ['name', 'pushServer'].includes(k) ? t.value : num(t.value);
-    if (k === 'name') { curProf().name = t.value.trim() || 'Người tập'; clearTimeout(profT); profT = setTimeout(saveProfiles, 600); }
+    if (k === 'name') { curProf().name = t.value.trim() || 'Người tập'; clearTimeout(profT); profT = setTimeout(() => { saveProfiles(); if (profiles.active === HLV_SELF) hubSelfNameSync(); }, 600); }
     if (k === 'pushServer') pushRegSoon();
     save(); renderHeader(); }
 });

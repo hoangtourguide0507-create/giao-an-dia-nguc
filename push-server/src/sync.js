@@ -135,7 +135,9 @@ async function ghi(ctx, q, auth) {
     if (!id || id.length > 80 || !Number.isFinite(t)) return fail(400, 'Bản ghi không hợp lệ');
     if ((k === 'plan@hlv' && !H) || (k === 'plan@hv' && H)) return fail(403, 'Bản ghi này thuộc phía khác');
     if (k === 'dau@hv' && (H || id !== 'dau')) return fail(403, 'Bản ghi này thuộc phía khác');   /* PA-40: học viên báo cơ còn đau, HLV chỉ đọc */
-    if (!(k === 'plan@hlv' || k === 'plan@hv' || k === 'dau@hv' || k === 'buoi:' + id)) return fail(400, 'Loại bản ghi không hợp lệ');
+    /* BR-28.11: tên hồ sơ tập của HLV, chỉ HLV ghi, chỉ vào hồ sơ sl:… */
+    if (k === 'ten@hlv' && (!H || !hv.startsWith('sl:') || id !== 'ten' || !d.trim() || d.length > 60)) return fail(403, 'Bản ghi tên không hợp lệ');
+    if (!(k === 'plan@hlv' || k === 'plan@hv' || k === 'dau@hv' || k === 'ten@hlv' || k === 'buoi:' + id)) return fail(400, 'Loại bản ghi không hợp lệ');
     if (d.length > (k.startsWith('plan@') ? MAX_PLAN : MAX_BUOI)) return fail(413, 'Bản ghi quá lớn');
     rows.push({ k, id, t, d, xoa: r.xoa ? 1 : 0 });
   }
