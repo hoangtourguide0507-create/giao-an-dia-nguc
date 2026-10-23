@@ -16,7 +16,7 @@ test('lần đầu mở trong claude.ai: đưa dữ liệu trên máy lên tài 
   expect(Object.keys(C.docs).filter(k => k.startsWith(BASE + '/sessions/'))).toHaveLength(1);
   expect(C.docs[BASE + '/photos/ph1']).toEqual({ d: PHOTO });
   expect(C.docs['data/users/u1/profiles']).toMatchObject({ active: 'p1' });
-  await app.more('drive');
+  await app.tab('more');
   await expect(syncCard(app)).toContainText('Đã đồng bộ với tài khoản Claude');
   /* trong claude.ai: thẻ thông báo báo chỉ có trên app mở từ màn hình chính; không hướng dẫn cài app */
   await app.tab('more');
@@ -55,7 +55,7 @@ test('máy mới hơn tài khoản: giữ máy, gộp buổi chỉ có trên tà
 test('không có quyền ghi / không nhận được tài khoản: chỉ lưu trên máy', async ({ app, page }) => {
   await installCloud(page, { canWrite: false });
   await app.goto();
-  await app.more('drive');
+  await app.tab('more');
   await expect(syncCard(app)).toContainText('Chỉ lưu trên máy này', { timeout: 5000 });
   await page.close();
 });
@@ -63,7 +63,7 @@ test('không có quyền ghi / không nhận được tài khoản: chỉ lưu t
 test('không lấy được mã tài khoản: chỉ lưu trên máy', async ({ app, page }) => {
   await installCloud(page, { uid: null });
   await app.goto();
-  await app.more('drive');
+  await app.tab('more');
   await expect(syncCard(app)).toContainText('Chỉ lưu trên máy này', { timeout: 5000 });
 });
 
@@ -71,7 +71,7 @@ test('bộ nhớ đồng bộ đầy / lỗi mạng: báo trạng thái tương 
   const P = basicPlan();
   await installCloud(page, { fail: { set: 'quota_exceeded' } });
   await app.seed({ state: state({ days: P.days, updatedAt: 5 }) });
-  await app.more('drive');
+  await app.tab('more');
   await expect(syncCard(app)).toContainText('Bộ nhớ đồng bộ đã đầy', { timeout: 5000 });
 });
 
@@ -79,7 +79,7 @@ test('lỗi mạng khi lưu lên tài khoản: “Chưa lưu được”, mở l
   const P = basicPlan();
   await installCloud(page, { fail: { set: 'network' } });
   await app.seed({ state: state({ days: P.days, updatedAt: 5 }) });
-  await app.more('drive');
+  await app.tab('more');
   await expect(syncCard(app)).toContainText('Chưa lưu được lên tài khoản', { timeout: 5000 });
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
   await expect(syncCard(app)).toContainText(/Chưa lưu được|Đang lưu|Đang kết nối/);
@@ -89,14 +89,14 @@ test('quyền bị thu hồi khi đang dùng: chuyển sang chỉ lưu trên má
   const P = basicPlan();
   await installCloud(page, { fail: { set: 'revoked' } });
   await app.seed({ state: state({ days: P.days, updatedAt: 5 }) });
-  await app.more('drive');
+  await app.tab('more');
   await expect(syncCard(app)).toContainText('Chỉ lưu trên máy này', { timeout: 5000 });
 });
 
 test('kết nối lỗi ngay từ đầu: báo chưa lưu được', async ({ app, page }) => {
   await installCloud(page, { useFail: 'network' });
   await app.goto();
-  await app.more('drive');
+  await app.tab('more');
   await expect(syncCard(app)).toContainText('Chỉ lưu trên máy này', { timeout: 5000 });
 });
 

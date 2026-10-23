@@ -6,9 +6,9 @@ const prof = (list, active = 'p1') => ({ active, list: list.map(([id, name, colo
 /* mã QR HLV như trong ảnh thẻ: GAH1 + JSON {s, k} mã base64url */
 const hubQR = (hub, k = hub.hk) => 'GAH1.' + Buffer.from(JSON.stringify({ s: hub.url, k })).toString('base64url');
 async function registerHlv(app, hub) {
-  await app.more('drive');
+  await app.tab('more');
   await fakeCamera(app.page, hubQR(hub));
-  await app.click('hub-reg');
+  await app.click('qr-scan');
   await expect(app.toast()).toContainText('Đã đăng ký làm HLV');
 }
 
