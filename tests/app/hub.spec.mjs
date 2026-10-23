@@ -323,7 +323,7 @@ test('Hồ sơ HLV · hồ sơ đang có dữ liệu: phải quét đúng mã QR
   await fakeCamera(app.page, 'GAH1.' + Buffer.from(JSON.stringify({ s: hub.url, k: 'khoa-sai-hoan-toan' })).toString('base64url'));
   await app.click('hub-self-auth');
   await expect(app.toast()).toContainText('không khớp');
-  expect((await app.state()).settings.sync.self).toBeUndefined();
+  expect((await app.state()).settings.sync.self).toBe('p1');   /* vẫn là hồ sơ HLV ban đầu (“Tôi”), mã sai không đổi */
   await app.page.keyboard.press('Escape');   /* đóng khung quét còn mở */
   await app.tab('more');
   await app.click('hub-self-open');

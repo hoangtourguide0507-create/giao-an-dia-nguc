@@ -4346,15 +4346,17 @@ function hlvSelf() {
   return p ? p.id : null;
 }
 /* BR-28.8: máy HLV chưa chọn hồ sơ HLV (cài lại) dùng hồ sơ có sẵn trên máy làm chỗ nhận sl:tu-tap từ máy chủ (hubPullSelf), không tạo hồ sơ thêm.
-   Ưu tiên hồ sơ “Tôi”, rồi hồ sơ mặc định p1 chưa gắn thẻ học viên (đổi tên cũng không mất); chỉ khi không còn hồ sơ nào mới tạo mới. Ghi vào sync.self để đổi tên không làm mất. */
-function hubSelfResolve() {
+   Ưu tiên hồ sơ “Tôi”, rồi hồ sơ mặc định p1 còn trống và chưa gắn thẻ học viên (đổi tên cũng không mất). Hồ sơ p1 đã có dữ liệu mà không tên “Tôi” là học viên như cũ.
+   Ghi vào sync.self để đổi tên không làm mất liên kết. */
+async function hubSelfResolve() {
   const sy = state.settings.sync; if (!sy || sy.self !== undefined) return;
   let pid = hlvSelf();
-  if (!pid) { const mapped = new Set(Object.values(sy.map || {})); const p1 = profiles.list.find(p => p.id === 'p1' && !mapped.has(p.id)); pid = p1 ? p1.id : null; }
   if (!pid) {
-    pid = uid(); profiles.list.push({ id: pid, name: 'Tôi', color: profiles.list.length % PCOLORS.length });
-    const st = freshState(); st.settings.name = 'Tôi'; LDB.put('kv', stateKey(pid), clone(st)); saveProfiles();
+    const mapped = new Set(Object.values(sy.map || {}));
+    const p1 = profiles.list.find(p => p.id === 'p1' && !mapped.has(p.id));
+    if (p1 && !hasData(p1.id === profiles.active ? state : await profState(p1.id))) pid = p1.id;
   }
+  if (!pid || sy.self !== undefined) return;
   sy.self = pid; save();
 }
 const hasData = st => !!st && ((st.days || []).length > 0 || (st.sessions || []).length > 0 || (st.body || []).length > 0);
