@@ -4267,7 +4267,7 @@ const hubRev = s => s.finishedAt || s.startedAt;
 /* BR-28 · PA-44: hồ sơ tập của HLV có một bản duy nhất trên máy chủ, id cố định (học viên kiểu 'sl') */
 const HLV_SELF = 'sl:tu-tap';
 /* máy HLV: các hồ sơ có giáo án cần gửi: học viên (theo thẻ) và hồ sơ tập của HLV */
-const planTargets = sy => { const t = Object.entries(sy.map || {}); const self = hlvSelf(); if (self && profiles.list.some(p => p.id === self)) t.push([HLV_SELF, self]); return t; };
+const planTargets = sy => { const t = Object.entries(sy.map || {}); const self = hlvSelf(); if (self && sy.selfMade && profiles.list.some(p => p.id === self)) t.push([HLV_SELF, self]); return t; };
 let hubT = 0, hubBusy = false;
 function hubFlushSoon() { clearTimeout(hubT); hubT = setTimeout(hubFlush, 1500); }
 /* gửi buổi đã tập và buổi đã xoá. Thông báo "vừa tập xong" chỉ cho buổi mới; buổi trước khi nối máy đi kèm backfill, không báo */
@@ -4325,13 +4325,13 @@ let hubEnsureT = 0, hubEnsuring = false;
 function hubEnsureSoon() { clearTimeout(hubEnsureT); hubEnsureT = setTimeout(hubEnsure, 800); }
 async function hubEnsure() {
   if (hubRole() !== 'hlv' || hubEnsuring || hubAdopting || !navigator.onLine) return;
-  await hubSelfMake();
-  const sy = state.settings.sync; sy.map = sy.map || {};
-  const selfId = hlvSelf(), linked = new Set(Object.values(sy.map));
-  const todo = profiles.list.filter(p => !(selfId && p.id === selfId) && !linked.has(p.id));
-  if (!todo.length) return;
+  /* cờ bật trước mọi lần chờ mạng, để hai lần gọi gần nhau không cùng tạo thẻ cho một hồ sơ */
   hubEnsuring = true;
   try {
+    await hubSelfMake();
+    const sy = state.settings.sync; sy.map = sy.map || {};
+    const selfId = hlvSelf(), linked = new Set(Object.values(sy.map));
+    const todo = profiles.list.filter(p => !(selfId && p.id === selfId) && !linked.has(p.id));
     for (const p of todo) { const c = await hubNewCard(p.name); state.settings.sync.map = { ...state.settings.sync.map, [c.id]: p.id }; linked.add(p.id); save(); }
   } catch (e) { /* mất mạng hoặc máy chủ lỗi: lần sau thử lại */ }
   finally { hubEnsuring = false; }
@@ -4480,9 +4480,9 @@ async function hubAdopt() {
     let added = false;
     for (const t of r.j.hv || []) {
       if (t.kieu !== 'hv' || t.khoa || !t.id || sy.map[t.id]) continue;
+      /* hồ sơ mới còn trống: đừng gửi giáo án trống đè lên giáo án đang có trên máy chủ. Đặt trước khi học viên vào map, kẻo hubPushPlans chen vào giữa */
+      sy.planH = sy.planH || {}; sy.planH[t.id] = planKey([]);
       const pid = await hubLinkProfile(t.id, t.ten || 'Học viên');
-      /* hồ sơ mới còn trống: đừng gửi giáo án trống đè lên giáo án đang có trên máy chủ */
-      sy.planH = sy.planH || {}; sy.planH[t.id] = planKey(await serPlan(await profState(pid), false, {}));
       added = true;
     }
     if (added) { sy.seq = 0; save(); }
@@ -4530,9 +4530,10 @@ async function hubSelfMake() {
   const skh = b64u(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(k))));
   const r = await hubCall('/s/tv/them', { id, kieu: 'sl', ten: 'Hồ sơ HLV', skh });
   if (r.s !== 200 && r.s !== 409) return;
-  sy.selfMade = true;
+  /* giáo án trống không đè lên bản trên máy chủ: đặt planH cùng lúc với selfMade, không có await xen giữa */
   const self = hlvSelf(), st = self ? await profState(self) : null;
-  if (st && !(st.days || []).length) { sy.planH = sy.planH || {}; sy.planH[HLV_SELF] = planKey(await serPlan(st, false, {})); }
+  if (st && !(st.days || []).length) { sy.planH = sy.planH || {}; sy.planH[HLV_SELF] = planKey([]); }
+  sy.selfMade = true;
   save();
 }
 /* BR-28.1: buổi tập và giáo án của hồ sơ tập HLV từ máy HLV khác vào đúng hồ sơ đang là hồ sơ HLV */
@@ -4608,6 +4609,7 @@ async function hubPushPlans(quiet) {
       const st = await profState(pid); if (!st) continue;
       const plan = await serPlan(st, false, {}), h = planKey(plan);
       if (H[hvId] === h) continue;
+      if (!plan.length && H[hvId] === undefined) { H[hvId] = h; sy.planH = H; continue; }   /* chưa từng đồng bộ mà trống: không gửi giáo án trống đè bản trên máy chủ */
       const ev = quiet ? null : { title: 'HLV vừa cập nhật giáo án', body: 'Mở app để xem bản mới', tag: 'plan' };
       const r = await hubCall('/s/ghi', { hv: hvId, recs: [{ k: 'plan@hlv', id: 'plan', t: Date.now(), vai: 'hlv', d: JSON.stringify({ plan }) }], ev, backfill: !!quiet });
       if (r.s === 200) { H[hvId] = h; sy.planH = H; save(); }

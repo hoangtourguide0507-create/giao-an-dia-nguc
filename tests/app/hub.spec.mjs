@@ -354,11 +354,16 @@ test('BR-24.24 · máy HLV trống đăng nhập bằng QR HLV: tự có hồ s�
   await expect.poll(async () => (await fresh.profiles()).list.map(p => p.name), { timeout: 20000 }).toContain('Lan');
   const pid = (await fresh.profiles()).list.find(p => p.name === 'Lan').id;
   await expect.poll(async () => (await fresh.idb('kv', 'state:' + pid))?.sessions?.map(x => x.id), { timeout: 30000 }).toContain(done.id);
-  expect((await fresh.idb('kv', 'state:' + pid)).days.map(x => x.name)).toEqual(P.days.map(x => x.name));
+  /* giáo án và buổi tập về trong cùng lượt kéo nhưng không cùng thứ tự: chờ đến khi giáo án có */
+  await expect.poll(async () => (await fresh.idb('kv', 'state:' + pid))?.days?.map(x => x.name), { timeout: 30000 }).toEqual(P.days.map(x => x.name));
   /* học viên đã có thẻ: máy mới nhận thẻ có sẵn, không tạo thẻ thứ hai */
   await fresh.page.waitForTimeout(3000);
   expect((await hub.req('/s/tv', 'GET', null, hub.auth)).j.hv.filter(x => x.kieu === 'hv')).toHaveLength(1);
   expect(Object.values((await fresh.state()).settings.sync.map)).toEqual([pid]);
+  /* máy HLV trống vừa nối không được gửi giáo án trống đè lên giáo án của học viên trên máy chủ */
+  const lanId = Object.keys((await fresh.state()).settings.sync.map)[0];
+  const planRec = (await hub.req(`/s/doi?hv=${lanId}&since=0`, 'GET', null, hub.auth)).j.recs.find(r => r.k === 'plan@hlv');
+  expect(JSON.parse(planRec.d).plan.map(x => x.n)).toEqual(P.days.map(x => x.name));
 });
 
 // BR-24.25 · PA-43: máy chủ không còn công nhận máy học viên → báo lỗi hỗ trợ, nối lại không mất dữ liệu
@@ -414,6 +419,9 @@ test('BR-28.1 · máy HLV thứ hai đăng nhập bằng cùng QR HLV: hồ sơ 
   await expect.poll(async () => (await b.state()).sessions.map(x => x.id), { timeout: 20000 }).toEqual([done.id]);
   expect((await b.state()).days.map(x => x.name)).toEqual(P.days.map(x => x.name));
   expect(await hvRecords(hub)).toHaveLength(0);
+  /* máy HLV trống vừa nối không được gửi giáo án trống đè lên giáo án trên máy chủ */
+  await b.page.waitForTimeout(3000);
+  expect(JSON.parse((await selfRecs(hub, 'plan@hlv'))[0].d).plan.map(x => x.n)).toEqual(P.days.map(x => x.name));
 });
 
 /* BR-28.4 (PA-44): đổi hồ sơ HLV khi hồ sơ HLV cũ có dữ liệu → hồ sơ cũ thành học viên có thẻ, buổi tập của nó chuyển lên học viên mới;
