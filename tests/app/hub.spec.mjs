@@ -290,6 +290,9 @@ test('BR-24.6 · học viên xoá buổi → máy HLV cũng xoá buổi đó (tr
   await expect.poll(async () => (await app.idb('kv', 'state:' + pid))?.sessions?.map(x => x.id), { timeout: 45000 }).toEqual([done.id]);
   /* xoá sau lúc buổi kết thúc (như khi người dùng xoá thật) */
   await hv.page.evaluate(id => { const s = window.__sota.state; s.syncDel = s.syncDel || { s: {}, e: {} }; s.syncDel.s[id] = Date.now() + 86400000; s.sessions = []; }, done.id);
+  /* như khi người dùng quay lại app: cả hai máy tự đồng bộ ngay, không chờ bộ hẹn giờ */
+  await hv.page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await app.page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
   /* máy học viên gửi mỗi 20 giây, máy HLV kéo mỗi 20 giây: tối đa khoảng 40 giây, để dư khi máy chạy chậm */
   await expect.poll(async () => (await app.idb('kv', 'state:' + pid))?.sessions?.map(x => x.id), { timeout: 120000 }).toEqual([]);
 });
@@ -334,4 +337,42 @@ test('BR-24.2 · học viên mới xuất hiện trên máy HLV (sau khi đã đ
   await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p3', name: 'Minh', color: 2 }] }, state: state({ settings: { sync } }) });
   const code = await autoCard(app, hub, 'p3');
   expect(code.startsWith('GAV1.')).toBe(true);
+});
+
+/* Hồ sơ HLV (Tài khoản → Hồ sơ HLV): chọn hồ sơ tự tập của HLV */
+test('Hồ sơ HLV · hồ sơ trống: chọn không cần xác nhận; thẻ của hồ sơ đó bị thu hồi; hồ sơ HLV cũ thành học viên và có thẻ', async ({ app, hub }) => {
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state() } });
+  await registerHlv(app, hub);
+  await autoCard(app, hub, 'p2');
+  await app.more('drive');
+  await app.click('hub-self-open');
+  await app.page.locator('[data-act="hub-self-pick"][data-id="p2"]').click();
+  await app.click('hub-self-go');
+  await expect.poll(async () => (await app.state()).settings.sync.self, { timeout: 5000 }).toBe('p2');
+  await expect.poll(async () => Object.values((await app.state()).settings.sync.map || {}), { timeout: 8000 }).toContain('p1');
+  const sy = (await app.state()).settings.sync;
+  expect(Object.values(sy.map)).not.toContain('p2');
+  const lanId = Object.keys(sy.map).find(k => sy.map[k] === 'p1');
+  expect((await hub.req('/s/tv', 'GET', null, hub.auth)).j.hv.map(x => x.id)).toContain(lanId);
+});
+
+test('Hồ sơ HLV · hồ sơ đang có dữ liệu: phải quét đúng mã QR HLV mới đổi được; mã sai thì không đổi', async ({ app, hub }) => {
+  const P = basicPlan();
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state({ days: P.days, sessions: [session(P.chest, TODAY, [[P.bench, [[40, 10]]]])] }), p2: state({ days: P.days }) } });
+  await registerHlv(app, hub);
+  await app.more('drive');
+  await app.click('hub-self-open');
+  await app.page.locator('[data-act="hub-self-pick"][data-id="p2"]').click();
+  await expect(app.sheet()).toContainText('cần xác nhận bằng mã QR HLV');
+  await fakeCamera(app.page, 'GAH1.' + Buffer.from(JSON.stringify({ s: hub.url, k: 'khoa-sai-hoan-toan' })).toString('base64url'));
+  await app.click('hub-self-auth');
+  await expect(app.toast()).toContainText('không khớp');
+  expect((await app.state()).settings.sync.self).toBeUndefined();
+  await app.page.keyboard.press('Escape');   /* đóng khung quét còn mở */
+  await app.more('drive');
+  await app.click('hub-self-open');
+  await app.page.locator('[data-act="hub-self-pick"][data-id="p2"]').click();
+  await fakeCamera(app.page, hubQR(hub));
+  await app.click('hub-self-auth');
+  await expect.poll(async () => (await app.state()).settings.sync.self, { timeout: 8000 }).toBe('p2');
 });

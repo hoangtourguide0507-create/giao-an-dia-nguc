@@ -4297,7 +4297,8 @@ function hubRole() { const sy = state.settings.sync || {}; return sy.hk ? 'hlv' 
 async function hubCall(path, body, method) {
   const sy = state.settings.sync || {};
   const auth = hubRole() === 'hv' ? 'Bearer v.' + sy.i + '.' + sy.dk : 'Bearer h.' + sy.hk;
-  const r = await fetch(sy.s + path, { method: method || 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth }, body: method === 'GET' ? undefined : JSON.stringify(body || {}) });
+  /* quá 15 giây không có hồi âm thì bỏ: để cờ “đang gửi” được trả lại, lần sau thử tiếp */
+  const r = await fetch(sy.s + path, { method: method || 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth }, body: method === 'GET' ? undefined : JSON.stringify(body || {}), signal: AbortSignal.timeout(15000) });
   return { s: r.status, j: await r.json().catch(() => ({})) };
 }
 async function hubKey(id, epoch) {
@@ -4307,6 +4308,11 @@ async function hubKey(id, epoch) {
 async function hubRegister(body) {
   let J = null; try { J = JSON.parse(new TextDecoder().decode(unb64u(body))); } catch (e) {}
   if (!J || !/^https:\/\//.test(J.s || '') || !J.k) { toast('Mã HLV không đúng'); return false; }
+  if (ui.hubAuthNext) {   /* đang xác nhận thao tác: mã phải đúng khoá của máy HLV này */
+    if (J.k !== (state.settings.sync || {}).hk) { toast('Mã QR này không khớp với máy HLV này'); return false; }
+    const next = ui.hubAuthNext; ui.hubAuthNext = null;
+    closeSheet(); await next(); return true;
+  }
   state.settings.sync = { s: J.s, hk: J.k };
   const r = await hubCall('/s/tv', null, 'GET');
   if (r.s !== 200) { state.settings.sync = {}; save(); toast('Mã HLV không đúng hoặc máy chủ chưa sẵn sàng'); return false; }
@@ -4422,7 +4428,7 @@ function hubCardHtml() {
   if (!hubOn()) return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>HLV: quét mã QR HLV để đăng ký (chỉ làm một lần). Học viên: quét thẻ học viên của HLV.</p>
     <div class="row"><button class="btn gold" data-act="hub-reg">Quét mã QR</button><button class="btn" data-act="hub-restore">Khôi phục bằng Face ID</button></div></div>`;
   return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã đăng ký làm HLV. Thêm học viên bằng thẻ QR; thẻ dùng được lâu dài.</p>
-    <div class="row"><button class="btn gold" data-act="hub-add">Thêm học viên</button><button class="btn" data-act="hub-migrate">Chuyển học viên có sẵn</button><button class="btn" data-act="hub-reg">Quét mã</button><button class="btn ghost" data-act="hub-unlink">Ngắt đăng ký trên máy này</button></div></div>`;
+    <div class="row"><button class="btn gold" data-act="hub-add">Thêm học viên</button><button class="btn" data-act="hub-self-open">Hồ sơ HLV</button><button class="btn" data-act="hub-migrate">Chuyển học viên có sẵn</button><button class="btn" data-act="hub-reg">Quét mã</button><button class="btn ghost" data-act="hub-unlink">Ngắt đăng ký trên máy này</button></div></div>`;
 }
 /* HLV: mọi học viên trong danh sách phải có thẻ QR. Hồ sơ tên “Tôi” là hồ sơ tự tập của HLV, không tính là học viên.
    Tự tạo học viên trên máy chủ cho hồ sơ nào chưa có; mất mạng thì thử lại khi có mạng, khi mở app, và mỗi 20 giây. */
@@ -4431,14 +4437,60 @@ function hubEnsureSoon() { clearTimeout(hubEnsureT); hubEnsureT = setTimeout(hub
 async function hubEnsure() {
   if (hubRole() !== 'hlv' || hubEnsuring || !navigator.onLine) return;
   const sy = state.settings.sync; sy.map = sy.map || {};
-  const self = profiles.list.find(p => /^tôi$/i.test(p.name.trim())), linked = new Set(Object.values(sy.map));
-  const todo = profiles.list.filter(p => !(self && p.id === self.id) && !linked.has(p.id));
+  const selfId = hlvSelf(), linked = new Set(Object.values(sy.map));
+  const todo = profiles.list.filter(p => !(selfId && p.id === selfId) && !linked.has(p.id));
   if (!todo.length) return;
   hubEnsuring = true;
   try {
     for (const p of todo) { const c = await hubNewCard(p.name); state.settings.sync.map = { ...state.settings.sync.map, [c.id]: p.id }; linked.add(p.id); save(); }
   } catch (e) { /* mất mạng hoặc máy chủ lỗi: lần sau thử lại */ }
   finally { hubEnsuring = false; }
+}
+/* Hồ sơ tự tập của HLV: chọn trong Tài khoản. Mặc định là hồ sơ tên “Tôi” cho đến khi HLV chọn khác.
+   Hồ sơ này không có thẻ học viên. Nếu đang có dữ liệu (hồ sơ HLV hiện tại hoặc hồ sơ được chọn) thì phải xác nhận bằng mã QR HLV. */
+function hlvSelf() {
+  const sy = state.settings.sync || {};
+  if (sy.self !== undefined) return sy.self;
+  const p = profiles.list.find(x => /^tôi$/i.test(x.name.trim()));
+  return p ? p.id : null;
+}
+const hasData = st => !!st && ((st.days || []).length > 0 || (st.sessions || []).length > 0 || (st.body || []).length > 0);
+async function hubSelfOpen() {
+  if (hubRole() !== 'hlv') return;
+  const cur = hlvSelf(), rows = [];
+  for (const p of profiles.list) {
+    const st = await profState(p.id), sy = state.settings.sync || {};
+    rows.push(`<button type="button" class="li" data-act="hub-self-pick" data-id="${p.id}"><span class="lt">${esc(p.name)}${p.id === cur ? ' <span class="chip">Hồ sơ HLV</span>' : ''}</span><span class="small muted">${hasData(st) ? 'có dữ liệu' : 'trống'}${Object.values(sy.map || {}).includes(p.id) ? ' · có thẻ học viên' : ''}</span></button>`);
+  }
+  openSheet(`<h3 class="sh-title">Hồ sơ HLV</h3><p class="sh-text">Chọn hồ sơ tự tập của HLV trên máy này. Hồ sơ này không có thẻ học viên. Hồ sơ HLV hiện tại (nếu có dữ liệu) sẽ thành học viên và được cấp thẻ.</p>
+    <div class="list">${rows.join('')}</div><div class="sh-actions"><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`);
+}
+async function hubSelfPick(pid) {
+  const cur = hlvSelf(), sy = state.settings.sync || {};
+  if (pid === cur) { toast('Đây đã là hồ sơ HLV'); return; }
+  const curSt = cur ? await profState(cur) : null, pickSt = await profState(pid);
+  const pickName = (profiles.list.find(x => x.id === pid) || {}).name || '';
+  const curName = cur ? ((profiles.list.find(x => x.id === cur) || {}).name || '') : '';
+  const hvId = Object.keys(sy.map || {}).find(k => sy.map[k] === pid);
+  const lines = [`“${pickName}” sẽ là hồ sơ tự tập của HLV và không còn có thẻ học viên.`];
+  if (hvId) lines.push(`Thẻ của “${pickName}” trên máy chủ sẽ bị thu hồi; dữ liệu của học viên này trên máy chủ sẽ bị xoá. Dữ liệu trên máy này vẫn giữ.`);
+  if (cur && curSt) lines.push(`“${curName}” sẽ thành học viên và được cấp thẻ QR mới.`);
+  const go = async () => {
+    if (hvId) { const r = await hubCall('/s/tv/xoa', { id: hvId }); if (r.s !== 200) { toast('Không thu hồi được thẻ. Thử lại khi có mạng.'); return; } }
+    const sy2 = state.settings.sync; delete (sy2.map || {})[hvId]; delete (sy2.planH || {})[hvId];
+    sy2.self = pid; save(); closeSheet(); render(true); toast(`Đã chọn “${pickName}” làm hồ sơ HLV`); hubEnsureSoon();
+  };
+  if (hasData(curSt) || hasData(pickSt)) {
+    lines.push('Vì đang có dữ liệu, cần xác nhận bằng mã QR HLV.');
+    openSheet(`<h3 class="sh-title">Đổi hồ sơ HLV?</h3><p class="sh-text">${lines.map(esc).join('<br>')}</p>
+      <div class="sh-actions"><button class="btn gold big" data-act="hub-self-auth" data-id="${pid}">Quét mã QR HLV để xác nhận</button><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
+    ui.hubAuthNext = go;
+    return;
+  }
+  lines.push('Bấm xác nhận để đổi.');
+  openSheet(`<h3 class="sh-title">Đổi hồ sơ HLV?</h3><p class="sh-text">${lines.map(esc).join('<br>')}</p>
+    <div class="sh-actions"><button class="btn gold big" data-act="hub-self-go">Xác nhận</button><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
+  ui.hubSelfGo = go;
 }
 function hubAddSheet() {
   openSheet(`<h3 class="sh-title">Thêm học viên</h3><p class="sh-text">Tạo thẻ QR cho học viên. Thẻ không hết hạn và dùng lại được, nên hãy cất giữ cẩn thận.</p>
@@ -4914,6 +4966,10 @@ const handlers = {
   'paste-go': async () => { const el = $('#paste-in'); if (!el || !el.value.trim()) { toast('Dán mã vào ô chữ trước'); return; } await handleCodeText(el.value); },
                                       'hub-reg': () => qrScanSheet('hub'),
   'hub-add': () => hubAddSheet(),
+  'hub-self-open': () => hubSelfOpen(),
+  'hub-self-pick': t => hubSelfPick(t.dataset.id),
+  'hub-self-go': () => { if (ui.hubSelfGo) ui.hubSelfGo(); },
+  'hub-self-auth': () => { closeSheet(); qrScanSheet('hub'); toast('Quét mã QR HLV để xác nhận'); },
   'hub-card-show': async t => {
     const sy = state.settings.sync || {}, hvId = Object.keys(sy.map || {}).find(k => sy.map[k] === t.dataset.id);
     const p = profiles.list.find(x => x.id === t.dataset.id);
