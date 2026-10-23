@@ -310,10 +310,10 @@ test('BR-24.5 · khôi phục từ máy chủ thay buổi trên máy, có thể 
 
 test('BR-24.2 · Phòng HLV: nút “Thẻ QR” của học viên mở đúng thẻ (thẻ có sẵn, không cần bấm gì thêm); máy chủ nhận mã đó', async ({ app, hub }) => {
   const P = basicPlan();
-  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }], coach: { on: true, name: 'Tôi' } }, states: { p1: state(), p2: state({ days: P.days }) } });
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) } });
   await registerHlv(app, hub);
   const code = await autoCard(app, hub, 'p2');
-  await app.tab('more');
+  await app.tab('home');
   await app.view().locator('[data-act="hub-card-show"][data-id="p2"]').click();
   await expect(app.sheet()).toContainText('Lan');
   expect(await app.page.locator('#hub-code-0').inputValue()).toBe(code);

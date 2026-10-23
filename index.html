@@ -1397,13 +1397,13 @@ function iconOf(skin, k) {
 }
 const ICON = new Proxy({}, { get: (_, k) => iconOf(curSkin, k) });
 const NAV = [['home', 'nHome', 'Trang chủ'], ['plan', 'cal', 'Lịch tập'], ['today', 'nTrain', 'Tập'], ['week', 'nProg', 'Tiến độ'], ['more', 'nMe', 'Tài khoản']];
-/* tab đang sáng trên thanh dưới: Cơ thể/Ảnh nằm trong Tiến độ, Cài đặt nằm trong Tài khoản */
-const navTab = () => ui.tab === 'today' && !state.active ? 'home' : ui.tab === 'body' || ui.tab === 'photos' ? 'week' : ui.tab === 'settings' ? 'more' : ui.tab;
+/* tab đang sáng trên thanh dưới: Cơ thể/Ảnh nằm trong Tiến độ */
+const navTab = () => ui.tab === 'today' && !state.active ? 'home' : ui.tab === 'body' || ui.tab === 'photos' ? 'week' : ui.tab;
 function renderNav() {
   const cur = navTab();
   $('#nav-bar').innerHTML = NAV.map(([t, k, l]) => t === 'today'
     ? `<button type="button" class="fab" data-act="${state.active ? 'tab' : 'start-pick'}" data-tab="today" ${cur === t ? 'aria-current="page"' : ''} aria-label="${state.active ? 'Quay lại buổi đang tập' : 'Bắt đầu buổi tập'}"><span class="fabc">${ICON[k]}</span><span class="lb">${state.active ? 'Đang tập' : l}</span><span class="dot" id="dot-active" ${state.active ? '' : 'hidden'}></span></button>`
-    : `<button type="button" data-act="tab" data-tab="${t}" ${cur === t ? 'aria-current="page"' : ''}>${t === 'more' && coach() ? ICON.users : ICON[k]}<span class="lb">${t === 'more' && coach() ? 'HLV' : l}</span></button>`).join('');
+    : `<button type="button" data-act="tab" data-tab="${t}" ${cur === t ? 'aria-current="page"' : ''}>${ICON[k]}<span class="lb">${l}</span></button>`).join('');
 }
 
 /* ---------- dữ liệu nền ---------- */
@@ -1654,7 +1654,7 @@ async function connectCloud(local) {
     if (canWrite === false) { setSyncStatus('readonly'); return; }
     try {
       const ms = await Cloud.meta.get();
-      if (ms.exists) { const have = new Set(profiles.list.map(p => p.id)); let ch = false; (ms.data().list || []).forEach(p => { if (p && p.id && !have.has(p.id)) { profiles.list.push({ id: p.id, name: p.name || 'Người tập', color: p.color || 0 }); ch = true; } }); if (!profiles.coach && ms.data().coach) { profiles.coach = ms.data().coach; ch = true; } if (ch) LDB.put('kv', 'profiles', clone(profiles)); }
+      if (ms.exists) { const have = new Set(profiles.list.map(p => p.id)); let ch = false; (ms.data().list || []).forEach(p => { if (p && p.id && !have.has(p.id)) { profiles.list.push({ id: p.id, name: p.name || 'Người tập', color: p.color || 0 }); ch = true; } }); if (ch) LDB.put('kv', 'profiles', clone(profiles)); }
     } catch (e) {}
     await reconcile(local);
     saveProfiles();
@@ -1697,7 +1697,9 @@ const GLOBAL_KEYS = ['skin', 'notify', 'pushServer', 'pushKey', 'sfx', 'haptics'
 const stateKey = pid => pid === 'p1' ? 'state' : 'state:' + pid;
 const curProf = () => profiles.list.find(p => p.id === profiles.active) || profiles.list[0];
 const multi = () => profiles.list.length > 1;
-const coach = () => profiles.coach && profiles.coach.on ? profiles.coach : null;
+const isHlv = () => hubRole() === 'hlv';
+/* học viên của HLV: mọi hồ sơ trừ hồ sơ tự tập của HLV (BR-25.2) */
+const studentsOf = () => profiles.list.filter(p => !isHlv() || p.id !== hlvSelf());
 const initials = n => String(n).trim().split(/\s+/).map(w => w[0]).slice(-2).join('').toUpperCase();
 const clone = o => JSON.parse(JSON.stringify(o));
 const globalsOf = st => { const g = {}; GLOBAL_KEYS.forEach(k => { if (st.settings[k] !== undefined) g[k] = st.settings[k]; }); return g; };
@@ -1924,7 +1926,7 @@ function render(keepScroll) {
   document.documentElement.dataset.anim = animOn() ? 'on' : 'off';
   if (document.documentElement.dataset.skin !== (state.settings.skin || 'amber')) applySkin(state.settings.skin);
   const v = $('#view');
-  v.innerHTML = ui.tab === 'home' ? viewHome() : ui.tab === 'today' ? viewToday() : ui.tab === 'plan' ? viewPlan() : ui.tab === 'week' ? viewWeek() : ui.tab === 'body' ? viewBody() : ui.tab === 'photos' ? viewPhotos() : ui.tab === 'settings' ? viewMore() : coach() ? viewCoach() : viewMore();
+  v.innerHTML = ui.tab === 'home' ? (isHlv() ? viewTeam() : '') + viewHome() : ui.tab === 'today' ? viewToday() : ui.tab === 'plan' ? viewPlan() : ui.tab === 'week' ? viewWeek() : ui.tab === 'body' ? viewBody() : ui.tab === 'photos' ? viewPhotos() : viewMore();
   renderNav();
   renderHeader();
   hydratePhotos(v);
@@ -1932,7 +1934,7 @@ function render(keepScroll) {
   if (ui.tab === 'photos') bindCompare();
   if (ui.tab === 'home' || (ui.tab === 'today' && !state.active)) bindTodos();
   if (ui.tab === 'today' && state.active) { requestWake(); updateProgress(); markCurrent(); }
-  if (ui.tab === 'more' && coach() && ((tabChanged && !ui.coachJust) || !ui.coachData) && !ui.coachLoading) loadCoach();
+  if (ui.tab === 'home' && isHlv() && ((tabChanged && !ui.coachJust) || !ui.coachData) && !ui.coachLoading) loadCoach();
   ui.coachJust = false;
   if (tabChanged && animOn()) { v.classList.remove('enter'); void v.offsetWidth; v.classList.add('enter'); countUp(v);
     const nb = $(`.nav [data-tab="${ui.tab}"]`); if (nb) nb.classList.add('pop'); clearTimeout(render.t); render.t = setTimeout(() => v.classList.remove('enter'), 1400); }
@@ -1989,12 +1991,9 @@ function renderHeader() {
   const p = curProf(), n = (p.name || state.settings.name || '').trim();
   const av = $('#avatar'); av.textContent = n ? initials(n) : 'ĐN';
   if (multi()) { av.style.setProperty('--pc', PCOLORS[p.color % PCOLORS.length]); av.classList.add('pcol'); } else { av.style.removeProperty('--pc'); av.classList.remove('pcol'); }
-  const d = new Date(), co = coach();
-  if (co) { av.style.setProperty('--pc', PCOLORS[p.color % PCOLORS.length]); av.classList.add('pcol');
-    $('#hello').innerHTML = esc(n || 'Học viên') + ICON.down; $('#today-l').textContent = `HLV ${co.name} · ${DOWL[d.getDay()]} ${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
-    $('.who').setAttribute('data-act', 'coach'); $('.who').setAttribute('aria-label', 'Mở bảng huấn luyện viên'); }
-  else { $('#hello').innerHTML = esc(multi() ? n : n ? `Chào ${n}` : 'Giáo Án Địa Ngục') + ICON.down; $('#today-l').textContent = `${DOWL[d.getDay()]}, ${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
-    $('.who').setAttribute('data-act', 'profiles'); $('.who').setAttribute('aria-label', 'Đổi người tập'); }
+  const d = new Date();
+  $('#hello').innerHTML = esc(multi() ? n : n ? `Chào ${n}` : 'Giáo Án Địa Ngục') + ICON.down; $('#today-l').textContent = `${DOWL[d.getDay()]}, ${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
+  $('.who').setAttribute('data-act', 'profiles'); $('.who').setAttribute('aria-label', 'Đổi người tập');
   const c = cycleInfo();
   const nTodo = state.days.length && !state.active ? todoItems().length + (activePains().length ? 1 : 0) : 0, bell = $('#bell');
   bell.hidden = !nTodo; bell.innerHTML = nTodo ? ICON.bell + `<span class="bd">${nTodo}</span>` : '';
@@ -2114,7 +2113,7 @@ function viewToday() { return state.active ? viewSession(state.active) : viewHom
 /* việc cần làm: gom các thẻ nhắc thành một thẻ lật ngang trên Trang chủ, đủ cả trong chuông */
 function todoItems() {
   const out = [];
-  if (multi() && !coach() && !(profiles.coach && profiles.coach.dismiss)) out.push(`<div class="banner"><span class="bi">${ICON.users}</span><div><b>Bạn đang kèm ${profiles.list.length} người?</b><p>Bật chế độ huấn luyện viên: bạn là HLV, những người còn lại là học viên. Có bảng theo dõi cả nhóm ngay ở đầu màn hình.</p><div class="row"><button class="btn sm gold" data-act="coach-setup">Bật chế độ HLV</button><button class="btn sm ghost" data-act="coach-dismiss">Để sau</button></div></div></div>`);
+  if (hubRole() === '' && multi()) out.push(`<div class="banner"><span class="bi">${ICON.users}</span><div><b>Máy này có ${profiles.list.length} hồ sơ</b><p>Quét mã QR HLV để làm HLV và quản lý học viên. Các hồ sơ đã có vẫn được giữ trên máy.</p><div class="row"><button class="btn sm gold" data-act="more-sec" data-k="drive">Đồng bộ với HLV</button></div></div></div>`);
   const wp = wpBanner(); if (wp && wp.includes('class="banner')) out.push(wp);
   for (const h of [deloadBanner(), recoveryHint(), bodyPhotoBanner(), packBanner()]) if (h) out.push(h);
   if (allExFull().some(x => x.ex.muscle === 'Khác')) out.push(`<div class="banner"><span class="bi">?</span><div><b>Có bài đang để nhóm cơ “Khác”</b><p>Các bài này không được tính độ hồi phục. Gán đúng nhóm cơ để gợi ý buổi tập chính xác.</p><button class="btn sm gold" data-act="other-open">Gán nhóm cơ</button></div></div>`);
@@ -2875,7 +2874,7 @@ function notifCardHtml(st) {
     ${S.nRemind !== false ? `<div class="dows">${[1, 2, 3, 4, 5, 6, 0].map(d => `<button type="button" data-act="n-day" data-d="${d}" aria-pressed="${nDays().includes(d)}">${NDOW[d]}</button>`).join('')}</div>
     <label class="f" style="margin-top:8px;max-width:180px">Giờ nhắc<input class="inp" type="time" id="n-time" value="${esc(S.nTime || '17:30')}"></label>` : ''}
     <label class="toggle" style="margin-top:12px"><span>Tối Chủ nhật: nhắc nhập số đo</span><input type="checkbox" id="n-weekly" ${S.nWeekly !== false ? 'checked' : ''}></label>
-    <label class="toggle"><span>${coach() ? 'Học viên tập xong' : 'HLV cập nhật giáo án'}</span><input type="checkbox" id="n-drive" ${S.nSync !== false ? 'checked' : ''}></label>`;
+    <label class="toggle"><span>${isHlv() ? 'Học viên tập xong' : 'HLV cập nhật giáo án'}</span><input type="checkbox" id="n-drive" ${S.nSync !== false ? 'checked' : ''}></label>`;
   return h + `</details></div>`;
 }
 
@@ -3327,7 +3326,7 @@ function viewWeek() {
   const mode = ui.pmode === 'month' ? 'month' : 'week', off = mode === 'month' ? (ui.monthOff || 0) : ui.weekOff, today = ymd();
   const P = periodOf(mode, off), S = periodStats(P.from, P.to), Q = periodStats(P.prev[0], P.prev[P.prev.length - 1]);
   const tonsN = v => fmt(v / 1000, v >= 10000 ? 1 : 2);
-  let h = `<section class="sec"><div class="sec-head" style="margin-bottom:12px"><h2 class="h1">Tiến độ</h2>${multi() || coach() ? `<button class="btn sm" data-act="coach">${ICON.users} Bảng HLV</button>` : ''}</div>${progTabs()}
+  let h = `<section class="sec"><div class="sec-head" style="margin-bottom:12px"><h2 class="h1">Tiến độ</h2>${isHlv() ? `<button class="btn sm" data-act="coach">${ICON.users} Bảng HLV</button>` : ''}</div>${progTabs()}
     ${tonTix(P, S, Q, mode)}
     <div class="seg pmode" role="group" aria-label="Xem theo">${[['week', 'Theo tuần'], ['month', 'Theo tháng']].map(([k, l]) => `<button type="button" data-act="pmode" data-k="${k}" aria-pressed="${mode === k}">${l}</button>`).join('')}</div>
     <div class="weeknav"><button class="btn" data-act="period" data-d="-1" aria-label="Trước">${ICON.chevL}</button>
@@ -3437,7 +3436,7 @@ function sessionSheet(id) {
     <div class="kpis"><div class="kpi"><div class="k">${s.finishedAt ? fmtDur(durOf(s)) : '–'}</div><div class="l">thời gian</div></div><div class="kpi"><div class="k">${st.sets}</div><div class="l">set</div></div><div class="kpi"><div class="k">${fmt(st.vol / 1000, 2)}</div><div class="l">tấn tạ</div></div></div>
     <div class="cmpline">${pv ? `So với lần trước (${dm(pv.date)}): <b>${tons(pst.vol)}</b> → <b>${tons(st.vol)}</b> ${deltaHtml(st.vol, pst.vol)}` : 'Đây là lần đầu tập buổi này.'}</div><div class="tbl-wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>Bài</th><th>Các set</th></tr></thead><tbody>`;
   for (const en of s.entries) h += `<tr><td>${esc(shortName(en.name))}${en.note ? `<div class="small muted">${esc(en.note)}</div>` : ''}</td><td class="tn">${setsStr(en.sets)}${en.drop ? ` · D ${fmt(en.drop.kg)}×${en.drop.reps}` : ''}</td></tr>`;
-  h += `</tbody></table></div><div class="sh-actions">${canReopen(s) ? `<button class="btn" data-act="reopen-session" data-id="${s.id}">${ICON.play} Mở lại để tập tiếp</button>` : ''}${coach() ? '' : `<button class="btn" data-act="share-open" data-d="${s.date}" data-id="${s.id}">${ICON.share} Chia sẻ với PT</button>`}<button class="btn ghost" data-act="close-sheet">Đóng</button><button class="btn ghost danger" data-act="del-session" data-id="${s.id}">Xoá buổi này</button></div>`;
+  h += `</tbody></table></div><div class="sh-actions">${canReopen(s) ? `<button class="btn" data-act="reopen-session" data-id="${s.id}">${ICON.play} Mở lại để tập tiếp</button>` : ''}${isHlv() ? '' : `<button class="btn" data-act="share-open" data-d="${s.date}" data-id="${s.id}">${ICON.share} Chia sẻ với PT</button>`}<button class="btn ghost" data-act="close-sheet">Đóng</button><button class="btn ghost danger" data-act="del-session" data-id="${s.id}">Xoá buổi này</button></div>`;
   openSheet(h);
 }
 
@@ -3727,7 +3726,6 @@ function bpEditSheet(id) {
 function viewMore() {
   const st = state.settings;
   const sk = st.skin || 'amber';
-  const co = coach();
   /* mỗi mục cài đặt là một trang con; trang Tài khoản chỉ còn danh mục */
   const SEC = {
     drive: ['Đồng bộ với HLV', () => hubCardHtml() + syncCardHtml()],
@@ -3742,7 +3740,7 @@ function viewMore() {
     form: ['Lưu ý form khi tập', () => `<div class="card set-card"><h3>Lưu ý form khi tập</h3><p>Điểm form · tránh chấn thương hiện ở đầu mỗi bài khi ${esc(curProf().name)} tập.</p>
     <div class="seg" role="group" aria-label="Mức lưu ý form" style="margin-top:6px">${Object.entries(FORM_LV).map(([k, m]) => `<button type="button" data-act="form-lv" data-k="${k}" aria-pressed="${formLv() === k}">${m.label}</button>`).join('')}</div>
     <p class="small muted" style="margin:10px 0 0">${FORM_LV[formLv()].desc}</p></div>`],
-    height: ['Chỉ số cơ thể', () => `<div class="card set-card"><h3>Chiều cao của ${esc(curProf().name)}</h3><p>Dùng để tính BMI ở tab Cơ thể. Đổi tên người tập ở danh sách ${co ? 'học viên' : 'người tập'}.</p><div class="formgrid" style="margin-top:10px">
+    height: ['Chỉ số cơ thể', () => `<div class="card set-card"><h3>Chiều cao của ${esc(curProf().name)}</h3><p>Dùng để tính BMI ở tab Cơ thể. Đổi tên người tập ở danh sách ${isHlv() ? 'học viên' : 'người tập'}.</p><div class="formgrid" style="margin-top:10px">
     <label class="f"><span>Chiều cao <span class="unit">cm</span></span><input class="inp" data-bind="setting" data-k="height" inputmode="decimal" value="${fmtIn(st.height)}" placeholder="Để tính BMI"></label>
   </div></div>`],
     notif: ['Thông báo', () => notifCardHtml(st)],
@@ -3760,7 +3758,7 @@ function viewMore() {
   };
   if (ui.moreSec && SEC[ui.moreSec]) {
     const [t, fn] = SEC[ui.moreSec];
-    return `<section class="sec"><div class="subhead"><button class="btn sm ghost" data-act="more-sec" data-k="">${ICON.chevL} ${co ? 'Cài đặt' : 'Tài khoản'}</button><h2 class="h1">${t}</h2></div>${fn()}</section>`;
+    return `<section class="sec"><div class="subhead"><button class="btn sm ghost" data-act="more-sec" data-k="">${ICON.chevL} Tài khoản</button><h2 class="h1">${t}</h2></div>${fn()}</section>`;
   }
   ui.moreSec = null;
   const p = curProf(), n = (p.name || st.name || '').trim() || 'Bạn', today = ymd();
@@ -3769,14 +3767,13 @@ function viewMore() {
   const np = 'Notification' in window ? Notification.permission : 'none';
   const syncLine = hubRole() === 'hv' ? 'Đã nối với HLV ' + esc(state.settings.sync.ten || '') : hubRole() === 'hlv' ? 'HLV · ' + Object.keys(state.settings.sync.map || {}).length + ' học viên' : 'Chưa nối máy chủ';
   const row = (k, ic, t, sub, cls) => `<button type="button" class="grow" data-act="more-sec" data-k="${k}"><span class="gi ${cls || ''}">${ICON[ic]}</span><span class="gt"><b>${t}</b><span>${sub}</span></span>${ICON.chevR}</button>`;
-  return `<section class="sec"><div class="sec-head" style="margin-bottom:14px"><h2 class="h1">${co ? 'Cài đặt' : 'Tài khoản'}</h2>${co ? `<button class="btn sm" data-act="tab" data-tab="more">${ICON.chevL} Phòng HLV</button>` : ''}</div>
-  <div class="card acc-prof"><div class="ap-top"><span class="avatar ${multi() ? 'pcol' : ''}" style="${multi() ? `--pc:${PCOLORS[p.color % PCOLORS.length]}` : ''}">${esc(initials(n))}</span><span class="t"><b>${esc(n)}</b><span>${co ? `Hồ sơ đang xem · HLV ${esc(co.name)}` : multi() ? `${profiles.list.length} người tập trên máy này` : 'Người tập'}</span></span><button class="btn sm" data-act="profiles">Đổi</button></div>
+  return `<section class="sec"><div class="sec-head" style="margin-bottom:14px"><h2 class="h1">Tài khoản</h2></div>
+  <div class="card acc-prof"><div class="ap-top"><span class="avatar ${multi() ? 'pcol' : ''}" style="${multi() ? `--pc:${PCOLORS[p.color % PCOLORS.length]}` : ''}">${esc(initials(n))}</span><span class="t"><b>${esc(n)}</b><span>${isHlv() ? 'Hồ sơ đang xem · vai HLV' : multi() ? `${profiles.list.length} người tập trên máy này` : 'Người tập'}</span></span><button class="btn sm" data-act="profiles">Đổi</button></div>
     <div class="ap-stats"><div><b>${state.sessions.length}</b><span>buổi đã tập</span></div><div><b>${streak}</b><span>tuần liên tục</span></div><div><b>${fmt(vol4, vol4 >= 10 ? 1 : 2)}t</b><span>tạ 4 tuần</span></div></div></div>
-  <div class="card set-card coachcard"><h3>${ICON.users} Huấn luyện viên</h3>${co
-    ? `<p><b>HLV ${esc(co.name)}</b> · ${profiles.list.length} học viên.</p>
-    <div class="row"><button class="btn sm" data-act="coach-setup">Đổi tên HLV</button><button class="btn sm ghost" data-act="coach-off">Tắt chế độ HLV</button></div>`
-    : `<p>Bạn kèm người khác tập? Bật chế độ HLV: bạn là huấn luyện viên, mỗi học viên có giáo án, mức tạ, lịch sử và số đo riêng. Một bảng theo dõi cả nhóm: ai lỡ buổi, ai cần lên tạ, ai đang đau.</p>
-    <div class="row"><button class="btn gold" data-act="coach-setup">Bật chế độ HLV</button><button class="btn" data-act="profiles">${ICON.users} Người tập (${profiles.list.length})</button></div>`}</div>
+  <div class="card set-card coachcard"><h3>${ICON.users} Vai trên máy này</h3>${isHlv()
+    ? `<p><b>HLV</b> · ${studentsOf().length} học viên trên máy này. Phòng HLV nằm ở Trang chủ.</p><div class="row"><button class="btn" data-act="profiles">${ICON.users} Học viên (${studentsOf().length})</button></div>`
+    : hubRole() === 'hv' ? `<p><b>HV</b> · máy này nối với HLV ${esc(state.settings.sync.ten || '')}. Chỉ có tính năng học viên.</p>`
+    : '<p>Chưa có vai. Quét mã QR HLV để làm HLV, hoặc quét thẻ học viên để nối máy với HLV.</p><div class="row"><button class="btn gold" data-act="more-sec" data-k="drive">Đồng bộ với HLV</button></div>'}</div>
   <div class="gh">Đồng bộ & dữ liệu</div><div class="card grp">
     ${row('drive', 'cloud', 'Đồng bộ với HLV', syncLine, hubRole() ? 'ok' : '')}
     ${row('pack', 'book', 'Thư viện hình hướng dẫn', ui.pack ? `Đã tải ${ui.pack.n} hình · xem được khi không có mạng` : 'Chưa tải · khoảng 20 MB')}
@@ -3826,10 +3823,9 @@ function coachData(st) {
 }
 async function coachSheet() {
   const days = weekDaysOf(0), rows = [];
-  for (const p of profiles.list) { const raw = await profState(p.id); rows.push({ p, c: raw ? coachData(p.id === profiles.active ? state : normState(raw)) : null }); }
+  for (const p of studentsOf()) { const raw = await profState(p.id); rows.push({ p, c: raw ? coachData(p.id === profiles.active ? state : normState(raw)) : null }); }
   const nm = xs => xs.slice(0, 3).map(x => esc(shortName(x.ex.name))).join(', ') + (xs.length > 3 ? ` +${xs.length - 3}` : '');
-  const co = coach();
-  let h = `<h3 class="sh-title">${co ? 'Bảng HLV · ' + esc(co.name) : 'Tổng quan cả nhóm'}</h3><p class="sh-text">${profiles.list.length} học viên · số liệu 7 ngày gần nhất. Chạm vào một người để xem và ghi buổi tập cho người đó.</p>`;
+  let h = `<h3 class="sh-title">Bảng HLV</h3><p class="sh-text">${studentsOf().length} học viên · số liệu 7 ngày gần nhất. Chạm vào một người để xem và ghi buổi tập cho người đó.</p>`;
   for (const { p, c } of rows) {
     h += `<button type="button" class="coach ${p.id === profiles.active ? 'cur' : ''}" data-act="switch-profile" data-id="${p.id}"><span class="ch"><span class="pav" style="--pc:${PCOLORS[p.color % PCOLORS.length]}">${esc(initials(p.name) || '?')}</span><b>${esc(p.name)}</b>${c && c.active ? '<span class="badge up">Đang tập</span>' : ''}${p.id === profiles.active ? '<span class="chip">Đang xem</span>' : ''}</span>`;
     if (!c) { h += `<span class="cl warn"><i>!</i><span>Chưa mở hồ sơ này lần nào trên máy. Chạm để mở.</span></span></button>`; continue; }
@@ -3847,17 +3843,17 @@ async function coachSheet() {
     L.push(['', '·', `Tháng này <b>${c.nMonth} buổi</b> · tổng ${c.total} buổi${c.w ? ` · cân nặng <b>${fmt(c.w.weight)} kg</b> (${dm(c.w.date)})` : ''}`]);
     h += L.map(([k, i, t]) => `<span class="cl ${k}"><i>${i}</i><span>${t}</span></span>`).join('') + `</button>`;
   }
-  h += `<div class="sh-actions"><button class="btn gold big" data-act="prof-add">${ICON.plus} Thêm học viên</button><button class="btn" data-act="profiles">Đổi tên, sao chép giáo án, xoá học viên</button>${co ? '' : '<button class="btn" data-act="coach-setup">Bật chế độ HLV</button>'}<button class="btn ghost" data-act="close-sheet">Đóng</button></div>`;
+  h += `<div class="sh-actions"><button class="btn gold big" data-act="prof-add">${ICON.plus} Thêm học viên</button><button class="btn" data-act="profiles">Đổi tên, sao chép giáo án, xoá học viên</button><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`;
   openSheet(h);
 }
 async function loadCoach() {
   ui.coachLoading = true;
   try {
     const rows = [];
-    for (const p of profiles.list) { const raw = await profState(p.id); const st = raw ? (p.id === profiles.active ? state : normState(raw)) : null; rows.push({ p, c: st ? coachRich(st) : null }); }
+    for (const p of studentsOf()) { const raw = await profState(p.id); const st = raw ? (p.id === profiles.active ? state : normState(raw)) : null; rows.push({ p, c: st ? coachRich(st) : null }); }
     ui.coachData = { rows, at: Date.now() };
   } finally { ui.coachLoading = false; }
-  if (ui.tab === 'more' && coach()) { lastTab = null; ui.coachJust = true; render(true); }
+  if (ui.tab === 'home' && isHlv()) { lastTab = null; ui.coachJust = true; render(true); }
 }
 function coachRich(st) {
   const base = coachData(st);
@@ -3871,14 +3867,14 @@ function coachRich(st) {
     return { ...base, d14, wk8, up28: upCount(s28), vol7: base.vol7, rot, wpOk: !!(wp && wp.at), wpMode: wp && wp.at ? (wp.mode === 'focus' ? 'ưu tiên ' + wp.focus : wp.mode === 'deload' ? 'deload' : 'cân bằng') : '' };
   });
 }
-function viewCoach() {
-  const co = coach(), D = ui.coachData;
-  let h = `<section class="sec"><div class="sec-head" style="margin-bottom:12px"><h2 class="h1">Phòng HLV</h2><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm" data-act="qr-scan">⌗ Nhận kết quả</button><button class="btn sm" data-act="tab" data-tab="settings">⚙</button></div></div>`;
+function viewTeam() {
+  const D = ui.coachData;
+  let h = `<section class="sec"><div class="sec-head" style="margin-bottom:12px"><h2 class="h1">Phòng HLV</h2><div class="row" style="gap:6px;flex-wrap:nowrap"><button class="btn sm" data-act="qr-scan">⌗ Nhận kết quả</button></div></div>`;
   if (!D) return h + '<div class="skel"></div><div class="skel"></div><div class="skel"></div></section>';
   const rows = D.rows.filter(r => r.c), col = p => PCOLORS[p.color % PCOLORS.length];
   const T = rows.reduce((a, r) => ({ n7: a.n7 + r.c.n7, vol7: a.vol7 + r.c.vol7, ups: a.ups + r.c.ups.length, warn: a.warn + ((r.c.gap == null || r.c.gap >= 4) || r.c.pains.length ? 1 : 0) }), { n7: 0, vol7: 0, ups: 0, warn: 0 });
   const today = ymd();
-  h += `<section class="hero glow chero tix"><div class="eyebrow">${ICON.users} HLV ${esc(co.name)} · ${profiles.list.length} học viên</div>
+  h += `<section class="hero glow chero tix"><div class="eyebrow">${ICON.users} HLV · ${studentsOf().length} học viên</div>
     <span class="big">${T.n7 ? `Cả đội ${T.n7} buổi / 7 ngày` : 'Cả đội chưa tập tuần này'}</span><div class="sub">${T.warn ? `${T.warn} người cần bạn để ý hôm nay` : 'Mọi người đang tập đều'}</div>
     <div class="pst"><div><span class="k">${fmt(T.vol7 / 1000, 1)}</span><span class="l">tấn tạ 7 ngày</span></div><div><span class="k">${rows.reduce((a, r) => a + r.c.up28, 0)}</span><span class="l">bài đã lên tạ · 4 tuần</span></div><div><span class="k">${rows.filter(r => r.c.wpOk).length}/${rows.length}</span><span class="l">đã duyệt kế hoạch tuần</span></div><div><span class="k">${rows.reduce((a, r) => a + r.c.nMonth, 0)}</span><span class="l">buổi tháng này</span></div></div>
     <div class="act14">${rows.map(r => `<div class="r" style="--pc:${col(r.p)}"><span class="av">${esc(initials(r.p.name))}</span><div class="cells">${r.c.d14.map((n, k) => `<i class="${n ? 'on' : ''} ${k === 13 ? 'td' : ''}" style="--k:${k}"></i>`).join('')}</div></div>`).join('')}
@@ -3994,15 +3990,7 @@ async function qrScanSheet(mode) {
   } catch (e) { const st = $('#qr-st'); if (st) st.textContent = 'Không mở được camera. Bạn vẫn có thể bấm “Dán mã từ bộ nhớ tạm” hoặc “Chọn từ Ảnh”.'; }
 }
 function qrStop() { clearTimeout(ui.qrRaf); if (ui.qrStream) { ui.qrStream.getTracks().forEach(t => t.stop()); ui.qrStream = null; } }
-function coachSetupSheet() {
-  const co = profiles.coach || {}, self = profiles.list.find(p => /^tôi$/i.test(p.name.trim()));
-  openSheet(`<h3 class="sh-title">Chế độ huấn luyện viên</h3><p class="sh-text">Bạn là HLV. Mọi người trong danh sách là học viên, mỗi người dữ liệu riêng, tất cả nằm trên điện thoại này.</p>
-    <label class="f full" style="margin-top:12px">Tên huấn luyện viên<input class="inp" id="f-cname" maxlength="30" value="${esc(co.name || 'Hoàng')}"></label>
-    ${self ? `<div class="eyebrow" style="margin:18px 0 8px">Hồ sơ “${esc(self.name)}” trong danh sách</div>
-    <div class="seg" role="group" aria-label="Hồ sơ của HLV"><button type="button" data-act="coach-self" data-v="train" aria-pressed="${ui.coachSelf !== 'coach'}">Tôi vẫn tự tập</button><button type="button" data-act="coach-self" data-v="coach" aria-pressed="${ui.coachSelf === 'coach'}">Chỉ làm HLV</button></div>
-    <p class="small muted" style="margin:10px 0 0">${ui.coachSelf === 'coach' ? 'Hồ sơ này sẽ được bỏ khỏi danh sách học viên nếu chưa có buổi tập nào. Nếu đã có dữ liệu, app giữ lại và đổi tên để bạn tự xoá sau.' : 'Hồ sơ này đổi tên thành tên HLV, vẫn ghi buổi tập như học viên.'}</p>` : ''}
-    <div class="sh-actions"><button class="btn gold big" data-act="coach-save">${co.on ? 'Lưu' : 'Bật chế độ HLV'}</button><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
-}
+
 function painSheet() {
   const A = activePains(), f = ui.painF || (ui.painF = { area: '', level: 1 });
   let h = `<h3 class="sh-title">Đau & chấn thương</h3><p class="sh-text">Đánh dấu chỗ đang đau của ${esc(curProf().name)}. App sẽ giảm tạ hoặc bỏ các bài dồn lực vào vùng đó, và cho quay lại từ từ khi hết đau.</p>`;
@@ -4027,7 +4015,7 @@ async function profilesSheet() {
       <span class="pinfo"><span class="lt">${esc(p.name)}${p.id === profiles.active ? ' <span class="chip">Đang xem</span>' : ''}${st.active ? ' <span class="badge up">Đang tập</span>' : ''}</span>
         <span class="pstats"><span><b>${st.wk}</b> buổi tuần này</span><span><b>${st.sets}</b> set</span><span><b>${st.w != null ? fmt(st.w) : '–'}</b> kg${st.dw != null ? ` <span class="delta ${Math.abs(st.dw) < 0.05 ? 'flat' : 'other'}">${st.dw > 0 ? '▲' : st.dw < 0 ? '▼' : '='}${fmt(Math.abs(st.dw))}</span>` : ''}</span></span>
         <span class="ls">${st.last ? 'Lần cuối: ' + esc(st.last.dayName) + ' · ' + ago(st.last.date) : 'Chưa tập buổi nào'}</span></span></button>`).join('')}</div>
-    <div class="sh-actions">${multi() || coach() ? `<button class="btn gold big" data-act="coach">${ICON.users} ${coach() ? 'Bảng HLV' : 'Tổng quan cả nhóm'}</button>` : ''}<button class="btn ${multi() ? '' : 'gold big'}" data-act="prof-add">${ICON.plus} Thêm người</button>
+    <div class="sh-actions">${isHlv() ? `<button class="btn gold big" data-act="coach">${ICON.users} Bảng HLV</button><button class="btn" data-act="prof-add">${ICON.plus} Thêm học viên</button>` : ''}
       <button class="btn" data-act="prof-rename">Đổi tên ${esc(curProf().name)}</button>
       ${multi() ? `<button class="btn" data-act="prof-copy">Sao chép giáo án từ người khác sang ${esc(curProf().name)}</button>` : ''}
       ${multi() ? `<button class="btn ghost danger" data-act="prof-del">Xoá hồ sơ ${esc(curProf().name)}</button>` : ''}
@@ -4035,7 +4023,7 @@ async function profilesSheet() {
 }
 function profAddSheet() {
   const opts = profiles.list.map(p => `<option value="${p.id}">Sao chép giáo án của ${esc(p.name)}</option>`).join('');
-  openSheet(`<h3 class="sh-title">${coach() ? 'Thêm học viên' : 'Thêm người tập'}</h3>
+  openSheet(`<h3 class="sh-title">Thêm học viên</h3>
     <label class="f full" style="margin-top:12px">Tên<input class="inp" id="f-pname" maxlength="30" placeholder="Ví dụ: Vợ"></label>
     <div class="qpick">${['Vợ', 'Chồng', 'Bạn', 'Em', 'Anh', 'Chị'].map(n => `<button type="button" data-act="qpick-p" data-v="${n}">${n}</button>`).join('')}</div>
     <label class="f full" style="margin-top:16px">Giáo án ban đầu<select class="inp" id="f-pfrom"><option value="">Để trống, tạo sau</option>${opts}</select></label>
@@ -4086,7 +4074,7 @@ const normHash = h => String(h == null ? '' : h).replace('.', '_');
 const photoHashCache = new Map();
 async function photoHash(id) { if (photoHashCache.has(id)) return photoHashCache.get(id); const v = await DB.get('photos', id); const h = v ? strHash(v) : null; if (h) photoHashCache.set(id, h); return h; }
 const okPhoto = v => typeof v === 'string' && v.length < 1500000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v);
-const syncRole = () => coach() ? 'coach' : 'student';
+const syncRole = () => isHlv() ? 'coach' : 'student';
 function syncDelOf(st) { if (!st.syncDel || typeof st.syncDel !== 'object') st.syncDel = { s: {}, e: {} }; st.syncDel.s = st.syncDel.s || {};
   const e = {}; for (const [k, t] of Object.entries(st.syncDel.e || {})) e[shKey(k)] = Math.max(e[shKey(k)] || 0, t); st.syncDel.e = e; return st.syncDel; }
 function pruneDel(D) { const lim = Date.now() - 180 * 864e5; for (const k of ['s', 'e']) for (const id in D[k]) if (D[k][id] < lim) delete D[k][id]; return D; }
@@ -4577,14 +4565,17 @@ function hubPlanSoon() { clearTimeout(hubPlanT); hubPlanT = setTimeout(hubPushPl
 async function hubPushPlans(quiet) {
   if (hubRole() !== 'hlv') return;
   const sy = state.settings.sync, H = sy.planH || {};
-  for (const [hvId, pid] of Object.entries(sy.map || {})) {
-    const st = await profState(pid); if (!st) continue;
-    const plan = await serPlan(st, false, {}), h = planKey(plan);
-    if (H[hvId] === h) continue;
-    const ev = quiet ? null : { title: 'HLV vừa cập nhật giáo án', body: 'Mở app để xem bản mới', tag: 'plan' };
-    const r = await hubCall('/s/ghi', { hv: hvId, recs: [{ k: 'plan@hlv', id: 'plan', t: Date.now(), vai: 'hlv', d: JSON.stringify({ plan }) }], ev, backfill: !!quiet });
-    if (r.s === 200) { H[hvId] = h; sy.planH = H; save(); }
-  }
+  /* mất mạng hoặc máy chủ lỗi: không báo lỗi, bản chưa gửi giữ lại để lần lưu sau thử tiếp */
+  try {
+    for (const [hvId, pid] of Object.entries(sy.map || {})) {
+      const st = await profState(pid); if (!st) continue;
+      const plan = await serPlan(st, false, {}), h = planKey(plan);
+      if (H[hvId] === h) continue;
+      const ev = quiet ? null : { title: 'HLV vừa cập nhật giáo án', body: 'Mở app để xem bản mới', tag: 'plan' };
+      const r = await hubCall('/s/ghi', { hv: hvId, recs: [{ k: 'plan@hlv', id: 'plan', t: Date.now(), vai: 'hlv', d: JSON.stringify({ plan }) }], ev, backfill: !!quiet });
+      if (r.s === 200) { H[hvId] = h; sy.planH = H; save(); }
+    }
+  } catch (e) { /* giáo án vẫn còn trên máy */ }
 }
 /* Giáo án: so 3 phía — bản đã thống nhất lần trước (planBase), bản trên máy, bản trên máy chủ.
    Chỉ khi cả máy này và HLV cùng đổi thì hỏi người dùng (xem hubConflictHtml). Buổi tập không cần hỏi: xem hubApplySession. */
@@ -4718,7 +4709,7 @@ const handlers = {
   'tab': t => { ui.tab = t.dataset.tab; ui.moreSec = null; render(); },
   'start-day': t => startSession(t.dataset.id),
   'pick-day': t => { ui.pick = t.dataset.id; render(true); },
-  'more-sec': t => { ui.moreSec = t.dataset.k || null; ui.tab = coach() ? 'settings' : 'more'; render(); },
+  'more-sec': t => { ui.moreSec = t.dataset.k || null; ui.tab = 'more'; render(); },
   'todos': () => todosSheet(),
   'start-pick': () => startPickSheet(),
   'custom-open': () => { ui.customSel = new Set(); customSheet(); },
@@ -4730,7 +4721,7 @@ const handlers = {
     confirmSheet({ title: `Bỏ “${esc(shortName(en.name))}” khỏi buổi này?`, text: 'Chỉ bỏ khỏi buổi tập hôm nay. Bài vẫn còn trong giáo án, bạn có thể thêm lại bằng “+ Thêm bài”.', ok: 'Bỏ bài này', danger: true,
       onOk: () => { const k = state.active && state.active.entries.indexOf(en); if (k == null || k < 0) return; state.active.entries.splice(k, 1); save(); closeSheet(); render(true); toast('Đã bỏ ' + shortName(en.name) + ' khỏi buổi này'); } }); },
   'profiles': () => profilesSheet(),
-  'switch-profile': async t => { const fromCoach = ui.tab === 'more' && coach(); await switchProfile(t.dataset.id); if (fromCoach) { ui.tab = 'today'; render(); } },
+  'switch-profile': async t => { await switchProfile(t.dataset.id); },
   'prof-add': () => profAddSheet(),
   'qpick-p': t => { $('#f-pname').value = t.dataset.v; },
   'prof-create': async t => {
@@ -4939,7 +4930,7 @@ const handlers = {
   'prog': t => { ui.progEx = t.dataset.id; progressSheet(); },
   'pm': t => { ui.pm = t.dataset.k; const y = $('#sheet-body').scrollTop; progressSheet(); $('#sheet-body').scrollTop = y; },
   'tempo': t => { state.settings.tempo = +t.dataset.k; save(); render(true); },
-  'coach': () => { if (coach()) { closeSheet(); ui.tab = 'more'; render(); } else coachSheet(); },
+  'coach': () => coachSheet(),
   'wp-open': () => { ui.wpDraft = null; weekPlanSheet(); },
   'wp-mode': t => { ui.wpDraft.mode = t.dataset.k; weekPlanSheet(); },
   'wp-focus': t => { ui.wpDraft.focus = t.dataset.k; weekPlanSheet(); },
@@ -4993,24 +4984,6 @@ const handlers = {
                       'qr-close': () => { clearInterval(ui.qrT); qrStop(); closeSheet(); },
   'lb': t => { ui.lb = t.dataset.k; render(true); },
   'goal': t => { const p = profiles.list.find(x => x.id === t.dataset.id); if (!p) return; p.goal = (p.goal || 5) >= 6 ? 3 : (p.goal || 5) + 1; saveProfiles(); render(true); toast(`Mục tiêu ${p.name}: ${p.goal} buổi mỗi tuần`); },
-  'coach-setup': () => { ui.coachSelf = 'train'; coachSetupSheet(); },
-  'coach-self': t => { const v = $('#f-cname').value; ui.coachSelf = t.dataset.v; coachSetupSheet(); $('#f-cname').value = v; },
-  'coach-dismiss': () => { profiles.coach = { ...(profiles.coach || {}), dismiss: true }; saveProfiles(); render(true); },
-  'coach-off': () => { profiles.coach = { ...(profiles.coach || {}), on: false, dismiss: true }; saveProfiles(); render(); toast('Đã tắt chế độ HLV'); },
-  'coach-save': async () => {
-    const name = ($('#f-cname').value || '').trim().slice(0, 30) || 'HLV';
-    profiles.coach = { ...(profiles.coach || {}), name, on: true };
-    const self = profiles.list.find(p => /^tôi$/i.test(p.name.trim())); let msg = `Chế độ HLV đã bật · HLV ${name}`;
-    if (self) {
-      const st = self.id === profiles.active ? state : await profState(self.id);
-      const empty = !st || (!(st.sessions || []).length && !(st.body || []).length && !st.active);
-      if (ui.coachSelf === 'coach' && empty && profiles.list.length > 1) {
-        if (self.id === profiles.active) await switchProfile(profiles.list.find(p => p.id !== self.id).id);
-        LDB.del('kv', stateKey(self.id)); profiles.list = profiles.list.filter(p => p !== self); msg += ` · đã bỏ hồ sơ “Tôi” trống`;
-      } else { self.name = ui.coachSelf === 'coach' ? name + ' (dữ liệu cũ)' : name; if (ui.coachSelf === 'coach') msg += ' · hồ sơ cũ có dữ liệu nên được giữ lại'; }
-    }
-    saveProfiles(); closeSheet(); render(); toast(msg);
-  },
   'pain': () => { ui.painF = { area: '', level: 1, note: '' }; painSheet(); },
   'pain-area': t => { const n = $('#f-pnote'); ui.painF.note = n ? n.value : ''; ui.painF.area = t.dataset.v; const ex = activePains().find(p => p.area === t.dataset.v); if (ex) ui.painF.level = ex.level; const y = $('#sheet-body').scrollTop; painSheet(); $('#sheet-body').scrollTop = y; },
   'pain-lv': t => { const n = $('#f-pnote'); ui.painF.note = n ? n.value : ''; ui.painF.level = +t.dataset.v; const y = $('#sheet-body').scrollTop; painSheet(); $('#sheet-body').scrollTop = y; },
@@ -5195,6 +5168,8 @@ async function purgeStored() {
   await LDB.open();
   const pm = await LDB.get('kv', 'profiles');
   if (pm && Array.isArray(pm.list) && pm.list.length) { profiles = pm; if (!profiles.list.some(p => p.id === profiles.active)) profiles.active = profiles.list[0].id; }
+  /* BR-25 (mig30): chế độ HLV đã bỏ, vai lấy từ mã QR; bỏ trường cũ một lần, không đụng hồ sơ */
+  if (profiles.coach) { delete profiles.coach; await LDB.put('kv', 'profiles', clone(profiles)); }
   await purgeStored();
   const saved = await LDB.get('kv', stateKey(profiles.active));
   if (saved && Array.isArray(saved.days)) loadState(saved);

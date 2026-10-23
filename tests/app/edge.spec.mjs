@@ -19,23 +19,6 @@ test('danh sách người tập: số buổi tuần này, cân nặng và thay �
   await expect(app.sheet().locator('.prow').first()).toContainText('Chưa tập buổi nào');
 });
 
-test('bật HLV khi hồ sơ “Tôi” đã có dữ liệu: giữ lại và đổi tên; hoặc vẫn tự tập thì đổi thành tên HLV', async ({ app, page }) => {
-  const P = basicPlan();
-  const withData = state({ days: P.days, sessions: [session(P.chest, addDays(TODAY, -1), [[P.bench, [[40, 10]]]])] });
-  const prof = { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'An', color: 1 }] };
-  await app.seed({ profiles: prof, states: { p1: withData, p2: state() } });
-  await app.click('coach-setup');
-  await app.sheet().locator('[data-act="coach-self"][data-v="coach"]').click();
-  await expect(app.sheet()).toContainText('Nếu đã có dữ liệu, app giữ lại');
-  await app.click('coach-save');
-  await expect(app.toast()).toContainText('hồ sơ cũ có dữ liệu nên được giữ lại');
-  expect((await app.profiles()).list.map(p => p.name)).toEqual(['Hoàng (dữ liệu cũ)', 'An']);
-  await app.seed({ profiles: prof, states: { p1: withData, p2: state() } });
-  await app.click('coach-setup');
-  await app.click('coach-save');
-  expect((await app.profiles()).list.map(p => p.name)).toEqual(['Hoàng', 'An']);
-});
-
 test('buổi cũ có drop set kiểu cũ: mở lại, kết thúc, tổng kết vẫn tính drop', async ({ app }) => {
   const P = basicPlan();
   const s = session(P.chest, TODAY, [[P.bench, [[40, 10], [40, 10], [40, 10]], { drop: { kg: 30, reps: 12 } }]], { startedAt: Date.now() - 3600e3 });

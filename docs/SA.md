@@ -57,7 +57,7 @@ Script chính là một IIFE, chia thành các khối (tiêu đề `/* ---------
 | Tab Tiến độ | khối `viewWeek` | `periodStats`, `progTabs` (Sức mạnh / Cơ thể / Ảnh), `tonTix`, `viewWeek`, `progressSheet`, `sessionSheet`, biểu đồ SVG `drawLine` |
 | Cơ thể & ảnh | khối `viewBody` | `bRange`, `bodyVerdict`, `viewBody`, ảnh trước/sau, đọc EXIF (hiển thị trong Tiến độ) |
 | Tab Tài khoản | khối `viewMore` | `viewMore` (thẻ hồ sơ + danh mục `row()` → trang con `SEC[...]`: drive, backup, pack, pace, form, height, notif, skin, install, wipe) |
-| Người tập & HLV | khối `profStats` | `profStats`, `withState`, `coachData/coachRich`, `viewCoach`, kế hoạch tuần (`wpBuild`, `weekPlanSheet`), các bảng hồ sơ |
+| Người tập & HLV | khối `profStats` | `profStats`, `withState`, `coachData/coachRich`, `viewTeam` (Phòng HLV, đầu Trang chủ của HLV), `studentsOf`, kế hoạch tuần (`wpBuild`, `weekPlanSheet`), các bảng hồ sơ |
 | Đồng bộ, Drive, tài khoản | khối `DRV` … `acc*` | Động cơ gộp dùng chung (`syncPack`, `cleanPkg`, `syncMerge`, `syncApply`, `syncUndo`, `syncReceive` cho file `gadn-sync`); Drive: `DRV`, `drvCall`, `drvSyncOne`, `drvEnsureAll`, `drvAuto/drvSoon`, ảnh (`drvLocalPhotos/drvPushPhotos/drvPullPhotos`), mã liên kết `drvCode/drvLinkReceive`; tài khoản: `accCardHtml`, `accApply`, `accRoster`, `accTvSheet/accTvForm`, `accHet`; QR: `qrScanSheet`, `decodeQrImage`, `joinQrParts`, `handleCodeText`, `oldCode`, `copyOrShareCode`; khôi phục file 1 người |
 | File, sheet, toast | cuối khối đồng bộ | `saveFile` (claude.ai downloads hoặc `<a download>`), `openSheet/closeSheet/confirmSheet`, `toast` |
 | Sự kiện | khối `handlers` | Bảng `handlers` (~186 hành động), ủy quyền `click` theo `data-act`, `input` theo `data-bind`, `change` (file, checkbox), `keydown` Esc, `visibilitychange`, `pagehide`, `beforeinstallprompt`, đồng hồ 1 giây |
@@ -66,7 +66,7 @@ Script chính là một IIFE, chia thành các khối (tiêu đề `/* ---------
 `window.__sota` lộ một số hàm thuần (`suggest`, `roadmap`, `exHistory`, `baseKg`, `warmSets`, `recommend`, `muscleLoad`, `switchProfile`, `findEx`, `slotOf`, `autoGid`, `guideSheet`, `exdbMatch`) và getter `state/ui/profiles` để gỡ lỗi và kiểm thử.
 
 ### Mô hình hiển thị
-- `render()` vẽ lại toàn bộ `#view` bằng chuỗi HTML theo `ui.tab` (`viewHome`/`viewSession` — `viewToday` chọn một trong hai —, `viewPlan`, `viewWeek` (kèm Cơ thể/Ảnh qua `progTabs`), `viewMore`, `viewCoach`); trong buổi tập dùng `refreshExCard(i)` để chỉ thay một thẻ bài (giữ con trỏ ô ghi chú).
+- `render()` vẽ lại toàn bộ `#view` bằng chuỗi HTML theo `ui.tab` (`viewHome`/`viewSession` — `viewToday` chọn một trong hai —, `viewPlan`, `viewWeek` (kèm Cơ thể/Ảnh qua `progTabs`), `viewMore`); vai máy `isHlv()` = `hubRole() === 'hlv'` (BR-25); trong buổi tập dùng `refreshExCard(i)` để chỉ thay một thẻ bài (giữ con trỏ ô ghi chú).
 - Mọi nút có `data-act="<tên>"` → `handlers[<tên>](element, event)`. Ô nhập có `data-bind` (`set`, `note`, `setting`, `cmp`).
 - Bảng nổi (`openSheet(html)`) dùng cho mọi form/hộp thoại; `confirmSheet` cho xác nhận nguy hiểm (`pendingConfirm`).
 - Mọi chuỗi người dùng nhập được `esc()` trước khi chèn vào HTML.
@@ -77,7 +77,7 @@ Script chính là một IIFE, chia thành các khối (tiêu đề `/* ---------
 
 | Nơi | Khoá | Giá trị |
 |---|---|---|
-| IndexedDB `so-ta` v1, store `kv` | `profiles` | `{ active, list: [{ id, name, color, goal? }], coach?: { on, name, dismiss } }` |
+| IndexedDB `so-ta` v1, store `kv` | `profiles` | `{ active, list: [{ id, name, color, goal? }] }`; trường cũ `coach` (chế độ HLV, PA-38) được bỏ một lần khi mở app (mig30) |
 | | `state` (hồ sơ `p1`), `state:<pid>` | Trạng thái một hồ sơ (§3.2) |
 | | `exdbPack` | `{ n, at }` — đã tải thư viện hình |
 | | `drvUp:<link máy chủ>` | Danh sách mã băm ảnh đã đẩy lên Drive (≤ 3.000) |
@@ -264,15 +264,14 @@ Máy chủ Apps Script (`drive/Code.gs`), liên kết `GAL1`, tài khoản tên 
 
 Có **hai bộ kiểm thử bổ trợ nhau**, cả hai chạy trên cùng `index.html`.
 
-### 12.1 Bộ Playwright/Node (`npm test`) — đo coverage, bộ chính
+### 12.1 Bộ Playwright/Node (`npm test`) — bộ chính
 ```
 tests/
   helpers/
     fixtures.mjs   – fixture Playwright: đồng hồ giả (21/10/2026 09:00 +07), chặn mạng ngoài (font rỗng,
-                     ảnh GitHub = JPEG 1×1), phục vụ index.html đã gắn bộ đếm Istanbul; lớp App (seed IndexedDB,
+                     ảnh GitHub = JPEG 1×1); lớp App (seed IndexedDB,
                      click theo data-act, tab()/more() đi theo thanh dưới mới, startPick, đọc state/ui/profiles/idb,
                      flushed); fixture gas (máy chủ Drive thật, §12.3) và device (thêm máy thứ hai/ba có dữ liệu riêng)
-    coverage.mjs   – gắn bộ đếm (istanbul-lib-instrument), lưu window.__coverage__ mỗi lần chụp, gộp, báo cáo, chặn ngưỡng
     data.mjs       – dựng dữ liệu mẫu đúng định dạng app (ex, day, session, state, basicPlan, jpegWithExif…)
     calc.mjs       – chạy hàm thuần của app (window.__sota) trên trạng thái dựng sẵn
     cloud.mjs      – giả lập window.claude (db/user/downloads) lưu trong sessionStorage
@@ -282,16 +281,12 @@ tests/
 scripts/
   serve.mjs        – máy chủ tĩnh cho test
   check-syntax.mjs – node --check script chính + sw.js
-  uncovered.mjs    – liệt kê dòng còn nhiều nhánh chưa chạy
   dead-code.py     – tìm hàm/khai báo/handler không có đường chạy tới (mã chết), dùng khi dọn mã
 ```
 - **Môi trường**: Chromium headless, iPhone 13 (cảm ứng, 390×844), `vi-VN`, `Asia/Ho_Chi_Minh`, quyền clipboard. Đồng hồ cài bằng `page.clock.install` và vẫn chạy thật; test đồng hồ nghỉ dùng `clock.fastForward`.
-- **Gieo dữ liệu**: `App.seed()` chụp coverage → sang trang tĩnh cùng nguồn (để app không ghi đè) → ghi thẳng IndexedDB → mở lại app. Trước khi `reload()` phải `flushed()` vì `save()` trễ 300 ms.
-- **Coverage**: chụp `window.__coverage__` trước mỗi lần tải lại trang và khi test kết thúc → `coverage/raw/*.json` → `globalTeardown` gộp, in tóm tắt, tạo `coverage/report/` (HTML, lcov, json-summary) và `coverage/summary.txt`, **ném lỗi nếu dưới ngưỡng** (lines/statements/functions 90%, branches 80%).
-- **Chống coverage farm**: không `istanbul ignore`; mã chết bị xoá (đã dọn hai đợt) thay vì phủ; test đi qua nút/luồng người dùng thật và khẳng định kết quả (dữ liệu trong IndexedDB, chữ trên màn hình, thông báo), không gọi hàm chỉ để chạy dòng.
-- **Lỗi đã biết**: 3 `test.fixme` — VD-02 (nút "Gửi giáo án"), VD-31 (duyệt kế hoạch tuần Deload lỗi vẽ lại), VD-32 (giao diện Đen Tuyền không nhớ). Cổng thử đọc từ biến môi trường `PORT` (mặc định 4173) để chạy song song nhiều bản sao repo.
-- **Lỗi đã biết**: 2 `test.fixme` — VD-02 (nút "Gửi giáo án"), VD-33 (ảnh máy tập qua Drive). VD-31, VD-32 đã sửa ở PA-26.
-- **Lỗi đã biết**: 3 `test.fixme` — VD-31 (duyệt kế hoạch tuần Deload lỗi vẽ lại), VD-32 (giao diện Đen Tuyền không nhớ), VD-33 (ảnh máy tập qua Drive).
+- **Gieo dữ liệu**: `App.seed()` sang trang tĩnh cùng nguồn (để app không ghi đè) → ghi thẳng IndexedDB → mở lại app. Trước khi `reload()` phải `flushed()` vì `save()` trễ 300 ms.
+- **Chất lượng test**: test đi qua nút/luồng người dùng thật và khẳng định kết quả (dữ liệu trong IndexedDB, chữ trên màn hình, thông báo); test trùng đường và khẳng định thì xoá; mã chết bị xoá thay vì phủ.
+- Cổng thử đọc từ biến môi trường `PORT` (mặc định 4173) để chạy song song nhiều bản sao repo.
 
 ### 12.2 Bộ Python/Playwright của dự án (`bash tests/chay.sh`) — hồi quy theo PA
 Các file `tests/test_<pa>.py` (`sync form focus pa10 pa11 pa14 pa16 pa18 pa19 pa20 pa21 pa22`) cộng `tests/test_push_server.mjs` và `tests/test_drive_gas.js`. `chuan_bi.py` chép `index.html` sang `tests/site/` và chèn `window.__ev = eval` để các test chạy lệnh trong phạm vi IIFE. Chạy được bằng Python Playwright (`pip install playwright && playwright install chromium`). Bộ này **không đo coverage**; vai trò là giữ nguyên các hành vi PA trước đã chốt. Test của tính năng đã bỏ (báo cáo tháng, Phím tắt, gửi giáo án bằng mã) đã được cắt khỏi các file này khi gộp PA-15 với PA-22.
@@ -301,7 +296,6 @@ Các file `tests/test_<pa>.py` (`sync form focus pa10 pa11 pa14 pa16 pa18 pa19 p
 
 ### 12.4 Kết quả (22/10/2026)
 - `npm test`: **177 test app xanh + 4 `fixme`**, 7 test `sw.js` xanh (script `check` cú pháp OK).
-- Coverage script chính `index.html`: **lines 98,99% · statements 92,54% · functions 95,54% · branches 80,39%**; `sw.js` 100% dòng.
 - `bash tests/chay.sh`: 12 file Python (gồm `pa23`) + push-server + Code.gs đều đạt.
 
 ### Bản đồ BR → test

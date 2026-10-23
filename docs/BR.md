@@ -17,7 +17,7 @@ Nguyên tắc chung:
 - **BR-00.1** Dữ liệu nằm trên máy người dùng (IndexedDB). App không có máy chủ riêng của nhà phát triển; đồng bộ HLV ⇄ học viên đi qua **Google Drive của chính HLV** (BR-14, BR-21), thông báo đẩy qua máy chủ Cloudflare của HLV (BR-22). Khi mở trong claude.ai (Artifact) thì đồng bộ với tài khoản Claude (BR-18).
 - **BR-00.2** Mọi chữ hiển thị bằng tiếng Việt; số dùng định dạng Việt (`42,5`).
 - **BR-00.3** App chỉ đưa ra gợi ý dựa trên số liệu người dùng ghi, không thay thế HLV hay bác sĩ (ghi rõ ở cuối trang Tài khoản).
-- **BR-00.4** Thanh điều hướng 5 mục: **Trang chủ · Lịch tập · Tập (nút tròn giữa) · Tiến độ · Tài khoản** (khi bật HLV, mục cuối thành **Phòng HLV**, cài đặt mở bằng nút ⚙). Nút Tập: chưa tập → bảng chọn buổi (BR-06.3); đang có buổi dở → quay lại màn tập (hiện "Đang tập" và chấm báo); chưa có giáo án → về Trang chủ.
+- **BR-00.4** Thanh điều hướng 5 mục: **Trang chủ · Lịch tập · Tập (nút tròn giữa) · Tiến độ · Tài khoản** (mục cuối luôn là **Tài khoản**; HLV thấy **Phòng HLV** ở đầu Trang chủ, BR-25.4). Nút Tập: chưa tập → bảng chọn buổi (BR-06.3); đang có buổi dở → quay lại màn tập (hiện "Đang tập" và chấm báo); chưa có giáo án → về Trang chủ.
 - **BR-00.5** Đầu trang hiện lời chào/tên người tập (bấm để đổi người tập hoặc mở Phòng HLV), thứ ngày hôm nay, chip chu kỳ "Tuần x/6" hoặc "Tuần deload", và **chuông** báo số việc cần làm (ẩn khi không có việc; bấm mở danh sách đủ).
 - **BR-00.6** Hai giao diện: **Hổ Phách** (mặc định, tối ấm nhấn cam) và **Đen Tuyền** (đen OLED nhấn vàng) — BR-11.1.
 
@@ -110,7 +110,7 @@ Test: `tests/app/home.spec.mjs`, `tests/app/edge.spec.mjs`
 - **BR-06.3 Chọn buổi khác**: dải chip các ngày tập (chấm màu hồi phục, nhãn "Gợi ý") + chip "Tự chọn bài"; chọn chip thì thẻ vé đổi theo. Nếu buổi chọn chưa hồi phục mà có buổi hồi phục tốt hơn thì cảnh báo và nút "Đổi sang …". Nút **Tập** giữa thanh dưới mở bảng "Bắt đầu buổi tập" (gợi ý xếp đầu + Tự chọn bài) hoặc quay lại buổi đang dở.
 - **BR-06.4** Hôm nay đã tập: thẻ "Hôm nay đã tập …" với "Tập tiếp" (mở lại) và "Xem lại"; thẻ vé chuyển sang "Gợi ý buổi tiếp theo".
 - **BR-06.5 Hai thẻ nhỏ**: *Tuần này* (số buổi / mục tiêu = max(số ngày tập, 3), số set, thanh tiến độ → mở Tiến độ) và *Buổi gần nhất* (tên, số set, thời lượng → mở buổi; chưa có buổi nào thì mời xem giáo án).
-- **BR-06.6 Việc cần làm**: gom các nhắc thành thẻ lật ngang có chấm trang (đủ cả trong chuông), theo thứ tự: gợi ý bật chế độ HLV khi có nhiều người tập (ẩn được) · kế hoạch tuần chưa duyệt · **tuần deload** ("Xong deload, bắt đầu chu kỳ mới" đặt lại ngày bắt đầu chu kỳ) · đang đau · cơ thể chưa hồi phục (nhịp tim nghỉ ≥ trung bình + 5 bpm hoặc HRV ≤ 85% trung bình, cần ≥ 4 lần đo trong 14 ngày, đo trong 1 ngày gần nhất) · chụp ảnh body (≥ 28 ngày) → mở Tiến độ/Ảnh · sao lưu định kỳ (≥ 5 buổi, chưa sao lưu hoặc ≥ 14 ngày và ≥ 5 buổi mới; "Để sau" 7 ngày; ẩn khi đồng bộ tài khoản) · tải thư viện hình ("Để sau" 7 ngày) · có bài nhóm "Khác". Không có việc nào thì không hiện thẻ và ẩn chấm chuông. Khi kế hoạch tuần đã duyệt: thẻ "Tuần … · đã duyệt · n bài lên tạ" có "Xem / sửa kế hoạch".
+- **BR-06.6 Việc cần làm**: gom các nhắc thành thẻ lật ngang có chấm trang (đủ cả trong chuông), theo thứ tự: kế hoạch tuần chưa duyệt · **tuần deload** ("Xong deload, bắt đầu chu kỳ mới" đặt lại ngày bắt đầu chu kỳ) · đang đau · cơ thể chưa hồi phục (nhịp tim nghỉ ≥ trung bình + 5 bpm hoặc HRV ≤ 85% trung bình, cần ≥ 4 lần đo trong 14 ngày, đo trong 1 ngày gần nhất) · chụp ảnh body (≥ 28 ngày) → mở Tiến độ/Ảnh · sao lưu định kỳ (≥ 5 buổi, chưa sao lưu hoặc ≥ 14 ngày và ≥ 5 buổi mới; "Để sau" 7 ngày; ẩn khi đồng bộ tài khoản) · tải thư viện hình ("Để sau" 7 ngày) · có bài nhóm "Khác". Không có việc nào thì không hiện thẻ và ẩn chấm chuông. Khi kế hoạch tuần đã duyệt: thẻ "Tuần … · đã duyệt · n bài lên tạ" có "Xem / sửa kế hoạch".
 - **BR-06.7 Thẻ Độ hồi phục** (thu gọn được; liệt kê nhóm cơ đang hồi phục kèm giờ còn lại) + liên kết "Báo đau".
 - **BR-06.8** Thời gian dự kiến = Σ bài [số set × (rep × giây/rep + 5) + (số set − 1) × nghỉ + drop (3 × (10 rep + 10s)) + khởi động (170s bài lớn, 60s bài cô lập) + 60s chuyển bài].
 - **BR-06.9** Giáo án mẫu/ngày tập chưa có: Trang chủ hiện màn khởi đầu (BR-01) cùng các việc cần làm.
@@ -136,7 +136,7 @@ Test: `tests/app/pain.spec.mjs`, `tests/app/suggest.spec.mjs`
 ## BR-09 Tiến độ — Sức mạnh
 Test: `tests/app/progress.spec.mjs`
 
-- **BR-09.0** Mục **Tiến độ** có 3 tab con: *Sức mạnh* (nội dung nhóm này) · *Cơ thể* (BR-10.1–10.5) · *Ảnh* (BR-10.6). Thẻ đầu tab Sức mạnh là thẻ "vé" tóm tắt kỳ đang xem; nút "Bảng HLV" (khi có nhiều người/HLV) mở tổng quan cả nhóm.
+- **BR-09.0** Mục **Tiến độ** có 3 tab con: *Sức mạnh* (nội dung nhóm này) · *Cơ thể* (BR-10.1–10.5) · *Ảnh* (BR-10.6). Thẻ đầu tab Sức mạnh là thẻ "vé" tóm tắt kỳ đang xem; nút "Bảng HLV" (chỉ máy HLV) mở bảng cả nhóm.
 - **BR-09.1** Xem **theo tuần** (chấm 7 ngày) hoặc **theo tháng** (lịch tháng, ngày có buổi tô màu theo ngày tập và viết tắt tên; bấm mở buổi); lùi/tiến kỳ (không vượt kỳ hiện tại).
 - **BR-09.2** 4 chỉ số: buổi · set · tấn tạ (Σ kg × rep, tạ đơn ×2, drop tính) · bài lên tạ; mũi tên so với kỳ trước.
 - **BR-09.3 Nhóm cơ**: set mỗi nhóm (tháng: trung bình mỗi tuần), vùng mục tiêu 10–20 set/tuần, trạng thái Thiếu/Đạt/Cao.
@@ -157,7 +157,7 @@ Test: `tests/app/body.spec.mjs`, `tests/app/home.spec.mjs`
 ## BR-11 Tài khoản & cài đặt cá nhân
 Test: `tests/app/settings.spec.mjs`, `tests/app/misc.spec.mjs`, `tests/app/backup.spec.mjs`
 
-- **BR-11.0 Trang Tài khoản** (mục cuối thanh dưới): thẻ hồ sơ (tên, số buổi đã tập, số tuần liên tục, tấn tạ 4 tuần), thẻ Huấn luyện viên (bật/đổi tên/tắt chế độ HLV, mở danh sách người tập), rồi danh mục bốn nhóm; bấm một dòng mở **trang con**, nút ‹ quay lại danh mục (đổi mục dưới thanh rồi quay lại luôn về danh mục). Khi bật HLV, trang này gọi là *Cài đặt* và mở bằng ⚙ ở Phòng HLV.
+- **BR-11.0 Trang Tài khoản** (mục cuối thanh dưới): thẻ hồ sơ (tên, số buổi đã tập, số tuần liên tục, tấn tạ 4 tuần), thẻ **Vai trên máy này** (BR-25: HLV → số học viên và nút *Học viên*; HV → đã nối với HLV; chưa có vai → nút *Đồng bộ với HLV*), rồi danh mục bốn nhóm; bấm một dòng mở **trang con**, nút ‹ quay lại danh mục (đổi mục dưới thanh rồi quay lại luôn về danh mục).
   - *Đồng bộ & dữ liệu*: Tài khoản & đồng bộ (BR-14, BR-21) · Sao lưu & khôi phục (BR-15) · Thư viện hình hướng dẫn (BR-16.4).
   - *Tập luyện*: Nhịp nghỉ & nhịp rep (BR-11.3) · Lưu ý form khi tập (BR-11.4) · Chỉ số cơ thể (BR-11.5) · Thông báo (BR-22).
   - *Giao diện*: Giao diện & hiệu ứng (BR-11.1/11.2) · Cài lên màn hình (BR-19.1; ẩn khi đã chạy toàn màn hình hoặc trong claude.ai).
@@ -170,15 +170,15 @@ Test: `tests/app/settings.spec.mjs`, `tests/app/misc.spec.mjs`, `tests/app/backu
 - **BR-11.6** Thẻ trạng thái lưu trữ khi chạy trong claude.ai (BR-18.4).
 - **BR-11.7 Xoá toàn bộ dữ liệu** (xác nhận): xoá mọi hồ sơ, giáo án, lịch sử, số đo, ảnh, video của tôi; giữ cài đặt dùng chung (giao diện, âm thanh…) và **thư viện hình offline đã tải** (thẻ "Đã tải N hình" vẫn đúng), về màn chào mừng. Xoá hồ sơ / ngày tập / bài cũng xoá video riêng của chúng (PA-28).
 
-## BR-12 Nhiều người tập & chế độ HLV
-Test: `tests/app/profiles.spec.mjs`, `tests/app/edge.spec.mjs`
+## BR-12 Nhiều người tập & Phòng HLV
+Test: `tests/app/profiles.spec.mjs`, `tests/app/vai.spec.mjs`
 
-- **BR-12.1** Tối đa **8** người trên một máy, mỗi người dữ liệu riêng; cài đặt giao diện/âm thanh/thông báo/sao lưu dùng chung.
-- **BR-12.2 Danh sách người tập**: màu đại diện, buổi tuần này (/ buổi theo lịch cũ nếu còn), set, cân nặng + thay đổi so với ~1 tháng trước, lần tập cuối, "Đang tập". Thêm người (tên + gợi ý nhanh; có thể sao chép giáo án + ảnh máy của người khác, không chép mức tạ/lịch sử/số đo) rồi chuyển sang người đó; đổi tên; sao chép giáo án từ người khác (thêm vào / thay toàn bộ); xoá hồ sơ (xác nhận, xoá ảnh).
+- **BR-12.1** Tối đa **8** người trên một máy (kể cả máy HLV), mỗi người dữ liệu riêng; cài đặt giao diện/âm thanh/thông báo/sao lưu dùng chung.
+- **BR-12.2 Danh sách người tập**: màu đại diện, buổi tuần này (/ buổi theo lịch cũ nếu còn), set, cân nặng + thay đổi so với ~1 tháng trước, lần tập cuối, "Đang tập". Thêm học viên (chỉ máy HLV, BR-25.1; tên + gợi ý nhanh; có thể sao chép giáo án + ảnh máy của người khác, không chép mức tạ/lịch sử/số đo) rồi chuyển sang người đó; đổi tên; sao chép giáo án từ người khác (thêm vào / thay toàn bộ); xoá hồ sơ (xác nhận, xoá ảnh).
 - **BR-12.3 Chuyển người**: lưu người hiện tại, nạp người mới; nếu người đó đang tập dở thì vào thẳng màn tập.
-- **BR-12.4 Bật chế độ HLV**: tên HLV; nếu có hồ sơ "Tôi": *Tôi vẫn tự tập* (đổi tên thành tên HLV) hoặc *Chỉ làm HLV* (bỏ hồ sơ nếu trống, nếu có dữ liệu thì giữ và đổi tên "(dữ liệu cũ)"). Tắt được.
-- **BR-12.5 Phòng HLV**: tổng quan cả đội (buổi/tấn tạ 7 ngày, bài đã lên tạ 4 tuần, số người đã duyệt kế hoạch tuần, người cần để ý), lưới hoạt động 14 ngày; **Việc cần làm**: học viên đang tập · chưa tập buổi nào (bấm vào mở **Mã liên kết** Drive của học viên đó — PA-27) · ≥ 4 ngày chưa tập · đang đau · ô bài nên đổi · chưa duyệt kế hoạch tuần (mở thẳng kế hoạch); **Bảng xếp hạng** (từ 4 học viên: tấn tạ 7 ngày / lên tạ 4 tuần / buổi 7 ngày); **thẻ học viên** (vòng mục tiêu buổi/7 ngày — đổi 3→6, biểu đồ tấn tạ 8 tuần, chỉ số, lần cuối, **Mở hồ sơ**, **☁ Mã liên kết** — BR-14.3). Phòng HLV có nút ⚙ mở Cài đặt (BR-11.0).
-- **BR-12.6** Khi có nhiều người mà chưa bật HLV: bảng "Tổng quan cả nhóm" từ nút "Bảng HLV" trong Tiến độ / danh sách người tập.
+- **BR-12.4 (ĐÃ BỎ, PA-38)**: chế độ HLV (nút bật/tắt, tên HLV, lựa chọn *Tôi vẫn tự tập* / *Chỉ làm HLV*) đã bỏ. Vai của máy lấy từ mã QR, xem [BR-25](#br-25-vai-của-máy-hlv--hv--pa-38).
+- **BR-12.5 Phòng HLV** (chỉ máy HLV, ở đầu Trang chủ — BR-25.4): tổng quan cả đội (buổi/tấn tạ 7 ngày, bài đã lên tạ 4 tuần, số người đã duyệt kế hoạch tuần, người cần để ý), lưới hoạt động 14 ngày; **Việc cần làm**: học viên đang tập · chưa tập buổi nào (bấm vào mở **Thẻ QR** của học viên đó — BR-24.19) · ≥ 4 ngày chưa tập · đang đau · ô bài nên đổi · chưa duyệt kế hoạch tuần (mở thẳng kế hoạch); **Bảng xếp hạng** (từ 4 học viên: tấn tạ 7 ngày / lên tạ 4 tuần / buổi 7 ngày); **thẻ học viên** (vòng mục tiêu buổi/7 ngày — đổi 3→6, biểu đồ tấn tạ 8 tuần, chỉ số, lần cuối, **Mở hồ sơ**, **Thẻ QR** — BR-24.2). Hồ sơ HLV (tự tập) không nằm trong Phòng HLV (BR-25.2).
+- **BR-12.6 Máy chưa có vai** có một hồ sơ; nếu còn nhiều hồ sơ từ bản cũ thì báo quét mã QR HLV, hồ sơ cũ vẫn được giữ (BR-25.6).
 
 ## BR-13 Gửi & nhận giáo án bằng mã — **ĐÃ BỎ (PA-19)**
 Test: `tests/app/drive.spec.mjs` (mã kiểu cũ bị từ chối), `tests/app/edge.spec.mjs`
@@ -273,3 +273,14 @@ So sánh giáo án bỏ qua mức tạ hiện tại (đổi mỗi buổi tập, 
 - **BR-24.7 Thông báo đẩy** (PA-34.6): học viên tập xong → HLV nhận "<tên> vừa tập xong · <buổi> · n bài · m set"; giáo án đổi → học viên nhận "HLV vừa cập nhật giáo án". Buổi trước khi nối máy (lịch sử) không báo. Tắt công tắc *Học viên tập xong / HLV cập nhật giáo án* thì máy đó không nhận nữa. Máy chủ gửi qua Web Push; kiểm trong bộ test máy chủ (`tests/test_hub_sync.mjs`). **Chưa kiểm trên iPhone thật.**
 - Ngắt đăng ký trên máy này chỉ xoá khoá trên máy, không xoá dữ liệu trên máy chủ.
 
+## BR-25 Vai của máy (HLV / HV) — PA-38
+Test: `tests/app/vai.spec.mjs`, `tests/app/profiles.spec.mjs`, `tests/app/hub.spec.mjs`
+
+Trước đây có hai thứ chồng nhau: *chế độ HLV* (công tắc tự bật, không cần QR) và *vai đồng bộ* (quét QR HLV hoặc thẻ học viên). Từ PA-38 chỉ còn **vai**, lấy từ mã QR.
+
+- **BR-25.1 Vai của máy**: đúng một trong ba: **HLV** (đã quét QR HLV `GAH1`, có khoá HLV), **HV** (đã nối bằng thẻ `GAV1`), hoặc **chưa có vai**. Mọi mục HLV (Phòng HLV, Bảng HLV, Thêm học viên, thẻ QR, Hồ sơ HLV) chỉ hiện khi là HLV. Máy chưa có vai có một hồ sơ, không thêm được người tập, không có nút bật chế độ HLV. *Test:* `vai.spec.mjs` (3 test đầu).
+- **BR-25.2 HLV vừa quản lý vừa tập**: hồ sơ HLV (BR-24.20, mặc định "Tôi") là hồ sơ tự tập của HLV như một HV. Hồ sơ này không có thẻ học viên, không nằm trong danh sách học viên và không gửi lên máy chủ. *Test:* `vai.spec.mjs` ("hồ sơ Tôi… không nằm trong danh sách").
+- **BR-25.3 HV chỉ có tính năng HV**: máy HV không thấy Phòng HLV, Bảng HLV, nút Bật chế độ HLV. Tài khoản ghi "HV · máy này nối với HLV …". *Test:* `vai.spec.mjs` (HV).
+- **BR-25.4 HLV thấy cùng lúc cả hai bộ tính năng**: Trang chủ của HLV có khối **Phòng HLV** (tổng quan đội, việc cần làm, bảng xếp hạng, thẻ học viên) ở đầu, rồi Trang chủ của hồ sơ đang xem. Thanh dưới luôn 5 mục: Trang chủ · Lịch tập · Tập · Tiến độ · Tài khoản. Tiến độ có nút Bảng HLV. Không còn công tắc chuyển đổi. *Test:* `vai.spec.mjs` ("cùng lúc"), `profiles.spec.mjs`.
+- **BR-25.5 Giới hạn 8 người** áp dụng cho máy HLV như trước (BR-12.1). *Test:* `vai.spec.mjs`.
+- **BR-25.6 Dữ liệu cũ** (mig30): máy đang có trường chế độ HLV (`profiles.coach`) nhưng chưa có khoá HLV: trường đó được bỏ một lần khi mở app, **mọi hồ sơ được giữ**. Nếu còn nhiều hồ sơ, Trang chủ báo "Quét mã QR HLV để làm HLV…". *Test:* `vai.spec.mjs` ("dữ liệu cũ").

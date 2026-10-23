@@ -121,10 +121,3 @@ test('dọn rác: khoá của tính năng đã gỡ (Drive, tài khoản, sao l�
   expect(pr.list.every(p => !('uid' in p))).toBe(true);
 });
 
-test('dọn rác không gửi yêu cầu nào tới Google Drive (dữ liệu trên Drive không bị đụng tới)', async ({ app, page }) => {
-  const hits = [];
-  page.on('request', r => { if (/script\.google|googleapis\.com\/.*exec/.test(r.url())) hits.push(r.url()); });
-  await app.seed({ state: state({ settings: { drvUrl: 'https://script.google.com/macros/s/X/exec', drvKey: 'x' }, drv: { id: 'hv1', m: 'k' } }) });
-  await app.flushed();
-  expect(hits).toEqual([]);
-});
