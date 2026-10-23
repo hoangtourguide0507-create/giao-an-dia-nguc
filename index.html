@@ -4194,6 +4194,19 @@ async function hubCall(path, body, method) {
   const r = await fetch(sy.s + path, { method: method || 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth }, body: method === 'GET' ? undefined : JSON.stringify(body || {}), signal: AbortSignal.timeout(15000) });
   return { s: r.status, j: await r.json().catch(() => ({})) };
 }
+/* PA-43 · BR-24.25: máy chủ trả 401/403 = không còn công nhận máy này (thẻ bị thu hồi/khoá, máy chủ làm mới), khác với mất mạng.
+   Trả true nếu bị từ chối: đặt sy.loi (báo ở thẻ đồng bộ, toast một lần) và chỉ thử lại mỗi 5 phút. Gặp 200 thì xoá lỗi. */
+function hubGate(r) {
+  const sy = state.settings.sync; if (!sy) return false;
+  if (r.s === 200) { if (sy.loi) { delete sy.loi; save(); if (ui.tab === 'more') render(true); } return false; }
+  if (r.s !== 401 && r.s !== 403) return false;
+  if (sy.loi) { sy.loi.thu = Date.now(); return true; }
+  sy.loi = { at: Date.now(), thu: Date.now() }; save();
+  toast('Máy chủ không còn công nhận máy này. Xem mục Máy chủ đồng bộ trong Tài khoản.');
+  if (ui.tab === 'more') render(true);
+  return true;
+}
+const hubHold = () => { const l = (state.settings.sync || {}).loi; return !!l && Date.now() - l.thu < 300000; };
 async function hubKey(id, epoch) {
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(state.settings.sync.hk), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
   return b64u(new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`gadn-hv:${id}:${epoch}`)))).slice(0, 32);
@@ -4230,6 +4243,7 @@ async function hubPair(body) {
 /* nối máy học viên (bằng thẻ hoặc passkey): lưu khoá, rồi kéo lại buổi đã gửi trước đó (khôi phục khi máy trống) */
 async function hubJoin(s, i, dk, ten) {
   state.settings.sync = { s, i, dk, ten, at: Date.now() };   /* at: buổi trước lúc này là lịch sử (backfill) */
+  state.sync = state.sync || { sent: {}, gone: {} }; state.sync.sent = {};   /* BR-24.25: nối lại (kể cả máy chủ mới) thì gửi lại mọi buổi đã tập */
   save(); closeSheet(); render(true); toast(`Đã nối với HLV · ${ten}`); hubFlushSoon(); hubSubscribe();
   await hubRestoreSelf(); return true;
 }
@@ -4242,7 +4256,7 @@ async function hubSubscribe() {
 async function hubRestoreSelf() {
   const sy = state.settings.sync; if (hubRole() !== 'hv') return;
   const r = await hubCall('/s/doi?hv=' + encodeURIComponent(sy.i) + '&since=0', null, 'GET');
-  if (r.s !== 200) return;
+  if (hubGate(r) || r.s !== 200) return;
   for (const rec of r.j.recs) {
     if (rec.k === 'plan@hlv') await hubApplyPlan(rec);
     else if (rec.k.startsWith('buoi:')) await hubApplySession(profiles.active, rec);
@@ -4254,7 +4268,7 @@ let hubT = 0, hubBusy = false;
 function hubFlushSoon() { clearTimeout(hubT); hubT = setTimeout(hubFlush, 1500); }
 /* gửi buổi đã tập và buổi đã xoá. Thông báo "vừa tập xong" chỉ cho buổi mới; buổi trước khi nối máy đi kèm backfill, không báo */
 async function hubFlush() {
-  if (hubRole() !== 'hv' || hubBusy || !navigator.onLine) return;
+  if (hubRole() !== 'hv' || hubBusy || !navigator.onLine || hubHold()) return;
   const sy = state.settings.sync; state.sync = state.sync || { sent: {}, gone: {} };
   const sent = state.sync.sent, gone = state.sync.gone = state.sync.gone || {};
   const todo = state.sessions.filter(x => x.finishedAt && sent[x.id] !== hubRev(x)).slice(0, 20);
@@ -4271,7 +4285,7 @@ async function hubFlush() {
       for (const x of todo) sent[x.id] = hubRev(x); for (const [id, t] of dels) gone[id] = t;
       sy.lastOk = Date.now(); save();   /* lưu lại: save() gọi hubFlush lần nữa, lúc đó không còn gì để gửi */
       if (ui.tab === 'more') render(true);   /* cập nhật dòng trạng thái đang hiện */
-    } else sy.lastErr = Date.now();
+    } else if (!hubGate(r)) sy.lastErr = Date.now();
   } catch (e) { sy.lastErr = Date.now(); }   /* mất mạng: thử lại khi mở app, khi có mạng, hoặc mỗi 20 giây */
   finally { hubBusy = false; }
 }
@@ -4293,8 +4307,10 @@ function hubCardHtml() {
     const pend = state.sessions.filter(x => x.finishedAt && sent[x.id] !== hubRev(x)).length;
     const stLine = sy.lastErr && (!sy.lastOk || sy.lastErr > sy.lastOk) ? 'Chưa gửi được: không liên lạc được máy chủ. Sẽ thử lại tự động.'
       : pend ? `Chờ gửi ${pend} buổi.` : sy.lastOk ? `Đã gửi xong · lần cuối lúc ${hhmm(sy.lastOk)}.` : 'Chưa gửi buổi nào.';
+    if (sy.loi) return hubConflictHtml() + `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p><b style="color:var(--down)">Không đồng bộ được: máy chủ không còn công nhận máy này.</b> Có thể thẻ QR đã bị thu hồi hoặc khoá, hoặc máy chủ vừa được làm mới. Dữ liệu trên máy vẫn còn nguyên, đừng đăng xuất.</p><p>Nhắn HLV để nhận thẻ QR mới rồi chạm <i>Nối lại bằng thẻ QR</i>; các buổi đã tập sẽ tự gửi lại.</p><div class="row"><button class="btn gold" data-act="hub-reg">Nối lại bằng thẻ QR</button></div></div>`;
     return hubConflictHtml() + `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã nối với HLV ${esc(sy.ten || '')}. ${stLine}</p></div>`;
   }
+  if ((state.settings.sync || {}).loi) return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p><b style="color:var(--down)">Không đồng bộ được: máy chủ không còn công nhận máy này.</b> Khoá HLV có thể đã đổi hoặc máy chủ được cài lại. Dữ liệu trên máy vẫn còn nguyên.</p><p>Chạm <i>Quét lại mã HLV</i> và quét mã QR HLV hiện hành.</p><div class="row"><button class="btn gold" data-act="hub-reg">Quét lại mã HLV</button></div></div>`;
   return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã đăng ký làm HLV. Thêm học viên bằng thẻ QR; thẻ dùng được lâu dài.</p>
     <div class="row"><button class="btn gold" data-act="hub-add">Thêm học viên</button><button class="btn" data-act="hub-self-open">Hồ sơ HLV</button><button class="btn" data-act="hub-reg">Quét mã</button></div></div>`;
 }
@@ -4459,13 +4475,13 @@ async function hubAdoptPlan(pid, rec) {
 let hubPulling = false;
 async function hubPull() {
   const role = hubRole();
-  if (!role || hubPulling || !navigator.onLine) return;
+  if (!role || hubPulling || !navigator.onLine || hubHold()) return;
   const sy = state.settings.sync; hubPulling = true;
   try {
     /* máy chủ trả tối đa một trang (con = còn nữa): kéo tiếp từ bản ghi cuối, không nhảy tới cuối kẻo mất bản ghi */
     for (let trang = 0, con = true; con && trang < 50; trang++) {
       const r = await hubCall(role === 'hlv' ? '/s/doi?since=' + (sy.seq || 0) : '/s/doi?hv=' + encodeURIComponent(sy.i) + '&since=' + (sy.seq || 0), null, 'GET');
-      if (r.s !== 200) return;
+      if (hubGate(r) || r.s !== 200) return;
       for (const rec of r.j.recs) {
         if (role === 'hv') { if (rec.k === 'plan@hlv' && rec.t > (sy.planT || 0)) await hubApplyPlan(rec); }
         else if (rec.k.startsWith('buoi:') && sy.map && sy.map[rec.hv]) await hubApplySession(sy.map[rec.hv], rec);
