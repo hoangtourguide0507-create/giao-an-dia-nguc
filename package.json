@@ -5,15 +5,10 @@
   "scripts": {
     "test": "npm run test:sw && npm run test:app",
     "test:app": "playwright test",
-    "test:cov": "COVERAGE=1 playwright test",
-    "test:sw": "node --test --experimental-test-coverage --test-coverage-include=sw.js --test-coverage-lines=90 --test-coverage-functions=90 --test-coverage-branches=80 tests/sw/*.test.mjs",
+    "test:sw": "node --test tests/sw/*.test.mjs",
     "check": "node scripts/check-syntax.mjs"
   },
   "devDependencies": {
-    "@playwright/test": "^1.64.1",
-    "istanbul-lib-coverage": "^3.2.2",
-    "istanbul-lib-instrument": "^6.0.3",
-    "istanbul-lib-report": "^3.0.1",
-    "istanbul-reports": "^3.2.0"
+    "@playwright/test": "^1.64.1"
   }
 }

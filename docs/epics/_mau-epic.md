@@ -38,7 +38,7 @@ Ngoài phạm vi: …
 - [ ] Anh xác nhận BR + SA + kế hoạch test (ngày …, tin nhắn: "…")
 
 ### Kết quả
-- `npm test`: … test xanh, coverage lines …% · statements …% · functions …% · branches …%
+- `npm test`: … test xanh, … test bị xoá (trùng)
 - Đã cập nhật: `BR.md` (BR-…), `SA.md` (§…), `VAN-DE-VA-CHIEN-LUOC.md` (VD-…)
 - `CACHE` trong `sw.js`: `gadn-v…`
 

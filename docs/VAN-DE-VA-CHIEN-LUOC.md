@@ -75,10 +75,10 @@ Nguyên tắc ưu tiên: **(1) đúng kết quả tập & không mất dữ li�
 
 ### Giai đoạn 2 — Nền móng (2–4 tuần)
 1. **Tách `index.html` thành module ES gốc** (không cần build, GitHub Pages vẫn phục vụ thẳng): `src/core/` (thuật toán thuần: gợi ý, lộ trình, hồi phục, khởi động, đồng bộ gộp), `src/data/` (lưu trữ, chuyển đổi dữ liệu), `src/ui/` (từng tab), `data/library.json` (thư viện bài/hình), `styles/` theo skin. Bộ test E2E hiện có là lưới an toàn: tách từng phần, test phải xanh sau mỗi bước.
-2. **Unit test cho `src/core/`** (Node test runner, chạy < 1 giây) bên cạnh E2E; giữ ngưỡng coverage hiện tại cho cả hai.
+2. **Unit test cho `src/core/`** (Node test runner, chạy < 1 giây) bên cạnh E2E; không đo coverage.
 3. **Phiên bản lược đồ dữ liệu** (`v: 4`) + bảng chuyển đổi có test cho mỗi bước; một nguồn phiên bản app (VD-26).
 4. Dọn CSS chết (VD-20) kèm test chụp màn hình 2 giao diện.
-5. Gộp hai bộ test (Node + Python) về một công cụ để có một báo cáo coverage duy nhất; hiện bộ Python chỉ là hồi quy theo PA, không đo coverage.
+5. Gộp hai bộ test (Node + Python) về một công cụ; hiện bộ Python chỉ là hồi quy theo PA.
 
 ### Giai đoạn 3 — Dữ liệu & đồng bộ (song song khi cần)
 1. Đồng bộ claude.ai gộp theo bản ghi, không mất buổi tập (VD-13).
@@ -91,6 +91,6 @@ Nguyên tắc ưu tiên: **(1) đúng kết quả tập & không mất dữ li�
 - Tuỳ chọn tắt tự bật kế hoạch tuần (VD-28); kiểm tra khả năng tiếp cận (VD-29).
 
 ### Chỉ số theo dõi
-- `npm test` xanh trên mọi PA; coverage không giảm dưới ngưỡng (lines/statements/functions ≥ 90%, branches ≥ 80%).
+- `npm test` xanh trên mọi PA; số test không tăng vô hạn (test trùng bị xoá).
 - Số `test.fixme` (lỗi đã biết): hiện 0 — VD-02, VD-31, VD-32, VD-33 đã có test thật (PA-25…PA-27).
 - Kích thước `index.html` và số dòng > 300 ký tự giảm dần trong Giai đoạn 2.

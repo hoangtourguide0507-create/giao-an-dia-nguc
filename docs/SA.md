@@ -264,15 +264,14 @@ Máy chủ Apps Script (`drive/Code.gs`), liên kết `GAL1`, tài khoản tên 
 
 Có **hai bộ kiểm thử bổ trợ nhau**, cả hai chạy trên cùng `index.html`.
 
-### 12.1 Bộ Playwright/Node (`npm test`) — đo coverage, bộ chính
+### 12.1 Bộ Playwright/Node (`npm test`) — bộ chính
 ```
 tests/
   helpers/
     fixtures.mjs   – fixture Playwright: đồng hồ giả (21/10/2026 09:00 +07), chặn mạng ngoài (font rỗng,
-                     ảnh GitHub = JPEG 1×1), phục vụ index.html đã gắn bộ đếm Istanbul; lớp App (seed IndexedDB,
+                     ảnh GitHub = JPEG 1×1); lớp App (seed IndexedDB,
                      click theo data-act, tab()/more() đi theo thanh dưới mới, startPick, đọc state/ui/profiles/idb,
                      flushed); fixture gas (máy chủ Drive thật, §12.3) và device (thêm máy thứ hai/ba có dữ liệu riêng)
-    coverage.mjs   – gắn bộ đếm (istanbul-lib-instrument), lưu window.__coverage__ mỗi lần chụp, gộp, báo cáo, chặn ngưỡng
     data.mjs       – dựng dữ liệu mẫu đúng định dạng app (ex, day, session, state, basicPlan, jpegWithExif…)
     calc.mjs       – chạy hàm thuần của app (window.__sota) trên trạng thái dựng sẵn
     cloud.mjs      – giả lập window.claude (db/user/downloads) lưu trong sessionStorage
@@ -282,16 +281,12 @@ tests/
 scripts/
   serve.mjs        – máy chủ tĩnh cho test
   check-syntax.mjs – node --check script chính + sw.js
-  uncovered.mjs    – liệt kê dòng còn nhiều nhánh chưa chạy
   dead-code.py     – tìm hàm/khai báo/handler không có đường chạy tới (mã chết), dùng khi dọn mã
 ```
 - **Môi trường**: Chromium headless, iPhone 13 (cảm ứng, 390×844), `vi-VN`, `Asia/Ho_Chi_Minh`, quyền clipboard. Đồng hồ cài bằng `page.clock.install` và vẫn chạy thật; test đồng hồ nghỉ dùng `clock.fastForward`.
-- **Gieo dữ liệu**: `App.seed()` chụp coverage → sang trang tĩnh cùng nguồn (để app không ghi đè) → ghi thẳng IndexedDB → mở lại app. Trước khi `reload()` phải `flushed()` vì `save()` trễ 300 ms.
-- **Coverage**: chụp `window.__coverage__` trước mỗi lần tải lại trang và khi test kết thúc → `coverage/raw/*.json` → `globalTeardown` gộp, in tóm tắt, tạo `coverage/report/` (HTML, lcov, json-summary) và `coverage/summary.txt`, **ném lỗi nếu dưới ngưỡng** (lines/statements/functions 90%, branches 80%).
-- **Chống coverage farm**: không `istanbul ignore`; mã chết bị xoá (đã dọn hai đợt) thay vì phủ; test đi qua nút/luồng người dùng thật và khẳng định kết quả (dữ liệu trong IndexedDB, chữ trên màn hình, thông báo), không gọi hàm chỉ để chạy dòng.
-- **Lỗi đã biết**: 3 `test.fixme` — VD-02 (nút "Gửi giáo án"), VD-31 (duyệt kế hoạch tuần Deload lỗi vẽ lại), VD-32 (giao diện Đen Tuyền không nhớ). Cổng thử đọc từ biến môi trường `PORT` (mặc định 4173) để chạy song song nhiều bản sao repo.
-- **Lỗi đã biết**: 2 `test.fixme` — VD-02 (nút "Gửi giáo án"), VD-33 (ảnh máy tập qua Drive). VD-31, VD-32 đã sửa ở PA-26.
-- **Lỗi đã biết**: 3 `test.fixme` — VD-31 (duyệt kế hoạch tuần Deload lỗi vẽ lại), VD-32 (giao diện Đen Tuyền không nhớ), VD-33 (ảnh máy tập qua Drive).
+- **Gieo dữ liệu**: `App.seed()` sang trang tĩnh cùng nguồn (để app không ghi đè) → ghi thẳng IndexedDB → mở lại app. Trước khi `reload()` phải `flushed()` vì `save()` trễ 300 ms.
+- **Chất lượng test**: test đi qua nút/luồng người dùng thật và khẳng định kết quả (dữ liệu trong IndexedDB, chữ trên màn hình, thông báo); test trùng đường và khẳng định thì xoá; mã chết bị xoá thay vì phủ.
+- Cổng thử đọc từ biến môi trường `PORT` (mặc định 4173) để chạy song song nhiều bản sao repo.
 
 ### 12.2 Bộ Python/Playwright của dự án (`bash tests/chay.sh`) — hồi quy theo PA
 Các file `tests/test_<pa>.py` (`sync form focus pa10 pa11 pa14 pa16 pa18 pa19 pa20 pa21 pa22`) cộng `tests/test_push_server.mjs` và `tests/test_drive_gas.js`. `chuan_bi.py` chép `index.html` sang `tests/site/` và chèn `window.__ev = eval` để các test chạy lệnh trong phạm vi IIFE. Chạy được bằng Python Playwright (`pip install playwright && playwright install chromium`). Bộ này **không đo coverage**; vai trò là giữ nguyên các hành vi PA trước đã chốt. Test của tính năng đã bỏ (báo cáo tháng, Phím tắt, gửi giáo án bằng mã) đã được cắt khỏi các file này khi gộp PA-15 với PA-22.
@@ -301,7 +296,6 @@ Các file `tests/test_<pa>.py` (`sync form focus pa10 pa11 pa14 pa16 pa18 pa19 p
 
 ### 12.4 Kết quả (22/10/2026)
 - `npm test`: **177 test app xanh + 4 `fixme`**, 7 test `sw.js` xanh (script `check` cú pháp OK).
-- Coverage script chính `index.html`: **lines 98,99% · statements 92,54% · functions 95,54% · branches 80,39%**; `sw.js` 100% dòng.
 - `bash tests/chay.sh`: 12 file Python (gồm `pa23`) + push-server + Code.gs đều đạt.
 
 ### Bản đồ BR → test

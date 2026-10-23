@@ -50,16 +50,6 @@ test('BR-25.4 · HLV thấy Phòng HLV và Trang chủ của mình cùng lúc; t
   await expect(page.locator('#nav-bar button .lb')).toHaveText(['Trang chủ', 'Lịch tập', 'Tập', 'Tiến độ', 'Tài khoản']);
 });
 
-test('BR-25.2 · HLV: hồ sơ “Tôi” là hồ sơ HLV nên không nằm trong danh sách học viên của Phòng HLV', async ({ app, hub }) => {
-  const P = basicPlan();
-  await app.seed({ profiles: prof([['p1', 'Tôi'], ['p2', 'An', 1], ['p3', 'Bình', 2]]), states: { p1: state({ days: P.days }), p2: state({ days: P.days }), p3: state({ days: P.days }) } });
-  await registerHlv(app, hub);
-  await app.tab('home');
-  await expect(app.view().locator('.tcard')).toHaveCount(2);
-  await expect(app.view().locator('.tcard', { hasText: 'Tôi' })).toHaveCount(0);
-  await expect(app.view().locator('.chero')).toContainText('2 học viên');
-});
-
 test('BR-12.1 · tối đa 8 người trên một máy, kể cả với HLV', async ({ app, hub, page }) => {
   await app.seed({ profiles: prof([1, 2, 3, 4, 5, 6, 7, 8].map(i => ['p' + i, 'N' + i])), states: { p1: state() } });
   await registerHlv(app, hub);

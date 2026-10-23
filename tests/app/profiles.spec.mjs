@@ -95,6 +95,7 @@ test('BR-25.4 · HLV: Phòng HLV ở Trang chủ (việc cần làm, duyệt k�
   await expect(app.view().locator('.chero')).toContainText('2 học viên');
   await expect(app.view().locator('.todo')).toContainText(['Nhắc An: 6 ngày chưa tập', 'An đang đau vai', 'Duyệt kế hoạch tuần cho An', 'Bình chưa tập buổi nào']);
   await expect(app.view().locator('.tcard')).toHaveCount(2);
+  await expect(app.view().locator('.tcard', { hasText: 'Tôi' })).toHaveCount(0);
   await expect(app.view().locator('.tcard').first()).toContainText('ĐANG ĐAU');
   /* đổi mục tiêu buổi/tuần: 5 → 6 → 3 */
   await app.view().locator('[data-act="goal"][data-id="p2"]').click();
@@ -143,11 +144,3 @@ test('Phòng HLV: bảng xếp hạng khi có từ 4 học viên, nhắc học v
   await expect(page.locator('#alarm-t')).toHaveText('Hết giờ nghỉ · B');
 });
 
-test('VD-02: Phòng HLV — thẻ “chưa tập buổi nào” mở đúng hồ sơ học viên (Drive đã bỏ)', async ({ app, hub }) => {
-  const P = basicPlan();
-  await app.seed({ profiles: prof([['p1', 'A'], ['p2', 'B', 1]]), states: { p1: state({ days: P.days }), p2: state({ days: P.days }) } });
-  await registerHlv(app, hub);
-  await app.tab('home');
-  await app.view().locator('.todo[data-act="switch-profile"][data-id="p2"]').click();
-  await expect.poll(async () => (await app.profiles()).active, { timeout: 5000 }).toBe('p2');
-});

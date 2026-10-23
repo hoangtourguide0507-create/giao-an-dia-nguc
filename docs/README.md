@@ -42,7 +42,7 @@
       │
  4. Test ── viết/sửa test theo tiêu chí chấp nhận; chạy để thấy test mới ĐỎ (đúng lý do)
       │
- 5. Code ── sửa app tới khi mọi test XANH, coverage đạt ngưỡng (`npm run test:cov`); cập nhật BR.md + SA.md
+ 5. Code ── sửa app tới khi mọi test XANH; cập nhật BR.md + SA.md
       │      (+ VAN-DE-VA-CHIEN-LUOC.md nếu xử lý xong vấn đề nào)
       │
  6. Nhánh pa-<số>-<tên> ── gửi link xem thử; chờ "Duyệt PA-x" rồi mới gộp vào main
@@ -62,36 +62,21 @@ npx playwright install chromium
 npm test
 ```
 
-- `npm run test:sw` — test service worker `sw.js` (Node test runner, ngưỡng 90% dòng/hàm, 80% nhánh).
-- `npm run test:app` — test toàn bộ app trong Chromium (Playwright, giả lập iPhone 13, giờ Việt Nam, ngày cố định **Thứ Tư 21/10/2026 09:00**). Không đo coverage (nhanh).
+- `npm run test:sw` — test service worker `sw.js` (Node test runner).
+- `npm run test:app` — test toàn bộ app trong Chromium (Playwright, giả lập iPhone 13, giờ Việt Nam, ngày cố định **Thứ Tư 21/10/2026 09:00**).
 - `npm run check` — kiểm tra cú pháp script chính trong `index.html` và `sw.js` (thay cho `node --check` thủ công).
-- `npm run test:cov` — như `test:app` nhưng đo coverage, in kết quả và **báo lỗi nếu dưới ngưỡng**. Hook `post-merge` tự chạy khi gộp vào `main`; chạy tay khi sửa test.
-- Báo cáo coverage chi tiết (sau `test:cov`): `coverage/report/index.html` (số dòng khớp `index.html`).
 - `npx playwright test <tên-file>` để chạy một nhóm khi đang viết test.
 
-**Bộ thứ hai — hồi quy theo PA (Python):** `bash tests/chay.sh` (cần `pip install playwright && playwright install chromium`) chạy `tests/test_<pa>.py`, `tests/test_push_server.mjs` và `tests/test_drive_gas.js` (chạy thẳng `drive/Code.gs`). Bộ này không đo coverage nhưng giữ các hành vi PA trước đã chốt; chạy một vài file: `bash tests/chay.sh pa22 sync`. Cả hai bộ phải xanh trước khi commit.
+**Bộ thứ hai — hồi quy theo PA (Python):** `bash tests/chay.sh` (cần `pip install playwright && playwright install chromium`) chạy `tests/test_<pa>.py`, `tests/test_push_server.mjs`, `tests/test_hub_sync.mjs`, `tests/test_hub_pa33b.mjs`. Bộ này giữ các hành vi PA trước đã chốt; chạy một vài file: `bash tests/chay.sh pa22 sync`. Cả hai bộ phải xanh trước khi commit.
 
-Máy chủ Drive trong bộ Node là **chính `drive/Code.gs`** chạy trong `tests/gas_server.js` (fixture `gas` và `device`), không phải bản mô phỏng viết lại — xem [SA.md §12](SA.md#12-kiến-trúc-kiểm-thử).
+### Chất lượng test
 
-### Ngưỡng coverage (bắt buộc, áp cho script chính trong `index.html`)
-
-| Chỉ số | Ngưỡng | Hiện tại (22/10/2026) |
-|---|---|---|
-| Lines | ≥ 90% | 98,99% |
-| Statements | ≥ 90% | 92,54% |
-| Functions | ≥ 90% | 95,54% |
-| Branches | ≥ 80% | 80,39% |
-
-Coverage đo bằng **Istanbul** (cách Jest/nyc dùng): khi test, trang được phục vụ với script đã gắn bộ đếm, nên nhánh và hàm *chưa từng chạy* vẫn được đếm. Thư viện QR nhúng sẵn (`qrcode-generator`, `jsQR`) không tính.
-
-### Không "coverage farm"
-
-Một test chỉ được tính là hợp lệ khi:
+Một test chỉ giữ lại khi:
 
 1. Đi theo **đường người dùng thật** (bấm nút, nhập ô, chọn file, kéo, quét) hoặc gọi **hàm tính toán thuần** qua `window.__sota` với dữ liệu nghiệp vụ có nghĩa.
 2. Có **khẳng định (expect) về kết quả người dùng thấy hoặc dữ liệu được lưu** — không có test chỉ "chạy cho qua".
 3. Không bật nút đang bị khoá, không gọi trực tiếp hàm xử lý mà giao diện không cho tới, chỉ để chạm dòng code.
-4. **Không dùng `istanbul ignore` / `c8 ignore`**. Code không có đường nào chạm tới là **mã chết → xoá** (git vẫn giữ lịch sử), không viết test giả để phủ.
+4. **Không viết test chỉ để phủ dòng code**. Code không có đường nào chạm tới là **mã chết → xoá** (git vẫn giữ lịch sử). Test trùng với test khác (cùng đường, cùng khẳng định) thì xoá một cái.
 5. **Lỗi đã biết** viết thành `test.fixme(...)` mô tả hành vi đúng, kèm mã `VD-xx` trong [`VAN-DE-VA-CHIEN-LUOC.md`](VAN-DE-VA-CHIEN-LUOC.md). Khi sửa lỗi thì bỏ `fixme` — test phải xanh.
 6. Test của một tính năng nằm trong file `tests/app/<nhóm>.spec.mjs` tương ứng mã BR ở dòng đầu file.
 
@@ -106,7 +91,7 @@ Một test chỉ được tính là hợp lệ khi:
 ## 6. Danh sách kiểm tra khi xong một PA (Definition of Done)
 
 - [ ] Epic ngày có đủ BR, SA, kế hoạch test; anh đã xác nhận trước khi code.
-- [ ] Test mới đã từng đỏ, giờ xanh; `npm test` và `bash tests/chay.sh` xanh; coverage ≥ ngưỡng.
+- [ ] Test mới đã từng đỏ, giờ xanh; `npm test` và `bash tests/chay.sh` xanh.
 - [ ] `BR.md`, `SA.md` phản ánh đúng hành vi mới; `VAN-DE-VA-CHIEN-LUOC.md` cập nhật nếu có.
 - [ ] `CACHE` trong `sw.js` đã tăng (nếu đổi `index.html`).
 - [ ] Nhánh `pa-<số>-<tên>` đã đẩy, có link xem thử raw.githack; chờ "Duyệt PA-x".

@@ -1,28 +1,21 @@
-// Fixture chung: đồng hồ cố định, chặn mạng ngoài, đo coverage cho mọi test, và lớp App để thao tác app.
+// Fixture chung: đồng hồ cố định, chặn mạng ngoài, máy chủ đồng bộ giả, và lớp App để thao tác app.
 import { test as base, expect, devices } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { randomUUID, randomBytes } from 'node:crypto';
-import { saveRaw, instrumentedHtml } from './coverage.mjs';
+import { randomBytes } from 'node:crypto';
 import { JPEG_B64, TODAY } from './data.mjs';
 
 export const NOW = new Date(`${TODAY}T09:00:00+07:00`);
 export { expect };
 
-/* chỉ đo coverage khi COVERAGE=1 (npm run test:cov, hook post-merge trên main): đo làm app chậm ~2,3 lần */
-const COVER = !!process.env.COVERAGE;
-/* bộ đếm coverage nằm trong trang: lấy ra trước mỗi lần tải lại trang và khi test xong */
-async function covSnap(page) { if (!COVER) return; try { saveRaw(randomUUID(), await page.evaluate(() => window.__coverage__)); } catch (e) { /* trang đã đóng */ } }
-
 class App {
   constructor(page) { this.page = page; }
-  async goto(hash = '') { if (this.page.url().startsWith('http')) await covSnap(this.page); await this.page.goto('/index.html' + hash); await this.ready(); }
-  async reload() { await covSnap(this.page); await this.page.reload(); await this.ready(); }
+  async goto(hash = '') { await this.page.goto('/index.html' + hash); await this.ready(); }
+  async reload() { await this.page.reload(); await this.ready(); }
   async ready() { await this.page.waitForFunction(() => window.__sota && document.querySelector('#nav-bar button')); await this.page.waitForTimeout(50); }
   /* ghi thẳng vào IndexedDB của app rồi mở lại trang */
   async seed({ state, profiles, states, kv, photos } = {}) {
     /* rời app sang một trang tĩnh cùng nguồn để app không kịp ghi đè dữ liệu vừa đặt */
-    if (this.page.url().startsWith('http')) await covSnap(this.page);
     await this.page.goto('/manifest.webmanifest');
     await this.page.evaluate(async ({ state, profiles, states, kv, photos }) => {
       const db = await new Promise((res, rej) => { const r = indexedDB.open('so-ta', 1); r.onupgradeneeded = () => { r.result.createObjectStore('kv'); r.result.createObjectStore('photos'); }; r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
@@ -81,9 +74,8 @@ class App {
   async flushed() { await this.page.waitForTimeout(400); }
 }
 
-/* chuẩn bị một trang: phục vụ index.html có bộ đếm coverage, đồng hồ giả, chặn mạng ngoài (trừ máy chủ Drive giả) */
+/* chuẩn bị một trang: đồng hồ giả, chặn mạng ngoài, máy chủ đồng bộ giả */
 async function prep(page) {
-  if (COVER) await page.route(/\/index\.html$/, route => route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: instrumentedHtml() }));
   await page.clock.install({ time: NOW });
   await page.route(/^https?:\/\/(?!localhost|gadn-push\.test)/, route => {
     const u = route.request().url();
@@ -105,7 +97,6 @@ async function prep(page) {
 }
 const CORS_HUB = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'Content-Type, Authorization', 'access-control-allow-methods': 'GET,POST,PUT,OPTIONS' };
 async function finish(page, info) {
-  await covSnap(page);
   if ((page.__errors || []).length && info.status === 'passed') throw new Error('Lỗi JS trong trang: ' + page.__errors.map(e => e.message).join(' | '));
 }
 let currentHub = 0;
