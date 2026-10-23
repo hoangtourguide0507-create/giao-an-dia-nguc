@@ -45,3 +45,4 @@ Mỗi lần chủ repo duyệt một PA, mốc được lưu bằng một nhánh
 | v19 | `49252cf` | 2026-10-22 | Duyệt PA-33: máy chủ đồng bộ `/s/*` (push-server; app chưa dùng) |
 | v20 | `43d1531` | 2026-10-22 | Duyệt PA-33b: passkey khôi phục trên máy trống; ảnh máy tập `/s/anh/*` có hạn mức (push-server; app chưa dùng) |
 | v21 | `c7fcfe2` | 2026-10-23 | Duyệt PA-36: gỡ sao lưu/khôi phục bằng file, chia sẻ với PT, nhắc sao lưu; đồng bộ HLV ⇄ học viên qua máy chủ Cloudflare (PA-34, PA-35 Drive đã gỡ) |
+| v22 | `89b23bf` | 2026-10-23 | Duyệt PA-37 (gồm PA-33, PA-33b, PA-34.x, PA-35, PA-36): đồng bộ HLV ⇄ học viên qua máy chủ Cloudflare, gỡ Google Drive và sao lưu/chia sẻ bằng file, dọn dữ liệu rác, hồ sơ HLV (BR-24.20) |
