@@ -301,3 +301,28 @@ test('BR-24.5 · khôi phục từ máy chủ thay buổi trên máy, có thể 
   await expect.poll(async () => (await hv.state()).sync.undo, { timeout: 5000 }).toBeFalsy();
   await expect.poll(async () => (await hv.state()).sessions.map(x => x.id), { timeout: 5000 }).toEqual([done.id]);
 });
+
+test('BR-24.2 · Phòng HLV: nút “Thẻ QR” của học viên mở đúng thẻ; máy chủ nhận mã đó', async ({ app, hub }) => {
+  const P = basicPlan();
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Hoàng', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }], coach: { on: true, name: 'Hoàng' } }, states: { p1: state(), p2: state({ days: P.days }) } });
+  await registerHlv(app, hub);
+  await app.more('drive'); await app.click('hub-migrate'); await app.click('hub-migrate-go');
+  const code = await app.page.locator('#hub-code-0').inputValue(); await app.page.keyboard.press('Escape');
+  await app.tab('more');
+  await app.view().locator('[data-act="hub-card-show"][data-id="p2"]').click();
+  await expect(app.sheet()).toContainText('Lan');
+  const shown = await app.page.locator('#hub-code-0').inputValue();
+  expect(shown).toBe(code);
+  const { i, k } = JSON.parse(Buffer.from(shown.split('.')[1], 'base64url').toString());
+  expect((await hub.req('/s/noi', 'POST', { i, k, tb: 'iPhone Lan' })).s).toBe(200);
+});
+
+test('BR-24.2 · mã liên kết Drive cũ (GAL1) quét được thì báo rõ là kiểu cũ, không im lặng', async ({ app, device, hub }) => {
+  await seedHlv(app); await registerHlv(app, hub);
+  const hv = await device();
+  await hv.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] }, states: { p1: state({ settings: { pushServer: hub.url } }) } });
+  await hv.more('drive');
+  await fakeCamera(hv.page, 'GAL1.ab12.1.1.' + Buffer.from('{"u":"x"}').toString('base64url'));
+  await hv.click('hub-reg');
+  await expect(hv.toast()).toContainText('kiểu gửi cũ');
+});

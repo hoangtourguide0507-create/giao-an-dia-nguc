@@ -3914,7 +3914,7 @@ function viewCoach() {
       <div class="tinfo"><div><b>${c.total}</b><span>tổng buổi · tháng này ${c.nMonth}</span></div><div><b>${c.w ? fmt(c.w.weight) + ' kg' : '—'}</b><span>${c.w ? 'cân nặng · ' + dm(c.w.date) : 'chưa nhập cân nặng'}</span></div>
         <div><b style="${c.ups.length ? 'color:var(--up)' : ''}">${c.ups.length}</b><span>bài cần lên tạ</span></div><div><b>${c.up28}</b><span>bài đã lên tạ · 4 tuần</span></div></div>
       ${c.last ? `<div class="tline">Lần cuối: <b>${esc(c.last.dayName)}</b> · ${ago(c.last.date)} · ${c.lastSt.sets} set · ${tons(c.lastSt.vol)}</div>` : ''}
-      <div class="tact"><button class="btn gold" data-act="switch-profile" data-id="${p.id}">Mở hồ sơ</button><button class="btn" data-act="drv-hv" data-id="${p.id}">☁ Mã liên kết</button></div></div>`;
+      <div class="tact"><button class="btn gold" data-act="switch-profile" data-id="${p.id}">Mở hồ sơ</button><button class="btn" data-act="hub-card-show" data-id="${p.id}">Thẻ QR</button></div></div>`;
   }
   return h + `</section>`;
 }
@@ -3987,7 +3987,7 @@ async function qrScanSheet(mode) {
         if (r && /GA(H1|V1)\./.test(r.data)) { qrStop(); hubCode(r.data); return; }
         if (r && /^GA[QSPL][12]\./.test(r.data)) { const [kind, id, i, n, body] = r.data.split('.'); if (id !== msg) { kindIn = kind; msg = id; for (const k in got) delete got[k]; need = +n; } got[i] = body;
           const have = Object.keys(got).length; $('#qr-st').textContent = need > 1 ? `Đã nhận ${have}/${need} trang…` : 'Đã nhận';
-          if (have >= need) { const body2 = Array.from({ length: need }, (_, k) => got[k + 1]).join(''); qrStop(); if (kindIn === 'GAL1') hubCode(body2); else toast(OLD_CODE); return; } } }
+          if (have >= need) { const body2 = Array.from({ length: need }, (_, k) => got[k + 1]).join(''); qrStop(); toast(OLD_CODE); return; } } }
       ui.qrRaf = setTimeout(tick, 90);
     };
     $('#qr-st').textContent = 'Giữ mã QR trong khung, cách khoảng 20–30 cm'; tick();
@@ -4595,7 +4595,6 @@ async function receiveQrImage(files) {
   const J = joinQrParts(texts);
   if (!J.kind) { toast('Không tìm thấy mã QR trong ảnh đã chọn'); return; }
   if (!J.ok) { toast(`Còn thiếu trang ${J.missing.slice(0, 8).join(', ')}${J.missing.length > 8 ? '…' : ''} trên tổng ${J.n}. Chụp thêm các trang đó rồi chọn lại tất cả ảnh.`); return; }
-  if (J.kind === 'GAL1') { await hubCode(J.body); return; }
   toast(OLD_CODE);
 }
 /* PA-19: giáo án và dữ liệu chỉ đi qua Google Drive; mã QR / tin nhắn kiểu cũ không còn dùng */
@@ -4609,7 +4608,6 @@ async function handleCodeText(raw) {
   if (parts && parts.length) {
     const J = joinQrParts(parts);
     if (!J.ok) { toast(`Mã nhiều phần đang thiếu trang ${J.missing.join(', ')}/${J.n}`); return false; }
-    if (J.kind === 'GAL1') { await hubCode(J.body); return true; }
     toast(OLD_CODE); return false;
   }
   if (/SOTA[12]z?\.[A-Za-z0-9_-]+/.test(txt) || (txt.startsWith('{') && txt.includes('"gadn-sync"'))) { toast(OLD_CODE); return false; }
@@ -4900,6 +4898,12 @@ const handlers = {
   'paste-go': async () => { const el = $('#paste-in'); if (!el || !el.value.trim()) { toast('Dán mã vào ô chữ trước'); return; } await handleCodeText(el.value); },
                                       'hub-reg': () => qrScanSheet('hub'),
   'hub-add': () => hubAddSheet(),
+  'hub-card-show': async t => {
+    const sy = state.settings.sync || {}, hvId = Object.keys(sy.map || {}).find(k => sy.map[k] === t.dataset.id);
+    const p = profiles.list.find(x => x.id === t.dataset.id);
+    if (hubRole() !== 'hlv' || !hvId || !p) { toast('Học viên này chưa có thẻ QR. Bấm Thêm học viên để tạo.'); return; }
+    hubCardsSheet([{ name: p.name, code: hubCodeOf(hvId, await hubKey(hvId, 0)) }]);
+  },
   'hub-pk-add': () => hubPasskeyAdd(),
   'hub-migrate': () => hubMigrateSheet(),
   'hub-migrate-go': () => hubMigrateGo(),
