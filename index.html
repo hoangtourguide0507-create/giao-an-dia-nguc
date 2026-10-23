@@ -4303,7 +4303,7 @@ function hubCardHtml() {
 let hubEnsureT = 0, hubEnsuring = false;
 function hubEnsureSoon() { clearTimeout(hubEnsureT); hubEnsureT = setTimeout(hubEnsure, 800); }
 async function hubEnsure() {
-  if (hubRole() !== 'hlv' || hubEnsuring || !navigator.onLine) return;
+  if (hubRole() !== 'hlv' || hubEnsuring || hubAdopting || !navigator.onLine) return;
   const sy = state.settings.sync; sy.map = sy.map || {};
   const selfId = hlvSelf(), linked = new Set(Object.values(sy.map));
   const todo = profiles.list.filter(p => !(selfId && p.id === selfId) && !linked.has(p.id));
@@ -4423,6 +4423,38 @@ async function hubLinkProfile(hvId, ten) {
   sy.map[hvId] = pid; save(); render(true);
   return pid;
 }
+/* HLV: học viên đã có trên máy chủ mà máy này chưa có hồ sơ (máy HLV mới hoặc trống, hoặc học viên thêm từ máy HLV khác):
+   tạo hồ sơ, gắn thẻ có sẵn (không tạo thẻ mới), rồi kéo lại từ đầu để nhận giáo án và toàn bộ buổi đã tập. */
+let hubAdopting = false;
+async function hubAdopt() {
+  if (hubRole() !== 'hlv' || hubAdopting || !navigator.onLine) return;
+  hubAdopting = true;
+  try {
+    const sy = state.settings.sync; sy.map = sy.map || {};
+    const r = await hubCall('/s/tv', null, 'GET'); if (r.s !== 200) return;
+    let added = false;
+    for (const t of r.j.hv || []) {
+      if (t.kieu !== 'hv' || t.khoa || !t.id || sy.map[t.id]) continue;
+      const pid = await hubLinkProfile(t.id, t.ten || 'Học viên');
+      /* hồ sơ mới còn trống: đừng gửi giáo án trống đè lên giáo án đang có trên máy chủ */
+      sy.planH = sy.planH || {}; sy.planH[t.id] = planKey(await serPlan(await profState(pid), false, {}));
+      added = true;
+    }
+    if (added) { sy.seq = 0; save(); }
+  } catch (e) { /* mất mạng: lần sau thử lại */ } finally { hubAdopting = false; }
+}
+/* giáo án của học viên vừa nhận về máy HLV: chỉ nhận khi hồ sơ trên máy này còn chưa có ngày tập nào, không đè giáo án HLV đang sửa */
+async function hubAdoptPlan(pid, rec) {
+  let J = null; try { J = JSON.parse(rec.d); } catch (e) {}
+  if (!J || !Array.isArray(J.plan) || !J.plan.length) return;
+  const st = pid === profiles.active ? state : await profState(pid); if (!st || (st.days || []).length) return;
+  let P = null; try { P = cleanPkg({ app: 'gadn-sync', role: 'coach', link: {}, plan: J.plan, sessions: [], del: {} }); } catch (e) { return; }
+  const { st: merged } = await syncMerge(st, P, {});
+  st.days = merged.days;
+  const sy = state.settings.sync; sy.planH = sy.planH || {}; sy.planH[rec.hv] = planKey(await serPlan(st, false, {}));
+  if (pid === profiles.active) { save(); render(true); return; }
+  st.updatedAt = Date.now(); await LDB.put('kv', stateKey(pid), clone(st)); save();
+}
 /* kéo buổi tập mới của học viên về máy HLV (bản ghi buoi:<mã>, theo số thứ tự seq) và ghi vào đúng hồ sơ */
 let hubPulling = false;
 async function hubPull() {
@@ -4430,21 +4462,27 @@ async function hubPull() {
   if (!role || hubPulling || !navigator.onLine) return;
   const sy = state.settings.sync; hubPulling = true;
   try {
-    const r = await hubCall(role === 'hlv' ? '/s/doi?since=' + (sy.seq || 0) : '/s/doi?hv=' + encodeURIComponent(sy.i) + '&since=' + (sy.seq || 0), null, 'GET');
-    if (r.s !== 200) return;
-    for (const rec of r.j.recs) {
-      if (role === 'hv') { if (rec.k === 'plan@hlv' && rec.t > (sy.planT || 0)) await hubApplyPlan(rec); }
-      else if (rec.k.startsWith('buoi:') && sy.map && sy.map[rec.hv]) await hubApplySession(sy.map[rec.hv], rec);
-      else if (rec.k === 'dau@hv' && sy.map && sy.map[rec.hv]) await hubApplyPain(sy.map[rec.hv], rec);
+    /* máy chủ trả tối đa một trang (con = còn nữa): kéo tiếp từ bản ghi cuối, không nhảy tới cuối kẻo mất bản ghi */
+    for (let trang = 0, con = true; con && trang < 50; trang++) {
+      const r = await hubCall(role === 'hlv' ? '/s/doi?since=' + (sy.seq || 0) : '/s/doi?hv=' + encodeURIComponent(sy.i) + '&since=' + (sy.seq || 0), null, 'GET');
+      if (r.s !== 200) return;
+      for (const rec of r.j.recs) {
+        if (role === 'hv') { if (rec.k === 'plan@hlv' && rec.t > (sy.planT || 0)) await hubApplyPlan(rec); }
+        else if (rec.k.startsWith('buoi:') && sy.map && sy.map[rec.hv]) await hubApplySession(sy.map[rec.hv], rec);
+        else if (rec.k === 'plan@hlv' && sy.map && sy.map[rec.hv]) await hubAdoptPlan(sy.map[rec.hv], rec);
+        else if (rec.k === 'dau@hv' && sy.map && sy.map[rec.hv]) await hubApplyPain(sy.map[rec.hv], rec);
+      }
+      con = !!r.j.con && r.j.recs.length > 0;
+      const next = con ? r.j.recs[r.j.recs.length - 1].seq : r.j.seq;
+      if (next > (sy.seq || 0)) { sy.seq = next; save(); }
     }
-    if (r.j.seq > (sy.seq || 0)) { sy.seq = r.j.seq; save(); }
   } catch (e) { /* mất mạng: lần sau kéo tiếp */ } finally { hubPulling = false; }
 }
 /* BR-24.21: đồng bộ tự động, không có nút đồng bộ tay. Gọi khi nối máy/đăng ký, khi mở app, khi có mạng và mỗi 20 giây khi app đang hiện.
    Khi dữ liệu đổi thì save() gọi riêng hubFlushSoon/hubPlanSoon. Mỗi bước tự chống chạy chồng và thử lại khi mất mạng. */
 async function hubSync() {
   const role = hubRole(); if (!role) return;
-  if (role === 'hlv') { await hubEnsure(); await hubPushPlans(); }
+  if (role === 'hlv') { await hubAdopt(); await hubEnsure(); await hubPushPlans(); }
   await hubPull(); await hubFlush();
 }
 /* khoá so sánh giáo án: bỏ mức tạ hiện tại (đổi mỗi buổi tập, không phải thay đổi giáo án) */

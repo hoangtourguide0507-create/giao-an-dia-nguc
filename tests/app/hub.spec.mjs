@@ -332,3 +332,31 @@ test('Hồ sơ HLV · hồ sơ đang có dữ liệu: phải quét đúng mã QR
   await app.click('hub-self-auth');
   await expect.poll(async () => (await app.state()).settings.sync.self, { timeout: 8000 }).toBe('p2');
 });
+
+/* BR-24.24 (PA-42): máy HLV trống đăng nhập bằng QR HLV thì tự có học viên của HLV */
+test('BR-24.24 · máy HLV trống đăng nhập bằng QR HLV: tự có hồ sơ học viên, giáo án và buổi tập từ máy chủ, không tạo thẻ trùng', async ({ app, hub, device }) => {
+  const P = basicPlan(), d = P.days[0];
+  const done = session(d, TODAY, [[d.exercises[0], [[40, 8]]]]);
+  /* máy HLV thứ nhất có học viên Lan, Lan nối máy và tập một buổi */
+  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) } });
+  await registerHlv(app, hub);
+  const code = await autoCard(app, hub, 'p2');
+  const hv = await device();
+  await hv.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Lan', color: 0 }] }, states: { p1: state({ days: P.days, sessions: [done], settings: { pushServer: hub.url } }) } });
+  await hv.tab('more'); await fakeCamera(hv.page, code); await hv.click('qr-scan');
+  await expect(hv.toast()).toContainText('Đã nối với HLV · Lan');
+  const { i, dk } = (await hv.state()).settings.sync;
+  await expect.poll(async () => (await hub.req(`/s/doi?hv=${i}&since=0`, 'GET', null, `Bearer v.${i}.${dk}`)).j.recs.map(r => r.k), { timeout: 20000 }).toEqual(expect.arrayContaining(['buoi:' + done.id, 'plan@hlv']));
+  /* máy HLV mới, chưa có gì, đăng nhập bằng cùng QR HLV */
+  const fresh = await device();
+  await fresh.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] }, states: { p1: state() } });
+  await registerHlv(fresh, hub);
+  await expect.poll(async () => (await fresh.profiles()).list.map(p => p.name), { timeout: 20000 }).toContain('Lan');
+  const pid = (await fresh.profiles()).list.find(p => p.name === 'Lan').id;
+  await expect.poll(async () => (await fresh.idb('kv', 'state:' + pid))?.sessions?.map(x => x.id), { timeout: 30000 }).toContain(done.id);
+  expect((await fresh.idb('kv', 'state:' + pid)).days.map(x => x.name)).toEqual(P.days.map(x => x.name));
+  /* học viên đã có thẻ: máy mới nhận thẻ có sẵn, không tạo thẻ thứ hai */
+  await fresh.page.waitForTimeout(3000);
+  expect((await hub.req('/s/tv', 'GET', null, hub.auth)).j.hv.filter(x => x.kieu === 'hv')).toHaveLength(1);
+  expect(Object.values((await fresh.state()).settings.sync.map)).toEqual([pid]);
+});
