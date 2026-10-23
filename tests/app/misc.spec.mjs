@@ -89,3 +89,21 @@ test('khoá màn hình sáng khi tập, quay lại app thì giữ', async ({ app
   await app.click('cancel-session'); await app.click('confirm-ok');
   await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
 });
+
+test('PA-36 · dữ liệu bản cũ (có Drive, tài khoản, sao lưu, ảnh) còn nguyên sau khi gỡ tính năng', async ({ app }) => {
+  const P = basicPlan();
+  const old = state({
+    days: P.days,
+    sessions: [session(P.chest, TODAY, [[P.bench, [[40, 10]]]]), session(P.back, addDays(TODAY, -2), [[P.lat, [[45, 8]]]])],
+    drv: { id: 'hv1', m: 'k'.repeat(24), at: 1700000000000 },
+    settings: { drvUrl: 'https://script.google.com/macros/s/X/exec', drvKey: 'x', acc: { u: 'hoang', vai: 'hlv' }, lastBackupAt: 1700000000000, lastBackupSess: 5, backupSkipAt: 0 },
+  });
+  await app.seed({ state: old });
+  await app.flushed();
+  const st = await app.idb('kv', 'state');
+  expect(st.sessions.map(s => s.id).sort()).toEqual(old.sessions.map(s => s.id).sort());
+  expect(st.days.map(d => d.name)).toEqual(P.days.map(d => d.name));
+  expect(st.drv).toMatchObject({ id: 'hv1' });
+  expect(st.settings).toMatchObject({ drvUrl: 'https://script.google.com/macros/s/X/exec', lastBackupAt: 1700000000000 });
+  await expect(app.view()).toBeVisible();
+});
