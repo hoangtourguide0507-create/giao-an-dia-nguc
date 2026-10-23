@@ -194,27 +194,18 @@ test('BR-24.4 · máy chưa bật Face ID cho học viên nào: khôi phục b�
   expect((await fresh.state()).settings.sync).toBeUndefined();
 });
 
-test('BR-24.17 · chuyển học viên có sẵn sang máy chủ mới: thẻ QR; học viên nối máy nhận giáo án HLV và giữ buổi cũ', async ({ app, hub, device }) => {
+/* BR-24.17 đã bỏ (PA-40): không còn "Chuyển học viên có sẵn"; học viên có sẵn tự có thẻ (BR-24.19) */
+test('BR-24.17 · đã bỏ: HLV không còn nút Chuyển học viên có sẵn; hồ sơ học viên có sẵn tự có thẻ QR', async ({ app, hub }) => {
   const P = basicPlan();
   await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) } });
   await registerHlv(app, hub);
+  await app.tab('more');
+  await expect(app.view().locator('[data-act="hub-migrate"]')).toHaveCount(0);
   const code = await autoCard(app, hub, 'p2');
-  await app.page.keyboard.press('Escape');
-  const i = JSON.parse(Buffer.from(code.split('.')[1], 'base64url').toString()).i;
-  expect((await app.state()).settings.sync.map[i]).toBe('p2');
-
-  const hv = await device();
-  const d = basicPlan().days[0];
-  const done = session(d, TODAY, [[d.exercises[0], [[40, 8]]]]);
-  await hv.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Lan', color: 0 }] }, states: { p1: state({ days: [], sessions: [done], settings: { pushServer: hub.url } }) } });
-  await hv.tab('more'); await fakeCamera(hv.page, code); await hv.click('qr-scan');
-  await expect(hv.toast()).toContainText('Đã nối với HLV · Lan');
-  await expect.poll(async () => (await hv.state()).days.map(x => x.name), { timeout: 15000 }).toEqual(P.days.map(x => x.name));
-  const { dk } = (await hv.state()).settings.sync;
-  await expect.poll(async () => (await hub.req(`/s/doi?hv=${i}&since=0`, 'GET', null, `Bearer v.${i}.${dk}`)).j.recs.map(r => r.id), { timeout: 15000 }).toContain(done.id);
+  expect(code.startsWith('GAV1.')).toBe(true);
 });
 
-test('BR-24.9 · HLV đổi giáo án → học viên nhận trong vòng 20 giây; học viên hoàn tác được', async ({ app, hub, device }) => {
+test('BR-24.9 · HLV đổi giáo án → học viên nhận trong vòng 20 giây; không có nút hoàn tác giáo án (PA-40)', async ({ app, hub, device }) => {
   const P = basicPlan();
   await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) } });
   await registerHlv(app, hub);
@@ -230,8 +221,8 @@ test('BR-24.9 · HLV đổi giáo án → học viên nhận trong vòng 20 giâ
   const bai = { name: 'Gập bụng', muscle: 'Bụng', type: 'upper', sets: 3, repMin: 8, repMax: 12, repTarget: 10 };
   await hub.req('/s/ghi', 'POST', { hv: i, recs: [{ k: 'plan@hlv', id: 'plan', t: Date.now() + 5000, vai: 'hlv', d: JSON.stringify({ plan: [{ n: 'Ngày đổi', e: [bai] }] }) }] }, hub.auth);
   await expect.poll(async () => (await hv.state()).days.map(x => x.name), { timeout: 45000 }).toContain('Ngày đổi');
-  await hv.tab('more'); await hv.click('hub-plan-undo');
-  await expect.poll(async () => (await hv.state()).days.map(x => x.name), { timeout: 5000 }).toEqual(P.days.map(x => x.name));
+  await hv.tab('more');
+  await expect(hv.view().locator('[data-act="hub-plan-undo"]')).toHaveCount(0);
 });
 
 /* thẻ của học viên được tạo tự động (mọi học viên đều có thẻ): đợi máy HLV ghi nhận, rồi tính mã từ khoá HLV như máy HLV làm */
@@ -265,7 +256,7 @@ test('BR-24.9 · máy học viên có giáo án riêng khác HLV: hỏi người
   await expect.poll(async () => (await hv.state()).days.map(x => x.name), { timeout: 5000 }).toContain(P.days[0].name);
   expect((await hv.state()).sync.conflict).toBeFalsy();
   expect((await hv.state()).days.map(x => x.name)).not.toContain('Ngày của tôi');
-  expect((await hv.state()).sync.prevDays.map(x => x.name)).toEqual(local.map(x => x.name));
+  expect((await hv.state()).sync.prevDays).toBeUndefined();   /* không còn hoàn tác giáo án (PA-40) */
 });
 
 test('BR-24.9 · máy học viên có giáo án riêng khác HLV: chọn giữ giáo án máy này thì không bị ghi đè', async ({ app, hub, device }) => {
@@ -297,15 +288,22 @@ test('BR-24.6 · học viên xoá buổi → máy HLV cũng xoá buổi đó (tr
   await expect.poll(async () => (await app.idb('kv', 'state:' + pid))?.sessions?.map(x => x.id), { timeout: 120000 }).toEqual([]);
 });
 
-test('BR-24.5 · khôi phục từ máy chủ thay buổi trên máy, có thể hoàn tác', async ({ app, hub, device }) => {
+/* BR-24.5 đã bỏ (PA-40): không còn khôi phục tay từ máy chủ; buổi vẫn tự đồng bộ (BR-24.21) */
+test('BR-24.22 · máy học viên không có Khôi phục từ máy chủ, Hoàn tác khôi phục; buổi vẫn tự lên máy HLV', async ({ app, hub, device }) => {
   const { hv, done } = await lanTrains(app, hub, device);
-  await hv.click('hub-restore-manual');
-  await hv.click('confirm-ok');
-  await expect.poll(async () => (await hv.state()).sessions.map(x => x.id), { timeout: 10000 }).toEqual([done.id]);
-  await expect(hv.view()).toContainText('Hoàn tác khôi phục');
-  await hv.click('hub-restore-undo');
-  await expect.poll(async () => (await hv.state()).sync.undo, { timeout: 5000 }).toBeFalsy();
-  await expect.poll(async () => (await hv.state()).sessions.map(x => x.id), { timeout: 5000 }).toEqual([done.id]);
+  await hv.tab('more');
+  for (const act of ['hub-restore-manual', 'hub-restore-undo', 'hub-plan-undo']) await expect(hv.view().locator(`[data-act="${act}"]`)).toHaveCount(0);
+  await expect(hv.view()).not.toContainText('Khôi phục từ máy chủ');
+  await expect(hv.view()).toContainText('Đã gửi xong');
+  expect((await hv.state()).sessions.map(x => x.id)).toEqual([done.id]);
+});
+
+test('BR-24.22 · máy đã có dữ liệu nhưng chưa nối HLV: không có nút khôi phục bằng Face ID (chỉ máy trống mới dùng)', async ({ hub, device }) => {
+  const hv = await device();
+  await hv.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] }, states: { p1: state({ days: basicPlan().days, settings: { pushServer: hub.url } }) } });
+  await hv.tab('more');
+  await expect(hv.view().locator('[data-act="qr-scan"]')).toHaveCount(1);
+  await expect(hv.view().locator('[data-act="hub-restore"]')).toHaveCount(0);
 });
 
 test('BR-24.2 · Phòng HLV: nút “Thẻ QR” của học viên mở đúng thẻ (thẻ có sẵn, không cần bấm gì thêm); máy chủ nhận mã đó', async ({ app, hub }) => {

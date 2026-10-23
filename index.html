@@ -1376,7 +1376,6 @@ const ICONSETS = {
   },
 };
 ICONSETS.gold.nHome = '<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>';
-ICONSETS.gold.cloud = '<path d="M7 18a4.5 4.5 0 0 1-.5-9A6 6 0 0 1 18 8a4.5 4.5 0 0 1-.5 10z"/><path d="m9.5 13 2.5 2.5 3.5-4"/>';
 ICONSETS.gold.clock = '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>';
 ICONSETS.gold.book = '<path d="M4 5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2zM4 5v16"/>';
 ICONSETS.gold.save = '<path d="M12 3v12M7 10l5 5 5-5M4 19h16"/>';
@@ -1527,7 +1526,7 @@ function migrateEx(ex) {
   return ex;
 }
 
-/* ---------- lưu trữ: máy này (IndexedDB) + tài khoản Claude (db) ---------- */
+/* ---------- lưu trữ: máy này (IndexedDB) ---------- */
 const LDB = {
   db: null, mem: { kv: {}, photos: {} },
   async open() {
@@ -1552,119 +1551,10 @@ const LDB = {
   async keys(store) { if (this.db) { try { return await this.req(store, 'readonly', s => s.getAllKeys()); } catch (e) {} } return Object.keys(this.mem[store]); },
   async clear(store) { this.mem[store] = {}; if (this.db) { try { await this.req(store, 'readwrite', s => s.clear()); } catch (e) {} } }
 };
-let inArtifact = !!(window.claude && typeof window.claude.use === 'function');
-async function detectArtifact() {
-  for (let i = 0; i < 20 && !inArtifact; i++) { await new Promise(r => setTimeout(r, 100)); inArtifact = !!(window.claude && typeof window.claude.use === 'function'); }
-  return inArtifact;
-}
-let syncStatus = 'device';
-function setSyncStatus(st) { syncStatus = st; const el = $('#sync'); if (el) el.outerHTML = syncCardHtml(); }
-const Cloud = {
-  ok: false, base: null, user: null, lastMain: null, lastSess: new Map(), q: Promise.resolve(), timer: null,
-  async init() {
-    if (!inArtifact) return false;
-    try {
-      const [db, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
-      if (!db || !user) return false;
-      const id = await user.id(); if (!id) return false;
-      this.user = user; this.db = db; this.uid = id; this.meta = db.doc('data/users/' + id + '/profiles'); this.setProfile(profiles.active); return true;
-    } catch (e) { return false; }
-  },
-  setProfile(pid) { this.base = this.db.doc('data/users/' + this.uid + '/' + (pid === 'p1' ? 'app' : 'app-' + pid)); this.remember(null); },
-  col(n) { return this.base.collection(n); },
-  enqueue(fn) { const run = this.q.then(() => (this.ok ? fn() : null)); this.q = run.catch(e => this.fail(e)); return this.q; },
-  fail(e) {
-    const c = e && e.code;
-    if (['invalid_argument', 'not_granted', 'revoked', 'capability_disabled', 'capability_removed', 'transform_error'].includes(c)) { this.ok = false; setSyncStatus('readonly'); }
-    else if (c === 'quota_exceeded') setSyncStatus('full');
-    else setSyncStatus('retry');
-  },
-  async pull() {
-    const snap = await this.base.get();
-    if (!snap.exists) return null;
-    const main = JSON.parse(JSON.stringify(snap.data()));
-    const sessions = []; let after = -1;
-    for (let guard = 0; guard < 50; guard++) {
-      const qs = await this.col('sessions').where('startedAt', '>', after).orderBy('startedAt').limit(1000).get();
-      qs.docs.forEach(d => sessions.push(JSON.parse(JSON.stringify(d.data()))));
-      if (qs.size < 1000) break;
-      after = sessions[sessions.length - 1].startedAt;
-    }
-    return { ...main, sessions };
-  },
-  remember(remote) {
-    if (!remote) { this.lastMain = null; this.lastSess = new Map(); return; }
-    const m = { ...remote }; delete m.sessions;
-    this.lastMain = JSON.stringify(m);
-    this.lastSess = new Map((remote.sessions || []).map(x => [x.id, JSON.stringify(x)]));
-  },
-  async pushNow() {
-    const main = { ...state }; delete main.sessions;
-    const mj = JSON.stringify(main);
-    const cur = new Map(state.sessions.map(x => [x.id, JSON.stringify(x)]));
-    const dirty = mj !== this.lastMain || [...cur].some(([k, v]) => this.lastSess.get(k) !== v) || [...this.lastSess.keys()].some(k => !cur.has(k));
-    if (!dirty) { if (syncStatus !== 'cloud') setSyncStatus('cloud'); return; }
-    setSyncStatus('saving');
-    if (mj !== this.lastMain) { await this.base.set(JSON.parse(mj)); this.lastMain = mj; }
-    for (const [k, v] of cur) if (this.lastSess.get(k) !== v) { await this.col('sessions').doc(k).set(JSON.parse(v)); this.lastSess.set(k, v); }
-    for (const k of [...this.lastSess.keys()]) if (!cur.has(k)) { await this.col('sessions').doc(k).delete(); this.lastSess.delete(k); }
-    setSyncStatus('cloud');
-  },
-  sync(now) { clearTimeout(this.timer); if (!this.ok) return; if (now) return this.enqueue(() => this.pushNow()); this.timer = setTimeout(() => this.enqueue(() => this.pushNow()), 1200); }
-};
-const DB = {
-  open: () => LDB.open(),
-  async get(store, key) {
-    let v = await LDB.get(store, key);
-    if (v == null && store === 'photos' && Cloud.ok) {
-      try { const snap = await Cloud.col('photos').doc(key).get(); v = snap.exists ? snap.data().d : undefined; if (v) LDB.put('photos', key, v); } catch (e) {}
-    }
-    return v;
-  },
-  async put(store, key, val) { await LDB.put(store, key, val); if (store === 'photos') Cloud.enqueue(() => Cloud.col('photos').doc(key).set({ d: val })); },
-  async del(store, key) { await LDB.del(store, key); if (store === 'photos') Cloud.enqueue(() => Cloud.col('photos').doc(key).delete()); },
-  keys: store => LDB.keys(store),
-  async clear(store, cloudIds) { await LDB.clear(store); if (store === 'photos') (cloudIds || []).forEach(k => Cloud.enqueue(() => Cloud.col('photos').doc(k).delete())); }
-};
-const usedPhotoIds = () => photoIdsOf(state);
-async function reconcile(local) {
-  const remote = await Cloud.pull();
-  Cloud.ok = true;
-  if (remote && (!local || (remote.updatedAt || 0) >= (local.updatedAt || 0))) {
-    const g = globalsOf(state); loadState(remote); Object.assign(state.settings, g); Cloud.remember(remote);
-    LDB.put('kv', stateKey(profiles.active), clone(state));
-    setSyncStatus('cloud'); if (!state.active || ui.tab !== 'today') render(true);
-  } else {
-    if (remote) { const have = new Set(state.sessions.map(x => x.id)); remote.sessions.forEach(x => { if (!have.has(x.id)) state.sessions.push(x); }); }
-    Cloud.remember(remote);
-    const hasData = state.days.length || state.sessions.length || state.body.length;
-    if (hasData) {
-      await Cloud.sync(true);
-      if (Cloud.ok && !remote) { for (const id of usedPhotoIds()) { const v = await LDB.get('photos', id); if (v) Cloud.enqueue(() => Cloud.col('photos').doc(id).set({ d: v })); } toast('Đã đưa dữ liệu lên tài khoản Claude'); }
-    } else setSyncStatus('cloud');
-    render(true);
-  }
-}
-async function connectCloud(local) {
-  if (!(await detectArtifact())) return;
-  if (syncStatus === 'device') setSyncStatus('connecting');
-  if (!(await Cloud.init())) { setSyncStatus('readonly'); return; }
-  try {
-    const canWrite = await Cloud.user.can('data.write');
-    if (canWrite === false) { setSyncStatus('readonly'); return; }
-    try {
-      const ms = await Cloud.meta.get();
-      if (ms.exists) { const have = new Set(profiles.list.map(p => p.id)); let ch = false; (ms.data().list || []).forEach(p => { if (p && p.id && !have.has(p.id)) { profiles.list.push({ id: p.id, name: p.name || 'Người tập', color: p.color || 0 }); ch = true; } }); if (ch) LDB.put('kv', 'profiles', clone(profiles)); }
-    } catch (e) {}
-    await reconcile(local);
-    saveProfiles();
-  } catch (e) { Cloud.ok = false; const c = e && e.code; setSyncStatus(['invalid_argument', 'not_granted', 'revoked'].includes(c) ? 'readonly' : 'retry'); }
-}
 async function switchProfile(pid) {
   if (pid === profiles.active || !profiles.list.some(p => p.id === pid)) { closeSheet(); return; }
   clearTimeout(saveT); saveT = null;
   await LDB.put('kv', stateKey(profiles.active), clone(state));
-  Cloud.sync(true); try { await Cloud.q; } catch (e) {}
   const g = globalsOf(state);
   profiles.active = pid; saveProfiles();
   const x = await LDB.get('kv', stateKey(pid));
@@ -1673,20 +1563,6 @@ async function switchProfile(pid) {
   if (!state.settings.name) state.settings.name = curProf().name;
   ui.pick = null; ui.openDay = null; ui.draft = null; ui.progEx = null;
   closeSheet(); if (state.active) ui.tab = 'today'; render(); toast(`Đang xem: ${curProf().name}`);
-  if (Cloud.ok) { try { Cloud.setProfile(pid); await reconcile(x && Array.isArray(x.days) ? x : null); } catch (e) { Cloud.fail(e); } }
-}
-function syncCardHtml() {
-  const M = {
-    device: ['Lưu trên máy này', 'Dữ liệu nằm trong trình duyệt của điện thoại. Khi đã nối máy chủ đồng bộ, dữ liệu được gửi tự động.', ''],
-    connecting: ['Đang kết nối tài khoản Claude…', 'Bạn vẫn dùng app bình thường trong lúc chờ.', ''],
-    saving: ['Đang lưu lên tài khoản…', 'Giáo án, buổi tập, số đo và ảnh được lưu vào tài khoản Claude của bạn.', 'ok'],
-    cloud: ['Đã đồng bộ với tài khoản Claude', 'Dữ liệu lưu riêng trong tài khoản của bạn. Mở link này trên điện thoại hay máy tính đều thấy, người khác mở link không xem được dữ liệu của bạn.', 'ok'],
-    retry: ['Chưa lưu được lên tài khoản', 'Có thể do mất mạng. Dữ liệu vẫn giữ trên máy này, app sẽ thử lại khi bạn mở lại.', 'warn'],
-    full: ['Bộ nhớ đồng bộ đã đầy', 'Xoá bớt ảnh máy tập hoặc ảnh body cũ để lưu tiếp lên tài khoản.', 'warn'],
-    readonly: ['Chỉ lưu trên máy này', 'Với quyền truy cập hiện tại, app không lưu được lên tài khoản. Dữ liệu nằm trong trình duyệt và có thể mất, hãy tải file sao lưu thường xuyên.', 'warn']
-  };
-  const [t, d, k] = M[syncStatus] || M.device;
-  return `<div class="card set-card sync ${k}" id="sync"><div class="sync-h"><span class="sync-dot"></span><h3>${t}</h3></div><p>${d}</p></div>`;
 }
 const freshState = () => ({ v: 3, days: [], sessions: [], body: [], bodyPhotos: [], active: null,
   settings: { name: '', height: null, setMin: 10, setMax: 20, deloadEvery: 6, cycleStart: null, progMode: 'linear', pace: 'std', restMode: 'std', tempo: 3, skin: 'amber', notify: false, sfx: true, haptics: true, eff: true, fxOff: false, animOff: false } });
@@ -1704,7 +1580,7 @@ const initials = n => String(n).trim().split(/\s+/).map(w => w[0]).slice(-2).joi
 const clone = o => JSON.parse(JSON.stringify(o));
 const globalsOf = st => { const g = {}; GLOBAL_KEYS.forEach(k => { if (st.settings[k] !== undefined) g[k] = st.settings[k]; }); return g; };
 let profT = null;
-function saveProfiles() { if (hubRole() === 'hlv') hubEnsureSoon(); clearTimeout(profT); LDB.put('kv', 'profiles', clone(profiles)); if (Cloud.ok && Cloud.meta) Cloud.enqueue(() => Cloud.meta.set({ ...clone(profiles), updatedAt: Date.now() })); }
+function saveProfiles() { if (hubRole() === 'hlv') hubEnsureSoon(); clearTimeout(profT); LDB.put('kv', 'profiles', clone(profiles)); }
 async function profState(pid) { if (pid === profiles.active) return state; const x = await LDB.get('kv', stateKey(pid)); return x && Array.isArray(x.days) ? x : null; }
 /* PA-28: video riêng của bài (khoá vid:*) nằm cùng kho photos nhưng không đi theo đồng bộ/sao lưu ảnh nên tách riêng */
 const vidIdsOf = st => (st.days || []).flatMap(d => d.exercises.flatMap(e => [e, ...(e.alts || [])].map(x => x.vid).filter(Boolean)));
@@ -1727,7 +1603,7 @@ function loadState(s) {
 }
 let saveT = null;
 function save() { state.updatedAt = Date.now(); clearTimeout(saveT); saveT = setTimeout(flush, 300); if (hubRole() === 'hv') hubFlushSoon(); if (hubRole() === 'hlv') hubPlanSoon(); }
-function flush(now) { clearTimeout(saveT); saveT = null; LDB.put('kv', stateKey(profiles.active), clone(state)); Cloud.sync(now); }
+function flush() { clearTimeout(saveT); saveT = null; LDB.put('kv', stateKey(profiles.active), clone(state)); }
 
 /* ---------- truy vấn ---------- */
 const findDay = id => state.days.find(d => d.id === id);
@@ -1972,9 +1848,6 @@ function setPtr(d, anim) {
 }
 async function doRefresh() {
   ptr.busy = true; const el = $('#ptr'); el.classList.add('spin'); setPtr(56, true);
-  try {
-    if (Cloud.ok && !state.active) { const snap = await Cloud.base.get(); if (snap.exists && (snap.data().updatedAt || 0) > (state.updatedAt || 0)) { const r = await Cloud.pull(); const g = globalsOf(state); loadState(r); Object.assign(state.settings, g); Cloud.remember(r); LDB.put('kv', stateKey(profiles.active), clone(state)); } }
-  } catch (e) {}
   await new Promise(r => setTimeout(r, 450));
   render(true); el.classList.remove('spin'); setPtr(0, true); ptr.busy = false; toast('Đã cập nhật');
 }
@@ -2773,7 +2646,7 @@ const PUSH_SERVER = 'https://gadn-push.sakutara.workers.dev'; /* PA-23: máy ch�
 const isIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const isStandalone = () => !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
 const pushBase = () => String(state.settings.pushServer || PUSH_SERVER || '').trim().replace(/\/+$/, '');
-const pushSupported = () => !inArtifact && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 let pushSub = null;
 function b64uToBytes(str) { let x = String(str).replace(/-/g, '+').replace(/_/g, '/'); x += '='.repeat((4 - x.length % 4) % 4); return Uint8Array.from(atob(x), c => c.charCodeAt(0)); }
 async function currentPushSub() {
@@ -2784,7 +2657,6 @@ async function currentPushSub() {
   pushSub = sub ? sub.toJSON() : null; return pushSub;
 }
 async function enablePush() {
-  if (inArtifact) return 'Thông báo chỉ có trên bản cài từ GitHub Pages, không có trong link claude.ai.';
   if (!pushSupported()) return isIOS() && !isStandalone() ? 'Trên iPhone, hãy mở app bằng icon trên màn hình chính rồi bật lại (cần iOS 16.4 trở lên).' : 'Trình duyệt này chưa hỗ trợ thông báo đẩy.';
   if (!pushBase()) return 'Chưa có địa chỉ máy chủ thông báo. Dán địa chỉ vào ô bên dưới trước.';
   const perm = await Notification.requestPermission();
@@ -2808,7 +2680,7 @@ async function pushCall(path, extra) {
 }
 const PUSH_GUIDE = 'https://github.com/hoangtourguide0507-create/giao-an-dia-nguc/blob/main/push-server/HUONG-DAN.md';
 function schedulePush(at, body, fromStart) {
-  if (!state.settings.notify || inArtifact) return;
+  if (!state.settings.notify) return;
 
   if (!pushBase() || !pushSupported() || !pushSub) return;
   rest.pushed = true;
@@ -2847,7 +2719,7 @@ let pushRegT = null;
 function pushRegSoon() { clearTimeout(pushRegT); pushRegT = setTimeout(() => pushRegister(), 2500); }
 async function pushRegister(force) {
   try {
-    if (inArtifact || !pushBase() || !(await currentPushSub())) return false;
+    if (!pushBase() || !(await currentPushSub())) return false;
     const tzOff = new Date().getTimezoneOffset(), topics = [], rules = pushRules();
     const h = strHash(JSON.stringify([pushBase(), pushSub.endpoint, topics, rules, tzOff, ymd()])); if (!force && h === (await LDB.get('kv', 'pushRegH'))) return true;
     await pushCall('/sub', { topics, tzOff }); await pushCall('/remind', { rules, tzOff }); await LDB.put('kv', 'pushRegH', h); return true;
@@ -2857,7 +2729,6 @@ async function pushTestNow() { const r = await pushCall('/test', {}); if (!r.ok 
 function notifCardHtml(st) {
   const S = st, np = 'Notification' in window ? Notification.permission : 'none', sub = !!pushSub;
   let h = `<div class="card set-card ncard"><h3>${ICON.bell} Thông báo</h3>`;
-  if (inArtifact) return h + `<p class="note-line">Thông báo chỉ có trên app mở từ icon màn hình chính.</p></div>`;
   if (np === 'none' || !('serviceWorker' in navigator)) return h + `<p class="note-line">${isIOS() && !isStandalone() ? 'Trên iPhone, mở app bằng icon trên màn hình chính rồi bật (cần iOS 16.4 trở lên).' : 'Trình duyệt này chưa hỗ trợ thông báo.'}</p></div>`;
   h += `<p>Dùng thông báo có sẵn của điện thoại (Notification API).</p>`;
   if (np === 'denied') return h + `<p class="note-line">Bạn đã chặn thông báo. Vào Cài đặt iPhone → Thông báo → Địa Ngục để bật lại.</p></div>`;
@@ -3247,13 +3118,13 @@ async function compressImage(file) {
     return out;
   } finally { URL.revokeObjectURL(url); }
 }
-async function storePhoto(file) { const data = await compressImage(file); const id = uid(); await DB.put('photos', id, data); photoCache.set(id, data); return id; }
+async function storePhoto(file) { const data = await compressImage(file); const id = uid(); await LDB.put('photos', id, data); photoCache.set(id, data); return id; }
 const photoCache = new Map();
 async function hydratePhotos(root) {
   for (const img of $$('img[data-photo]', root)) {
     const id = img.dataset.photo; let src = photoCache.get(id);
     if (!src && id.startsWith('exdb:')) { const [, g, n] = id.split(':'); exdbImg(g, n).then(v => { if (v) { img.src = v; img.classList.remove('nosrc'); } }); continue; }
-    if (!src) { src = await DB.get('photos', id); if (src) photoCache.set(id, src); }
+    if (!src) { src = await LDB.get('photos', id); if (src) photoCache.set(id, src); }
     if (src) { img.src = src; img.classList.remove('nosrc'); } else img.classList.add('nosrc');
   }
 }
@@ -3581,7 +3452,7 @@ function viewBodyPhotos() {
   const last = all.length ? all[all.length - 1].date : null, gap = last ? daysBetween(last, ymd()) : null;
   let h = `<section class="sec"><div class="sec-head"><h2 class="h">Ảnh trước / sau</h2><label class="btn sm gold" for="bp-in">${ICON.cam} Thêm ảnh</label></div>
     <input type="file" id="bp-in" accept="image/*" multiple hidden>`;
-  if (!all.length) return h + `<div class="empty">Mỗi tháng chụp 3 tư thế (trước, nghiêng, sau), cùng chỗ đứng, cùng ánh sáng, buổi sáng trước khi ăn.<br><br>Ảnh cũ từ năm trước: bấm “Thêm ảnh”, chọn nhiều ảnh một lúc, app tự đọc ngày chụp và cho bạn sửa lại tháng.</div><p class="note-line">Ảnh body lưu trên máy này. Khi chạy trong claude.ai, mọi ảnh (gồm ảnh body) được đẩy lên tài khoản Claude của bạn.</p></section>`;
+  if (!all.length) return h + `<div class="empty">Mỗi tháng chụp 3 tư thế (trước, nghiêng, sau), cùng chỗ đứng, cùng ánh sáng, buổi sáng trước khi ăn.<br><br>Ảnh cũ từ năm trước: bấm “Thêm ảnh”, chọn nhiều ảnh một lúc, app tự đọc ngày chụp và cho bạn sửa lại tháng.</div><p class="note-line">Ảnh body lưu trên máy này.</p></section>`;
   if (gap != null && gap >= 28) h += `<div class="banner"><span class="bi">${ICON.cal}</span><div><b>Đã ${gap} ngày chưa chụp</b><p>Chụp ảnh tháng ${+ymd().slice(5, 7)} để so với tháng trước.</p></div></div>`;
   // so sánh
   h += `<div class="card bcmp"><div class="chips" role="group" aria-label="Tư thế" style="margin-bottom:10px">${POSES.map(p => `<button type="button" data-act="pose" data-k="${p}" aria-pressed="${ui.pose === p}">${p} · ${all.filter(x => x.pose === p).length}</button>`).join('')}</div>`;
@@ -3614,7 +3485,7 @@ function viewBodyPhotos() {
     }
     h += `</div>`;
   }
-  h += `</div><p class="note-line">Bấm ô trống để thêm ảnh cho đúng tháng. Bấm ảnh để xem, đặt làm ảnh so sánh, đổi ngày hoặc xoá. Ảnh body lưu trên máy này; khi chạy trong claude.ai, ảnh được đẩy lên tài khoản Claude của bạn.</p></section>`;
+  h += `</div><p class="note-line">Bấm ô trống để thêm ảnh cho đúng tháng. Bấm ảnh để xem, đặt làm ảnh so sánh, đổi ngày hoặc xoá. Ảnh body lưu trên máy này.</p></section>`;
   return h;
 }
 function setCompare(v) {
@@ -3631,7 +3502,7 @@ function bindCompare() {
 }
 async function showBodyViewer(id) {
   const bp = state.bodyPhotos.find(x => x.id === id); if (!bp) return;
-  let src = photoCache.get(bp.photoId); if (!src) { src = await DB.get('photos', bp.photoId); if (src) photoCache.set(bp.photoId, src); }
+  let src = photoCache.get(bp.photoId); if (!src) { src = await LDB.get('photos', bp.photoId); if (src) photoCache.set(bp.photoId, src); }
   const v = $('#viewer'); v.hidden = false;
   v.innerHTML = `<div class="vtop"><b>${esc(bp.pose)} · ${DOWL[parseYmd(bp.date).getDay()]} ${dm(bp.date)}/${bp.date.slice(0, 4)}</b><button type="button" data-act="viewer-close">Đóng</button></div>
     <div class="vimg">${src ? `<img src="${src}" alt="Ảnh body">` : ''}</div>
@@ -3773,7 +3644,6 @@ function viewMore() {
   <div class="gh">Đồng bộ & dữ liệu</div><div class="card grp">
     ${row('pack', 'book', 'Thư viện hình hướng dẫn', ui.pack ? `Đã tải ${ui.pack.n} hình · xem được khi không có mạng` : 'Chưa tải · khoảng 20 MB')}
   </div>
-  ${syncCardHtml()}
   <div class="gh">Tập luyện</div><div class="card grp">
     ${row('pace', 'clock', 'Nhịp nghỉ & nhịp rep', `Nghỉ ${restMode().label.toLowerCase()} · set 10 rep ≈ ${setSec(10)} giây`)}
     ${row('form', 'alert', 'Lưu ý form khi tập', FORM_LV[formLv()].label)}
@@ -3782,7 +3652,7 @@ function viewMore() {
   </div>
   <div class="gh">Giao diện</div><div class="card grp">
     ${row('skin', 'palette', 'Giao diện & hiệu ứng', `${(SKINS.find(k => k.id === sk) || SKINS[0]).name} · hiệu ứng ${animOn() ? 'bật' : 'tắt'}`, 'acc')}
-    ${inArtifact || isStandalone() ? '' : row('install', 'phone', 'Cài lên màn hình điện thoại', 'Mở được cả khi không có mạng')}
+    ${isStandalone() ? '' : row('install', 'phone', 'Cài lên màn hình điện thoại', 'Mở được cả khi không có mạng')}
   </div>
   <div class="gh">Khác</div><div class="card grp">${row('wipe', 'trash', 'Xoá dữ liệu', 'Xoá toàn bộ dữ liệu trên máy này', 'bad')}</div>
   <p class="small muted" style="margin-top:18px">Giáo Án Địa Ngục chỉ đưa ra gợi ý dựa trên số liệu bạn ghi, không thay thế huấn luyện viên hay bác sĩ. Đau khớp hoặc đau nhói thì dừng bài đó.</p></section>`;
@@ -4044,9 +3914,9 @@ async function clonePlan(days) {
     const exs = [];
     for (const e of d.exercises) {
       const photos = [];
-      for (const pid of e.photos || []) { const v = await DB.get('photos', pid); if (v) { const nid = uid(); await LDB.put('photos', nid, v); photoCache.set(nid, v); photos.push(nid); } }
+      for (const pid of e.photos || []) { const v = await LDB.get('photos', pid); if (v) { const nid = uid(); await LDB.put('photos', nid, v); photoCache.set(nid, v); photos.push(nid); } }
       const alts = [];
-      for (const a of e.alts || []) { const ph = []; for (const pid of a.photos || []) { const v = await DB.get('photos', pid); if (v) { const nid = uid(); await LDB.put('photos', nid, v); photoCache.set(nid, v); ph.push(nid); } } alts.push({ ...clone(a), id: uid(), photos: ph, vid: await cloneVid(a.vid), currentKg: null, kgSetAt: null, targetKg: null }); }
+      for (const a of e.alts || []) { const ph = []; for (const pid of a.photos || []) { const v = await LDB.get('photos', pid); if (v) { const nid = uid(); await LDB.put('photos', nid, v); photoCache.set(nid, v); ph.push(nid); } } alts.push({ ...clone(a), id: uid(), photos: ph, vid: await cloneVid(a.vid), currentKg: null, kgSetAt: null, targetKg: null }); }
       exs.push({ ...clone(e), id: uid(), photos, alts, vid: await cloneVid(e.vid), mainSince: ymd(), currentKg: null, kgSetAt: null, targetKg: null });
     }
     out.push({ id: uid(), name: d.name, exercises: exs });
@@ -4068,7 +3938,7 @@ function strHash(s) { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h
 /* PA-25: mã băm cũ có dấu “.” (máy chủ Drive từ chối) → đổi sang “_”; cùng nội dung thì cùng mã mới */
 const normHash = h => String(h == null ? '' : h).replace('.', '_');
 const photoHashCache = new Map();
-async function photoHash(id) { if (photoHashCache.has(id)) return photoHashCache.get(id); const v = await DB.get('photos', id); const h = v ? strHash(v) : null; if (h) photoHashCache.set(id, h); return h; }
+async function photoHash(id) { if (photoHashCache.has(id)) return photoHashCache.get(id); const v = await LDB.get('photos', id); const h = v ? strHash(v) : null; if (h) photoHashCache.set(id, h); return h; }
 const okPhoto = v => typeof v === 'string' && v.length < 1500000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v);
 const syncRole = () => isHlv() ? 'coach' : 'student';
 function syncDelOf(st) { if (!st.syncDel || typeof st.syncDel !== 'object') st.syncDel = { s: {}, e: {} }; st.syncDel.s = st.syncDel.s || {};
@@ -4085,7 +3955,7 @@ async function serEx(ex, withPhotos, photos) {
   if (ex.currentKg != null) o.currentKg = ex.currentKg; if (ex.kgSetAt) o.kgSetAt = ex.kgSetAt;
   if (ex.fromStudent || (syncRole() === 'student' && !ex.srcId)) o.fs = 1; /* bài học viên tự thêm */
   o.ph = [];
-  for (const pid of ex.photos || []) { const h = await photoHash(pid); if (!h) continue; o.ph.push(h); if (withPhotos && !photos[h]) { const v = await DB.get('photos', pid); if (v) photos[h] = v; } }
+  for (const pid of ex.photos || []) { const h = await photoHash(pid); if (!h) continue; o.ph.push(h); if (withPhotos && !photos[h]) { const v = await LDB.get('photos', pid); if (v) photos[h] = v; } }
   return o;
 }
 async function serPlan(st, withPhotos, photos) {
@@ -4300,7 +4170,7 @@ async function hubRegister(body) {
   state.settings.sync = { s: J.s, hk: J.k };
   const r = await hubCall('/s/tv', null, 'GET');
   if (r.s !== 200) { state.settings.sync = {}; save(); toast('Mã HLV không đúng hoặc máy chủ chưa sẵn sàng'); return false; }
-  save(); closeSheet(); render(true); toast('Đã đăng ký làm HLV'); hubEnsureSoon(); return true;
+  save(); closeSheet(); render(true); toast('Đã đăng ký làm HLV'); hubSync(); return true;
 }
 /* đọc mã từ camera, ô dán, hoặc ảnh: trả true nếu là mã của máy chủ mới */
 async function hubCode(text) {
@@ -4326,19 +4196,9 @@ async function hubJoin(s, i, dk, ten) {
 }
 /* đăng ký nhận thông báo đẩy với máy chủ đồng bộ. HLV: buổi mới của học viên. Học viên: giáo án đổi. Tắt công tắc thì huỷ */
 async function hubSubscribe() {
-  if (!hubRole() || inArtifact) return;
+  if (!hubRole()) return;
   const sub = await currentPushSub().catch(() => null); if (!sub) return;
   await hubCall('/s/dk', { sub, off: state.settings.nSync === false }).catch(() => {});
-}
-/* khôi phục thủ công (BR-24.5): buổi trên máy được thay bằng bản trên máy chủ; bản cũ giữ trong state.sync.undo để hoàn tác */
-async function hubRestoreManual() {
-  const sy = state.settings.sync;
-  const r = await hubCall('/s/doi?hv=' + encodeURIComponent(sy.i) + '&since=0', null, 'GET');
-  if (r.s !== 200) { toast('Không kết nối được máy chủ. Thử lại khi có mạng.'); return; }
-  state.sync = state.sync || { sent: {} }; state.sync.undo = { sessions: clone(state.sessions), sent: clone(state.sync.sent) };
-  state.sessions = []; state.sync.sent = {};
-  for (const rec of r.j.recs) if (rec.k.startsWith('buoi:')) await hubApplySession(profiles.active, rec);
-  save(); render(true); toast('Đã khôi phục từ máy chủ · có thể hoàn tác');
 }
 async function hubRestoreSelf() {
   const sy = state.settings.sync; if (hubRole() !== 'hv') return;
@@ -4403,7 +4263,7 @@ async function hubFlush() {
 /* BR-26.5: máy chưa có vai thấy khối đăng nhập: quét QR (camera, ảnh) hoặc dán mã GAH1/GAV1 */
 function loginCardHtml() {
   return `<div class="card set-card" id="login"><h3>Đăng nhập</h3><p>HLV: quét mã QR HLV hoặc dán mã HLV. Học viên: quét thẻ QR của HLV hoặc dán mã thẻ.</p>
-    <div class="row"><button class="btn gold" data-act="qr-scan">Quét mã QR</button><button class="btn" data-act="hub-restore">Khôi phục bằng Face ID</button></div>
+    <div class="row"><button class="btn gold" data-act="qr-scan">Quét mã QR</button>${hasData(state) ? '' : '<button class="btn" data-act="hub-restore">Khôi phục bằng Face ID</button>'}</div>
     <details class="wpkeep" style="margin-top:10px"><summary>Hoặc dán mã</summary><div class="paste-box"><textarea class="inp" id="login-in" rows="2" placeholder="Dán mã GAH1… hoặc GAV1…"></textarea><button type="button" class="btn sm gold" data-act="login-go">Đăng nhập</button></div></details></div>`;
 }
 /* BR-26.1: HLV lấy và chia sẻ thẻ QR từng học viên; học viên chưa có thẻ thì bấm để tạo */
@@ -4419,10 +4279,10 @@ function hubCardHtml() {
     const stLine = sy.lastErr && (!sy.lastOk || sy.lastErr > sy.lastOk) ? 'Chưa gửi được: không liên lạc được máy chủ. Sẽ thử lại tự động.'
       : pend ? `Chờ gửi ${pend} buổi.` : sy.lastOk ? `Đã gửi xong · lần cuối lúc ${hhmm(sy.lastOk)}.` : 'Chưa gửi buổi nào.';
     return hubConflictHtml() + `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã nối với HLV ${esc(sy.ten || '')}. ${stLine}</p>
-    <div class="row"><button class="btn gold" data-act="hub-pk-add">Bật khôi phục bằng Face ID</button><button class="btn" data-act="hub-restore-manual">Khôi phục từ máy chủ</button>${state.sync && state.sync.undo ? '<button class="btn" data-act="hub-restore-undo">Hoàn tác khôi phục</button>' : ''}${state.sync && state.sync.prevDays ? '<button class="btn" data-act="hub-plan-undo">Hoàn tác giáo án</button>' : ''}<button class="btn ghost" data-act="hub-unlink">Ngắt kết nối trên máy này</button></div></div>`;
+    <div class="row"><button class="btn gold" data-act="hub-pk-add">Bật khôi phục bằng Face ID</button><button class="btn ghost" data-act="hub-unlink">Ngắt kết nối trên máy này</button></div></div>`;
   }
   return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã đăng ký làm HLV. Thêm học viên bằng thẻ QR; thẻ dùng được lâu dài.</p>
-    <div class="row"><button class="btn gold" data-act="hub-add">Thêm học viên</button><button class="btn" data-act="hub-self-open">Hồ sơ HLV</button><button class="btn" data-act="hub-migrate">Chuyển học viên có sẵn</button><button class="btn" data-act="hub-reg">Quét mã</button><button class="btn ghost" data-act="hub-unlink">Ngắt đăng ký trên máy này</button></div></div>`;
+    <div class="row"><button class="btn gold" data-act="hub-add">Thêm học viên</button><button class="btn" data-act="hub-self-open">Hồ sơ HLV</button><button class="btn" data-act="hub-reg">Quét mã</button><button class="btn ghost" data-act="hub-unlink">Ngắt đăng ký trên máy này</button></div></div>`;
 }
 /* HLV: mọi học viên trong danh sách phải có thẻ QR. Hồ sơ tên “Tôi” là hồ sơ tự tập của HLV, không tính là học viên.
    Tự tạo học viên trên máy chủ cho hồ sơ nào chưa có; mất mạng thì thử lại khi có mạng, khi mở app, và mỗi 20 giây. */
@@ -4508,28 +4368,6 @@ async function hubAddGo() {
   try { const c = await hubNewCard(ten); await hubLinkProfile(c.id, ten); hubCardsSheet([{ name: ten, code: c.code }]); }
   catch (e) { toast(e.message); }
 }
-/* PA-34.5: chuyển hồ sơ học viên đã có trên máy (từ Drive) sang máy chủ mới: mỗi người một thẻ, giữ nguyên dữ liệu */
-function hubMigrateSheet() {
-  const map = state.settings.sync.map || {}, others = profiles.list.filter(p => p.id !== profiles.active);
-  openSheet(`<h3 class="sh-title">Chuyển học viên sang đồng bộ mới</h3><p class="sh-text">Chọn hồ sơ học viên đang có trên máy này. Mỗi người sẽ có một thẻ QR; dữ liệu và giáo án đang có được giữ nguyên.</p>
-    <div class="list">${others.map(p => `<label class="li"><input type="checkbox" class="hub-pick" value="${p.id}"${Object.values(map).includes(p.id) ? ' disabled' : ' checked'}><span class="lt">${esc(p.name)}${Object.values(map).includes(p.id) ? ' <span class="chip">Đã chuyển</span>' : ''}</span></label>`).join('') || '<p class="small muted">Không có hồ sơ học viên nào khác trên máy này.</p>'}</div>
-    <div class="sh-actions"><button class="btn gold big" data-act="hub-migrate-go">Chuyển và tạo thẻ QR</button><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
-}
-async function hubMigrateGo() {
-  const picks = [...document.querySelectorAll('.hub-pick:checked')].map(x => x.value);
-  if (!picks.length) { toast('Chọn ít nhất một học viên'); return; }
-  const cards = [];
-  try {
-    for (const pid of picks) {
-      const p = profiles.list.find(x => x.id === pid); if (!p) continue;
-      const c = await hubNewCard(p.name);
-      state.settings.sync.map = { ...(state.settings.sync.map || {}), [c.id]: pid };
-      cards.push({ name: p.name, code: c.code });
-    }
-  } catch (e) { toast(e.message); }
-  save(); await hubPushPlans(true);
-  if (cards.length) hubCardsSheet(cards);
-}
 function hubCardsSheet(cards) {
   ui.hubCards = cards;
   openSheet(`<h3 class="sh-title">Thẻ QR của học viên</h3><p class="sh-text">Cho từng học viên quét thẻ của mình bằng app. Thẻ dùng được lâu dài, nên hãy cất giữ cẩn thận.</p>
@@ -4587,13 +4425,19 @@ async function hubPull() {
     if (r.j.seq > (sy.seq || 0)) { sy.seq = r.j.seq; save(); }
   } catch (e) { /* mất mạng: lần sau kéo tiếp */ } finally { hubPulling = false; }
 }
+/* BR-24.21: đồng bộ tự động, không có nút đồng bộ tay. Gọi khi nối máy/đăng ký, khi mở app, khi có mạng và mỗi 20 giây khi app đang hiện.
+   Khi dữ liệu đổi thì save() gọi riêng hubFlushSoon/hubPlanSoon. Mỗi bước tự chống chạy chồng và thử lại khi mất mạng. */
+async function hubSync() {
+  const role = hubRole(); if (!role) return;
+  if (role === 'hlv') { await hubEnsure(); await hubPushPlans(); }
+  await hubPull(); await hubFlush();
+}
 /* khoá so sánh giáo án: bỏ mức tạ hiện tại (đổi mỗi buổi tập, không phải thay đổi giáo án) */
 const planKey = plan => { const strip = e => ({ ...e, currentKg: undefined, kgSetAt: undefined, l: (e.l || []).map(strip) }); return strHash(JSON.stringify(plan.map(d => ({ n: d.n, e: (d.e || []).map(strip) })))); };
-/* giáo án HLV → học viên: HLV gửi khi giáo án đổi; học viên nhận bằng cùng động cơ gộp của Drive (syncMerge). Lưu bản cũ để hoàn tác. */
+/* giáo án HLV → học viên: HLV gửi khi giáo án đổi; học viên nhận bằng động cơ gộp (syncMerge). */
 let hubPlanT = 0;
 function hubPlanSoon() { clearTimeout(hubPlanT); hubPlanT = setTimeout(hubPushPlans, 1500); }
-/* quiet: gửi giáo án lần đầu khi chuyển học viên, không báo */
-async function hubPushPlans(quiet) {
+async function hubPushPlans() {
   if (hubRole() !== 'hlv') return;
   const sy = state.settings.sync, H = sy.planH || {};
   /* mất mạng hoặc máy chủ lỗi: không báo lỗi, bản chưa gửi giữ lại để lần lưu sau thử tiếp */
@@ -4602,8 +4446,8 @@ async function hubPushPlans(quiet) {
       const st = await profState(pid); if (!st) continue;
       const plan = await serPlan(st, false, {}), h = planKey(plan);
       if (H[hvId] === h) continue;
-      const ev = quiet ? null : { title: 'HLV vừa cập nhật giáo án', body: 'Mở app để xem bản mới', tag: 'plan' };
-      const r = await hubCall('/s/ghi', { hv: hvId, recs: [{ k: 'plan@hlv', id: 'plan', t: Date.now(), vai: 'hlv', d: JSON.stringify({ plan }) }], ev, backfill: !!quiet });
+      const ev = { title: 'HLV vừa cập nhật giáo án', body: 'Mở app để xem bản mới', tag: 'plan' };
+      const r = await hubCall('/s/ghi', { hv: hvId, recs: [{ k: 'plan@hlv', id: 'plan', t: Date.now(), vai: 'hlv', d: JSON.stringify({ plan }) }], ev, backfill: false });
       if (r.s === 200) { H[hvId] = h; sy.planH = H; save(); }
     }
   } catch (e) { /* giáo án vẫn còn trên máy */ }
@@ -4622,11 +4466,11 @@ async function hubApplyPlan(rec) {
   state.sync.conflict = { plan: J.plan, t: rec.t };
   sy.planT = rec.t; save(); render(true);
 }
-/* áp giáo án của HLV vào máy (gộp như Drive trước đây), lưu bản cũ để hoàn tác, và ghi nhận bản đã thống nhất */
+/* áp giáo án của HLV vào máy (gộp bằng syncMerge) và ghi nhận bản đã thống nhất */
 async function applyRemotePlan(plan, t) {
   let P = null; try { P = cleanPkg({ app: 'gadn-sync', role: 'coach', link: {}, plan, sessions: [], del: {} }); } catch (e) { return; }
   const { st } = await syncMerge(state, P, {});
-  state.sync = state.sync || { sent: {} }; state.sync.prevDays = clone(state.days); state.sync.conflict = null;
+  state.sync = state.sync || { sent: {} }; state.sync.conflict = null;
   state.days = st.days; state.settings.sync.planT = t;
   state.sync.planBase = planKey(await serPlan(state, false, {}));
   save(); render(true);
@@ -4654,7 +4498,7 @@ function hubConflictHtml() {
       <tr><td>Chỉ có ở HLV</td><td colspan="2">${list(k.onlyRemote)}</td></tr>
       <tr><td>Khác số bài</td><td colspan="2">${list(k.diffEx)}</td></tr>
     </table>
-    <p class="small muted">Dùng giáo án HLV: các ngày và bài theo giáo án HLV thay cho bản trên máy; bài bạn tự thêm được giữ lại; lịch sử tập và mức tạ được giữ. Bạn có thể hoàn tác sau đó. Giữ giáo án máy này: giữ nguyên bản trên máy; bản của HLV không áp dụng cho đến khi HLV cập nhật lần nữa.</p>
+    <p class="small muted">Dùng giáo án HLV: các ngày và bài theo giáo án HLV thay cho bản trên máy; bài bạn tự thêm được giữ lại; lịch sử tập và mức tạ được giữ. Giữ giáo án máy này: giữ nguyên bản trên máy; bản của HLV không áp dụng cho đến khi HLV cập nhật lần nữa.</p>
     <div class="row"><button class="btn gold" data-act="hub-conflict-remote">Dùng giáo án HLV</button><button class="btn" data-act="hub-conflict-local">Giữ giáo án máy này</button></div></div>`;
 }
 /* chỉ nhận bản mới hơn bản đã có; buổi của hồ sơ đang mở được ghi qua state để không bị ghi đè */
@@ -4774,8 +4618,7 @@ const handlers = {
   'prof-copy-go': async t => {
     const src = await profState($('#f-cfrom').value); if (!src) return;
     const days = await clonePlan(src.days);
-    if (t.dataset.m === 'replace') { state.days.forEach(d => d.exercises.forEach(ex => { ex.photos.forEach(id => DB.del('photos', id)); vidIdsOf({ days: [{ exercises: [ex] }] }).forEach(id => LDB.del('photos', id)); })); state.days = days; } else state.days.push(...days);
-    if (Cloud.ok) for (const d of days) for (const e of d.exercises) for (const pid of e.photos) { const v = photoCache.get(pid); if (v) Cloud.enqueue(() => Cloud.col('photos').doc(pid).set({ d: v })); }
+    if (t.dataset.m === 'replace') { state.days.forEach(d => d.exercises.forEach(ex => { ex.photos.forEach(id => LDB.del('photos', id)); vidIdsOf({ days: [{ exercises: [ex] }] }).forEach(id => LDB.del('photos', id)); })); state.days = days; } else state.days.push(...days);
     save(); closeSheet(); ui.tab = 'plan'; ui.openDay = days[0] && days[0].id; render(); toast(`Đã chép ${days.length} ngày tập. Bấm từng bài để điền mức tạ.`);
   },
   'prof-del': () => {
@@ -4865,7 +4708,7 @@ const handlers = {
     save(); closeSheet(); render(true);
   },
   'del-day': t => { const d = findDay(t.dataset.id); confirmSheet({ title: `Xoá ngày “${esc(d.name)}”?`, text: 'Các bài tập và ảnh trong ngày này sẽ bị xoá. Lịch sử các buổi đã tập vẫn được giữ.', ok: 'Xoá ngày tập', danger: true,
-    onOk: () => { d.exercises.forEach(ex => [ex, ...(ex.alts || [])].forEach(e2 => { markDelEx(e2); e2.photos.forEach(id => DB.del('photos', id)); if (e2.vid) LDB.del('photos', e2.vid); })); state.days = state.days.filter(x => x !== d); save(); render(true); } }); },
+    onOk: () => { d.exercises.forEach(ex => [ex, ...(ex.alts || [])].forEach(e2 => { markDelEx(e2); e2.photos.forEach(id => LDB.del('photos', id)); if (e2.vid) LDB.del('photos', e2.vid); })); state.days = state.days.filter(x => x !== d); save(); render(true); } }); },
   'move-day': t => { const i = state.days.findIndex(d => d.id === t.dataset.id), j = i + +t.dataset.d; if (j < 0 || j >= state.days.length) return; [state.days[i], state.days[j]] = [state.days[j], state.days[i]]; save(); render(true); },
   'toggle-day': t => { ui.openDay = ui.openDay === t.dataset.id ? null : t.dataset.id; ui.justOpen = ui.openDay; render(true); },
   'db-setup': () => dbSheet(),
@@ -4919,7 +4762,7 @@ const handlers = {
   'lib-open': () => { ui.libQ = ''; ui.libM = ''; libSheet(); },
   'lib-m': t => { ui.libM = ui.libM === t.dataset.k ? '' : t.dataset.k; libSheet(); },
   'ph-rm': t => { if (!t.dataset.armed) { t.dataset.armed = '1'; t.classList.add('armed'); t.setAttribute('aria-label', 'Bấm lần nữa để xoá ảnh'); setTimeout(() => { if (t.isConnected) { delete t.dataset.armed; t.classList.remove('armed'); } }, 3000); toast('Bấm ✕ lần nữa để xoá ảnh'); return; } readDraft(); ui.draft.photos = ui.draft.photos.filter(id => id !== t.dataset.id); const y = $('#sheet-body').scrollTop; exSheet(); $('#sheet-body').scrollTop = y; },
-  'cancel-ex': () => { const d = ui.draft; d.added.forEach(id => DB.del('photos', id)); ui.draft = null; closeSheet(); },
+  'cancel-ex': () => { const d = ui.draft; d.added.forEach(id => LDB.del('photos', id)); ui.draft = null; closeSheet(); },
   'save-ex': () => {
     readDraft(); const d = ui.draft;
     if (!d.name) { toast('Nhập tên bài tập'); return; }
@@ -4935,7 +4778,7 @@ const handlers = {
       dropSet: d.dropSet, warmup: d.warmup, step: d.step, rest: d.rest, setup: d.setup, photos: d.photos, zone: d.zone || null, gid: d.name === d.nameOrig ? d.gid : (LIB_GID[d.name] || undefined), cues: d.cues || '', vid: d.vid || null, vlink: d.vlink || '', targetKg: d.targetKg, each: !!d.each, restV: 2,
       ...(d.altOf ? {} : { alts: d.alts || [], slot: (d.slot || '').trim(), mainSince: d.mainSince || ymd() }),
       currentKg: changedKg ? d.curIn : (d.isNew ? null : d.currentKg), kgSetAt: changedKg ? Date.now() : (d.kgSetAt || null) };
-    [...d.orig, ...d.added].filter(id => !d.photos.includes(id)).forEach(id => DB.del('photos', id));
+    [...d.orig, ...d.added].filter(id => !d.photos.includes(id)).forEach(id => LDB.del('photos', id));
     if (d.altOf) { const m = findEx(d.altOf); m.alts = m.alts || []; if (d.isNew) m.alts.push(ex); else { const k = m.alts.findIndex(a => a.id === d.id); m.alts[k] = ex; } ui.altOpen = { ...(ui.altOpen || {}), [m.id]: true }; }
     else if (d.isNew) day.exercises.push(ex); else { const i = day.exercises.findIndex(e => e.id === d.id); day.exercises[i] = ex; }
     syncActive(d.isNew && !d.altOf ? { add: ex.id } : null);
@@ -4948,7 +4791,7 @@ const handlers = {
       if (d.altOf) { const m = findEx(d.altOf); m.alts = (m.alts || []).filter(a => a.id !== d.id); }
       else if (hasAlts) { const nm = swapMain(cur, cur.alts[0].id); nm.alts = nm.alts.filter(a => a.id !== d.id); }
       else day.exercises = day.exercises.filter(e => e.id !== d.id);
-      [...d.orig, ...d.added].forEach(id => DB.del('photos', id));
+      [...d.orig, ...d.added].forEach(id => LDB.del('photos', id));
       if (gone && gone.vid && !(findEx(d.id) && findEx(d.id).vid === gone.vid)) LDB.del('photos', gone.vid);
       ui.draft = null; syncActive(); save(); render(true); } }); },
   'pmode': t => { ui.pmode = t.dataset.k; render(true); },
@@ -5005,13 +4848,8 @@ const handlers = {
     hubCardsSheet([{ name: p.name, code: hubCodeOf(id2, await hubKey(id2, 0)) }]);
   },
   'hub-pk-add': () => hubPasskeyAdd(),
-  'hub-migrate': () => hubMigrateSheet(),
-  'hub-migrate-go': () => hubMigrateGo(),
   'hub-conflict-remote': async () => { const c = state.sync && state.sync.conflict; if (c) await applyRemotePlan(c.plan, c.t); toast('Đã dùng giáo án của HLV'); },
   'hub-conflict-local': async () => { state.sync.conflict = null; state.sync.planBase = planKey(await serPlan(state, false, {})); save(); render(true); toast('Đã giữ giáo án trên máy này'); },
-  'hub-restore-manual': () => confirmSheet({ title: 'Khôi phục từ máy chủ?', text: `Buổi tập trên máy này sẽ được thay bằng bản đã gửi lên máy chủ.Buổi chưa gửi trên máy này sẽ mất. Bạn có thể hoàn tác ngay sau đó.`, ok: 'Khôi phục', danger: true, onOk: () => hubRestoreManual() }),
-  'hub-restore-undo': () => { const u = state.sync && state.sync.undo; if (!u) return; state.sessions = u.sessions; state.sync.sent = u.sent; state.sync.undo = null; save(); render(true); toast('Đã hoàn tác khôi phục'); },
-  'hub-plan-undo': () => { if (!state.sync || !state.sync.prevDays) return; state.days = state.sync.prevDays; state.sync.prevDays = null; save(); render(true); toast('Đã hoàn tác giáo án'); },
   'hub-restore': () => hubPasskeyRestore(),
   'hub-add-go': () => hubAddGo(),
   'hub-unlink': () => confirmSheet({ title: 'Ngắt kết nối trên máy này?', text: 'Chỉ xoá khoá trên máy này. Dữ liệu trên máy chủ vẫn giữ nguyên; quét lại thẻ để nối lại.', ok: 'Ngắt', danger: true, onOk: () => { state.settings.sync = {}; save(); render(true); toast('Đã ngắt kết nối trên máy này'); } }),
@@ -5055,7 +4893,7 @@ const handlers = {
   'bp-del': t => {
     if (!t.dataset.armed) { t.dataset.armed = '1'; t.textContent = 'Bấm lần nữa để xoá'; return; }
     const bp = state.bodyPhotos.find(x => x.id === t.dataset.id); if (!bp) return;
-    state.bodyPhotos = state.bodyPhotos.filter(x => x !== bp); DB.del('photos', bp.photoId); photoCache.delete(bp.photoId);
+    state.bodyPhotos = state.bodyPhotos.filter(x => x !== bp); LDB.del('photos', bp.photoId); photoCache.delete(bp.photoId);
     save(); handlers['viewer-close'](); render(true); toast('Đã xoá ảnh');
   },
   'body-edit': t => bodySheet(state.body.find(e => e.id === t.dataset.id)),
@@ -5077,17 +4915,14 @@ const handlers = {
           'install': async () => { if (!deferredInstall) return; deferredInstall.prompt(); try { await deferredInstall.userChoice; } catch (e) {} deferredInstall = null; render(true); },
   'wipe': () => confirmSheet({ title: 'Xoá toàn bộ dữ liệu?', text: 'Giáo án, lịch sử tập, ảnh và số đo trên máy này sẽ bị xoá vĩnh viễn. Nên tải file sao lưu trước.', ok: 'Xoá toàn bộ', danger: true,
     onOk: async () => {
-      const ids = [], g = globalsOf(state);
-      for (const p of profiles.list) { const st = await profState(p.id); if (st) ids.push(...photoIdsOf(st)); if (p.id !== 'p1') LDB.del('kv', stateKey(p.id)); }
+      const g = globalsOf(state);
+      for (const p of profiles.list) { if (p.id !== 'p1') LDB.del('kv', stateKey(p.id)); }
       /* PA-28: giữ thư viện hình offline (exdb:*) cho khớp khoá exdbPack; xoá phần còn lại (ảnh, video) */
       for (const k of await LDB.keys('photos')) if (!String(k).startsWith('exdb:')) await LDB.del('photos', k);
-      if (profiles.active === 'p1') ids.forEach(k => Cloud.enqueue(() => Cloud.col('photos').doc(k).delete()));
       photoCache.clear();
-      const wasP1 = profiles.active === 'p1';
       profiles = { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] };
-      if (Cloud.ok && !wasP1) Cloud.setProfile('p1');
       state = freshState(); Object.assign(state.settings, g); state.updatedAt = Date.now();
-      saveProfiles(); flush(true); stopRest(); releaseWake(); ui.tab = 'today'; ui.pick = null; render(); toast('Đã xoá dữ liệu');
+      saveProfiles(); flush(); stopRest(); releaseWake(); ui.tab = 'today'; ui.pick = null; render(); toast('Đã xoá dữ liệu');
     } }),
   'step-pick': t => { const i = $('#f-step'); if (i) i.value = fmtIn(+t.dataset.v); $$('[data-act="step-pick"]').forEach(b => b.setAttribute('aria-pressed', b === t)); },
   'fx-lv': t => { const k = t.dataset.k; state.settings.fxOff = true; state.settings.animOff = k === 'off'; applySkin(state.settings.skin); save(); render(true); toast('Hiệu ứng: ' + FX_LV[fxLevel()].label); },
@@ -5160,17 +4995,13 @@ document.addEventListener('change', async e => {
   if (t.id === 'img-in' && t.files && t.files.length) { const fs = [...t.files]; t.value = ''; await receiveQrImage(fs); return; }
   });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { if (!$('#viewer').hidden) handlers['viewer-close'](); else if (!$('#sheet').hidden) handlers['close-sheet'](); } });
-document.addEventListener('visibilitychange', async () => {
-  if (document.visibilityState === 'hidden') { if (saveT) flush(true); else Cloud.sync(true); return; }
-  hubFlushSoon(); hubPull();
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') { if (saveT) flush(); return; }
+  hubSync();
   if (state.active && ui.tab === 'today') requestWake();
   if (rest.pending || (!rest.fired && rest.end && Date.now() >= rest.end)) { rest.pending = false; if (!rest.fired) tickRest(); else { initAudio(); beep(); showAlarm(); } }
-  if (inArtifact && !Cloud.ok && syncStatus === 'retry') { connectCloud(state); return; }
-  if (Cloud.ok && !state.active && !saveT) {
-    try { const snap = await Cloud.base.get(); if (snap.exists && (snap.data().updatedAt || 0) > (state.updatedAt || 0)) { const r = await Cloud.pull(); const g = globalsOf(state); loadState(r); Object.assign(state.settings, g); Cloud.remember(r); LDB.put('kv', stateKey(profiles.active), clone(state)); if ($('#sheet').hidden) render(true); } } catch (e) {}
-  }
 });
-window.addEventListener('pagehide', () => { if (saveT) flush(true); });
+window.addEventListener('pagehide', () => { if (saveT) flush(); });
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; if (ui.tab === 'more') render(true); });
 let etaTick = 0;
 setInterval(() => { const el = $('#elapsed'); if (el && state.active) { el.textContent = fmtDur(durOf(state.active)); if (++etaTick % 15 === 0) updateProgress(); } }, 1000);
@@ -5185,6 +5016,7 @@ function purgeJunk(st) {
   if (!st || typeof st !== 'object') return st;
   for (const k of JUNK_STATE) delete st[k];
   if (st.settings && typeof st.settings === 'object') for (const k of JUNK_SETTINGS) delete st.settings[k];
+  if (st.sync && typeof st.sync === 'object') { delete st.sync.undo; delete st.sync.prevDays; }
   return st;
 }
 async function purgeStored() {
@@ -5210,10 +5042,9 @@ async function purgeStored() {
   if (!pm) { profiles.list[0].name = (state.settings.name || '').trim() || 'Tôi'; LDB.put('kv', 'profiles', clone(profiles)); }
   render();
   LDB.get('kv', 'exdbPack').then(p => { ui.pack = p || false; if (ui.tab === 'today' || ui.tab === 'more') render(true); }).catch(() => { ui.pack = false; });
-  connectCloud(saved && Array.isArray(saved.days) ? saved : null);
   if (!location.hash.startsWith('#nhap=')) maybeWeekPlan();
-      setTimeout(() => { hubFlush(); hubPull(); hubPushPlans(); hubSubscribe(); hubEnsure(); }, 1600); window.addEventListener('online', () => { hubFlush(); hubPull(); hubPushPlans(); hubEnsure(); });
-  setInterval(() => { if (document.visibilityState === 'visible') { hubPull(); hubFlush(); hubEnsure(); } }, 20000);
+      setTimeout(() => { hubSync(); hubSubscribe(); }, 1600); window.addEventListener('online', () => hubSync());
+  setInterval(() => { if (document.visibilityState === 'visible') hubSync(); }, 20000);
   setTimeout(() => pushRegister(), 3000);
   if (state.settings.notify) currentPushSub().then(async sub => {
     /* PA-23: đã cho phép thông báo mà máy chưa nối máy chủ thì tự nối, không cần dán địa chỉ */
