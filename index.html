@@ -1689,11 +1689,11 @@ function syncCardHtml() {
   return `<div class="card set-card sync ${k}" id="sync"><div class="sync-h"><span class="sync-dot"></span><h3>${t}</h3></div><p>${d}</p></div>`;
 }
 const freshState = () => ({ v: 3, days: [], sessions: [], body: [], bodyPhotos: [], active: null,
-  settings: { name: '', height: null, setMin: 10, setMax: 20, deloadEvery: 6, cycleStart: null, progMode: 'linear', pace: 'std', restMode: 'std', tempo: 3, schedule: {}, remindTime: '18:00', remindBefore: 30, skin: 'amber', restAlert: 'app', shortcutName: 'Nghỉ giữa set', notify: false, sfx: true, haptics: true, eff: true, fxOff: false, animOff: false } });
+  settings: { name: '', height: null, setMin: 10, setMax: 20, deloadEvery: 6, cycleStart: null, progMode: 'linear', pace: 'std', restMode: 'std', tempo: 3, skin: 'amber', notify: false, sfx: true, haptics: true, eff: true, fxOff: false, animOff: false } });
 let state = freshState();
 let profiles = { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }] };
 const PCOLORS = ['#d9b45b', '#6ea8ff', '#ff86b4', '#5fdc9b', '#c79bff', '#ffa45c'];
-const GLOBAL_KEYS = ['skin', 'notify', 'alertMethod', 'ntfyTopic', 'pushServer', 'pushKey', 'restAlert', 'shortcutName', 'alertV17', 'sfx', 'haptics', 'eff', 'sync', 'nRemind', 'nDays', 'nTime', 'nWeekly', 'nSync','fxOff', 'animOff', ];
+const GLOBAL_KEYS = ['skin', 'notify', 'pushServer', 'pushKey', 'sfx', 'haptics', 'eff', 'sync', 'nRemind', 'nDays', 'nTime', 'nWeekly', 'nSync','fxOff', 'animOff', ];
 const stateKey = pid => pid === 'p1' ? 'state' : 'state:' + pid;
 const curProf = () => profiles.list.find(p => p.id === profiles.active) || profiles.list[0];
 const multi = () => profiles.list.length > 1;
@@ -1708,15 +1708,14 @@ async function profState(pid) { if (pid === profiles.active) return state; const
 const vidIdsOf = st => (st.days || []).flatMap(d => d.exercises.flatMap(e => [e, ...(e.alts || [])].map(x => x.vid).filter(Boolean)));
 const photoIdsOf = st => [...(st.days || []).flatMap(d => d.exercises.flatMap(e => [...(e.photos || []), ...(e.alts || []).flatMap(a => a.photos || [])])), ...(st.bodyPhotos || []).map(b => b.photoId)];
 function loadState(s) {
+  purgeJunk(s);
   state = { ...freshState(), ...s, settings: { ...freshState().settings, ...(s.settings || {}) } };
   state.days.forEach(d => d.exercises.forEach(ex => { migrateEx(ex); if (!Array.isArray(ex.alts)) ex.alts = []; ex.alts.forEach(a => { migrateEx(a); delete a.alts; }); if (ex.slot == null) ex.slot = '';
     if (!ex.mainSince) { const ds = state.sessions.filter(x => x.entries.some(en => en.exId === ex.id)).map(x => x.date).sort(); ex.mainSince = ds[0] || ymd(); } }));
   if (!Array.isArray(state.bodyPhotos)) state.bodyPhotos = [];
   if (!Array.isArray(state.pains)) state.pains = [];
   if (!state.weekPlans || typeof state.weekPlans !== 'object') state.weekPlans = {};
-  if (!state.settings.schedule || typeof state.settings.schedule !== 'object') state.settings.schedule = {};
   sets3(state); warmAll(state); mig29(state);
-  if (state.settings.alertMethod !== 'push') state.settings.alertMethod = 'push';
   /* PA-22: chỉ còn Hổ Phách và Đen Tuyền; lần đầu chuyển mọi người sang Hổ Phách */
   /* VD-32: hồ sơ trống (người mới) giữ nguyên lựa chọn; chỉ dữ liệu cũ có sẵn mới bị chuyển */
   const fresh22 = !(s.settings && s.settings.skin22) && !state.days.length && !state.sessions.length;
@@ -4174,7 +4173,6 @@ async function syncMerge(L0, P, choices) {
       for (const d of L.days) { const before = d.exercises.length; d.exercises = d.exercises.filter(e => !(e.fromStudent && [...exKeys(e)].some(k => P.del.e[k]))); R.dropEx += before - d.exercises.length; }
     } else {
       /* máy học viên: dựng lại giáo án theo HLV, giữ mã bài cũ để lịch sử không mất */
-      const linked = !L.coachLink || !L.coachLink.pk || !P.link.pk || L.coachLink.pk === P.link.pk;
       const days = [];
       for (const pd of P.plan) {
         const ld = L.days.find(d => d.name === pd.n && !days.some(x => x.id === d.id)), day = { ...(ld || {}), id: ld ? ld.id : uid(), name: pd.n, exercises: [] };
@@ -4189,7 +4187,7 @@ async function syncMerge(L0, P, choices) {
       /* bài còn lại trên máy học viên */
       for (const { ex, d, alt } of pool) {
         if (used.has(ex)) continue;
-        const fromCoach = !!ex.srcId && !ex.fromStudent && linked;
+        const fromCoach = !!ex.srcId && !ex.fromStudent;   /* gói từ máy chủ luôn là của HLV đã nối */
         if (fromCoach || [...exKeys(ex)].some(k => P.del.e[k])) { R.dropEx++; continue; }
         if (alt) continue;
         let day = days.find(x => x.name === d.name); if (!day) { day = { ...d, exercises: [] }; days.push(day); }
@@ -4227,8 +4225,6 @@ async function syncMerge(L0, P, choices) {
     if (last && (!ex.kgSetAt || ex.kgSetAt < last.t) && ex.currentKg !== last.kg) { ex.currentKg = last.kg; ex.kgSetAt = null; R.kg++; }
   }
   pruneDel(D);
-  const M = L.syncMark || {}, sent = { ...(M.sent || {}) }; for (const ps of P.sessions) { const x = L.sessions.find(s => s.id === ps.id); if (x && sRev(x) === sRev(ps)) sent[ps.id] = sRev(ps); } L.syncMark = { ...M, sent };
-  if (P.role === 'coach' && P.link.pk) L.coachLink = { pk: P.link.pk, name: P.link.cn || (L.coachLink || {}).name || '' };
   return { st: L, R, newPhotos };
 }
 
@@ -5094,10 +5090,33 @@ let etaTick = 0;
 setInterval(() => { const el = $('#elapsed'); if (el && state.active) { el.textContent = fmtDur(durOf(state.active)); if (++etaTick % 15 === 0) updateProgress(); } }, 1000);
 
 /* ---------- khởi động ---------- */
+/* ---------- dọn dữ liệu rác ----------
+   Xoá khoá của các tính năng đã gỡ (Google Drive, tài khoản, sao lưu, chia sẻ, nhắc sao lưu, thông báo cũ).
+   Chỉ xoá khoá không còn được đọc ở đâu trong app; dữ liệu buổi tập, giáo án, số đo, ảnh giữ nguyên. */
+const JUNK_STATE = ['drv', 'coachLink', 'syncMark'];
+const JUNK_SETTINGS = ['acc', 'drvUrl', 'drvKey', 'drvSv', 'nDrive', 'lastBackupAt', 'lastBackupSess', 'backupSkipAt', 'shareNoAsk', 'alertV17', 'alertMethod', 'ntfyTopic', 'restAlert', 'shortcutName', 'remindTime', 'remindBefore', 'schedule'];
+function purgeJunk(st) {
+  if (!st || typeof st !== 'object') return st;
+  for (const k of JUNK_STATE) delete st[k];
+  if (st.settings && typeof st.settings === 'object') for (const k of JUNK_SETTINGS) delete st.settings[k];
+  return st;
+}
+async function purgeStored() {
+  for (const k of await LDB.keys('kv')) if (typeof k === 'string' && (k.startsWith('drvUp:') || k === 'syncUndo')) await LDB.del('kv', k);
+  let profChanged = false;
+  for (const p of profiles.list) {
+    if ('uid' in p) { delete p.uid; profChanged = true; }
+    const st = await LDB.get('kv', stateKey(p.id)); if (!st) continue;
+    const before = JSON.stringify(st); purgeJunk(st);
+    if (JSON.stringify(st) !== before) await LDB.put('kv', stateKey(p.id), clone(st));
+  }
+  if (profChanged) saveProfiles();
+}
 (async () => {
   await LDB.open();
   const pm = await LDB.get('kv', 'profiles');
   if (pm && Array.isArray(pm.list) && pm.list.length) { profiles = pm; if (!profiles.list.some(p => p.id === profiles.active)) profiles.active = profiles.list[0].id; }
+  await purgeStored();
   const saved = await LDB.get('kv', stateKey(profiles.active));
   if (saved && Array.isArray(saved.days)) loadState(saved);
   if (!pm) { profiles.list[0].name = (state.settings.name || '').trim() || 'Tôi'; LDB.put('kv', 'profiles', clone(profiles)); }

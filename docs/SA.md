@@ -240,6 +240,9 @@ Máy chủ Apps Script (`drive/Code.gs`), liên kết `GAL1`, tài khoản tên 
 ## 8. File sao lưu
 > **ĐÃ BỎ (PA-36, 23/10/2026)**: file sao lưu và khôi phục đã gỡ (PA-36). Không còn định dạng file `so-ta`/`gadn-sync` nào được đọc. Mục này giữ lại để tra cứu dữ liệu cũ.
 
+### 3.4 Dọn dữ liệu rác (PA-37)
+`purgeJunk(st)` và `purgeStored()` (khởi động) xoá khoá của tính năng đã gỡ: `drv`, `coachLink`, `syncMark` trong hồ sơ; `acc`, `drvUrl`, `drvKey`, `drvSv`, `nDrive`, `lastBackupAt`, `lastBackupSess`, `backupSkipAt`, `shareNoAsk`, `alertV17`, `alertMethod`, `ntfyTopic`, `restAlert`, `shortcutName`, `remindTime`, `remindBefore`, `schedule` trong cài đặt; `uid` trong danh sách hồ sơ; khoá IndexedDB `drvUp:*` và `syncUndo`. Dữ liệu buổi tập, giáo án, số đo, ảnh không bị động đến.
+
 ## 9. Offline & tài nguyên ngoài
 - `sw.js` (`CACHE = 'gadn-v53'`): `install` thêm `SHELL` (bỏ qua file lỗi) + `skipWaiting`; `activate` xoá cache khác tên + `clients.claim`; `fetch`: GET cùng nguồn — bỏ qua `.bin`; điều hướng = network-first, lưu `./index.html`, lỗi mạng trả bản lưu; còn lại cache-first rồi lưu. Font Google: trả bản lưu ngay + làm mới ngầm. `notificationclick`, `push` (hiện thông báo từ máy chủ thông báo). Service worker chỉ đăng ký khi `https:` và `<html data-pwa="1">`.
 - **Gói hình GAP1** (`exdb-1.bin`, `exdb-2.bin`): `"GAP1"` + `uint32 LE` độ dài chỉ mục + chỉ mục JSON `[[key, offset, length]]` + dữ liệu WebP. Tải từ cùng nguồn, dự phòng `https://hoangtourguide0507-create.github.io/giao-an-dia-nguc/`, đọc luồng để báo tiến độ, ghi từng hình `exdb:<key>` vào IndexedDB, xin `navigator.storage.persist()`.
