@@ -63,11 +63,11 @@ npm test
 ```
 
 - `npm run test:sw` — test service worker `sw.js` (Node test runner).
-- `npm run test:app` — test toàn bộ app trong Chromium (Playwright, giả lập iPhone 13, giờ Việt Nam, ngày cố định **Thứ Tư 21/10/2026 09:00**).
+- `npm run test:app` — test toàn bộ app trong Chromium (Playwright, Chromium với khung nhìn iPhone 13 — không cần iPhone/WebKit thật, giờ Việt Nam, ngày cố định **Thứ Tư 21/10/2026 09:00**).
 - `npm run check` — kiểm tra cú pháp script chính trong `index.html` và `sw.js` (thay cho `node --check` thủ công).
 - `npx playwright test <tên-file>` để chạy một nhóm khi đang viết test.
 
-**Bộ thứ hai — hồi quy theo PA (Python):** `bash tests/chay.sh` (cần `pip install playwright && playwright install chromium`) chạy `tests/test_<pa>.py`, `tests/test_push_server.mjs`, `tests/test_hub_sync.mjs`, `tests/test_hub_pa33b.mjs`. Bộ này giữ các hành vi PA trước đã chốt; chạy một vài file: `bash tests/chay.sh pa22 sync`. Cả hai bộ phải xanh trước khi commit.
+**Bộ nhẹ (cổng bắt buộc):** `bash tests/chay.sh` chạy `npm run check`, `npm run test:sw`, `tests/test_push_server.mjs`, `tests/test_hub_sync.mjs`, `tests/test_hub_pa33b.mjs` — chỉ Node, vài giây, phải xanh trước khi commit. Bộ Python/Playwright (`tests/test_pa*.py`) đã xoá từ 24/10/2026; `npm run test:app` chạy khi PA đụng giao diện (file liên quan) hoặc khi chủ repo yêu cầu.
 
 ### Chất lượng test
 
@@ -84,14 +84,14 @@ Một test chỉ giữ lại khi:
 
 - App là một file `index.html` (toàn bộ JS trong một IIFE), `sw.js` là service worker.
 - Mỗi lần đổi `index.html` thì **tăng `CACHE` trong `sw.js`** để điện thoại nhận bản mới.
-- Trước khi commit: `npm run check`, `npm test` và `bash tests/chay.sh` phải xanh.
+- Trước khi commit: `bash tests/chay.sh` phải xanh; PA đụng giao diện thì chạy thêm `npx playwright test <file liên quan>`.
 - Giao diện, nội dung, tài liệu và tên test viết bằng **tiếng Việt**.
 - Dữ liệu người dùng phải **tương thích ngược**: mọi thay đổi định dạng dữ liệu cần bước chuyển đổi trong `loadState` / `migrateEx` và có test "mở dữ liệu bản cũ".
 
 ## 6. Danh sách kiểm tra khi xong một PA (Definition of Done)
 
 - [ ] Epic ngày có đủ BR, SA, kế hoạch test; anh đã xác nhận trước khi code.
-- [ ] Test mới đã từng đỏ, giờ xanh; `npm test` và `bash tests/chay.sh` xanh.
+- [ ] Test mới đã từng đỏ, giờ xanh; `bash tests/chay.sh` và test Playwright liên quan xanh.
 - [ ] `BR.md`, `SA.md` phản ánh đúng hành vi mới; `VAN-DE-VA-CHIEN-LUOC.md` cập nhật nếu có.
 - [ ] `CACHE` trong `sw.js` đã tăng (nếu đổi `index.html`).
 - [ ] Nhánh `pa-<số>-<tên>` đã đẩy, có link xem thử raw.githack; chờ "Duyệt PA-x".
