@@ -35,7 +35,7 @@ flowchart LR
 | `.claude/agents/*.md` | Các agent làm việc của dự án (duyệt PA, kiểm chứng y khoa, kiểm thử, máy chủ, triển khai PA, UX/UI) |
 | `manifest.webmanifest`, `icon-*.png`, `apple-touch-icon.png` | PWA |
 | `exdb-1.bin`, `exdb-2.bin` | 2 gói hình minh hoạ offline (định dạng GAP1, §9) |
-| `package.json`, `playwright.config.mjs`, `scripts/`, `tests/` | Hai bộ kiểm thử (§12), không phát hành cho người dùng |
+| `package.json`, `playwright.config.mjs`, `scripts/`, `tests/` | Bộ kiểm thử (§12), không phát hành cho người dùng |
 
 ## 2. Cấu trúc script chính
 
@@ -297,20 +297,20 @@ scripts/
   check-syntax.mjs – node --check script chính + sw.js
   dead-code.py     – tìm hàm/khai báo/handler không có đường chạy tới (mã chết), dùng khi dọn mã
 ```
-- **Môi trường**: Chromium headless, iPhone 13 (cảm ứng, 390×844), `vi-VN`, `Asia/Ho_Chi_Minh`, quyền clipboard. Đồng hồ cài bằng `page.clock.install` và vẫn chạy thật; test đồng hồ nghỉ dùng `clock.fastForward`.
+- **Môi trường**: Chromium headless với khung nhìn iPhone 13 (cảm ứng, 390×844; không dùng WebKit/iPhone thật), `vi-VN`, `Asia/Ho_Chi_Minh`, quyền clipboard. Đồng hồ cài bằng `page.clock.install` và vẫn chạy thật; test đồng hồ nghỉ dùng `clock.fastForward`.
 - **Gieo dữ liệu**: `App.seed()` sang trang tĩnh cùng nguồn (để app không ghi đè) → ghi thẳng IndexedDB → mở lại app. Trước khi `reload()` phải `flushed()` vì `save()` trễ 300 ms.
 - **Chất lượng test**: test đi qua nút/luồng người dùng thật và khẳng định kết quả (dữ liệu trong IndexedDB, chữ trên màn hình, thông báo); test trùng đường và khẳng định thì xoá; mã chết bị xoá thay vì phủ.
 - Cổng thử đọc từ biến môi trường `PORT` (mặc định 4173) để chạy song song nhiều bản sao repo.
 
-### 12.2 Bộ Python/Playwright của dự án (`bash tests/chay.sh`) — hồi quy theo PA
-Các file `tests/test_<pa>.py` (`pa10 pa11 pa14 pa20 pa22`) cộng `tests/test_push_server.mjs` và `tests/test_drive_gas.js`. `chuan_bi.py` chép `index.html` sang `tests/site/` và chèn `window.__ev = eval` để các test chạy lệnh trong phạm vi IIFE. Chạy được bằng Python Playwright (`pip install playwright && playwright install chromium`). Bộ này **không đo coverage**; vai trò là giữ nguyên các hành vi PA trước đã chốt. Test của tính năng đã bỏ (báo cáo tháng, Phím tắt, gửi giáo án bằng mã) đã được cắt khỏi các file này khi gộp PA-15 với PA-22.
+### 12.2 Bộ nhẹ (`bash tests/chay.sh`) — cổng bắt buộc
+Chạy `npm run check`, `npm run test:sw`, `tests/test_push_server.mjs`, `tests/test_hub_sync.mjs`, `tests/test_hub_pa33b.mjs` (chỉ Node, không trình duyệt). Bộ Python/Playwright (`tests/test_pa*.py`, `chuan_bi.py`, móc `window.__ev`) đã xoá từ 24/10/2026 vì chậm và trùng với bộ §12.1; Playwright §12.1 không còn là cổng bắt buộc, chạy theo file liên quan.
 
 ### 12.3 Máy chủ thật trong test
 `tests/hub_server.mjs` chạy **chính `push-server/src/index.js`** với SQLite thật; fixture `hub` nối trình duyệt tới máy chủ này. Mỗi test một máy chủ riêng; fixture `device` mở thêm máy học viên với dữ liệu riêng. (Máy chủ Drive giả `tests/gas_server.js` đã gỡ, PA-35.)
 
 ### 12.4 Kết quả (22/10/2026)
 - `npm test`: **177 test app xanh + 4 `fixme`**, 7 test `sw.js` xanh (script `check` cú pháp OK).
-- `bash tests/chay.sh`: 12 file Python (gồm `pa23`) + push-server + Code.gs đều đạt.
+- (Ghi nhận cũ: bộ Python 12 file đã xoá 24/10/2026.)
 
 ### Bản đồ BR → test
 

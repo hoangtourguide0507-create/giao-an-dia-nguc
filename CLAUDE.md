@@ -4,7 +4,8 @@
 
 ## Duyệt theo cây phương án
 - `main` là bản chính thức, GitHub Pages dựng app từ `main` / `(root)` (Source: *Deploy from a branch*).
-- **Không commit trực tiếp vào `main`.** Mọi thay đổi commit trên nhánh rồi mới `git merge --no-ff` vào `main`. Hook `.git/hooks/pre-commit` chặn commit trên `main` (trừ lúc đang merge); hook `.git/hooks/post-merge` chạy toàn bộ kiểm thử sau mỗi lần gộp vào `main` và cảnh báo nếu đỏ.
+- **Không commit trực tiếp vào `main`.** Mọi thay đổi commit trên nhánh rồi mới `git merge --no-ff` vào `main`. Hook `.git/hooks/pre-commit` chặn commit trên `main` (trừ lúc đang merge). Không dùng hook `post-merge`.
+- **Sau mỗi lần `git merge` vào `main`, agent tự chạy `bash tests/chay.sh`** (bộ nhẹ, vài giây) ngay trong cùng lượt, không chờ nhắc. Đỏ thì báo cáo ngay, chưa đẩy `main` lên GitHub, sửa nguyên nhân (không làm yếu test) bằng commit trên nhánh rồi gộp lại. Không tự chạy cả bộ Playwright sau khi gộp.
 - Mỗi yêu cầu thay đổi là một nhánh riêng `pa-<số>-<tên-ngắn>`, rẽ từ `main` (hoặc từ một PA khác khi chủ repo yêu cầu rẽ tiếp).
 - Nhánh `pa-<số>-<tên>` chỉ gộp vào `main` khi chủ repo nhắn "Duyệt PA-x". Gộp bằng `git merge --no-ff`.
 - Nhánh khác (tài liệu, ADR, sửa lỗi ngoài PA…) gộp vào `main` không cần lệnh duyệt, cũng bằng `git merge --no-ff`.
@@ -15,13 +16,14 @@
 ## Khi sửa app
 - App là một file `index.html` (toàn bộ JS trong một IIFE), `sw.js` là service worker.
 - Mỗi lần đổi `index.html` thì tăng `CACHE` trong `sw.js` để điện thoại nhận bản mới.
-- Kiểm tra cú pháp bằng `npm run check` và chạy `npm test` (Playwright, chỉ trên local hoặc remote — xem mục Kiểm thử). Không đo coverage.
+- Kiểm tra cú pháp bằng `npm run check` và chạy `bash tests/chay.sh` (nhẹ, vài giây). Test giao diện Playwright chạy riêng, theo file liên quan (xem mục Kiểm thử). Không đo coverage.
 - Giao diện và nội dung viết bằng tiếng Việt.
 
 ## Kiểm thử
-- `bash tests/chay.sh`: dựng bản thử `tests/site/` (chèn móc `window.__ev`), kiểm cú pháp, chạy các kiểm thử Playwright và kiểm thử 2 máy chủ. Phải xanh trước khi đẩy nhánh và trước khi gộp. Từ 23/10/2026 chủ repo cho phép duyệt (ghi mốc) khi chưa chạy Playwright; khi đó dòng mốc ghi rõ "Playwright chưa chạy".
-- **Playwright chỉ viết hoặc chạy trên local hoặc remote** (phiên trên máy chủ, tương tác qua điện thoại được). **Trong môi trường cloud (container tạm của claude.ai/code) không viết và không chạy Playwright**, dù yêu cầu có nói gì — `tests/app/*.spec.mjs`, `tests/test_*.py`, `npm run test:app`, `bash tests/chay.sh`. Khi đó báo cáo ghi rõ phần Playwright chưa làm, để chủ repo chạy trên local hoặc remote. Các kiểm tra nhẹ (`npm run check`, `npm run test:sw`) vẫn chạy được trên cloud. Chi tiết: [README](README.md#quy-tắc-cho-ai-test-playwright).
-- Tính năng mới: thêm `tests/test_pa<số>.py` và đưa vào danh sách mặc định trong `tests/chay.sh` (khi làm trên local hoặc remote; trên cloud thì chỉ ghi nhận việc này là còn lại).
+- `bash tests/chay.sh`: bộ nhẹ, không dùng trình duyệt — kiểm cú pháp, service worker và 3 kiểm thử máy chủ (push-server, hub-sync, passkey/ảnh). Phải xanh trước khi đẩy nhánh và trước khi gộp.
+- Từ 24/10/2026 Playwright **không còn nằm trong cổng bắt buộc** (bộ Python `tests/test_pa*.py` và `chuan_bi.py` đã xoá). `npm run test:app` là bộ giao diện duy nhất, chạy trên Chromium với khung nhìn iPhone 13 (không cần iPhone thật hay WebKit); khi PA đụng giao diện thì chạy file liên quan: `npx playwright test <tên-file>`; cả bộ chỉ chạy khi chủ repo yêu cầu.
+- **Playwright chỉ viết hoặc chạy trên local hoặc remote** (phiên trên máy chủ, tương tác qua điện thoại được). **Trong môi trường cloud (container tạm của claude.ai/code) không viết và không chạy Playwright**, dù yêu cầu có nói gì — `tests/app/*.spec.mjs`, `npm run test:app`. Khi đó báo cáo ghi rõ phần Playwright chưa làm, để chủ repo chạy trên local hoặc remote. Các kiểm tra nhẹ (`npm run check`, `npm run test:sw`) vẫn chạy được trên cloud. Chi tiết: [README](README.md#quy-tắc-cho-ai-test-playwright).
+- Tính năng mới: thêm hoặc sửa `tests/app/<nhóm>.spec.mjs` (khi làm trên local hoặc remote; trên cloud thì chỉ ghi nhận việc này là còn lại). Ưu tiên test logic thuần bằng Node thay vì dựng cả trình duyệt khi có thể.
 
 ## Agent của dự án (`.claude/agents/`)
 - `trien-khai-pa`: làm một yêu cầu thay đổi thành nhánh PA, kiểm thử, đẩy, trả link xem thử.

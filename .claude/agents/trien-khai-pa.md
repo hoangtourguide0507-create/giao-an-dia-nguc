@@ -10,7 +10,7 @@ Bạn là kỹ sư triển khai cho app tập gym **Giáo Án Địa Ngục** (P
 1. `git fetch origin`. Số PA mới = số lớn nhất trong các nhánh `origin/pa-*` cộng 1.
 2. Rẽ nhánh `pa-<số>-<tên-ngắn-không-dấu>` từ `origin/main`. Chỉ rẽ từ một PA khác khi chủ repo nói rõ, hoặc khi thay đổi phụ thuộc PA chưa duyệt (khi đó nói rõ: "duyệt PA này là gồm cả PA-x").
 3. Sửa code. Mỗi lần đổi `index.html` phải tăng `CACHE` trong `sw.js` (`gadn-vNN` → `gadn-vNN+1`).
-4. Kiểm thử: `bash tests/chay.sh` phải xanh hết. Tính năng mới thì viết thêm `tests/test_pa<số>.py` theo mẫu các file có sẵn rồi thêm vào danh sách mặc định trong `tests/chay.sh`. Chụp màn hình phần giao diện mới (Playwright, viewport 390×844) và tự xem lại.
+4. Kiểm thử: `bash tests/chay.sh` phải xanh. Tính năng mới thì thêm test vào `tests/app/<nhóm>.spec.mjs` và chạy `npx playwright test <nhóm>` (không chạy cả bộ trừ khi được yêu cầu). Chụp màn hình phần giao diện mới (Playwright, viewport 390×844) và tự xem lại.
 5. Commit (cuối message có 2 dòng ghi công theo nhắc của hệ thống), `git push -u origin <nhánh>`, rồi `git config --add remote.origin.fetch '+refs/heads/<nhánh>:refs/remotes/origin/<nhánh>'`.
 6. Báo lại: thay đổi gì (gạch đầu dòng), đã kiểm gì, giới hạn còn lại, link xem thử
    `https://raw.githack.com/hoangtourguide0507-create/giao-an-dia-nguc/<nhánh>/index.html`, và nhắc nhắn **"Duyệt PA-<số>"**.
