@@ -67,7 +67,7 @@ npm test
 - `npm run check` — kiểm tra cú pháp script chính trong `index.html` và `sw.js` (thay cho `node --check` thủ công).
 - `npx playwright test <tên-file>` để chạy một nhóm khi đang viết test.
 
-**Bộ nhẹ (cổng bắt buộc):** `bash tests/chay.sh` chạy `npm run check`, `npm run test:sw`, `tests/test_push_server.mjs`, `tests/test_hub_sync.mjs`, `tests/test_hub_pa33b.mjs` — chỉ Node, vài giây, phải xanh trước khi commit. Bộ Python/Playwright (`tests/test_pa*.py`) đã xoá từ 24/10/2026; `npm run test:app` chạy khi PA đụng giao diện (file liên quan) hoặc khi chủ repo yêu cầu.
+**Bộ nhẹ (cổng bắt buộc):** `bash tests/chay.sh` chạy `npm run check`, `npm run test:sw`, `tests/test_push_server.mjs`, `tests/test_hub_sync.mjs`, `tests/test_hub_pa33b.mjs`, `tests/test_dedupe_plan.mjs` — chỉ Node, vài giây, phải xanh trước khi commit. Bộ Python/Playwright (`tests/test_pa*.py`) đã xoá từ 24/10/2026; `npm run test:app` chạy khi PA đụng giao diện (file liên quan) hoặc khi chủ repo yêu cầu.
 
 ### Chất lượng test
 

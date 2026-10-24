@@ -178,6 +178,32 @@ ok(!(await doi('since=0', H)).j.recs.some(r => r.hv === 'lan-7k3f'), 'Xoá học
   await api('/s/ghi', recAn('off2', T + 6000), V('an-1x2y', dkAn));
   ok(!sent.some(u => u.url === subT.endpoint), 'Sau khi tắt: máy đó không còn nhận thông báo của phòng');
 }
+// ---------- 12. Quản trị giáo án (PA-46, chỉ đọc) ----------
+{
+  const AK = rnd(32), tenBai = (name, i = []) => ({ i, name, currentKg: 20, kgSetAt: 1, ph: [], hlvNote: '', l: [] });
+  const kBo = rnd(24);
+  await api('/s/tv/them', { id: 'bo-9q8w', ten: 'Bo', kieu: 'hv', skh: shaFull(kBo) }, H);
+  const plan = [{ n: 'Đẩy', e: [tenBai('Squat'), tenBai('squat'), tenBai('Bench')] }, { n: 'Kéo', e: [tenBai('Row')] }];
+  await api('/s/ghi', { hv: 'bo-9q8w', recs: [{ k: 'plan@hlv', id: 'plan', t: T + 9000, d: JSON.stringify({ plan }) }] }, H);
+  const goi = (a, q = '') => api('/s/admin/giao-an' + q, null, a, 'GET');
+
+  ok((await goi(null)).s === 401, 'Admin: không có khoá → 401');
+  ok((await goi(H)).s === 401, 'Admin: khoá HLV không đủ quyền → 401');
+  ok((await goi('Bearer a.' + AK)).s === 401, 'Admin: chưa đặt ADMIN_HASH → tắt, 401');
+  env.ADMIN_HASH = shaFull(AK);
+  ok((await goi('Bearer a.sai')).s === 401, 'Admin: khoá sai → 401');
+  const seq0 = (await api('/s/tt', null, H, 'GET')).j.seq;
+  const g = await goi('Bearer a.' + AK);
+  const rec = g.j.recs && g.j.recs.find(r => r.hv === 'bo-9q8w' && r.k === 'plan@hlv');
+  ok(g.s === 200 && rec && rec.ngay === 2 && rec.bai === 4, 'Admin: đọc đúng số ngày/bài của giáo án');
+  ok(rec && rec.trung.length === 1 && rec.trung[0].n === 'Đẩy' && rec.trung[0].bai[0].so === 2, 'Admin: báo ngày Đẩy có Squat ×2');
+  ok(g.j.biTrung >= 1 && g.j.baiTrung >= 1 && rec && rec.d === undefined, 'Admin: có tổng số, mặc định không kèm nội dung gốc');
+  const gd = await goi('Bearer a.' + AK, '?d=1');
+  ok(JSON.parse(gd.j.recs.find(r => r.hv === 'bo-9q8w' && r.k === 'plan@hlv').d).plan.length === 2, 'Admin: d=1 kèm nội dung gốc để sao lưu');
+  ok((await api('/s/tt', null, H, 'GET')).j.seq === seq0, 'Admin: chỉ đọc, seq không đổi');
+  ok((await api('/s/admin/giao-an', {}, 'Bearer a.' + AK)).s === 404, 'Admin: POST chưa có (D1 chỉ đọc) → 404');
+  delete env.ADMIN_HASH;
+}
 // ---------- 10. Trạng thái ----------
 const tt = await api('/s/tt', null, H, 'GET');
 ok(tt.s === 200 && typeof tt.j.seq === 'number', 'Trạng thái máy chủ có seq');

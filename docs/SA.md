@@ -216,6 +216,7 @@ Máy chủ Apps Script (`drive/Code.gs`), liên kết `GAL1`, tài khoản tên 
 - **Passkey (PA-33b)**: `POST /s/pk/thach` cấp thách thức dùng một lần (hết hạn 5 phút). `POST /s/pk/dky` (máy HV) lưu khoá công khai, kiểm `type = webauthn.create`, `challenge`, `origin`. `POST /s/pk/vao` (không cần khoá máy) kiểm `type = webauthn.get`, `origin`, `rpIdHash`, cờ UP và UV, chữ ký ECDSA P-256 (DER → r‖s) rồi cấp khoá máy mới. Mặc định `RP_ID = gym.fiddle.vn`, `RP_ORIGIN = https://gym.fiddle.vn` (ghi đè bằng biến môi trường). Tối đa 5 khoá/học viên.
 - **Ảnh máy tập (PA-33b)**: `POST /s/anh/co` hỏi ảnh còn thiếu; `PUT /s/anh/<tên>?hv=` và `GET /s/anh/<tên>?hv=`. Tên ảnh `[A-Za-z0-9_-]{4,64}` (mã băm PA-25). Tối đa 1,2 MB/ảnh (base64 vẫn dưới giới hạn 2 MB của một dòng SQLite). Hạn mức 400 MB/học viên và 4 GB/phòng (`IMG_QUOTA_HV`, `IMG_QUOTA_ROOM` ghi đè được); vượt thì 507, nhưng chữ (`/s/ghi`) vẫn nhận. Ghi đè ảnh cùng tên không cộng dồn.
 - Chưa có WebSocket theo quyết định của anh (dùng Web Push và hỏi `/s/doi` định kỳ).
+- **Quản trị giáo án (PA-46 D1, chỉ đọc)**: `push-server/src/admin.js`, đường `GET /s/admin/giao-an[?d=1]`, xác thực `Authorization: Bearer a.<ADMIN_KEY>` so băm SHA-256 với secret `ADMIN_HASH`; chưa đặt secret thì tắt (401). Trả báo cáo bài trùng của mọi `plan@hlv`/`plan@hv` (kể cả `sl:`); `d=1` kèm nội dung gốc để sao lưu. Hàm thuần `push-server/src/dedupe.js` (`baoCaoTrung`, `dedupePlan`, BR-33.2): trong một ngày, bài trùng khi khoá `i` giao nhau hoặc cùng tên; giữ bài mức tạ cao hơn → `kgSetAt` mới hơn → có ảnh/ghi chú, gộp khoá `i`. D1 không ghi dữ liệu. Test: `tests/test_dedupe_plan.mjs`, mục 12 của `tests/test_hub_sync.mjs`.
 - Kiểm thử: `tests/test_hub_sync.mjs` (49 kiểm tra, PA-33) và `tests/test_hub_pa33b.mjs` (34 kiểm tra: passkey gồm chữ ký thật do khoá P-256 giả lập ký theo DER, ảnh, hạn mức), đều chạy đúng `push-server/src/index.js` với SQLite thật (`node:sqlite`), được gọi trong `bash tests/chay.sh`.
 
 ### 7.8 Máy chủ đồng bộ mới trong app (PA-34.1)
@@ -302,7 +303,7 @@ scripts/
 - Cổng thử đọc từ biến môi trường `PORT` (mặc định 4173) để chạy song song nhiều bản sao repo.
 
 ### 12.2 Bộ nhẹ (`bash tests/chay.sh`) — cổng bắt buộc
-Chạy `npm run check`, `npm run test:sw`, `tests/test_push_server.mjs`, `tests/test_hub_sync.mjs`, `tests/test_hub_pa33b.mjs` (chỉ Node, không trình duyệt). Bộ Python/Playwright (`tests/test_pa*.py`, `chuan_bi.py`, móc `window.__ev`) đã xoá từ 24/10/2026 vì chậm và trùng với bộ §12.1; Playwright §12.1 không còn là cổng bắt buộc, chạy theo file liên quan.
+Chạy `npm run check`, `npm run test:sw`, `tests/test_push_server.mjs`, `tests/test_hub_sync.mjs`, `tests/test_hub_pa33b.mjs`, `tests/test_dedupe_plan.mjs` (chỉ Node, không trình duyệt). Bộ Python/Playwright (`tests/test_pa*.py`, `chuan_bi.py`, móc `window.__ev`) đã xoá từ 24/10/2026 vì chậm và trùng với bộ §12.1; Playwright §12.1 không còn là cổng bắt buộc, chạy theo file liên quan.
 
 ### 12.3 Máy chủ thật trong test
 `tests/hub_server.mjs` chạy **chính `push-server/src/index.js`** với SQLite thật; fixture `hub` nối trình duyệt tới máy chủ này. Mỗi test một máy chủ riêng; fixture `device` mở thêm máy học viên với dữ liệu riêng. (Máy chủ Drive giả `tests/gas_server.js` đã gỡ, PA-35.)

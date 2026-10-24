@@ -9,6 +9,8 @@
  * Không có lệnh tạo HLV: chỉ ai giữ QR HLV (khoá trong QR) mới là HLV.
  */
 
+import { handleAdmin } from './admin.js';
+
 const enc = new TextEncoder();
 export const MAX_DEV = 5, MAX_RECS = 200, PAGE = 500, MAX_BUOI = 256 * 1024, MAX_PLAN = 1024 * 1024;
 const ID_RE = /^[a-z0-9-]{3,40}$/;
@@ -303,6 +305,7 @@ export async function handle(ctx, req, p, u) {
   if (p === '/s/pk/thach' && m === 'POST') return thach(sql);
   if (p === '/s/pk/vao' && m === 'POST') return pkVao(sql, env, await req.json().catch(() => ({})));
 
+  if (p.startsWith('/s/admin/')) return handleAdmin(ctx, req, p, u);
   const auth = await whoIs(sql, env, req.headers.get('Authorization'));
   if (!auth) return fail(401, 'Chưa đăng nhập hoặc máy đã bị thu hồi');
   const key = m + ' ' + p;
