@@ -119,7 +119,7 @@ test('BR-25.4 · HLV: Phòng HLV ở Trang chủ (việc cần làm, duyệt k�
   await expect(app.view()).not.toContainText('Bật chế độ HLV');
 });
 
-test('Phòng HLV: bảng xếp hạng khi có từ 4 học viên, nhắc học viên nghỉ lâu, mở hồ sơ học viên để ghi buổi', async ({ app, page, hub }) => {
+test('Phòng HLV: bảng xếp hạng khi có từ 4 học viên, nhắc học viên nghỉ lâu, mở hồ sơ học viên chỉ để xem', async ({ app, page, hub }) => {
   const P = basicPlan();
   const mk = (ago, kg) => state({ days: P.days, weekPlans: { [MONDAY]: { mode: 'balanced', kg: {}, dec: {}, custom: {}, at: 1 } }, sessions: [session(P.chest, addDays(TODAY, -ago), [[P.bench, [[kg, 10], [kg, 10]]]])] });
   await app.seed({ profiles: prof([['p1', 'A'], ['p2', 'B', 1], ['p3', 'C', 2], ['p4', 'D', 3]]),
@@ -137,10 +137,10 @@ test('Phòng HLV: bảng xếp hạng khi có từ 4 học viên, nhắc học v
   await expect(app.view().locator('.tcard').first()).toContainText('Tuần này: cân bằng');
   await app.view().locator('.tcard').nth(1).locator('[data-act="switch-profile"]').click();
   await expect(app.toast()).toHaveText('Đang xem: B');
-  /* nghỉ giữa set ghi tên học viên */
-  await app.view().locator('.hero [data-act="start-day"]').click();
-  await app.view().locator('[data-act="set-done"][data-e="0"][data-s="0"]').click();
-  await page.clock.fastForward(95000);
-  await expect(page.locator('#alarm-t')).toHaveText('Hết giờ nghỉ · B');
+  /* BR-35.1: bấm Tập ở hồ sơ học viên thì chuyển về hồ sơ HLV, không ghi buổi vào hồ sơ học viên */
+  await expect(page.locator('#nav-bar .fab')).toBeVisible();
+  await app.view().locator('.hero [data-act="start-day"]').first().click();
+  await expect.poll(async () => (await app.profiles()).active).not.toBe('p2');
+  expect((await app.idb('kv', 'state:p2')).active ?? null).toBeNull();
 });
 

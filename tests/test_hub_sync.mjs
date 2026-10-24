@@ -157,6 +157,27 @@ ok(!(await doi('since=0', H)).j.recs.some(r => r.hv === 'sl:hlv-tu-tap'), 'Đọ
 ok((await doi('hv=sl:hlv-tu-tap&since=0', H)).j.recs.some(r => r.id === 't1'), 'Khôi phục hồ sơ sao lưu: đọc được theo hv=sl:…');
 ok((await api('/s/tv', null, H, 'GET')).j.hv.find(x => x.id === 'hlv-tu-tap').kieu === 'sl', 'Hồ sơ sao lưu hiển thị đúng loại');
 
+// PA-48 · BR-37: thông tin cơ thể (do@hv, anh@hv, ho-so@hv): học viên ghi, HLV chỉ đọc, báo HLV khi có số đo/ảnh mới
+{
+  const A = V('lan-7k3f', dkMoi), ct = (k, id, t, d, extra = {}) => ({ hv: 'lan-7k3f', recs: [{ k, id, t, vai: 'hv', d: JSON.stringify(d), ...extra }] });
+  sent.length = 0;
+  const ev = { title: 'Lan vừa cập nhật số đo', body: 'x', tag: 'co-the' };
+  ok((await api('/s/ghi', { ...ct('do@hv', 'd1', T, { date: '2026-10-20', weight: 70, bodyFat: 20 }), ev }, A)).s === 200, 'Học viên ghi số đo (do@hv)');
+  ok(sent.length === 1 && sent[0].url === subHLV.endpoint, 'Số đo mới → 1 thông báo tới HLV');
+  sent.length = 0;
+  ok((await api('/s/ghi', { ...ct('anh@hv', 'a1', T, { date: '2026-10-20', pose: 'Trước', h: 'abc123xyz' }), ev }, A)).s === 200 && sent.length === 1, 'Học viên ghi dòng ảnh body (anh@hv) → báo HLV');
+  sent.length = 0;
+  ok((await api('/s/ghi', { ...ct('do@hv', 'd1', T + 1, {}, { xoa: 1 }), ev }, A)).s === 200 && sent.length === 0, 'Xoá số đo (xoa) → không báo');
+  ok((await api('/s/ghi', { ...ct('do@hv', 'd2', T, { weight: 71 }), ev, backfill: true }, A)).s === 200 && sent.length === 0, 'Gửi bù (backfill) → không báo');
+  ok((await api('/s/ghi', ct('ho-so@hv', 'ho-so', T, { height: 170, sex: 'm' }), A)).s === 200, 'Học viên ghi chiều cao/giới tính (ho-so@hv)');
+  ok((await api('/s/ghi', ct('ho-so@hv', 'khac', T, {}), A)).s === 403, 'ho-so@hv có mã khác “ho-so” → 403');
+  for (const k of ['do@hv', 'anh@hv', 'ho-so@hv']) ok((await api('/s/ghi', { hv: 'lan-7k3f', recs: [{ k, id: k === 'ho-so@hv' ? 'ho-so' : 'z1', t: T, vai: 'hlv', d: '{}' }] }, H)).s === 403, 'HLV không ghi được ' + k + ' → 403');
+  ok((await api('/s/ghi', ct('do@hv', 'big', T, { x: 'y'.repeat(5000) }), A)).s === 413, 'Số đo quá 4 KB → 413');
+  const got = (await doi('hv=lan-7k3f&since=0', H)).j.recs;
+  ok(got.some(r => r.k === 'do@hv' && r.id === 'd1' && r.xoa === 1) && got.some(r => r.k === 'anh@hv') && got.some(r => r.k === 'ho-so@hv'), 'HLV và học viên đọc lại được các bản ghi cơ thể (kể cả bản xoá)');
+  ok((await doi('hv=lan-7k3f&since=0', A)).j.recs.some(r => r.k === 'do@hv' && r.id === 'd2'), 'Máy học viên mới (since=0) lấy lại được số đo của chính mình');
+}
+
 // ---------- 9. Xoá học viên ----------
 await api('/s/tv/xoa', { id: 'lan-7k3f' }, H);
 ok((await doi('hv=lan-7k3f&since=0', V('lan-7k3f', dkMoi))).s === 401, 'Xoá học viên: máy của họ mất quyền');

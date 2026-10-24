@@ -138,11 +138,17 @@ Test: `tests/app/progress.spec.mjs`
 
 - **BR-09.0** Mục **Tiến độ** có 3 tab con: *Sức mạnh* (nội dung nhóm này) · *Cơ thể* (BR-10.1–10.5) · *Ảnh* (BR-10.6). Thẻ đầu tab Sức mạnh là thẻ "vé" tóm tắt kỳ đang xem; nút "Bảng HLV" (chỉ máy HLV) mở bảng cả nhóm.
 - **BR-09.1** Xem **theo tuần** (chấm 7 ngày) hoặc **theo tháng** (lịch tháng, ngày có buổi tô màu theo ngày tập và viết tắt tên; bấm mở buổi); lùi/tiến kỳ (không vượt kỳ hiện tại).
-- **BR-09.2** 4 chỉ số: buổi · set · tấn tạ (Σ kg × rep, tạ đơn ×2, drop tính) · bài lên tạ; mũi tên so với kỳ trước.
+- **BR-09.2** 4 chỉ số: buổi · set · tấn tạ (Σ kg × rep, tạ đơn ×2, drop tính) · bài lên tạ. Mũi tên so với kỳ trước **cùng khoảng ngày** (BR-38.1) và, riêng tấn tạ, là **% lệch sức mạnh** (BR-38.2–38.4).
 - **BR-09.3 Nhóm cơ**: set mỗi nhóm (tháng: trung bình mỗi tuần), vùng mục tiêu 10–20 set/tuần, trạng thái Thiếu/Đạt/Cao.
 - **BR-09.4 Vùng cơ 4 tuần**: số set 28 ngày theo vùng cơ chi tiết (ngực trên/giữa/dưới, 3 đầu vai…), vùng chính chưa tập, cặp lệch (ngực trên < 40% ngực giữa, vai sau < 40% vai trước, đùi sau < 40% đùi trước, lưng giữa < 40% xô).
 - **BR-09.5 Từng bài**: "Tiến bộ nhiều nhất" (3 bài), "Đang chững" (giảm/đau, 4 bài); "Tất cả bài" theo nhóm cơ có tìm kiếm. Chi tiết bài: nhãn gợi ý, lộ trình 8 tuần, biểu đồ Mức tạ / 1RM ước tính / Khối lượng (rê để xem giá trị), bảng 40 buổi gần nhất (set, cảm giác, ghi chú, drop, deload), nút sửa.
 - **BR-09.6** Danh sách buổi trong kỳ: thời lượng, số set, tấn tạ, so lần trước. Xem buổi: chỉ số, so lần trước, bảng set; **Mở lại** (BR-03.14); **Xoá** (xác nhận, ghi dấu xoá để đồng bộ).
+
+- **BR-38.1 Kỳ so sánh cùng khoảng ngày** (PA-49): tuần/tháng đang diễn ra chỉ so với đúng khoảng ngày đã qua của kỳ trước (T2→thứ N tuần trước; ngày 1→D tháng trước). Kỳ đã qua so cả kỳ với cả kỳ liền trước. Hai kỳ dài ngắn khác nhau (tháng): lấy cả tháng trước, nhân số buổi/set kỳ trước với `ngày kỳ này / ngày kỳ trước` (trung bình theo ngày). *Test:* `progress.spec.mjs` (BR-38.1).
+- **BR-38.2 Sức mạnh chỉ so bài chung**: bài phải có buổi ở cả hai kỳ; bài chính/thay thế cùng ô tính một bài. *Test:* `progress.spec.mjs` (BR-38.2).
+- **BR-38.3 Bài lặp lấy trung bình theo buổi**: sức mạnh một bài trong một buổi = kg × rep mọi set (tạ đơn ×2, drop tính, như tấn tạ); mỗi kỳ lấy trung bình trên các buổi có bài. Deload vẫn tính. *Test:* `progress.spec.mjs` (BR-38.3).
+- **BR-38.4 Độ lệch**: % lệch từng bài chung rồi trung bình đều (bài nhỏ ngang bài lớn). Không có bài chung thì không hiện %. Hiện ở thẻ vé "Tổng tạ" và mũi tên ô tấn tạ. Số "x tấn" vẫn là tổng thật của kỳ. *Test:* `progress.spec.mjs` (BR-38.4).
+- **BR-38.5** Mũi tên buổi và set so cùng khoảng ngày (BR-38.1). Không có dòng chú thích khoảng ngày. Chỉ đổi cách tính hiển thị, dữ liệu không đổi.
 
 ## BR-10 Cơ thể & ảnh (Tiến độ → Cơ thể / Ảnh)
 Test: `tests/app/body.spec.mjs`, `tests/app/home.spec.mjs`
@@ -248,7 +254,7 @@ Test: `tests/app/notify.spec.mjs`, `tests/app/rest.spec.mjs`, `tests/test_push_s
 - ~~**BR-24.4 (khôi phục khi máy trống)** Học viên bật *Khôi phục bằng Face ID* trên máy đã nối. Máy trống (vừa xoá dữ liệu) chọn *Khôi phục bằng Face ID* → máy chủ kiểm chữ ký passkey và cấp khoá máy mới → app kéo lại toàn bộ buổi đã gửi. Không có Face ID thì quét lại thẻ học viên cho kết quả giống hệt. Face ID không dùng được hoặc chưa bật thì báo lỗi, không nối máy. *Test:* `tests/app/hub.spec.mjs`.~~ **ĐÃ BỎ (PA-40, BR-27.5)**
 - **BR-24.9** (PA-40: gộp theo từng ngày, chỉ hỏi khi một ngày bị đổi cả hai bên — BR-27.6) Giáo án HLV → học viên: máy HLV gửi giáo án của mỗi học viên khi giáo án đổi; máy học viên nhận trong vòng 20 giây (kéo định kỳ) và gộp bằng cùng động cơ với Drive (`syncMerge`). Không còn nút *Hoàn tác giáo án* (BR-24.22, PA-41). *Test:* `tests/app/hub.spec.mjs`.
 - **BR-24.17 (chuyển học viên có sẵn)** ~~HLV chọn các hồ sơ học viên đang có…~~ — **đã bỏ (PA-41)**: học viên có sẵn tự có thẻ QR theo BR-24.19. *Test:* `tests/app/hub.spec.mjs`.
-- **BR-24.18 Xung đột giữa máy này và máy chủ** (PA-35): tự gộp khi có thể; hỏi người dùng khi không thể.
+- **BR-24.18 Xung đột giữa máy này và máy chủ** (PA-35; PA-46 chỉ còn cho buổi tập): buổi tập tự gộp, không hỏi. Giáo án không còn xung đột: bản HLV thay hẳn (BR-35.4).
 
 | Dữ liệu | Khi xung đột | Cách xử lý |
 |---|---|---|
@@ -299,7 +305,7 @@ Test: `tests/app/popup.spec.mjs`, `tests/app/pa40.spec.mjs`, `tests/app/hub.spec
 - **BR-27.3 Nút quay lại (trình duyệt / vuốt trái)**: đang có popup thì đóng popup; không có popup mà đang ở tab khác thì về Trang chủ. *Test:* `popup.spec.mjs`.
 - **BR-27.4 Chữ không chọn được**: mọi chữ không sửa được (nhãn, nút, tab, tiêu đề, mô tả, nội dung thẻ) không chọn được, kể cả bằng nhấn đúp hay kéo; ô nhập và ô soạn thảo vẫn chọn và sửa bình thường. *Test:* `popup.spec.mjs`.
 - **BR-27.5 Bỏ hẳn khôi phục và ngắt kết nối**: không còn *Bật khôi phục bằng Face ID*, *Khôi phục bằng Face ID* (khối đăng nhập), *Khôi phục từ máy chủ*, *Hoàn tác khôi phục*, *Ngắt kết nối trên máy này* / *Ngắt đăng ký trên máy này*. Dữ liệu đã lưu giữ nguyên. Khi nối máy, buổi đã gửi vẫn tự kéo về như trước. *Test:* `pa40.spec.mjs`.
-- **BR-27.6 Đồng bộ tự động, hỏi khi cần**: app tự gửi và kéo dữ liệu khi mở app, có mạng, quay lại app và mỗi 20 giây (như trước). Giáo án gộp **theo từng ngày** so với bản đã thống nhất: ngày chỉ một bên đổi thì tự gộp; chỉ khi **cùng một ngày** bị đổi cả hai bên mới hỏi, từng ngày một (*Dùng bản HLV* / *Giữ bản máy này*). Ngày còn lại không bị chặn. Mất mạng thì báo ở thẻ máy chủ và tự thử lại. *Test:* `hub.spec.mjs` (BR-27.6, BR-24.9).
+- **BR-27.6 Đồng bộ tự động** (PA-46 bỏ phần “hỏi khi cần”): app tự gửi và kéo dữ liệu khi mở app, có mạng, quay lại app và mỗi 20 giây. Buổi tập gộp theo mã (bản mới hơn thắng, buổi trùng giữ cả hai); giáo án đi một chiều HLV → học viên và **bản của HLV thay hẳn** bản trên máy học viên (BR-35.4), không còn hộp thoại xung đột. *Test:* `huong-du-lieu.spec.mjs` (BR-35.4).
 - **BR-27.7 Thư viện hình cho học viên**: không có tab hay nút tải/xoá; chỉ một dòng trạng thái *Đã đồng bộ · N hình* hoặc *Chưa đồng bộ* trong Tài khoản. HLV giữ nguyên quản lý. *Test:* `pa40.spec.mjs`.
 - **BR-27.8 Thẻ "Lưu trên máy này"**: chỉ còn tiêu đề. Khi dữ liệu đã được gửi lên máy chủ Cloudflare (`lastOk` hoặc giáo án đã gửi), tiêu đề đổi màu thành *Đã đồng bộ với server*. *Test:* `pa40.spec.mjs`.
 - **BR-27.9 Dòng tóm tắt lịch tập**: "x bài · x set · thời gian" nằm một hàng ngay dưới tiêu đề ngày, không xuống dòng. *Test:* `pa40.spec.mjs`.
@@ -338,4 +344,43 @@ Ngoài phạm vi PA-40: đổi công thức hồi phục, đổi cảnh báo đa
 - **BR-32.4 Nhãn chất lượng**: Cần xem lại nếu hoàn thành < 80% hoặc đủ rep < 70%; Tốt nếu hoàn thành ≥ 95% và đủ rep ≥ 90%; còn lại Ổn. Buổi không có set kế hoạch thì không có nhãn. Ngưỡng là mặc định, chờ đối chiếu chuyên môn trước khi duyệt. *Test:* `chatluong-buoi.spec.mjs` (BR-32.4).
 - **BR-32.5 Hiển thị cho HLV**: chi tiết buổi có dòng "Chất lượng: nhãn · hoàn thành … · đủ rep … · cảm giác …"; Bảng HLV: dòng "Lần cuối" của mỗi học viên có thêm nhãn của buổi đó. Máy học viên không thấy nhãn. *Test:* `chatluong-buoi.spec.mjs` (BR-32.5).
 - **Chưa làm (BR-32.6)**: ghi chú HLV cho từng buổi và so thời lượng với thời gian dự kiến.
-- **BR-33.6 Buổi kéo từ máy chủ nối lại với giáo án** (PA-46): buổi tập nhận từ máy chủ (HLV ⇄ học viên) giữ mã ngày và mã bài của máy gốc nếu còn dùng được, không thì khớp theo tên ngày / tên bài trong giáo án của máy này; nhờ vậy màn giáo án vẫn hiện mức tạ từ lịch sử. Bài đã xoá khỏi giáo án thì buổi cũ giữ nguyên, không gán nhầm. Mở app cũng tự nối lại các buổi đã mất mã. *Test:* `hub-noi-lai-lich-su.spec.mjs` (BR-33.6).
+
+## Lịch sử học viên trên máy HLV (PA-45 · 2)
+- **BR-33.1 Buổi của học viên gắn đúng bài và ngày giáo án**: buổi về máy HLV được gắn bài theo khoá bài (`k`, máy học viên gửi kèm từ nay), rồi theo tên; ngày theo tên ngày tập. Bài không còn trong giáo án vẫn hiện trong lịch sử theo tên. *Test:* `lichsu-hlv.spec.mjs` (BR-33.1).
+- **BR-33.2 Tổng quan theo ngày tập**: trên Đã tập của hồ sơ học viên (máy HLV) có khối "Theo ngày tập": mỗi ngày có số buổi và ngày gần nhất; mỗi bài có kg tốt nhất, kg gần nhất và ▲ ▼ so với buổi trước. *Test:* `lichsu-hlv.spec.mjs` (BR-33.2).
+- **BR-33.3 HLV không ghi lịch sử học viên** (sửa ở PA-46, xem BR-35.1/35.2): trên hồ sơ học viên (máy HLV, không phải hồ sơ HLV tự tập) không thêm, sửa, xoá, mở lại, tập tiếp buổi tập. Nút Tập vẫn hiện; bấm vào chuyển về hồ sơ HLV (BR-35.1). *Test:* `huong-du-lieu.spec.mjs` (BR-35.1, BR-35.2).
+- **BR-33.4 Học viên thấy giáo án HLV vừa chỉnh**: khi nhận giáo án mới từ HLV, máy học viên hiện banner "HLV vừa chỉnh giáo án" kèm danh sách ngày/bài đổi (thêm/bỏ ngày, bài, số set×rep, tạ); bấm Đã xem thì ẩn. *Test:* `lichsu-hlv.spec.mjs` (BR-33.4).
+- **BR-33.5 Buổi cũ được gắn lại**: buổi cũ của hồ sơ chưa có bài (về trước đây) được gắn lại bài và ngày một lần khi hồ sơ được mở. *Test:* `lichsu-hlv.spec.mjs` (BR-33.5).
+
+## Sửa lỗi: Lịch tập của học viên trống trên máy HLV (BR-34)
+- **BR-34.1** ~~Giáo án riêng của học viên về máy HLV~~ — **rút lại (PA-46)**: giáo án chỉ đi HLV → học viên, máy học viên không gửi giáo án lên (BR-35.5).
+- **BR-34.2 Lịch tập hiện lịch sử khi chưa có ngày tập**: hồ sơ học viên (máy HLV) có buổi tập nhưng chưa có giáo án vẫn hiện chế độ Đã tập, không trống. *Test:* `lichsu-hlv.spec.mjs` (BR-34.2).
+
+
+## Hướng dữ liệu giáo án / lịch sử tập (PA-46 · BR-35)
+Nguyên tắc: **giáo án (GA) chỉ đi HLV → học viên; lịch sử tập (LST) chỉ đi học viên → HLV**; tham chiếu chéo: HLV dựa vào LST để tạo/sửa GA, học viên tập theo GA. Mỗi học viên một GA riêng, không đồng bộ giữa các GA (Sao chép giáo án chỉ chép một lần, không liên kết).
+- **BR-35.1 Tập luôn ghi vào hồ sơ của chính người dùng máy**: HLV bấm Tập (nút thanh dưới, *Tập ngày này*, *Bắt đầu*) khi đang xem hồ sơ học viên → app chuyển về hồ sơ HLV (`sl:tu-tap`), toast “Đã chuyển về hồ sơ HLV”, mở bảng chọn buổi theo giáo án của HLV. Chưa có hồ sơ HLV → toast “Chưa có hồ sơ HLV”. *Test:* `huong-du-lieu.spec.mjs` (BR-35.1).
+- **BR-35.2 LST của học viên chỉ đọc trên máy HLV**: không *Tập tiếp*, *Mở lại để sửa*, xoá buổi. *Test:* `huong-du-lieu.spec.mjs` (BR-35.2).
+- **BR-35.3 Học viên không sửa giáo án**: máy có vai HV không thêm, sửa, xoá, đổi thứ tự ngày/bài/bài thay thế, không chép giáo án, không mở Kho bài; sửa bài chỉ còn *Mức tạ đang tập*; vẫn *Đổi bài* khi tập (chính ↔ thay thế) nhưng không *Đặt làm bài chính*. Chưa có giáo án thì thấy “Chờ HLV gửi giáo án”. Máy không có vai giữ nguyên quyền sửa. *Test:* `huong-du-lieu.spec.mjs` (BR-35.3).
+- **BR-35.4 Giáo án HLV thay hẳn giáo án trên máy học viên**: không hộp thoại xung đột, không còn “bài học viên tự thêm”; mức tạ đang tập theo bản mới hơn (`kgSetAt`). Giáo án trống của HLV không xoá giáo án đang tập. *Test:* `huong-du-lieu.spec.mjs` (BR-35.4).
+- **BR-35.5 Học viên không gửi giáo án lên**: không có bản ghi `plan@hv` do app tạo. GA nằm trên máy chủ (`plan@hlv`); HLV đăng nhập máy mới tải lại như BR-28. *Test:* `huong-du-lieu.spec.mjs` (BR-35.5), `hub.spec.mjs` (BR-24.6).
+- **BR-35.6 Tạo giáo án từ lịch sử**: hồ sơ học viên chưa có ngày tập mà có LST → nút *Tạo giáo án từ lịch sử* (HLV): mỗi tên ngày thành một ngày, mỗi bài thành một bài với set, rep, mức tạ từ buổi gần nhất; buổi cũ được gắn lại vào bài/ngày mới. *Test:* `huong-du-lieu.spec.mjs` (BR-35.6).
+- **BR-35.7 LST trong màn sửa bài**: HLV sửa bài của học viên thấy 3 buổi gần nhất của bài (và bài cùng ô) và kg tốt nhất. *Test:* `huong-du-lieu.spec.mjs` (BR-35.7).
+- **BR-35.8 Bài chính hay thay thế đều tính là đã tập nhóm cơ đó**: tổng quan HLV gộp bài chính và bài thay thế cùng ô thành một dòng (tên bài chính); nhóm cơ và chất lượng buổi tính theo bài thực tế đã tập. *Test:* `huong-du-lieu.spec.mjs` (BR-35.8).
+
+## Tự chỉnh set sau mỗi set (PA-46 · BR-36)
+- **BR-36.1** Khi học viên bấm ✓ một set làm việc (không phải drop), các set làm việc **chưa tập** còn lại của bài đó nhận kg bằng set vừa xong; rep = nhỏ hơn giữa rep đang đặt và rep vừa làm (chỉ giảm, không tự tăng). Không tự giảm tạ khi dưới rep tối thiểu. *Test:* `tu-chinh-set.spec.mjs`.
+- **BR-36.2** Set đã tự sửa tay (kg hoặc rep) và set đã tập giữ nguyên; bỏ ✓ không hoàn lại; drop set tính lại theo kg mới. *Test:* `tu-chinh-set.spec.mjs`.
+- **BR-36.3** Có toast “Set 2–3 chỉnh theo set 1 · 42,5 kg × 8”; giáo án không đổi cho tới khi kết thúc buổi. *Test:* `tu-chinh-set.spec.mjs`.
+
+## Thông tin cơ thể của học viên đến HLV (PA-48 · BR-37)
+Hướng dữ liệu: **HV → máy chủ → HLV**, giống lịch sử tập (BR-35). Test: `tests/app/co-the-hlv.spec.mjs`, `tests/test_hub_sync.mjs`.
+- **BR-37.1 Số đo cơ thể HV tự đồng bộ**: máy có vai HV gửi mỗi lần đo (cân, % mỡ, cơ xương, vòng eo, mỡ nội tạng) lên máy chủ khi thêm, sửa, xoá; số đo có sẵn gửi bù một lần, không báo.
+- **BR-37.2 Ảnh body HV tự đồng bộ**: ảnh (đã nén) và ngày, tư thế; đổi ngày/tư thế và xoá cũng đồng bộ; lỗi mạng thì thử lại ở lần sau.
+- **BR-37.3 Chiều cao và giới tính** của HV đồng bộ.
+- **BR-37.4 Máy HLV nhận** số đo, ảnh, chiều cao, giới tính của tất cả HV vào đúng hồ sơ HV (mở app, có mạng, mỗi 20 giây). Số đo/ảnh HLV từng nhập tay cho HV được **thay bằng bản từ máy HV** khi nhận bản ghi đầu tiên.
+- **BR-37.5 HLV không sửa lịch sử đo của HV**: hồ sơ HV trên máy HLV ẩn và chặn thêm/sửa/xoá số đo, thêm/sửa/xoá ảnh, đổi giới tính, nhập chiều cao (toast “Số đo và ảnh body do học viên tự cập nhật. HLV chỉ xem.”); xem, biểu đồ, so sánh ảnh vẫn dùng được. Hồ sơ tự tập của HLV và máy không vai giữ nguyên quyền sửa.
+- **BR-37.6 Một chiều**: HLV không gửi số đo/ảnh/hồ sơ cơ thể lên máy chủ; máy chủ trả 403 nếu HLV ghi.
+- **BR-37.7 Danh sách học viên của HLV** hiện lần đo gần nhất (ngày, cân nặng, % mỡ).
+- **BR-37.8 Thông báo**: HV thêm hoặc sửa số đo/ảnh (không phải gửi bù, không phải xoá) → HLV nhận thông báo đẩy “<tên> vừa cập nhật số đo”.
+- **BR-37.9 HV máy mới lấy lại dữ liệu và xử lý xung đột**: nối thẻ trên máy mới thì tải số đo, ảnh, chiều cao, giới tính từ máy chủ; gộp với dữ liệu đã nhập trên máy mới theo **thời điểm sửa (bản mới hơn thắng)**; mỗi ngày một lần đo (hai số đo cùng ngày khác mã: bản mới hơn thắng, bản kia bị xoá cả trên máy chủ); số đo khác ngày giữ cả hai; bản đã xoá trên máy này sau thời điểm của bản máy chủ không sống lại.

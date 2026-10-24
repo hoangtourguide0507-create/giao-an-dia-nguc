@@ -102,10 +102,13 @@ test('BR-24.6 · buổi đã tập tự gửi lên máy chủ; buổi đang tậ
   await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Lan', color: 0 }] },
     states: { p1: state({ days: [d], sessions: [done], active: dang, settings: { sync: { s: hub.url, i: 'lan-7k3f', dk, ten: 'Lan' } } }) } });
   const doi = () => hub.req('/s/doi?hv=lan-7k3f&since=0', 'GET', null, `Bearer v.lan-7k3f.${dk}`);
-  await expect.poll(async () => (await doi()).j.recs.map(r => r.id), { timeout: 15000 }).toEqual([done.id]);
-  const rec = (await doi()).j.recs[0];
+  const buoi = async () => (await doi()).j.recs.filter(r => r.k.startsWith('buoi:'));
+  await expect.poll(async () => (await buoi()).map(r => r.id), { timeout: 15000 }).toEqual([done.id]);
+  const rec = (await buoi())[0];
   expect(JSON.parse(rec.d)).toMatchObject({ id: done.id, dayName: done.dayName });
   expect(rec).toMatchObject({ k: 'buoi:' + done.id, vai: 'hv' });
+  /* BR-35.5: giáo án chỉ đi HLV → HV, máy học viên không gửi plan@hv */
+  expect((await doi()).j.recs.find(r => r.k === 'plan@hv')).toBeUndefined();
 });
 
 test('BR-24.4 · HLV thêm học viên → học viên nối máy và tập xong → máy HLV kéo buổi về đúng hồ sơ học viên', async ({ app, hub, device }) => {
@@ -209,41 +212,6 @@ async function autoCard(app, hub, pid) {
   const k = crypto.createHmac('sha256', hub.hk).update(`gadn-hv:${hvId}:0`).digest('base64url').slice(0, 32);
   return 'GAV1.' + Buffer.from(JSON.stringify({ s: hub.url, i: hvId, k })).toString('base64url');
 }
-/* HLV chuyển Lan sang máy chủ mới; máy Lan đã có giáo án riêng (localDays) rồi nối máy */
-async function lanWithOwnPlan(app, hub, device, localDays) {
-  const P = basicPlan();
-  await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Tôi', color: 0 }, { id: 'p2', name: 'Lan', color: 1 }] }, states: { p1: state(), p2: state({ days: P.days }) } });
-  await registerHlv(app, hub);
-  const code = await autoCard(app, hub, 'p2');
-  const hv = await device();
-  await hv.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Lan', color: 0 }] }, states: { p1: state({ days: localDays, settings: { pushServer: hub.url } }) } });
-  await hv.tab('more'); await fakeCamera(hv.page, code); await hv.click('qr-scan');
-  await expect(hv.toast()).toContainText('Đã nối với HLV · Lan');
-  return { hv, P };
-}
-
-test('BR-27.6 · máy học viên có ngày riêng chỉ một bên đổi: gộp tự động từng ngày, không hỏi', async ({ app, hub, device }) => {
-  const P = basicPlan();
-  const local = P.days.map((d, i) => (i === 0 ? { ...d, name: 'Ngày của tôi' } : d));
-  const { hv } = await lanWithOwnPlan(app, hub, device, local);
-  await expect.poll(async () => (await hv.state()).days.map(x => x.name), { timeout: 5000 }).toContain(P.days[0].name);
-  const names = (await hv.state()).days.map(x => x.name);
-  expect(names).toContain('Ngày của tôi');
-  expect((await hv.state()).sync.conflict).toBeFalsy();
-  await expect(hv.view()).not.toContainText('ngày khác với HLV');
-});
-
-test('BR-27.6 · cùng một ngày bị đổi cả hai bên: chỉ hỏi đúng ngày đó; giữ bản máy này thì không bị ghi đè', async ({ app, hub, device }) => {
-  const P = basicPlan();
-  const local = P.days.map((d, i) => (i === 0 ? { ...d, exercises: d.exercises.slice(1) } : d));
-  const { hv } = await lanWithOwnPlan(app, hub, device, local);
-  await expect(hv.view()).toContainText('1 ngày khác với HLV');
-  await expect(hv.view()).toContainText(P.days[0].name);
-  await hv.page.locator(`[data-act="hub-conflict-day"][data-n="${P.days[0].name}"][data-v="local"]`).click();
-  await expect(hv.view()).not.toContainText('ngày khác với HLV');
-  expect((await hv.state()).days.map(x => x.name)).toEqual(local.map(x => x.name));
-  expect((await hv.state()).days[0].exercises.length).toBe(local[0].exercises.length);
-});
 
 test('BR-24.15 · máy học viên hiện trạng thái đã gửi xong sau khi buổi lên máy chủ', async ({ app, hub, device }) => {
   const { hv } = await lanTrains(app, hub, device);

@@ -199,7 +199,7 @@ test('kết thúc buổi còn set chưa ✓: cảnh báo, tập tiếp hoặc v�
   expect(st.active).toBeNull();
   expect(st.sessions).toHaveLength(1);
   expect(st.sessions[0].entries).toHaveLength(1);
-  expect(st.sessions[0].entries[0].sets).toEqual([{ kg: 42.5, reps: 10 }, { kg: 40, reps: 10 }]);
+  expect(st.sessions[0].entries[0].sets).toEqual([{ kg: 42.5, reps: 10 }, { kg: 42.5, reps: 10 }]);   /* BR-36.1: set 2 theo set 1 */
   expect(st.days[0].exercises[0]).toMatchObject({ currentKg: 42.5, kgSetAt: null });
   expect(st.settings.cycleStart).toBe(TODAY);
   await expect(app.view()).toContainText('Hôm nay đã tập Ngực + Tay sau');
