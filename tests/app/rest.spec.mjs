@@ -1,4 +1,4 @@
-// BR-04 Đồng hồ nghỉ giữa set và báo hết giờ (trong app + Phím tắt iPhone).
+// BR-04 Đồng hồ nghỉ giữa set và báo hết giờ (trong app).
 import { test, expect } from '../helpers/fixtures.mjs';
 import { state, basicPlan } from '../helpers/data.mjs';
 
