@@ -363,3 +363,10 @@ Bản đồ BR: BR-27.1–27.12 trong [BR.md](BR.md).
 3. `git merge --no-ff` vào `main` → GitHub Pages tự dựng → thêm dòng mốc `vN` (SHA trên `main`) vào [ADR 0001](adr/0001-bo-nhanh-moc.md).
 4. Máy chủ đồng bộ và thông báo do HLV tự triển khai (`push-server/HUONG-DAN.md`).
 5. Số phiên bản hiển thị trong app cập nhật thủ công, không gắn với `CACHE` (VD-26).
+
+## Giáo án HLV (PA-45 · A)
+- Bài có thêm trường tuỳ chọn `hold` (boolean) và `hlvNote` (chuỗi ≤ 300). Dữ liệu cũ không có hai trường này → coi như `false` / rỗng, không cần chuyển đổi.
+- `SYNC_STRUCT` gồm `hold`, `hlvNote`; `cleanEx` làm sạch hai trường. Máy học viên nhận qua `struct`; máy HLV giữ nguyên (nhánh `coachLocal`).
+- `holdOf(ex, g)` (trước `suggestRaw`): bài `hold` và gợi ý gốc là `up` → `kind:'hold'`, `kg` = mức hiện tại (`prev`), cờ `hlvHold` làm `suggest()` bỏ qua kế hoạch tuần.
+- `sy.planAt[hvId]` ghi thời điểm `hubPushPlans` gửi thành công; `viewPlan` tra `sy.map` ngược để biết học viên có thẻ, rồi hiện dòng trạng thái và `render(true)` khi gửi xong ở tab Lịch tập.
+- `exSheet`: công tắc `#f-hold` và ô `#f-hlvnote` chỉ hiện khi `hubRole()==='hlv'`; máy khác chỉ đọc ghi chú. `CACHE` gadn-v81.

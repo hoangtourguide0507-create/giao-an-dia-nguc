@@ -322,3 +322,7 @@ Ngoài phạm vi PA-40: đổi công thức hồi phục, đổi cảnh báo đa
 - **BR-28.11 Tên hồ sơ HLV đồng bộ**: tên có trên máy chủ thì máy lấy tên đó; HLV đổi tên thì cập nhật lên máy chủ và các máy HLV khác nhận theo (~20 giây). Máy chủ chưa có tên thì giữ tên trên máy (tên mặc định “Tôi” không gửi). Máy chủ chưa cập nhật bản ghi `ten@hlv` thì tên chỉ giữ trên máy. *Test:* `hub.spec.mjs` (BR-28.11), `test_hub_sync.mjs`.
 - **BR-28.12 Máy HLV cũ**: khi mở app, hồ sơ HLV theo `sync.self` (hoặc “Tôi”) đổi id thành `sl:tu-tap`, dữ liệu và học viên giữ nguyên, bỏ `sync.self`. *Test:* `hub.spec.mjs` (BR-28.12).
 
+## Giáo án HLV (PA-45 · A)
+- **BR-30.1 Khoá mức tạ**: HLV khoá một bài (`hold`): app không tự lên tạ bài đó, gợi ý là GIỮ ở mức hiện tại. Bỏ khoá thì gợi ý trở lại bình thường. Chỉ HLV đặt; học viên thấy chip "HLV khoá" trong Lịch tập. *Test:* `giaoan-hlv.spec.mjs` (BR-30.1).
+- **BR-30.2 Ghi chú HLV cho bài**: HLV viết ghi chú (tối đa 300 ký tự, `hlvNote`) cho bài; học viên thấy trong Lịch tập và thẻ bài đang tập. Máy không phải HLV chỉ đọc. *Test:* `giaoan-hlv.spec.mjs` (BR-30.2).
+- **BR-30.3 Trạng thái gửi giáo án**: trên Lịch tập của HLV đang xem học viên có thẻ: "Gửi giáo án lần cuối lúc hh:mm" hoặc "Chưa gửi lần nào"; học viên chưa có thẻ QR thì báo "Học viên chưa có thẻ QR". *Test:* `giaoan-hlv.spec.mjs` (BR-30.3).
