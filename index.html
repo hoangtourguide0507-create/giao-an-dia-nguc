@@ -1602,9 +1602,20 @@ async function profState(pid) { if (pid === profiles.active) return state; const
 /* PA-28: video riêng của bài (khoá vid:*) nằm cùng kho photos nhưng không đi theo đồng bộ/sao lưu ảnh nên tách riêng */
 const vidIdsOf = st => (st.days || []).flatMap(d => d.exercises.flatMap(e => [e, ...(e.alts || [])].map(x => x.vid).filter(Boolean)));
 const photoIdsOf = st => [...(st.days || []).flatMap(d => d.exercises.flatMap(e => [...(e.photos || []), ...(e.alts || []).flatMap(a => a.photos || [])])), ...(st.bodyPhotos || []).map(b => b.photoId)];
+/* PA-46 (BR-33.6): buổi kéo từ máy chủ qua cleanPkg mất exId/dayId → nối lại với bài và ngày trong giáo án của máy này:
+   giữ mã cũ nếu còn dùng được, không thì khớp theo tên bài / tên ngày; không khớp thì để nguyên (bài đã xoá khỏi giáo án). */
+function relinkSessions(st, sessions) {
+  const all = (st.days || []).flatMap(d => d.exercises.flatMap(e => [e, ...(e.alts || [])])), ids = new Set(all.map(x => x.id)), byName = new Map();
+  for (const x of all) { const n = String(x.name || '').toLowerCase(); if (!byName.has(n)) byName.set(n, x.id); }
+  for (const s of sessions || []) {
+    if (!(st.days || []).some(d => d.id === s.dayId)) { const d = (st.days || []).find(d => d.name === s.dayName); if (d) s.dayId = d.id; }
+    for (const en of s.entries || []) { if (en.exId && ids.has(en.exId)) continue; const id = byName.get(String(en.name || '').toLowerCase()); if (id) en.exId = id; }
+  }
+}
 function loadState(s) {
   purgeJunk(s);
   state = { ...freshState(), ...s, settings: { ...freshState().settings, ...(s.settings || {}) } };
+  relinkSessions(state, state.sessions);
   state.days.forEach(d => d.exercises.forEach(ex => { migrateEx(ex); if (!Array.isArray(ex.alts)) ex.alts = []; ex.alts.forEach(a => { migrateEx(a); delete a.alts; }); if (ex.slot == null) ex.slot = '';
     if (!ex.mainSince) { const ds = state.sessions.filter(x => x.entries.some(en => en.exId === ex.id)).map(x => x.date).sort(); ex.mainSince = ds[0] || ymd(); } }));
   if (!Array.isArray(state.bodyPhotos)) state.bodyPhotos = [];
@@ -4778,8 +4789,12 @@ async function hubApplySession(pid, rec) {
     st.sessions.splice(j, 1);
   } else {
     /* dữ liệu từ máy khác: làm sạch như gói đồng bộ Drive (cleanPkg) trước khi ghi */
-    let s = null; try { s = cleanPkg({ app: 'gadn-sync', role: 'student', sessions: [JSON.parse(rec.d)] }).sessions[0]; } catch (e) {}
+    let raw = null, s = null; try { raw = JSON.parse(rec.d); s = cleanPkg({ app: 'gadn-sync', role: 'student', sessions: [raw] }).sessions[0]; } catch (e) {}
     if (!s) return;
+    /* cleanPkg bỏ exId/dayId: đặt lại từ bản gốc rồi nối với giáo án của máy này (BR-33.6) */
+    if (raw.dayId) s.dayId = String(raw.dayId).slice(0, 40);
+    (raw.entries || []).slice(0, s.entries.length).forEach((en, j) => { if (en && en.exId) s.entries[j].exId = String(en.exId).slice(0, 40); });
+    relinkSessions(st, [s]);
     const i = st.sessions.findIndex(x => x.id === s.id);
     if (i >= 0 && hubRev(st.sessions[i]) >= rec.t) return;
     if (i >= 0) st.sessions[i] = s; else st.sessions.push(s);
@@ -5364,7 +5379,7 @@ async function purgeStored() {
   if (h.startsWith('#nhap=')) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} toast(OLD_CODE); }
   if ('serviceWorker' in navigator && location.protocol === 'https:' && document.documentElement.dataset.pwa === '1') { navigator.serviceWorker.register('sw.js').catch(() => {}); }
 })();
-window.__sota = { suggest, sessQuality, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
+window.__sota = { hubApplySession, suggest, sessQuality, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
 })();
 </script>
 </body>
