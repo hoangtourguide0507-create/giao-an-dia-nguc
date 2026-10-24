@@ -210,7 +210,24 @@ ok(!(await doi('since=0', H)).j.recs.some(r => r.hv === 'lan-7k3f'), 'Xoá học
   const ct = (await api('/s/admin/buoi?tu=2026-10-19&den=2026-10-25&ct=1', null, 'Bearer a.' + AK, 'GET')).j.hv.find(x => x.hv === 'bo-9q8w');
   ok(ct && ct.buoi[0].entries[0].sets[0].kg === 1 && bo.buoi[0].entries === undefined, 'Admin buoi: ct=1 kèm từng set (kg, rep); mặc định không kèm');
   ok((await api('/s/admin/buoi?tu=x&den=y', null, 'Bearer a.' + AK, 'GET')).s === 400 && (await api('/s/admin/buoi?tu=2026-10-19&den=2026-10-25', null, H, 'GET')).s === 401, 'Admin buoi: ngày sai → 400; khoá HLV → 401');
-  ok((await api('/s/admin/giao-an', {}, 'Bearer a.' + AK)).s === 404, 'Admin: POST chưa có (D1 chỉ đọc) → 404');
+  ok((await api('/s/admin/giao-an', {}, 'Bearer a.' + AK)).s === 404, 'Admin: POST vào đường chỉ đọc → 404');
+  // gán lại nhóm cơ
+  const bk = (id, date) => ({ k: 'buoi:' + id, id, t: T + 9200, vai: 'hv', d: JSON.stringify({ id, date, dayName: 'Lưng', finishedAt: 1, entries: [{ name: 'T Bar', muscle: 'Khác', sets: [{ kg: 1, reps: 1 }] }, { name: 'Kéo dọc', muscle: 'Khác', sets: [{ kg: 1, reps: 1 }] }, { name: 'Row', muscle: 'Lưng', sets: [{ kg: 1, reps: 1 }] }] }) });
+  await api('/s/ghi', { hv: 'bo-9q8w', recs: [bk('k1', '2026-10-05')] }, V('bo-9q8w', dkBo));
+  const tK = (await api('/s/admin/buoi?tu=2026-10-05&den=2026-10-05', null, 'Bearer a.' + AK, 'GET')).j.hv.find(x => x.hv === 'bo-9q8w').buoi[0].t;
+  const doi = [{ hv: 'bo-9q8w', buoi: 'k1', bai: 'T Bar', den: 'Lưng', t: tK }], P = b => api('/s/admin/gan-nhom-co', b, 'Bearer a.' + AK);
+  const seqA = (await api('/s/tt', null, H, 'GET')).j.seq;
+  const th = await P({ chay_thu: true, doi });
+  ok(th.s === 200 && th.j.ketQua[0].trangThai === 'se-doi' && JSON.parse(th.j.truoc[0].d).entries[0].muscle === 'Khác' && (await api('/s/tt', null, H, 'GET')).j.seq === seqA, 'Gán nhóm cơ: chạy thử không ghi, trả bản gốc để sao lưu');
+  ok((await P({ doi: [{ ...doi[0], den: 'Linh tinh' }] })).s === 400 && (await api('/s/admin/gan-nhom-co', { doi }, H)).s === 401, 'Gán nhóm cơ: nhóm đích sai → 400; khoá HLV → 401');
+  ok((await P({ doi: [{ ...doi[0], t: tK - 1 }] })).j.ketQua[0].trangThai === 'da-doi', 'Gán nhóm cơ: bản ghi đã đổi từ lúc đọc → không ghi');
+  sent.length = 0;
+  const gh = await P({ doi });
+  const sau = JSON.parse((await api('/s/doi?hv=bo-9q8w&since=0', null, V('bo-9q8w', dkBo), 'GET')).j.recs.find(r => r.id === 'k1').d);
+  ok(gh.j.ketQua[0].trangThai === 'da-ghi' && sau.entries[0].muscle === 'Lưng' && sau.entries[1].muscle === 'Khác' && sau.entries[2].muscle === 'Lưng' && sau.entries[0].sets.length === 1, 'Gán nhóm cơ: đổi đúng bài T Bar, giữ Kéo dọc và dữ liệu set');
+  const rc = (await api('/s/doi?hv=bo-9q8w&since=0', null, V('bo-9q8w', dkBo), 'GET')).j.recs.find(r => r.id === 'k1');
+  ok(rc.t > tK && (await api('/s/tt', null, H, 'GET')).j.seq > seqA && sent.length === 0, 'Gán nhóm cơ: t mới hơn, seq tăng (máy kéo về), không gửi thông báo đẩy');
+  ok((await P({ doi })).j.ketQua[0].trangThai === 'da-doi', 'Gán nhóm cơ: chạy lại bản cũ không ghi đè');
   delete env.ADMIN_HASH;
 }
 // ---------- 10. Trạng thái ----------

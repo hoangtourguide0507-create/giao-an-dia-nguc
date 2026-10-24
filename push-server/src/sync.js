@@ -42,7 +42,7 @@ export function schema(sql) {
 }
 
 export function seqNow(sql) { const r = one(sql, "SELECT v FROM meta WHERE k = 'seq'"); return r ? r.v : 0; }
-function nextSeq(sql) { const s = seqNow(sql) + 1; sql.exec("INSERT INTO meta(k, v) VALUES('seq', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v", s); return s; }
+export function nextSeq(sql) { const s = seqNow(sql) + 1; sql.exec("INSERT INTO meta(k, v) VALUES('seq', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v", s); return s; }
 
 /* Xác định người gọi từ header Authorization. Trả null nếu sai, máy bị đẩy/thu hồi hoặc học viên bị khoá. */
 export async function whoIs(sql, env, h) {
