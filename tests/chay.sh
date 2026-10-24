@@ -10,4 +10,5 @@ node tests/test_push_server.mjs | grep -q FAIL && { echo "✗ push-server"; FAIL
 node tests/test_hub_sync.mjs 2>/dev/null | grep -q FAIL && { echo "✗ hub-sync (máy chủ đồng bộ)"; FAIL=1; } || echo "✓ hub-sync (máy chủ đồng bộ)"
 node tests/test_dedupe_plan.mjs | grep -q FAIL && { echo "✗ dedupe giáo án"; FAIL=1; } || echo "✓ dedupe giáo án"
 node tests/test_hub_pa33b.mjs 2>/dev/null | grep -q FAIL && { echo "✗ hub-passkey-anh"; FAIL=1; } || echo "✓ hub-passkey-anh"
+node tests/test_can_vung_co.mjs | grep -q FAIL && { echo "✗ cân vùng cơ (BR-39)"; FAIL=1; } || echo "✓ cân vùng cơ (BR-39)"
 exit $FAIL

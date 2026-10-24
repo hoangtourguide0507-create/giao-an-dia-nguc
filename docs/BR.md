@@ -384,3 +384,16 @@ Hướng dữ liệu: **HV → máy chủ → HLV**, giống lịch sử tập (
 - **BR-37.7 Danh sách học viên của HLV** hiện lần đo gần nhất (ngày, cân nặng, % mỡ).
 - **BR-37.8 Thông báo**: HV thêm hoặc sửa số đo/ảnh (không phải gửi bù, không phải xoá) → HLV nhận thông báo đẩy “<tên> vừa cập nhật số đo”.
 - **BR-37.9 HV máy mới lấy lại dữ liệu và xử lý xung đột**: nối thẻ trên máy mới thì tải số đo, ảnh, chiều cao, giới tính từ máy chủ; gộp với dữ liệu đã nhập trên máy mới theo **thời điểm sửa (bản mới hơn thắng)**; mỗi ngày một lần đo (hai số đo cùng ngày khác mã: bản mới hơn thắng, bản kia bị xoá cả trên máy chủ); số đo khác ngày giữ cả hai; bản đã xoá trên máy này sau thời điểm của bản máy chủ không sống lại.
+
+## Cân vùng cơ trong ngày tập, góc tập, vùng còn thiếu, biến thể (PA-50 · BR-39)
+*Ngưỡng là mặc định, chờ `kiem-chung-y-khoa` đối chiếu trước khi duyệt.*
+- **BR-39.1 Góc / hướng là thuộc tính của bài** (`angle`): *Sửa bài* có chip góc cho đẩy ngực (Phẳng 0° · Dốc lên 15–30° · Dốc lên 45° · Dốc xuống), ép ngực tạ đơn (Phẳng · Dốc lên · Dốc xuống), ép cáp (Từ dưới lên · Ngang ngực · Từ trên xuống), chèo (Khuỷu sát thân → Xô · Khuỷu mở → Lưng giữa). Chọn góc → vùng cơ đổi theo; tên bài đổi sang tên thư viện cùng dụng cụ nếu có, không có thì ghép tên (ví dụ "Đẩy ngực dốc xuống máy Smith"). 45° hiện lời nhắc vai trước gánh nhiều hơn. Danh sách bài trong Lịch tập ghi góc dưới tên.
+- **BR-39.2 Mỗi góc là một bài riêng** (mức tạ, lịch sử, gợi ý lên tạ riêng); không đổi góc giữa buổi.
+- **BR-39.3 Set quy đổi**: set của vùng chính = 1; bài nhiều khớp có vùng phụ = 0,5 (đẩy ngực → vai trước, tay sau; chèo/kéo xô → tay trước…); bài cô lập không có vùng phụ.
+- **BR-39.4 Thanh cân vùng cơ** trên ngày tập đang mở (nhóm cơ, từng vùng, set trực tiếp + set phụ, trần mỗi nhóm) và **xem trước** khi thêm/sửa bài ("Thêm bài này · ngày Ngực: Ngực dưới 0 → 3").
+- **BR-39.5 Cảnh báo, không chặn** (tối đa 2 mỗi ngày, ẩn được tới khi ngày đó đổi; số cảnh báo hiện trên đầu ngày): **vượt trần** nhóm cơ > 11 set quy đổi/buổi; **dồn một vùng** ≥ 3 bài hoặc ≥ 8 set trực tiếp trong khi vùng chính khác cùng nhóm đang trống; **gần trùng** hai bài cùng kiểu động tác (đẩy ngực, ép, đẩy vai), cùng vùng, cùng góc.
+- **BR-39.6 Sửa một chạm**: đổi góc một bài sang vùng trống, bớt 1 set, chuyển bài sang ngày khác (giữ mức tạ, lịch sử).
+- **BR-39.7** Áp dụng cả khi HLV soạn giáo án cho học viên; góc đi theo giáo án sang máy HV. Máy HV chỉ thấy thanh cân, không có cảnh báo/nút sửa.
+- **BR-39.8 Còn thiếu**: vùng chính (theo danh sách vùng chính của app + Ngực dưới) của các nhóm cơ có trong ngày mà chưa có set trực tiếp và set phụ < 3; vùng đã tập ở ngày khác trong giáo án ghi "có ở ngày X". Chạm → *Thêm bài tập* mở đúng vùng; thư viện xếp bài cùng dụng cụ với ngày đó lên trước, ghi *Cùng dụng cụ* / *Đã có*.
+- **BR-39.9 Biến thể** trong *Sửa bài*: cùng động tác, đổi một yếu tố — góc (cùng dụng cụ), dụng cụ (cùng góc), động tác (đẩy ↔ ép, cùng vùng), tay cầm; bài không thuộc họ có góc: các bài cùng vùng, cùng kiểu bài. Biến thể lấp vùng còn thiếu đứng đầu (*Lấp chỗ thiếu*), bài đã có ghi *Đã có*.
+- **BR-39.10** Biến thể → *Thêm vào ngày* (bài mới) hoặc *Làm bài thay thế* (vào ô của bài, dùng gợi ý đổi bài sau 6 tuần sẵn có).
