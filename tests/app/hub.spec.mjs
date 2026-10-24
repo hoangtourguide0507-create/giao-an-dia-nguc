@@ -102,10 +102,13 @@ test('BR-24.6 · buổi đã tập tự gửi lên máy chủ; buổi đang tậ
   await app.seed({ profiles: { active: 'p1', list: [{ id: 'p1', name: 'Lan', color: 0 }] },
     states: { p1: state({ days: [d], sessions: [done], active: dang, settings: { sync: { s: hub.url, i: 'lan-7k3f', dk, ten: 'Lan' } } }) } });
   const doi = () => hub.req('/s/doi?hv=lan-7k3f&since=0', 'GET', null, `Bearer v.lan-7k3f.${dk}`);
-  await expect.poll(async () => (await doi()).j.recs.map(r => r.id), { timeout: 15000 }).toEqual([done.id]);
-  const rec = (await doi()).j.recs[0];
+  const buoi = async () => (await doi()).j.recs.filter(r => r.k.startsWith('buoi:'));
+  await expect.poll(async () => (await buoi()).map(r => r.id), { timeout: 15000 }).toEqual([done.id]);
+  const rec = (await buoi())[0];
   expect(JSON.parse(rec.d)).toMatchObject({ id: done.id, dayName: done.dayName });
   expect(rec).toMatchObject({ k: 'buoi:' + done.id, vai: 'hv' });
+  /* BR-34.1: giáo án riêng của học viên cũng được gửi (plan@hv) để HLV xem */
+  expect((await doi()).j.recs.find(r => r.k === 'plan@hv')).toMatchObject({ vai: 'hv' });
 });
 
 test('BR-24.4 · HLV thêm học viên → học viên nối máy và tập xong → máy HLV kéo buổi về đúng hồ sơ học viên', async ({ app, hub, device }) => {

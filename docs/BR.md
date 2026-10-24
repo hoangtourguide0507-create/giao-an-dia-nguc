@@ -345,3 +345,8 @@ Ngoài phạm vi PA-40: đổi công thức hồi phục, đổi cảnh báo đa
 - **BR-33.3 HLV không ghi lịch sử học viên**: trên hồ sơ học viên (máy HLV, không phải hồ sơ HLV tự tập) ẩn nút Tập ngày này, nút thêm buổi, và chặn bắt đầu buổi, xoá buổi (thông báo "Học viên tự ghi buổi tập…"). Hồ sơ HLV vẫn tập được. *Test:* `lichsu-hlv.spec.mjs` (BR-33.2, BR-33.3); `profiles.spec.mjs` (Phòng HLV).
 - **BR-33.4 Học viên thấy giáo án HLV vừa chỉnh**: khi nhận giáo án mới từ HLV, máy học viên hiện banner "HLV vừa chỉnh giáo án" kèm danh sách ngày/bài đổi (thêm/bỏ ngày, bài, số set×rep, tạ); bấm Đã xem thì ẩn. *Test:* `lichsu-hlv.spec.mjs` (BR-33.4).
 - **BR-33.5 Buổi cũ được gắn lại**: buổi cũ của hồ sơ chưa có bài (về trước đây) được gắn lại bài và ngày một lần khi hồ sơ được mở. *Test:* `lichsu-hlv.spec.mjs` (BR-33.5).
+
+## Sửa lỗi: Lịch tập của học viên trống trên máy HLV (BR-34)
+- **BR-34.1 Giáo án riêng của học viên về máy HLV**: học viên có giáo án mà hồ sơ trên máy HLV chưa có ngày tập nào thì HLV nhận giáo án đó (học viên gửi bản ghi `plan@hv` khi giáo án đổi); hồ sơ đã có ngày tập thì giữ nguyên, không đè. *Test:* `lichsu-hlv.spec.mjs` (BR-34.1); `hub.spec.mjs` (BR-24.6).
+- **BR-34.2 Lịch tập hiện lịch sử khi chưa có ngày tập**: hồ sơ học viên (máy HLV) có buổi tập nhưng chưa có giáo án vẫn hiện chế độ Đã tập, không trống. *Test:* `lichsu-hlv.spec.mjs` (BR-34.2).
+- **BR-33.3 (sửa)**: nút Tập ở thanh dưới vẫn hiện để giữ bố cục menu; trên hồ sơ học viên bấm vào chỉ báo "Học viên tự ghi buổi tập. HLV chỉ xem lịch sử ở đây."
