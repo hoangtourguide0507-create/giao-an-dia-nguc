@@ -140,6 +140,6 @@ test('Phòng HLV: bảng xếp hạng khi có từ 4 học viên, nhắc học v
   /* BR-33.3: hồ sơ học viên trên máy HLV chỉ xem, không có nút bắt đầu buổi và nút thêm buổi */
   await expect(app.view().locator('.hero [data-act="start-day"]').first()).toBeAttached();
   await expect(app.view().locator('.hero [data-act="start-day"]').first()).toBeHidden();
-  await expect(page.locator('#nav-bar .fab')).toBeHidden();
+  await expect(page.locator('#nav-bar .fab')).toBeVisible();
 });
 

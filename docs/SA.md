@@ -389,3 +389,11 @@ Bản đồ BR: BR-27.1–27.12 trong [BR.md](BR.md).
 - `planDiff(a, b)`: thuần, nhận giáo án dạng `{n, e}` hoặc `{name, exercises}`; liệt kê ngày/bài thêm, bỏ, đổi số set×rep, đổi tạ khi `kgSetAt` của HLV mới hơn. `hubApplyPlan` (nhánh học viên) ghi `sync.planDiff = {at, items}`; `viewPlan` hiện banner khi `!isHlv()`; `'plan-diff-ok'` xoá.
 - Không đổi máy chủ, không đổi định dạng gói sync (chỉ thêm `k` vào bài của buổi). `CACHE` gadn-v84.
 - Chưa làm: banner ở Trang chủ (hiện ở Lịch tập); HLV thấy học viên đã nhận giáo án (cần ack từ máy chủ).
+
+## Sửa lỗi: Lịch tập của học viên trống trên máy HLV (BR-34)
+- Nguyên nhân: giáo án của học viên không bao giờ rời máy học viên (`plan@hv` chưa được dùng), nên hồ sơ học viên trên máy HLV không có ngày tập; `viewPlan` chỉ vẽ Đã tập khi có ngày tập nên màn hình trống dù buổi tập đã về.
+- `hubOwnPlan()` (máy HV): gửi `plan@hv` (`id:'plan'`, `backfill`, không báo) khi giáo án không trống và `planKey` khác `sync.ownH`; gọi trong `hubSync` và sau `hubFlushSoon`. Máy chủ đã cho HV ghi `plan@hv` nên không cần triển khai lại Worker.
+- `hubPull` (máy HLV): `plan@hv` đi cùng đường với `plan@hlv` vào `hubAdoptPlan` (chỉ nhận khi hồ sơ chưa có ngày tập; đặt `planH` để không gửi ngược lại học viên).
+- `viewPlan`: `hasHist = histLocked() && (days || sessions)`; chưa có ngày tập thì chế độ mặc định là `done`. `viewDoneWeeks` bỏ chữ "x/y ngày trong giáo án" khi không có ngày tập.
+- CSS `hist-locked` không còn ẩn `#nav-bar .fab`; `'start-pick'` báo `LOCK_MSG` khi `histLocked()`. `CACHE` gadn-v85.
+- Hạn chế: HLV chỉ nhận giáo án học viên một lần (khi hồ sơ còn trống); học viên sửa giáo án sau đó không tự cập nhật sang bản HLV đã có.

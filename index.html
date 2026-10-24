@@ -1287,7 +1287,7 @@ body.resting{padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) 
 :root[data-anim="on"] .prog i{background-size:200% 100%;animation:flow 4s linear infinite}
 @keyframes flow{to{background-position:-200% 0}}
 @media (max-width:370px){.tix .h1{font-size:26px}.tfoot{flex-wrap:wrap}.tgo{width:100%}.mini .mv{font-size:23px}.stepper input{font-size:19px}}
-body.hist-locked [data-act="start-day"], body.hist-locked [data-act="add-entry"], body.hist-locked #nav-bar .fab { display: none !important; }  /* BR-33.3 */
+body.hist-locked [data-act="start-day"], body.hist-locked [data-act="add-entry"] { display: none !important; }  /* BR-33.3 */
 </style>
 </head>
 <body>
@@ -2934,7 +2934,7 @@ function viewDoneWeeks() {
   for (let k = 0; k < 8; k++) {
     const days = weekDaysOf(-k), ss = state.sessions.filter(x => x.date >= days[0] && x.date <= days[6]);
     const done = new Set(ss.map(x => x.dayId).filter(id => state.days.some(d => d.id === id))).size;
-    h += `<div class="card" style="margin-top:12px"><b>${dm(days[0])} – ${dm(days[6])}</b><p class="note-line">${ss.length} buổi · đã tập ${done}/${nDays} ngày trong giáo án</p>`;
+    h += `<div class="card" style="margin-top:12px"><b>${dm(days[0])} – ${dm(days[6])}</b><p class="note-line">${ss.length} buổi${nDays ? ` · đã tập ${done}/${nDays} ngày trong giáo án` : ''}</p>`;
     if (ss.length) h += `<div class="list">${[...ss].reverse().map(x => `<button type="button" class="li" data-act="open-session" data-id="${x.id}"><span style="min-width:0"><span class="lt">${esc(x.dayName)}</span><span class="ls">${DOW[parseYmd(x.date).getDay()]} ${dm(x.date)}</span></span></button>`).join('')}</div>`;
     h += `</div>`;
   }
@@ -2952,8 +2952,9 @@ function viewPlan() {
   let h = `<section class="sec"><div class="sec-head"><h2 class="h1">Lịch tập</h2><div class="row" style="gap:6px;flex-wrap:nowrap">${nAll ? `<button class="btn sm" data-act="lib-open">${ICON.book} Kho bài</button>` : ''}<button class="btn sm gold" data-act="add-day">+ Ngày tập</button></div></div>`
   if (sentLine) h += `<p class="note-line">${sentLine}</p>`;
   if (sy.planDiff && !isHlv()) h += `<div class="banner"><span class="bi">!</span><div><b>HLV vừa chỉnh giáo án</b><p>${sy.planDiff.items.map(esc).join(' · ')}</p><button class="btn sm" data-act="plan-diff-ok">Đã xem</button></div></div>`;   /* BR-33.4 */
-  if (isHlv() && profiles.active !== HLV_SELF && state.days.length) h += `<div class="seg" role="group" aria-label="Xem giáo án hoặc buổi đã tập">${[['plan', 'Giáo án'], ['done', 'Đã tập']].map(([k, l]) => `<button type="button" data-act="plan-view" data-k="${k}" aria-pressed="${(ui.planView || 'plan') === k}">${l}</button>`).join('')}</div>`;
-  if (ui.planView === 'done' && isHlv() && profiles.active !== HLV_SELF && state.days.length) return h + viewDoneWeeks() + `</section>`;
+  const hasHist = histLocked() && (state.days.length || state.sessions.length), pv = ui.planView || (state.days.length ? 'plan' : 'done');
+  if (hasHist) h += `<div class="seg" role="group" aria-label="Xem giáo án hoặc buổi đã tập">${[['plan', 'Giáo án'], ['done', 'Đã tập']].map(([k, l]) => `<button type="button" data-act="plan-view" data-k="${k}" aria-pressed="${pv === k}">${l}</button>`).join('')}</div>`;
+  if (pv === 'done' && hasHist) return h + viewDoneWeeks() + `</section>`;
   if (!state.days.length) return h + `<div class="hero pempty"><div class="h1" style="font-size:24px">Chưa có ngày tập nào</div><p class="meta">Tạo ngày tập như Lưng, Ngực, Chân rồi thêm bài. Hoặc dùng giáo án mẫu 4 ngày.</p>
     <div class="stack" style="margin-top:16px"><button class="btn gold big" data-act="add-day">+ Tạo ngày tập</button><button class="btn big" data-act="onb-sample">Dùng giáo án mẫu</button></div></div></section>`;
   const allX = allEx(), nSets = state.days.reduce((a, d) => a + d.exercises.reduce((b, e) => b + e.sets, 0), 0);
@@ -4316,7 +4317,7 @@ const HLV_SELF = 'sl:tu-tap';
 /* máy HLV: các hồ sơ có giáo án cần gửi: học viên (theo thẻ) và hồ sơ tập của HLV */
 const planTargets = sy => { const t = Object.entries(sy.map || {}); const self = hlvSelf(); if (self && sy.selfMade && profiles.list.some(p => p.id === self)) t.push([HLV_SELF, self]); return t; };
 let hubT = 0, hubBusy = false;
-function hubFlushSoon() { clearTimeout(hubT); hubT = setTimeout(hubFlush, 1500); }
+function hubFlushSoon() { clearTimeout(hubT); hubT = setTimeout(() => { hubFlush(); hubOwnPlan(); }, 1500); }
 /* gửi buổi đã tập và buổi đã xoá. Thông báo "vừa tập xong" chỉ cho buổi mới; buổi trước khi nối máy đi kèm backfill, không báo */
 async function hubFlush() {
   const role = hubRole(), hid = role === 'hv' ? (state.settings.sync || {}).i : role === 'hlv' && hlvSelf() === profiles.active ? HLV_SELF : '';
@@ -4619,7 +4620,7 @@ async function hubPull() {
       for (const rec of r.j.recs) {
         if (role === 'hv') { if (rec.k === 'plan@hlv' && rec.t > (sy.planT || 0)) await hubApplyPlan(rec); }
         else if (rec.k.startsWith('buoi:') && sy.map && sy.map[rec.hv]) await hubApplySession(sy.map[rec.hv], rec);
-        else if (rec.k === 'plan@hlv' && sy.map && sy.map[rec.hv]) await hubAdoptPlan(sy.map[rec.hv], rec);
+        else if ((rec.k === 'plan@hlv' || rec.k === 'plan@hv') && sy.map && sy.map[rec.hv]) await hubAdoptPlan(sy.map[rec.hv], rec);
         else if (rec.k === 'dau@hv' && sy.map && sy.map[rec.hv]) await hubApplyPain(sy.map[rec.hv], rec);
       }
       con = !!r.j.con && r.j.recs.length > 0;
@@ -4682,7 +4683,7 @@ async function hubPushSessionsTo(hvId, pid) {
 async function hubSync() {
   const role = hubRole(); if (!role) return;
   if (role === 'hlv') { await hubSelfResolve(); await hubAdopt(); await hubEnsure(); await hubPushPlans(); await hubPullSelf(); await hubSelfNameSync(); }
-  await hubPull(); await hubFlush();
+  await hubPull(); await hubOwnPlan(); await hubFlush();
 }
 /* khoá so sánh giáo án: bỏ mức tạ hiện tại (đổi mỗi buổi tập, không phải thay đổi giáo án) */
 const planKey = plan => { const strip = e => ({ ...e, currentKg: undefined, kgSetAt: undefined, l: (e.l || []).map(strip) }); return strHash(JSON.stringify(plan.map(d => ({ n: d.n, e: (d.e || []).map(strip) })))); };
@@ -4703,6 +4704,17 @@ async function hubApplyPain(pid, rec) {
   st.musclePain = list;
   if (pid === profiles.active) { save(); render(true); return; }
   st.updatedAt = Date.now(); await LDB.put('kv', stateKey(pid), clone(st));
+}
+/* BR-34.1: học viên gửi giáo án của mình (plan@hv) để HLV xem; chỉ gửi khi đổi và không trống. HLV chỉ nhận vào hồ sơ còn chưa có ngày tập (hubAdoptPlan). */
+async function hubOwnPlan() {
+  if (hubRole() !== 'hv' || !navigator.onLine || hubHold()) return;
+  const sy = state.settings.sync;
+  try {
+    const plan = await serPlan(state, false, {}); if (!plan.length) return;
+    const h = planKey(plan); if (sy.ownH === h) return;
+    const r = await hubCall('/s/ghi', { hv: sy.i, recs: [{ k: 'plan@hv', id: 'plan', t: Date.now(), vai: 'hv', d: JSON.stringify({ plan }) }], backfill: true });
+    if (r.s === 200) { sy.ownH = h; save(); }
+  } catch (e) { /* mất mạng: lần sau gửi lại */ }
 }
 function hubPlanSoon() { clearTimeout(hubPlanT); hubPlanT = setTimeout(hubPushPlans, 1500); }
 /* quiet: gửi giáo án lần đầu khi chuyển học viên, không báo */
@@ -4949,7 +4961,7 @@ const handlers = {
   'pick-day': t => { ui.pick = t.dataset.id; render(true); },
   'more-sec': t => { ui.moreSec = t.dataset.k || null; ui.tab = 'more'; render(); },
   'todos': () => todosSheet(),
-  'start-pick': () => startPickSheet(),
+  'start-pick': () => histLocked() ? toast(LOCK_MSG) : startPickSheet(),
   'custom-open': () => { ui.customSel = new Set(); customSheet(); },
   'custom-toggle': t => { const id = t.dataset.id; if (ui.customSel.has(id)) ui.customSel.delete(id); else ui.customSel.add(id); t.setAttribute('aria-pressed', ui.customSel.has(id)); const b = $('#custom-go'); if (b) { b.disabled = !ui.customSel.size; b.innerHTML = `${ICON.play} Bắt đầu (${ui.customSel.size} bài${ui.customSel.size ? ' · ' + minTxt(dayEst([...ui.customSel].map(findEx).filter(Boolean))) : ''})`; } },
   'custom-start': () => startSession(null, [...ui.customSel]),
