@@ -366,3 +366,15 @@ Nguyên tắc: **giáo án (GA) chỉ đi HLV → học viên; lịch sử tập
 - **BR-36.1** Khi học viên bấm ✓ một set làm việc (không phải drop), các set làm việc **chưa tập** còn lại của bài đó nhận kg bằng set vừa xong; rep = nhỏ hơn giữa rep đang đặt và rep vừa làm (chỉ giảm, không tự tăng). Không tự giảm tạ khi dưới rep tối thiểu. *Test:* `tu-chinh-set.spec.mjs`.
 - **BR-36.2** Set đã tự sửa tay (kg hoặc rep) và set đã tập giữ nguyên; bỏ ✓ không hoàn lại; drop set tính lại theo kg mới. *Test:* `tu-chinh-set.spec.mjs`.
 - **BR-36.3** Có toast “Set 2–3 chỉnh theo set 1 · 42,5 kg × 8”; giáo án không đổi cho tới khi kết thúc buổi. *Test:* `tu-chinh-set.spec.mjs`.
+
+## Thông tin cơ thể của học viên đến HLV (PA-48 · BR-37)
+Hướng dữ liệu: **HV → máy chủ → HLV**, giống lịch sử tập (BR-35). Test: `tests/app/co-the-hlv.spec.mjs`, `tests/test_hub_sync.mjs`.
+- **BR-37.1 Số đo cơ thể HV tự đồng bộ**: máy có vai HV gửi mỗi lần đo (cân, % mỡ, cơ xương, vòng eo, mỡ nội tạng) lên máy chủ khi thêm, sửa, xoá; số đo có sẵn gửi bù một lần, không báo.
+- **BR-37.2 Ảnh body HV tự đồng bộ**: ảnh (đã nén) và ngày, tư thế; đổi ngày/tư thế và xoá cũng đồng bộ; lỗi mạng thì thử lại ở lần sau.
+- **BR-37.3 Chiều cao và giới tính** của HV đồng bộ.
+- **BR-37.4 Máy HLV nhận** số đo, ảnh, chiều cao, giới tính của tất cả HV vào đúng hồ sơ HV (mở app, có mạng, mỗi 20 giây). Số đo/ảnh HLV từng nhập tay cho HV được **thay bằng bản từ máy HV** khi nhận bản ghi đầu tiên.
+- **BR-37.5 HLV không sửa lịch sử đo của HV**: hồ sơ HV trên máy HLV ẩn và chặn thêm/sửa/xoá số đo, thêm/sửa/xoá ảnh, đổi giới tính, nhập chiều cao (toast “Số đo và ảnh body do học viên tự cập nhật. HLV chỉ xem.”); xem, biểu đồ, so sánh ảnh vẫn dùng được. Hồ sơ tự tập của HLV và máy không vai giữ nguyên quyền sửa.
+- **BR-37.6 Một chiều**: HLV không gửi số đo/ảnh/hồ sơ cơ thể lên máy chủ; máy chủ trả 403 nếu HLV ghi.
+- **BR-37.7 Danh sách học viên của HLV** hiện lần đo gần nhất (ngày, cân nặng, % mỡ).
+- **BR-37.8 Thông báo**: HV thêm hoặc sửa số đo/ảnh (không phải gửi bù, không phải xoá) → HLV nhận thông báo đẩy “<tên> vừa cập nhật số đo”.
+- **BR-37.9 HV máy mới lấy lại dữ liệu và xử lý xung đột**: nối thẻ trên máy mới thì tải số đo, ảnh, chiều cao, giới tính từ máy chủ; gộp với dữ liệu đã nhập trên máy mới theo **thời điểm sửa (bản mới hơn thắng)**; mỗi ngày một lần đo (hai số đo cùng ngày khác mã: bản mới hơn thắng, bản kia bị xoá cả trên máy chủ); số đo khác ngày giữ cả hai; bản đã xoá trên máy này sau thời điểm của bản máy chủ không sống lại.

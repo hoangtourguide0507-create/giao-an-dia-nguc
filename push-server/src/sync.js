@@ -10,7 +10,9 @@
  */
 
 const enc = new TextEncoder();
-export const MAX_DEV = 5, MAX_RECS = 200, PAGE = 500, MAX_BUOI = 256 * 1024, MAX_PLAN = 1024 * 1024;
+export const MAX_DEV = 5, MAX_RECS = 200, PAGE = 500, MAX_BUOI = 256 * 1024, MAX_PLAN = 1024 * 1024, MAX_CT = 4096;
+/* PA-48 · BR-37: thông tin cơ thể do học viên ghi, HLV chỉ đọc: số đo (do@hv, mỗi lần đo một bản ghi), ảnh body (anh@hv, ảnh nằm ở kho /s/anh), chiều cao/giới tính (ho-so@hv) */
+const CT_KINDS = new Set(['do@hv', 'anh@hv', 'ho-so@hv']);
 const ID_RE = /^[a-z0-9-]{3,40}$/;
 const MAX_IMG = 1200000, MAX_PK = 5, CHAL_MS = 5 * 60000, IMG_RE = /^[A-Za-z0-9_-]{4,64}$/;
 const DEFAULT_IMG_HV = 400 * 1024 * 1024, DEFAULT_IMG_ROOM = 4 * 1024 * 1024 * 1024;
@@ -134,11 +136,12 @@ async function ghi(ctx, q, auth) {
     const k = String(r.k || ''), id = String(r.id || ''), t = Number(r.t), d = String(r.d ?? '');
     if (!id || id.length > 80 || !Number.isFinite(t)) return fail(400, 'Bản ghi không hợp lệ');
     if ((k === 'plan@hlv' && !H) || (k === 'plan@hv' && H)) return fail(403, 'Bản ghi này thuộc phía khác');
+    if (CT_KINDS.has(k) && (H || (k === 'ho-so@hv' && id !== 'ho-so'))) return fail(403, 'Bản ghi này thuộc phía khác');   /* PA-48 */
     if (k === 'dau@hv' && (H || id !== 'dau')) return fail(403, 'Bản ghi này thuộc phía khác');   /* PA-40: học viên báo cơ còn đau, HLV chỉ đọc */
     /* BR-28.11: tên hồ sơ tập của HLV, chỉ HLV ghi, chỉ vào hồ sơ sl:… */
     if (k === 'ten@hlv' && (!H || !hv.startsWith('sl:') || id !== 'ten' || !d.trim() || d.length > 60)) return fail(403, 'Bản ghi tên không hợp lệ');
-    if (!(k === 'plan@hlv' || k === 'plan@hv' || k === 'dau@hv' || k === 'ten@hlv' || k === 'buoi:' + id)) return fail(400, 'Loại bản ghi không hợp lệ');
-    if (d.length > (k.startsWith('plan@') ? MAX_PLAN : MAX_BUOI)) return fail(413, 'Bản ghi quá lớn');
+    if (!(k === 'plan@hlv' || k === 'plan@hv' || k === 'dau@hv' || CT_KINDS.has(k) || k === 'ten@hlv' || k === 'buoi:' + id)) return fail(400, 'Loại bản ghi không hợp lệ');
+    if (d.length > (k.startsWith('plan@') ? MAX_PLAN : CT_KINDS.has(k) ? MAX_CT : MAX_BUOI)) return fail(413, 'Bản ghi quá lớn');
     rows.push({ k, id, t, d, xoa: r.xoa ? 1 : 0 });
   }
 
@@ -160,7 +163,7 @@ async function ghi(ctx, q, auth) {
   const ev = q.ev && typeof q.ev === 'object' ? q.ev : null;
   if (ev && !q.backfill && !hv.startsWith('sl:')) {
     if (H && acc.some(r => r.k === 'plan@hlv')) await ctx.notify('hv:' + hv, ev);
-    if (!H && acc.some(r => r.k.startsWith('buoi:'))) await ctx.notify('hlv', ev);
+    if (!H && acc.some(r => r.k.startsWith('buoi:') || (CT_KINDS.has(r.k) && !r.xoa))) await ctx.notify('hlv', ev);
   }
   return json({ ok: true, seq: seqNow(sql), tuChoi });
 }

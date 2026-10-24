@@ -1287,6 +1287,8 @@ body.resting{padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) 
 :root[data-anim="on"] .prog i{background-size:200% 100%;animation:flow 4s linear infinite}
 @keyframes flow{to{background-position:-200% 0}}
 @media (max-width:370px){.tix .h1{font-size:26px}.tfoot{flex-wrap:wrap}.tgo{width:100%}.mini .mv{font-size:23px}.stepper input{font-size:19px}}
+body.ct-locked :is([data-act="body-add"]:not(.btile), [data-act="sex"], label[for="bp-in"], .bc.add, [data-act="bp-edit"], [data-act="bp-del"], .bhist .sec-head .small, .bhist .li > .ls:last-child, .bnow-h .link, .bsex) { display: none !important; }  /* BR-37.5 */
+body.ct-locked :is(.btile, .bhist .li) { pointer-events: none; }
 body.plan-locked :is([data-act="add-day"], [data-act="rename-day"], [data-act="del-day"], [data-act="move-day"], [data-act="move-ex"], [data-act="add-ex"], [data-act="add-alt"], [data-act="make-main"], [data-act="rot-open"], [data-act="rot-hold"], [data-act="rot-swap"], [data-act="onb-sample"], [data-act="onb-new"], [data-act="prof-copy"], [data-act="lib-open"], [data-act="other-open"]) { display: none !important; }  /* BR-35.3 */
 </style>
 </head>
@@ -1821,6 +1823,7 @@ function render(keepScroll) {
   document.documentElement.dataset.fx = state.settings.fxOff ? 'off' : 'on';
   document.documentElement.dataset.anim = animOn() ? 'on' : 'off';
   document.body.classList.toggle('plan-locked', planLocked());   /* BR-35.3 */
+  document.body.classList.toggle('ct-locked', bodyLocked());   /* BR-37.5 */
   if (document.documentElement.dataset.skin !== (state.settings.skin || 'amber')) applySkin(state.settings.skin);
   const v = $('#view');
   v.innerHTML = ui.tab === 'home' ? (isHlv() ? viewTeam() : '') + viewHome() : ui.tab === 'today' ? viewToday() : ui.tab === 'plan' ? viewPlan() : ui.tab === 'week' ? viewWeek() : ui.tab === 'body' ? viewBody() : ui.tab === 'photos' ? viewPhotos() : viewMore();
@@ -3502,7 +3505,7 @@ function viewBody() {
   let h = `<section class="sec"><div class="sec-head"><h2 class="h1">Tiến độ</h2><button class="btn sm gold" data-act="body-add">+ Số đo</button></div>${progTabs()}`;
   if (!sexOf()) h += `<div class="card bsex"><div><b>Giới tính</b><p class="small muted">Để so với mức chuẩn tỉ lệ mỡ và vòng eo.</p></div><div class="seg" role="group" aria-label="Giới tính">${[['m', 'Nam'], ['f', 'Nữ']].map(([k, l]) => `<button type="button" data-act="sex" data-k="${k}" aria-pressed="false">${l}</button>`).join('')}</div></div>`;
   if (!B.length) {
-    h += `<div class="empty">Mỗi tháng đo 1–2 lần bằng máy InBody hoặc cân điện tử, cùng điều kiện: buổi sáng, trước khi ăn, sau khi đi vệ sinh, chưa tập. Chỉ cần 4 chỉ số: cân nặng, tỉ lệ mỡ, khối cơ xương, vòng eo.</div></section>`;
+    h += `<div class="empty">${bodyLocked() ? 'Học viên chưa cập nhật số đo cơ thể.<br><br>' : ''}Mỗi tháng đo 1–2 lần bằng máy InBody hoặc cân điện tử, cùng điều kiện: buổi sáng, trước khi ăn, sau khi đi vệ sinh, chưa tập. Chỉ cần 4 chỉ số: cân nặng, tỉ lệ mỡ, khối cơ xương, vòng eo.</div></section>`;
     return h;
   }
   // 4 chỉ số chính
@@ -3550,7 +3553,7 @@ function viewBodyPhotos() {
   const last = all.length ? all[all.length - 1].date : null, gap = last ? daysBetween(last, ymd()) : null;
   let h = `<section class="sec"><div class="sec-head"><h2 class="h">Ảnh trước / sau</h2><label class="btn sm gold" for="bp-in">${ICON.cam} Thêm ảnh</label></div>
     <input type="file" id="bp-in" accept="image/*" multiple hidden>`;
-  if (!all.length) return h + `<div class="empty">Mỗi tháng chụp 3 tư thế (trước, nghiêng, sau), cùng chỗ đứng, cùng ánh sáng, buổi sáng trước khi ăn.<br><br>Ảnh cũ từ năm trước: bấm “Thêm ảnh”, chọn nhiều ảnh một lúc, app tự đọc ngày chụp và cho bạn sửa lại tháng.</div><p class="note-line">Ảnh body lưu trên máy này.</p></section>`;
+  if (!all.length) return h + `<div class="empty">Mỗi tháng chụp 3 tư thế (trước, nghiêng, sau), cùng chỗ đứng, cùng ánh sáng, buổi sáng trước khi ăn.<br><br>Ảnh cũ từ năm trước: bấm “Thêm ảnh”, chọn nhiều ảnh một lúc, app tự đọc ngày chụp và cho bạn sửa lại tháng.</div><p class="note-line">${bodyLocked() ? 'Học viên chưa cập nhật ảnh body.' : 'Ảnh body lưu trên máy này.'}</p></section>`;
   if (gap != null && gap >= 28) h += `<div class="banner"><span class="bi">${ICON.cal}</span><div><b>Đã ${gap} ngày chưa chụp</b><p>Chụp ảnh tháng ${+ymd().slice(5, 7)} để so với tháng trước.</p></div></div>`;
   // so sánh
   h += `<div class="card bcmp"><div class="chips" role="group" aria-label="Tư thế" style="margin-bottom:10px">${POSES.map(p => `<button type="button" data-act="pose" data-k="${p}" aria-pressed="${ui.pose === p}">${p} · ${all.filter(x => x.pose === p).length}</button>`).join('')}</div>`;
@@ -3709,7 +3712,7 @@ function viewMore() {
     <div class="seg" role="group" aria-label="Mức lưu ý form" style="margin-top:6px">${Object.entries(FORM_LV).map(([k, m]) => `<button type="button" data-act="form-lv" data-k="${k}" aria-pressed="${formLv() === k}">${m.label}</button>`).join('')}</div>
     <p class="small muted" style="margin:10px 0 0">${FORM_LV[formLv()].desc}</p></div>`],
     height: ['Chỉ số cơ thể', () => `<div class="card set-card"><h3>Chiều cao của ${esc(curProf().name)}</h3><p>Dùng để tính BMI ở tab Cơ thể. Đổi tên người tập ở danh sách ${isHlv() ? 'học viên' : 'người tập'}.</p><div class="formgrid" style="margin-top:10px">
-    <label class="f"><span>Chiều cao <span class="unit">cm</span></span><input class="inp" data-bind="setting" data-k="height" inputmode="decimal" value="${fmtIn(st.height)}" placeholder="Để tính BMI"></label>
+    <label class="f"><span>Chiều cao <span class="unit">cm</span></span><input class="inp" data-bind="setting" data-k="height" inputmode="decimal" ${bodyLocked() ? 'disabled' : ''} value="${fmtIn(st.height)}" placeholder="Để tính BMI"></label>
   </div></div>`],
     notif: ['Thông báo', () => notifCardHtml(st)],
     skin: ['Giao diện & hiệu ứng', () => `<div class="card set-card"><h3>Giao diện & Hiệu ứng</h3><div class="skins">${SKINS.map(k => `<button type="button" class="skin" data-act="skin" data-k="${k.id}" aria-pressed="${sk === k.id}" style="--sb:${k.bg};--sa:${k.acc};--sa2:${k.acc2}"><span class="sw"><i></i><i></i></span><span class="sn">${k.name}</span><span class="sd">${k.desc}</span></button>`).join('')}</div>
@@ -4253,7 +4256,7 @@ const hubSynced = () => { const sy = state.settings.sync || {}; return !!sy.last
 function hubRole() { const sy = state.settings.sync || {}; return sy.hk ? 'hlv' : sy.dk ? 'hv' : ''; }
 async function hubCall(path, body, method) {
   const sy = state.settings.sync || {};
-  const auth = hubRole() === 'hv' ? 'Bearer v.' + sy.i + '.' + sy.dk : 'Bearer h.' + sy.hk;
+  const auth = hubAuth();
   /* quá 15 giây không có hồi âm thì bỏ: để cờ “đang gửi” được trả lại, lần sau thử tiếp */
   const r = await fetch(sy.s + path, { method: method || 'POST', headers: { 'Content-Type': 'application/json', Authorization: auth }, body: method === 'GET' ? undefined : JSON.stringify(body || {}), signal: AbortSignal.timeout(15000) });
   return { s: r.status, j: await r.json().catch(() => ({})) };
@@ -4307,7 +4310,7 @@ async function hubPair(body) {
 /* nối máy học viên (bằng thẻ hoặc passkey): lưu khoá, rồi kéo lại buổi đã gửi trước đó (khôi phục khi máy trống) */
 async function hubJoin(s, i, dk, ten) {
   state.settings.sync = { s, i, dk, ten, at: Date.now() };   /* at: buổi trước lúc này là lịch sử (backfill) */
-  state.sync = state.sync || { sent: {}, gone: {} }; state.sync.sent = {};   /* BR-24.25: nối lại (kể cả máy chủ mới) thì gửi lại mọi buổi đã tập */
+  state.sync = state.sync || { sent: {}, gone: {} }; state.sync.sent = {}; state.sync.ct = { sent: {}, gone: {} };   /* BR-37: lấy lại số đo từ máy chủ rồi gộp; BR-24.25: nối lại (kể cả máy chủ mới) thì gửi lại mọi buổi đã tập */
   save(); closeSheet(); render(true); toast(`Đã nối với HLV · ${ten}`); hubFlushSoon(); hubSubscribe();
   await hubRestoreSelf(); return true;
 }
@@ -4333,7 +4336,7 @@ const HLV_SELF = 'sl:tu-tap';
 /* máy HLV: các hồ sơ có giáo án cần gửi: học viên (theo thẻ) và hồ sơ tập của HLV */
 const planTargets = sy => { const t = Object.entries(sy.map || {}); const self = hlvSelf(); if (self && sy.selfMade && profiles.list.some(p => p.id === self)) t.push([HLV_SELF, self]); return t; };
 let hubT = 0, hubBusy = false;
-function hubFlushSoon() { clearTimeout(hubT); hubT = setTimeout(hubFlush, 1500); }
+function hubFlushSoon() { clearTimeout(hubT); hubT = setTimeout(() => { hubFlush(); hubCtPush(); }, 1500); }
 /* gửi buổi đã tập và buổi đã xoá. Thông báo "vừa tập xong" chỉ cho buổi mới; buổi trước khi nối máy đi kèm backfill, không báo */
 async function hubFlush() {
   const role = hubRole(), hid = role === 'hv' ? (state.settings.sync || {}).i : role === 'hlv' && hlvSelf() === profiles.active ? HLV_SELF : '';
@@ -4365,9 +4368,14 @@ function loginCardHtml() {
     <details class="wpkeep" style="margin-top:10px"><summary>Hoặc dán mã</summary><div class="paste-box"><textarea class="inp" id="login-in" rows="2" placeholder="Dán mã GAH1… hoặc GAV1…"></textarea><button type="button" class="btn sm gold" data-act="login-go">Đăng nhập</button></div></details></div>`;
 }
 /* BR-26.1: HLV lấy và chia sẻ thẻ QR từng học viên; học viên chưa có thẻ thì bấm để tạo */
+/* BR-37.7: lần đo gần nhất của học viên, lấy từ máy chủ */
+function ctSumHtml(pid) {
+  const m = ((state.settings.sync || {}).ctSum || {})[pid]; if (!m) return '';
+  return `<span class="ct-sum">Đo ${dm(m.date)}${m.w != null ? ` · ${fmt(m.w)} kg` : ''}${m.f != null ? ` · mỡ ${fmt(m.f)} %` : ''}</span>`;
+}
 function hlvStudentsHtml() {
   const linked = new Set(Object.values((state.settings.sync || {}).map || {}));
-  const rows = studentsOf().map(p => `<button type="button" class="grow" data-act="hub-card-show" data-id="${p.id}"><span class="gi">${ICON.users}</span><span class="gt"><b>${esc(p.name)}</b><span>${linked.has(p.id) ? 'Thẻ QR · chạm để xem và chia sẻ' : 'Chưa có thẻ QR · chạm để tạo'}</span></span>${ICON.chevR}</button>`).join('');
+  const rows = studentsOf().map(p => `<button type="button" class="grow" data-act="hub-card-show" data-id="${p.id}"><span class="gi">${ICON.users}</span><span class="gt"><b>${esc(p.name)}</b><span>${linked.has(p.id) ? 'Thẻ QR · chạm để xem và chia sẻ' : 'Chưa có thẻ QR · chạm để tạo'}</span>${ctSumHtml(p.id)}</span>${ICON.chevR}</button>`).join('');
   return `<div class="gh">Học viên</div><div class="card grp">${rows || '<div class="empty">Chưa có học viên nào trên máy này.</div>'}</div>`;
 }
 function hubCardHtml() {
@@ -4634,10 +4642,11 @@ async function hubPull() {
       const r = await hubCall(role === 'hlv' ? '/s/doi?since=' + (sy.seq || 0) : '/s/doi?hv=' + encodeURIComponent(sy.i) + '&since=' + (sy.seq || 0), null, 'GET');
       if (hubGate(r) || r.s !== 200) return;
       for (const rec of r.j.recs) {
-        if (role === 'hv') { if (rec.k === 'plan@hlv' && rec.t > (sy.planT || 0)) await hubApplyPlan(rec); }
+        if (role === 'hv') { if (rec.k === 'plan@hlv' && rec.t > (sy.planT || 0)) await hubApplyPlan(rec); else if (CT_KIND.has(rec.k) && await ctApply(state, rec, true, sy.i)) { save(); render(true); } }
         else if (rec.k.startsWith('buoi:') && sy.map && sy.map[rec.hv]) await hubApplySession(sy.map[rec.hv], rec);
         else if (rec.k === 'plan@hlv' && sy.map && sy.map[rec.hv]) await hubAdoptPlan(sy.map[rec.hv], rec);
         else if (rec.k === 'dau@hv' && sy.map && sy.map[rec.hv]) await hubApplyPain(sy.map[rec.hv], rec);
+        else if (CT_KIND.has(rec.k) && sy.map && sy.map[rec.hv]) await hubApplyCt(sy.map[rec.hv], rec);
       }
       con = !!r.j.con && r.j.recs.length > 0;
       const next = con ? r.j.recs[r.j.recs.length - 1].seq : r.j.seq;
@@ -4699,7 +4708,7 @@ async function hubPushSessionsTo(hvId, pid) {
 async function hubSync() {
   const role = hubRole(); if (!role) return;
   if (role === 'hlv') { await hubSelfResolve(); await hubAdopt(); await hubEnsure(); await hubPushPlans(); await hubPullSelf(); await hubSelfNameSync(); }
-  await hubPull(); await hubFlush();
+  await hubPull(); await hubFlush(); await hubCtPush(); await hubCtImages();
 }
 /* khoá so sánh giáo án: bỏ mức tạ hiện tại (đổi mỗi buổi tập, không phải thay đổi giáo án) */
 const planKey = plan => { const strip = e => ({ ...e, currentKg: undefined, kgSetAt: undefined, l: (e.l || []).map(strip) }); return strHash(JSON.stringify(plan.map(d => ({ n: d.n, e: (d.e || []).map(strip) })))); };
@@ -4720,6 +4729,144 @@ async function hubApplyPain(pid, rec) {
   st.musclePain = list;
   if (pid === profiles.active) { save(); render(true); return; }
   st.updatedAt = Date.now(); await LDB.put('kv', stateKey(pid), clone(st));
+}
+/* ---------- PA-48 · BR-37: thông tin cơ thể (số đo, ảnh body, chiều cao, giới tính) đi một chiều HV → máy chủ → HLV ----------
+   Ba loại bản ghi do học viên ghi: do@hv (mỗi lần đo một bản ghi), anh@hv (dòng ảnh; ảnh nằm ở kho /s/anh), ho-so@hv (chiều cao, giới tính).
+   Mỗi bản ghi mang thời điểm sửa (t): bản mới hơn thắng. Máy HV mới nối lấy lại từ máy chủ và gộp với dữ liệu đã nhập; máy HLV chỉ nhận. */
+const CT_MSG = 'Số đo và ảnh body do học viên tự cập nhật. HLV chỉ xem.';
+const bodyLocked = () => histLocked();
+const CT_KIND = new Set(['do@hv', 'anh@hv', 'ho-so@hv']);
+const bodyU = e => e.u || (e.date ? parseYmd(e.date).getTime() : 0);
+const photoU = p => p.u || p.t || 0;
+const ctFields = () => [...BCORE, 'visceral'];
+const ctBodyD = e => JSON.stringify({ date: e.date, u: bodyU(e), ...Object.fromEntries(ctFields().filter(k => e[k] != null).map(k => [k, e[k]])) });
+const ctPhotoD = p => JSON.stringify({ date: p.date, pose: p.pose, h: p.photoId, t: p.t });
+const ctProfD = st => JSON.stringify({ height: st.settings.height || null, sex: st.settings.sex || '' });
+const ctNum = v => v !== null && v !== '' && Number.isFinite(+v) && +v > 0 && +v < 1000 ? +v : null;
+const ctDate = d => /^\d{4}-\d\d-\d\d$/.test(String(d)) ? (d > ymd() ? ymd() : d) : '';
+const ctBox = st => { st.sync = st.sync || { sent: {}, gone: {} }; return st.sync.ct = st.sync.ct || { sent: {}, gone: {} }; };
+/* HV xoá số đo / ảnh: ghi dấu xoá để gửi lên máy chủ (và để bản cũ từ máy chủ không sống lại) */
+function ctGone(key) { if (hubRole() === 'hv') ctBox(state).gone[key] = Date.now(); }
+/* nhận một bản ghi cơ thể vào st. own = máy học viên (gộp theo thời điểm sửa); không own = máy HLV (máy chủ thay hẳn). Trả true nếu st đổi */
+async function ctApply(st, rec, own, hvId) {
+  const sc = (st.sync = st.sync || { sent: {}, gone: {} }), C = ctBox(st), key = rec.k === 'do@hv' ? 'd:' + rec.id : rec.k === 'anh@hv' ? 'a:' + rec.id : 'hs';
+  let J = {}; try { J = JSON.parse(rec.d) || {}; } catch (e) {}
+  st.body = st.body || []; st.bodyPhotos = st.bodyPhotos || [];
+  let ch = false;
+  /* HLV: số đo, ảnh nhập tay cũ trên hồ sơ học viên được thay bằng bản từ máy HV (BR-37.4) */
+  if (!own && !sc.ctOwn) { sc.ctOwn = 1; for (const p of st.bodyPhotos) LDB.del('photos', p.photoId); st.body = []; st.bodyPhotos = []; ch = true; }
+  const resend = () => { delete C.sent[key]; };
+  if (own && !rec.xoa && C.gone[key] && C.gone[key] >= rec.t) return ch;   /* đã xoá ở máy này sau bản đó */
+  if (rec.k === 'do@hv') {
+    const i = st.body.findIndex(x => x.id === rec.id), cur = i >= 0 ? st.body[i] : null;
+    if (rec.xoa) { if (!cur) return ch; if (own && bodyU(cur) > rec.t) { resend(); return ch; } st.body.splice(i, 1); return true; }
+    const e = { id: rec.id, date: ctDate(J.date), u: Number.isFinite(+J.u) && +J.u > 0 ? +J.u : rec.t };
+    for (const k of ctFields()) { const v = ctNum(J[k]); if (v != null) e[k] = v; }
+    if (!e.date || !ctFields().some(k => e[k] != null)) return ch;
+    if (cur && own && bodyU(cur) >= rec.t) { if (bodyU(cur) > rec.t) resend(); return ch; }
+    const clash = st.body.find(x => x.date === e.date && x.id !== e.id);   /* một ngày một lần đo: bản mới hơn thắng */
+    if (clash) {
+      if (own && bodyU(clash) > rec.t) { C.gone[key] = Date.now(); return ch; }
+      st.body = st.body.filter(x => x !== clash); if (own) C.gone['d:' + clash.id] = Date.now();
+    }
+    st.body = st.body.filter(x => x.id !== e.id); st.body.push(e);
+    if (own) C.sent[key] = strHash(ctBodyD(e));
+    return true;
+  }
+  if (rec.k === 'anh@hv') {
+    const i = st.bodyPhotos.findIndex(x => x.id === rec.id), cur = i >= 0 ? st.bodyPhotos[i] : null;
+    if (rec.xoa) { if (!cur) return ch; if (own && photoU(cur) > rec.t) { resend(); return ch; } st.bodyPhotos.splice(i, 1); LDB.del('photos', cur.photoId); photoCache.delete(cur.photoId); return true; }
+    const h = String(J.h || ''), date = ctDate(J.date);
+    if (!/^[A-Za-z0-9_-]{4,64}$/.test(h) || !date || !POSES.includes(J.pose)) return ch;
+    if (cur && photoU(cur) >= rec.t) { if (own && photoU(cur) > rec.t) resend(); return ch; }
+    const p = { id: rec.id, date, t: Number.isFinite(+J.t) && +J.t > 0 ? +J.t : rec.t, pose: J.pose, photoId: h, u: rec.t };
+    st.bodyPhotos = st.bodyPhotos.filter(x => x.id !== rec.id); st.bodyPhotos.push(p);
+    if (own) C.sent[key] = strHash(ctPhotoD(p));
+    if (!(await LDB.get('photos', h))) { const sy = state.settings.sync; sy.ctNeed = sy.ctNeed || {}; sy.ctNeed[h] = hvId; }   /* tải ảnh về ở hubCtImages */
+    return true;
+  }
+  /* ho-so@hv: chiều cao, giới tính */
+  const H = ctNum(J.height), S = J.sex === 'm' || J.sex === 'f' ? J.sex : '';
+  if (own) {
+    const lu = st.settings.bodyU || 0;
+    if (rec.t <= lu) { if (rec.t < lu) resend(); return ch; }
+    if (!lu && (st.settings.height || st.settings.sex)) return ch;   /* dữ liệu cũ chưa có thời điểm: ưu tiên bản trên máy */
+    st.settings.bodyU = rec.t;
+  } else if (rec.t <= (sc.ctHs || 0)) return ch;
+  if (H && H >= 100 && H <= 250) st.settings.height = H;
+  if (S) st.settings.sex = S;
+  sc.ctHs = rec.t; if (own) C.sent.hs = strHash(ctProfD(st));
+  return true;
+}
+/* tóm tắt lần đo gần nhất của học viên để hiện ở danh sách học viên của HLV (BR-37.7) */
+function hubCtSum(pid, st) {
+  const sy = state.settings.sync; sy.ctSum = sy.ctSum || {};
+  const B = [...(st.body || [])].sort((a, b) => a.date.localeCompare(b.date)), L = B[B.length - 1];
+  if (L) sy.ctSum[pid] = { date: L.date, w: L.weight != null ? L.weight : null, f: L.bodyFat != null ? L.bodyFat : null }; else delete sy.ctSum[pid];
+}
+async function hubApplyCt(pid, rec) {
+  const st = pid === profiles.active ? state : await profState(pid); if (!st) return;
+  if (!(await ctApply(st, rec, false, rec.hv))) return;
+  hubCtSum(pid, st);
+  if (pid === profiles.active) { save(); render(true); return; }
+  st.updatedAt = Date.now(); await LDB.put('kv', stateKey(pid), clone(st)); save();
+}
+const hubAuth = () => { const sy = state.settings.sync || {}; return hubRole() === 'hv' ? 'Bearer v.' + sy.i + '.' + sy.dk : 'Bearer h.' + sy.hk; };
+const dataUrlBlob = u => { const [m, b] = String(u).split(','), bin = atob(b || ''), a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new Blob([a], { type: (/data:([^;]+)/.exec(m) || [])[1] || 'image/jpeg' }); };
+const blobDataUrl = b => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); });
+/* tải ảnh body còn thiếu từ kho ảnh máy chủ (HLV: ảnh của học viên; HV máy mới: ảnh của chính mình); lỗi mạng thì lần sau thử tiếp */
+let ctImgBusy = false;
+async function hubCtImages() {
+  const sy = state.settings.sync, need = sy && sy.ctNeed;
+  if (!need || !Object.keys(need).length || ctImgBusy || !navigator.onLine || hubHold()) return;
+  ctImgBusy = true; let got = 0;
+  try {
+    for (const [h, hv] of Object.entries(need).slice(0, 4)) {
+      const r = await fetch(sy.s + '/s/anh/' + encodeURIComponent(h) + '?hv=' + encodeURIComponent(hv), { headers: { Authorization: hubAuth() }, signal: AbortSignal.timeout(20000) });
+      if (r.status === 404) { delete need[h]; continue; }
+      if (r.status !== 200) continue;
+      const data = await blobDataUrl(await r.blob()); await LDB.put('photos', h, data); photoCache.set(h, data); delete need[h]; got++;
+    }
+  } catch (e) { /* mất mạng: lần sau */ } finally { ctImgBusy = false; }
+  if (got) { save(); render(true); }
+}
+/* HV → máy chủ: gửi số đo, ảnh, hồ sơ cơ thể chưa gửi (hoặc đã sửa sau lần gửi trước) và dấu xoá. Lần gửi đầu là gửi bù, không báo HLV. */
+let ctBusy = false;
+async function hubCtPush() {
+  if (hubRole() !== 'hv' || ctBusy || !navigator.onLine || hubHold()) return;
+  const sy = state.settings.sync, C = ctBox(state), recs = [];
+  ctBusy = true;
+  try {
+    const add = (k, id, t, d, key) => { const hs = strHash(d); if (C.sent[key] !== hs) recs.push({ k, id, t, vai: 'hv', d, key, hs }); };
+    for (const e of state.body) add('do@hv', e.id, bodyU(e), ctBodyD(e), 'd:' + e.id);
+    if (state.settings.height || state.settings.sex) add('ho-so@hv', 'ho-so', state.settings.bodyU || 1, ctProfD(state), 'hs');
+    const ph = state.bodyPhotos.filter(p => C.sent['a:' + p.id] !== strHash(ctPhotoD(p))).slice(0, 5);
+    if (ph.length) {
+      const co = await hubCall('/s/anh/co', { hv: sy.i, hs: ph.map(p => p.photoId) });
+      if (hubGate(co)) return;
+      if (co.s === 200) for (const p of ph) {
+        if ((co.j.thieu || []).includes(p.photoId)) {
+          const data = await LDB.get('photos', p.photoId); if (!data) continue;
+          const r = await fetch(sy.s + '/s/anh/' + encodeURIComponent(p.photoId) + '?hv=' + encodeURIComponent(sy.i), { method: 'PUT', headers: { Authorization: hubAuth() }, body: dataUrlBlob(data), signal: AbortSignal.timeout(30000) });
+          if (r.status !== 200) { if (r.status === 507) sy.lastErr = Date.now(); continue; }
+        }
+        add('anh@hv', p.id, photoU(p), ctPhotoD(p), 'a:' + p.id);
+      }
+    }
+    for (const [key, t] of Object.entries(C.gone)) if (C.sent[key] !== 'x' + t) recs.push({ k: key[0] === 'd' ? 'do@hv' : 'anh@hv', id: key.slice(2), t, vai: 'hv', xoa: 1, d: '{}', key, hs: 'x' + t });
+    const backfill = !C.init, fresh = recs.filter(r => !r.xoa && r.k !== 'ho-so@hv');
+    for (let i = 0; i < recs.length; i += 20) {
+      const part = recs.slice(i, i + 20), last = part.filter(r => !r.xoa && r.k !== 'ho-so@hv').pop();
+      let ev = null;
+      if (!backfill && last) { let J = {}; try { J = JSON.parse(last.d); } catch (e) {} ev = { title: `${sy.ten || 'Học viên'} vừa cập nhật số đo`, body: last.k === 'anh@hv' ? 'Có ảnh body mới' : [J.weight != null ? `${fmt(J.weight)} kg` : '', J.bodyFat != null ? `mỡ ${fmt(J.bodyFat)}%` : ''].filter(Boolean).join(' · ') || 'Có số đo mới', tag: 'co-the' }; }
+      const r = await hubCall('/s/ghi', { hv: sy.i, recs: part.map(({ key, hs, ...x }) => x), ev, backfill });
+      if (hubGate(r)) return;
+      if (r.s !== 200) { sy.lastErr = Date.now(); return; }
+      for (const x of part) C.sent[x.key] = x.hs;
+      for (const tc of r.j.tuChoi || []) if (tc.cu) await ctApply(state, { k: tc.k, id: tc.id, t: tc.cu.t, d: tc.cu.d, xoa: tc.cu.xoa }, true, sy.i);   /* máy chủ có bản mới hơn: gộp về */
+    }
+    if (!C.init || recs.length) { C.init = true; save(); if (recs.length) render(true); }
+  } catch (e) { sy.lastErr = Date.now(); /* mất mạng: lần sau */ } finally { ctBusy = false; }
 }
 function hubPlanSoon() { clearTimeout(hubPlanT); hubPlanT = setTimeout(hubPushPlans, 1500); }
 /* quiet: gửi giáo án lần đầu khi chuyển học viên, không báo */
@@ -5279,43 +5426,45 @@ const handlers = {
   'rest-mode': t => { state.settings.restMode = t.dataset.k; save(); render(true); toast('Nhịp nghỉ: ' + restMode().label); },
   'body-add': () => bodySheet(null),
   'b-all': () => { ui.bAll = true; render(true); },
-  'sex': t => { state.settings.sex = t.dataset.k; save(); render(true); },
+  'sex': t => { if (bodyLocked()) { toast(CT_MSG); return; } state.settings.sex = t.dataset.k; state.settings.bodyU = Date.now(); save(); render(true); },
   'bm': t => { ui.bm = t.dataset.k; $$('[data-act="bm"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === ui.bm)); drawBodyChart(); },
-  'bp-add': t => { ui.bpPreset = { m: t.dataset.m, k: t.dataset.k }; ui.pose = t.dataset.k; const inp = $('#bp-in'); if (inp) inp.click(); },
+  'bp-add': t => { if (bodyLocked()) { toast(CT_MSG); return; } ui.bpPreset = { m: t.dataset.m, k: t.dataset.k }; ui.pose = t.dataset.k; const inp = $('#bp-in'); if (inp) inp.click(); },
   'bp-ab': t => { const bp = state.bodyPhotos.find(x => x.id === t.dataset.id); if (!bp) return; ui.pose = bp.pose; ui['cmp' + t.dataset.k] = bp.id; handlers['viewer-close'](); render(true); toast(t.dataset.k === 'A' ? 'Đã đặt làm ảnh Trước' : 'Đã đặt làm ảnh Sau'); const c = $('#cmp'); if (c) c.scrollIntoView({ block: 'center', behavior: 'smooth' }); },
-  'bp-edit': t => { const id = t.dataset.id; handlers['viewer-close'](); bpEditSheet(id); },
+  'bp-edit': t => { if (bodyLocked()) { toast(CT_MSG); return; } const id = t.dataset.id; handlers['viewer-close'](); bpEditSheet(id); },
   'bpe-pose': t => { ui.bpEdit.pose = t.dataset.k; $$('[data-act="bpe-pose"]').forEach(b => b.setAttribute('aria-pressed', b.dataset.k === t.dataset.k)); },
-  'bpe-save': () => { const E = ui.bpEdit, bp = E && state.bodyPhotos.find(x => x.id === E.id); if (!bp) return; const d = $('#bpe-d').value; if (d) bp.date = d > ymd() ? ymd() : d; bp.pose = E.pose; ui.pose = E.pose; save(); closeSheet(); render(true); toast('Đã cập nhật ảnh'); },
+  'bpe-save': () => { if (bodyLocked()) { toast(CT_MSG); return; } const E = ui.bpEdit, bp = E && state.bodyPhotos.find(x => x.id === E.id); if (!bp) return; const d = $('#bpe-d').value; if (d) bp.date = d > ymd() ? ymd() : d; bp.pose = E.pose; bp.u = Date.now(); ui.pose = E.pose; save(); closeSheet(); render(true); toast('Đã cập nhật ảnh'); },
   'bpn-pose': t => { const x = ui.bpNew && ui.bpNew[+t.dataset.i]; if (!x) return; x.pose = t.dataset.k; $$(`[data-act="bpn-pose"][data-i="${t.dataset.i}"]`).forEach(b => b.setAttribute('aria-pressed', b.dataset.k === x.pose)); },
   'bpn-cancel': () => { (ui.bpNew || []).forEach(x => URL.revokeObjectURL(x.url)); ui.bpNew = null; closeSheet(); },
-  'bpn-save': async t => { const N = ui.bpNew || []; if (!N.length) return; t.disabled = true; let ok = 0;
+  'bpn-save': async t => { if (bodyLocked()) { toast(CT_MSG); return; } const N = ui.bpNew || []; if (!N.length) return; t.disabled = true; let ok = 0;
     for (let i = 0; i < N.length; i++) { const x = N[i]; t.textContent = `Đang lưu ${i + 1}/${N.length}…`; const d = ($('#bpn-d-' + i) || {}).value || x.date;
-      try { const photoId = await storePhoto(x.file); state.bodyPhotos.push({ id: uid(), date: d > ymd() ? ymd() : d, t: Date.now() + i, pose: x.pose, photoId }); ok++; } catch (e) {}
+      try { const photoId = await storePhoto(x.file); state.bodyPhotos.push({ id: uid(), date: d > ymd() ? ymd() : d, t: Date.now() + i, u: Date.now() + i, pose: x.pose, photoId }); ok++; } catch (e) {}
       URL.revokeObjectURL(x.url); }
     ui.bpNew = null; ui.cmpA = ui.cmpB = null; if (N[0]) ui.pose = N[N.length - 1].pose; save(); closeSheet(); render(true); toast(ok === N.length ? `Đã lưu ${ok} ảnh` : `Đã lưu ${ok}/${N.length} ảnh, có ảnh không đọc được`); },
   'pose': t => { ui.pose = t.dataset.k; ui.cmpA = ui.cmpB = null; render(true); },
   'bp-view': t => showBodyViewer(t.dataset.id),
   'bp-del': t => {
+    if (bodyLocked()) { toast(CT_MSG); return; }
     if (!t.dataset.armed) { t.dataset.armed = '1'; t.textContent = 'Bấm lần nữa để xoá'; return; }
     const bp = state.bodyPhotos.find(x => x.id === t.dataset.id); if (!bp) return;
-    state.bodyPhotos = state.bodyPhotos.filter(x => x !== bp); LDB.del('photos', bp.photoId); photoCache.delete(bp.photoId);
+    ctGone('a:' + bp.id); state.bodyPhotos = state.bodyPhotos.filter(x => x !== bp); LDB.del('photos', bp.photoId); photoCache.delete(bp.photoId);
     save(); handlers['viewer-close'](); render(true); toast('Đã xoá ảnh');
   },
-  'body-edit': t => bodySheet(state.body.find(e => e.id === t.dataset.id)),
+  'body-edit': t => bodyLocked() ? toast(CT_MSG) : bodySheet(state.body.find(e => e.id === t.dataset.id)),
   'body-save': t => {
+    if (bodyLocked()) { toast(CT_MSG); return; } 
     const date = $('#b-date').value || ymd(); const vals = {}, keys = [...BCORE, 'visceral'];
     for (const k of keys) { const v = num($('#b-' + k).value); if (v != null) vals[k] = v; }
     if (!Object.keys(vals).length) { toast('Nhập ít nhất một chỉ số'); return; }
     let e = t.dataset.id ? state.body.find(x => x.id === t.dataset.id) : null;
     const clash = state.body.find(x => x.date === date && x !== e);
-    if (clash) { state.body = state.body.filter(x => x !== clash); if (!e) e = { id: clash.id }; }
+    if (clash) { state.body = state.body.filter(x => x !== clash); if (!e) e = { id: clash.id }; else ctGone('d:' + clash.id); }
     if (!e) e = { id: uid() };
     const keep = { ...(state.body.find(x => x.id === e.id) || {}) }; for (const k of keys) delete keep[k];
     state.body = state.body.filter(x => x.id !== e.id);
-    state.body.push({ ...keep, id: e.id, date, ...vals });
+    state.body.push({ ...keep, id: e.id, date, u: Date.now(), ...vals });
     save(); closeSheet(); render(true); toast('Đã lưu số đo');
   },
-  'body-del': t => { if (!t.dataset.armed) { t.dataset.armed = '1'; t.textContent = 'Bấm lần nữa để xoá'; setTimeout(() => { if (t.isConnected) { delete t.dataset.armed; t.textContent = 'Xoá lần đo này'; } }, 3000); return; } state.body = state.body.filter(e => e.id !== t.dataset.id); save(); closeSheet(); render(true); },
+  'body-del': t => { if (bodyLocked()) { toast(CT_MSG); return; } if (!t.dataset.armed) { t.dataset.armed = '1'; t.textContent = 'Bấm lần nữa để xoá'; setTimeout(() => { if (t.isConnected) { delete t.dataset.armed; t.textContent = 'Xoá lần đo này'; } }, 3000); return; } ctGone('d:' + t.dataset.id); state.body = state.body.filter(e => e.id !== t.dataset.id); save(); closeSheet(); render(true); },
   'copy': t => copyText(t.dataset.t),
           'install': async () => { if (!deferredInstall) return; deferredInstall.prompt(); try { await deferredInstall.userChoice; } catch (e) {} deferredInstall = null; render(true); },
   'wipe': () => confirmSheet({ title: 'Xoá toàn bộ dữ liệu?', text: 'Giáo án, lịch sử tập, ảnh và số đo trên máy này sẽ bị xoá vĩnh viễn. Nên tải file sao lưu trước.', ok: 'Xoá toàn bộ', danger: true,
@@ -5361,7 +5510,7 @@ document.addEventListener('input', e => {
   if (!b) return;
   if (b === 'set' && state.active) { const set = getSet(+t.dataset.e, t.dataset.s); if (set) { set[t.dataset.f] = num(t.value); if (t.dataset.f === 'kg' || t.dataset.f === 'reps') set.man = 1; if (t.dataset.f === 'kg') { refreshWarm(+t.dataset.e); const en2 = state.active.entries[+t.dataset.e]; if (isDrop(set)) set.m = 1; else if (syncDrops(en2)) en2.sets.forEach((d, k) => { if (d.dr) { const ip = $(`input[data-bind="set"][data-e="${t.dataset.e}"][data-s="${k}"][data-f="kg"]`); if (ip) ip.value = fmtIn(d.kg); } }); } save(); } }
   else if (b === 'note' && state.active) { state.active.entries[+t.dataset.e].note = t.value; save(); }
-  else if (b === 'setting') { const k = t.dataset.k; state.settings[k] = ['name', 'pushServer'].includes(k) ? t.value : num(t.value);
+  else if (b === 'setting') { const k = t.dataset.k; if (k === 'height') { if (bodyLocked()) return; state.settings.bodyU = Date.now(); } state.settings[k] = ['name', 'pushServer'].includes(k) ? t.value : num(t.value);
     if (k === 'name') { curProf().name = t.value.trim() || 'Người tập'; clearTimeout(profT); profT = setTimeout(() => { saveProfiles(); if (profiles.active === HLV_SELF) hubSelfNameSync(); }, 600); }
     if (k === 'pushServer') pushRegSoon();
     save(); renderHeader(); }
@@ -5392,7 +5541,8 @@ document.addEventListener('change', async e => {
     state.settings.notify = true; save(); render(true); toast('Đã bật báo hết giờ nghỉ'); return;
   }
   if (t.id === 'g-vin' && t.files && t.files[0]) { const ex = findEx(ui.guideEx), f = t.files[0]; t.value = ''; if (ex) await vidSave(ex, f); }
-  if (t.id === 'bp-in' && t.files && t.files[0]) { const F = [...t.files]; t.value = ''; await bpAddSheet(F); }
+  if (t.id === 'bp-in' && t.files && t.files[0] && bodyLocked()) { t.value = ''; toast(CT_MSG); }
+  else if (t.id === 'bp-in' && t.files && t.files[0]) { const F = [...t.files]; t.value = ''; await bpAddSheet(F); }
   if (t.id === 'bpn-all' && t.value) { $$('[id^="bpn-d-"]').forEach(x => { x.value = t.value; }); }
   if (t.dataset && t.dataset.cap) {
     const ex = findEx(t.dataset.cap); const f = t.files && t.files[0]; if (!ex || !f) return;
