@@ -137,9 +137,10 @@ test('Phòng HLV: bảng xếp hạng khi có từ 4 học viên, nhắc học v
   await expect(app.view().locator('.tcard').first()).toContainText('Tuần này: cân bằng');
   await app.view().locator('.tcard').nth(1).locator('[data-act="switch-profile"]').click();
   await expect(app.toast()).toHaveText('Đang xem: B');
-  /* BR-33.3: hồ sơ học viên trên máy HLV chỉ xem, không có nút bắt đầu buổi và nút thêm buổi */
-  await expect(app.view().locator('.hero [data-act="start-day"]').first()).toBeAttached();
-  await expect(app.view().locator('.hero [data-act="start-day"]').first()).toBeHidden();
+  /* BR-35.1: bấm Tập ở hồ sơ học viên thì chuyển về hồ sơ HLV, không ghi buổi vào hồ sơ học viên */
   await expect(page.locator('#nav-bar .fab')).toBeVisible();
+  await app.view().locator('.hero [data-act="start-day"]').first().click();
+  await expect.poll(async () => (await app.profiles()).active).not.toBe('p2');
+  expect((await app.idb('kv', 'state:p2')).active ?? null).toBeNull();
 });
 
