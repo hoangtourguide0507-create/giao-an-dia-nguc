@@ -207,6 +207,8 @@ ok(!(await doi('since=0', H)).j.recs.some(r => r.hv === 'lan-7k3f'), 'Xoá học
   const bt = await api('/s/admin/buoi?tu=2026-10-19&den=2026-10-25', null, 'Bearer a.' + AK, 'GET'), bo = bt.j.hv && bt.j.hv.find(x => x.hv === 'bo-9q8w');
   ok(bt.s === 200 && bo && bo.soBuoi === 2 && bo.tongNhom['Ngực'] === 6, 'Admin buoi: chỉ buổi trong tuần; set mỗi nhóm cơ gồm cả drop (4 + 2)');
   ok(bo && bo.trungNgayTen.length === 1 && bo.trungNgayTen[0].n === 2, 'Admin buoi: báo hai buổi trùng ngày + tên buổi');
+  const ct = (await api('/s/admin/buoi?tu=2026-10-19&den=2026-10-25&ct=1', null, 'Bearer a.' + AK, 'GET')).j.hv.find(x => x.hv === 'bo-9q8w');
+  ok(ct && ct.buoi[0].entries[0].sets[0].kg === 1 && bo.buoi[0].entries === undefined, 'Admin buoi: ct=1 kèm từng set (kg, rep); mặc định không kèm');
   ok((await api('/s/admin/buoi?tu=x&den=y', null, 'Bearer a.' + AK, 'GET')).s === 400 && (await api('/s/admin/buoi?tu=2026-10-19&den=2026-10-25', null, H, 'GET')).s === 401, 'Admin buoi: ngày sai → 400; khoá HLV → 401');
   ok((await api('/s/admin/giao-an', {}, 'Bearer a.' + AK)).s === 404, 'Admin: POST chưa có (D1 chỉ đọc) → 404');
   delete env.ADMIN_HASH;

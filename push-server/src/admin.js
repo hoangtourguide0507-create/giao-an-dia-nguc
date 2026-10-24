@@ -2,7 +2,7 @@
  * PA-46 · quản trị dữ liệu giáo án trên máy chủ (/s/admin/*). Chỉ chủ repo dùng, bằng curl.
  * Xác thực:  Authorization: Bearer a.<ADMIN_KEY>   (băm SHA-256 phải khớp secret env.ADMIN_HASH)
  * Chưa đặt ADMIN_HASH thì mọi đường /s/admin/* đều bị từ chối (tắt mặc định).
- * D1 chỉ đọc (cả hai đường): GET /s/admin/buoi?tu=&den= — set mỗi nhóm cơ và buổi trùng ngày+tên trong khoảng ngày.
+ * D1 chỉ đọc (cả hai đường): GET /s/admin/buoi?tu=&den=[&ct=1] (ct=1 kèm từng bài, từng set: kg, rep, cảm giác) — set mỗi nhóm cơ và buổi trùng ngày+tên trong khoảng ngày.
  * D1 chỉ đọc: GET /s/admin/giao-an[?d=1]  — báo cáo bài trùng của mọi bản ghi plan@*; d=1 kèm nội dung gốc (để sao lưu).
  */
 import { sha } from './sync.js';
@@ -31,7 +31,7 @@ function giaoAn(sql, withD) {
 }
 
 /* Buổi tập đã ghi trong khoảng ngày [tu, den] (YYYY-MM-DD), theo học viên: set mỗi nhóm cơ như app đếm (set + drop) và các buổi trùng ngày + tên buổi. Chỉ đọc. */
-function buoiTuan(sql, tu, den) {
+function buoiTuan(sql, tu, den, ct) {
   const NGAY = /^\d{4}-\d\d-\d\d$/;
   if (!NGAY.test(tu) || !NGAY.test(den)) return { ok: false, loi: 'Cần tu và den dạng YYYY-MM-DD' };
   const hv = {};
@@ -40,7 +40,7 @@ function buoiTuan(sql, tu, den) {
     if (!x || !NGAY.test(x.date || '') || x.date < tu || x.date > den) continue;
     const nhom = {}, es = Array.isArray(x.entries) ? x.entries : [];
     for (const en of es) nhom[en.muscle || '?'] = (nhom[en.muscle || '?'] || 0) + (Array.isArray(en.sets) ? en.sets.length : 0) + (en.drop ? 1 : 0);
-    (hv[r.hv] = hv[r.hv] || []).push({ id: r.id, date: x.date, dayName: x.dayName || '', xong: !!x.finishedAt, bai: es.length, nhom });
+    (hv[r.hv] = hv[r.hv] || []).push({ id: r.id, date: x.date, dayName: x.dayName || '', xong: !!x.finishedAt, bai: es.length, nhom, ...(ct ? { dayId: x.dayId, entries: es.map(en => ({ name: en.name, muscle: en.muscle, each: !!en.each, sets: (en.sets || []).map(z => ({ kg: z.kg, reps: z.reps, ...(z.dr ? { dr: z.dr } : {}), ...(z.ef ? { ef: z.ef } : {}), ...(z.done === false ? { done: false } : {}) })), drop: en.drop || null })) } : {}) });
   }
   const out = Object.entries(hv).map(([id, buoi]) => {
     const tong = {}, dem = {};
@@ -53,6 +53,6 @@ function buoiTuan(sql, tu, den) {
 export async function handleAdmin(ctx, req, p, u) {
   if (!(await laAdmin(ctx.env, req.headers.get('Authorization')))) return json({ ok: false, loi: 'Không có quyền' }, 401);
   if (req.method === 'GET' && p === '/s/admin/giao-an') return json(giaoAn(ctx.sql, u.searchParams.get('d') === '1'));
-  if (req.method === 'GET' && p === '/s/admin/buoi') { const r = buoiTuan(ctx.sql, u.searchParams.get('tu') || '', u.searchParams.get('den') || ''); return json(r, r.ok ? 200 : 400); }
+  if (req.method === 'GET' && p === '/s/admin/buoi') { const r = buoiTuan(ctx.sql, u.searchParams.get('tu') || '', u.searchParams.get('den') || '', u.searchParams.get('ct') === '1'); return json(r, r.ok ? 200 : 400); }
   return json({ ok: false, loi: 'Không có đường dẫn này' }, 404);
 }
