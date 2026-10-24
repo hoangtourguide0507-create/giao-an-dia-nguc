@@ -374,3 +374,9 @@ Bản đồ BR: BR-27.1–27.12 trong [BR.md](BR.md).
 ## Học viên đã tập (PA-45 · B)
 - `ui.planView` ('plan' | 'done') chỉ có khi HLV đang xem học viên. `viewPlan` trả về `viewDoneWeeks()` khi chế độ là done; `viewDoneWeeks` dùng `weekDaysOf(-k)` (k = 0..7) và đếm `dayId` khác nhau có trong `state.days`.
 - `sessionSheet`: kế hoạch lấy từ `findEx(en.exId)` (sets × repTarget); làm = số set không phải `dr`. Không đổi dữ liệu hay máy chủ. `CACHE` gadn-v82.
+
+## Chất lượng buổi tập (PA-45 · C)
+- `sessQuality(x)` đặt cạnh `sessStats`: thuần, không đổi dữ liệu. Trả `null` nếu không có set kế hoạch; không thì `{ plan, done, repOk, comp, rep, eff, label }`. Chỉ tính các entry còn bài trong giáo án (`findEx`); set `dr` (drop) không tính.
+- Nhãn: `comp < 0.8 || (rep !== null && rep < 0.7)` → "Cần xem lại"; `comp ≥ 0.95 && (rep === null || rep ≥ 0.9)` → "Tốt"; còn lại "Ổn".
+- `coachData` thêm `lastQ = sessQuality(last)`; `coachSheet` thêm nhãn `lastQ` vào dòng "Lần cuối" khi có.
+- `sessionSheet` thêm dòng chất lượng khi `isHlv()`. Không đổi máy chủ, không đổi sync. `CACHE` gadn-v83.

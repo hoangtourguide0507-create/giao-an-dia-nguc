@@ -3193,6 +3193,22 @@ function sessStats(x) {
   for (const en of x.entries) { sets += en.sets.length + (en.drop ? 1 : 0); vol += mul(en) * (en.sets.reduce((a, y) => a + (y.kg || 0) * y.reps, 0) + (en.drop ? (en.drop.kg || 0) * (en.drop.reps || 0) : 0)); }
   return { sets, vol };
 }
+function sessQuality(x) {
+  let plan = 0, done = 0, repOk = 0; const eff = { e: 0, m: 0, h: 0, f: 0 };
+  for (const en of x.entries) {
+    const pe = findEx(en.exId); if (!pe) continue;
+    plan += pe.sets;
+    for (const z of en.sets) {
+      if (z.dr) continue;
+      done++; if (z.reps >= pe.repTarget) repOk++;
+      if (z.ef && eff[z.ef] !== undefined) eff[z.ef]++;
+    }
+  }
+  if (!plan) return null;
+  const comp = Math.min(1, done / plan), rep = done ? repOk / done : null;
+  const label = comp < 0.8 || (rep !== null && rep < 0.7) ? 'Cần xem lại' : comp >= 0.95 && (rep === null || rep >= 0.9) ? 'Tốt' : 'Ổn';
+  return { plan, done, repOk, comp, rep, eff, label };
+}
 function prevSame(x) {
   let best = null;
   for (const o of state.sessions) if (o.id !== x.id && o.startedAt < x.startedAt && (x.dayId !== 'custom' ? o.dayId === x.dayId : o.dayName === x.dayName) && (!best || o.startedAt > best.startedAt)) best = o;
@@ -3360,9 +3376,10 @@ function progressSheet() {
 }
 function sessionSheet(id) {
   const s = state.sessions.find(x => x.id === id); if (!s) return;
-  const st = sessStats(s), pv = prevSame(s), pst = pv && sessStats(pv);
+  const st = sessStats(s), pv = prevSame(s), pst = pv && sessStats(pv), q = sessQuality(s);
   let h = `<h3 class="sh-title">${esc(s.dayName)}</h3><p class="sh-text">${DOW[parseYmd(s.date).getDay()]} ${dm(s.date)}${s.deload ? ' · deload' : ''}</p>
     <div class="kpis"><div class="kpi"><div class="k">${s.finishedAt ? fmtDur(durOf(s)) : '–'}</div><div class="l">thời gian</div></div><div class="kpi"><div class="k">${st.sets}</div><div class="l">set</div></div><div class="kpi"><div class="k">${fmt(st.vol / 1000, 2)}</div><div class="l">tấn tạ</div></div></div>
+    ${q && isHlv() ? `<div class="cmpline"><b>Chất lượng: ${q.label}</b> · Hoàn thành ${q.done}/${q.plan} set (${Math.round(q.comp * 100)}%)${q.done ? ` · Đủ rep ${q.repOk}/${q.done} set` : ''}${Object.values(q.eff).some(Boolean) ? ' · Cảm giác: ' + Object.entries(q.eff).filter(([, n]) => n).map(([k, n]) => `${EFF[k].t} ${n}`).join(' · ') : ''}</div>` : ''}
     <div class="cmpline">${pv ? `So với lần trước (${dm(pv.date)}): <b>${tons(pst.vol)}</b> → <b>${tons(st.vol)}</b> ${deltaHtml(st.vol, pst.vol)}` : 'Đây là lần đầu tập buổi này.'}</div><div class="tbl-wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>Bài</th><th>Các set</th></tr></thead><tbody>`;
   for (const en of s.entries) { const pe = findEx(en.exId), nDone = en.sets.filter(z => !z.dr).length; h += `<tr><td>${esc(shortName(en.name))}${en.note ? `<div class="small muted">${esc(en.note)}</div>` : ''}<div class="small muted">${pe ? `Kế hoạch ${pe.sets}×${pe.repTarget} · làm ${nDone}/${pe.sets} set` : 'Kế hoạch —'}</div></td><td class="tn">${setsStr(en.sets)}${en.drop ? ` · D ${fmt(en.drop.kg)}×${en.drop.reps}` : ''}</td></tr>`; }
   h += `</tbody></table></div><div class="sh-actions">${canReopen(s) ? `<button class="btn" data-act="reopen-session" data-id="${s.id}">${ICON.play} Mở lại để tập tiếp</button>` : ''}${isHlv() ? '' : `<button class="btn" data-act="share-open" data-d="${s.date}" data-id="${s.id}">${ICON.share} Chia sẻ với PT</button>`}<button class="btn ghost" data-act="close-sheet">Đóng</button><button class="btn ghost danger" data-act="del-session" data-id="${s.id}">Xoá buổi này</button></div>`;
@@ -3741,7 +3758,7 @@ function coachData(st) {
     const sg = allEx().map(x => ({ ...x, sg: suggest(x.ex) }));
     const last = S.reduce((a, b) => !a || b.startedAt > a.startedAt ? b : a, null);
     const B = [...(state.body || [])].filter(e => e.weight != null).sort((a, b) => a.date.localeCompare(b.date));
-    return { n7: w7.length, sets7, vol7, nMonth: mo.length, total: S.length, last, lastSt: last ? sessStats(last) : null, gap: last ? daysBetween(last.date, today) : null, active: !!state.active,
+    return { n7: w7.length, sets7, vol7, nMonth: mo.length, total: S.length, last, lastSt: last ? sessStats(last) : null, lastQ: last ? sessQuality(last) : null,gap: last ? daysBetween(last.date, today) : null, active: !!state.active,
       ups: sg.filter(x => x.sg.kind === 'up'), almost: sg.filter(x => x.sg.kind === 'almost'), downs: sg.filter(x => x.sg.kind === 'down'),
       pains: activePains(), nDays: state.days.length, w: B.length ? B[B.length - 1] : null };
   });
@@ -3764,7 +3781,7 @@ async function coachSheet() {
     if (c.almost.length) L.push(['', '◔', `Sắp tăng: ${nm(c.almost)}`]);
     if (c.downs.length) L.push(['down', '▼', `Đang chững, cần giảm tạ: <b>${nm(c.downs)}</b>`]);
     if (!L.length) L.push(['ok', '✓', 'Tập đều, chưa có gì cần xử lý.']);
-    if (c.last) L.push(['', '·', `Lần cuối: <b>${esc(c.last.dayName)}</b> · ${ago(c.last.date)} · ${c.lastSt.sets} set · ${tons(c.lastSt.vol)}`]);
+    if (c.last) L.push(['', '·', `Lần cuối: <b>${esc(c.last.dayName)}</b> · ${ago(c.last.date)} · ${c.lastSt.sets} set · ${tons(c.lastSt.vol)}${c.lastQ ? ` · <b>${c.lastQ.label}</b>` : ''}`]);
     L.push(['', '·', `Tháng này <b>${c.nMonth} buổi</b> · tổng ${c.total} buổi${c.w ? ` · cân nặng <b>${fmt(c.w.weight)} kg</b> (${dm(c.w.date)})` : ''}`]);
     h += L.map(([k, i, t]) => `<span class="cl ${k}"><i>${i}</i><span>${t}</span></span>`).join('') + `</button>`;
   }
@@ -5347,7 +5364,7 @@ async function purgeStored() {
   if (h.startsWith('#nhap=')) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} toast(OLD_CODE); }
   if ('serviceWorker' in navigator && location.protocol === 'https:' && document.documentElement.dataset.pwa === '1') { navigator.serviceWorker.register('sw.js').catch(() => {}); }
 })();
-window.__sota = { suggest, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
+window.__sota = { suggest, sessQuality, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
 })();
 </script>
 </body>

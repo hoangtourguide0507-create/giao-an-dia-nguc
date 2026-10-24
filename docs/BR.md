@@ -330,3 +330,11 @@ Ngoài phạm vi PA-40: đổi công thức hồi phục, đổi cảnh báo đa
 ## Học viên đã tập (PA-45 · B)
 - **BR-31.1 Chế độ Đã tập**: trên Lịch tập của HLV đang xem học viên có chế độ **Giáo án / Đã tập**. Đã tập liệt kê 8 tuần gần nhất, mỗi tuần có số buổi và số ngày giáo án đã tập (ví dụ "2/2 ngày"); chạm một buổi để mở chi tiết. Máy học viên không có chế độ này. *Test:* `theodoi-hlv.spec.mjs` (BR-31.1).
 - **BR-31.2 Kế hoạch cạnh thực tế**: chi tiết buổi tập hiện cho từng bài "Kế hoạch 3×10 · làm 2/3 set"; bài không còn trong giáo án hiện "Kế hoạch —". *Test:* `theodoi-hlv.spec.mjs` (BR-31.2).
+
+## Chất lượng buổi tập (PA-45 · C)
+- **BR-32.1 Hoàn thành**: chi tiết buổi tập hiện số set đã làm trên tổng set kế hoạch của các bài còn trong giáo án ("Hoàn thành 7/9 set (78%)"). Bài đã bỏ khỏi giáo án không tính vào kế hoạch. *Test:* `chatluong-buoi.spec.mjs` (BR-32.1).
+- **BR-32.2 Đủ rep**: trong các set đã làm, set có số rep ≥ số rep mục tiêu của bài hiện "Đủ rep 4/6 set". *Test:* `chatluong-buoi.spec.mjs` (BR-32.2).
+- **BR-32.3 Cảm giác**: đếm set theo Dễ / Vừa / Sát / Hỏng (chỉ set đã chấm). *Test:* `chatluong-buoi.spec.mjs` (BR-32.3).
+- **BR-32.4 Nhãn chất lượng**: Cần xem lại nếu hoàn thành < 80% hoặc đủ rep < 70%; Tốt nếu hoàn thành ≥ 95% và đủ rep ≥ 90%; còn lại Ổn. Buổi không có set kế hoạch thì không có nhãn. Ngưỡng là mặc định, chờ đối chiếu chuyên môn trước khi duyệt. *Test:* `chatluong-buoi.spec.mjs` (BR-32.4).
+- **BR-32.5 Hiển thị cho HLV**: chi tiết buổi có dòng "Chất lượng: nhãn · hoàn thành … · đủ rep … · cảm giác …"; Bảng HLV: dòng "Lần cuối" của mỗi học viên có thêm nhãn của buổi đó. Máy học viên không thấy nhãn. *Test:* `chatluong-buoi.spec.mjs` (BR-32.5).
+- **Chưa làm (BR-32.6)**: ghi chú HLV cho từng buổi và so thời lượng với thời gian dự kiến.
