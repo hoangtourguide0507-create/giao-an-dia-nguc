@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PA-50 · Cân vùng cơ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap">
+<style>
+/* Bản demo PA-50 — dùng token giao diện Hổ Phách của app (index.html, PA-22). Không lưu dữ liệu. */
+:root{
+  --bg:#161518; --surface:#211f23; --surface-2:#2a282d; --surface-3:#353238; --line:rgba(255,255,255,.075); --line-2:rgba(255,255,255,.13);
+  --fg:#f4efe8; --fg-2:#bdb6ad; --muted:#8b847c;
+  --gold:#ec6a2c; --gold-hi:#ff8b4d; --acc-rgb:236 106 44;
+  --up:#46d184; --up-rgb:70 209 132; --down:#ff5d50; --down-rgb:255 93 80; --almost:#f4b13d; --warn-rgb:244 177 61; --hold:#9db8ff;
+  --font:'Be Vietnam Pro',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --r-lg:18px; --r:16px; --r-sm:13px; --pill:999px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.45}
+button{font:inherit;color:inherit;cursor:pointer}
+.wrap{max-width:520px;margin:0 auto;padding:max(14px,env(safe-area-inset-top)) 16px 120px}
+.top{display:flex;align-items:center;gap:10px;margin:4px 0 14px}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#f7a33a,#ef5a3c 55%,#e8457e);display:grid;place-items:center;font-weight:800;font-size:13px;color:#fff;flex:none}
+.top b{font-size:17px}.top small{display:block;color:var(--muted);font-size:12.5px}
+.demo-note{font-size:13px;color:var(--fg-2);background:rgb(var(--acc-rgb)/.1);border:1px solid rgb(var(--acc-rgb)/.3);border-radius:var(--r);padding:10px 12px;margin-bottom:12px}
+.demo-note b{color:var(--gold-hi)}
+h2{font-size:24px;margin:18px 0 10px;letter-spacing:-.01em}
+details.try{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:0 14px;margin-bottom:12px}
+details.try>summary{list-style:none;padding:12px 0;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+details.try>summary::-webkit-details-marker{display:none}
+details.try>summary span{color:var(--muted);font-weight:500;font-size:13px}
+.tryg{display:grid;gap:12px;padding-bottom:14px}
+.tryg .lab{font-size:13px;color:var(--fg-2);margin-bottom:6px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button,.chip{border:1px solid var(--line-2);background:var(--surface-2);border-radius:var(--pill);padding:7px 12px;font-size:13px;font-weight:500}
+.seg button[aria-pressed="true"],.chip[aria-pressed="true"]{background:#efe1c8;color:#1d1610;border-color:#efe1c8}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:8px 14px;border-radius:14px;border:1px solid var(--line-2);background:var(--surface-2);font-weight:600;font-size:14px}
+.btn.gold{background:var(--gold);border-color:var(--gold);color:#fff}
+.btn.ghost{background:transparent}
+.btn.sm{min-height:34px;padding:6px 12px;font-size:13px;border-radius:11px}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.day{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);margin-bottom:12px;overflow:hidden}
+.day-h{width:100%;display:flex;align-items:center;gap:12px;padding:14px;background:none;border:0;text-align:left}
+.day-h .num{font-weight:800;color:var(--gold);font-size:13px;width:22px}
+.day-h .t{flex:1;min-width:0}.day-h .t b{display:block;font-size:16px}
+.day-h .meta{font-size:12.5px;color:var(--muted)}
+.wbadge{font-size:12px;font-weight:600;padding:3px 9px;border-radius:var(--pill);background:rgb(var(--warn-rgb)/.15);color:var(--almost);white-space:nowrap}
+.okbadge{font-size:12px;font-weight:600;padding:3px 9px;border-radius:var(--pill);background:rgb(var(--up-rgb)/.14);color:var(--up);white-space:nowrap}
+.chev{transition:transform .2s;color:var(--muted)}.day.open .chev{transform:rotate(90deg)}
+.day-b{padding:0 14px 14px}
+/* thanh cân vùng cơ */
+.bal{background:var(--surface-2);border-radius:var(--r);padding:12px;margin-bottom:12px}
+.bal-h{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--fg-2);margin-bottom:8px}
+.bal-h b{color:var(--fg);font-size:14px}
+.grp{margin-top:10px}.grp:first-of-type{margin-top:0}
+.grp-h{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px}
+.grp-h b{font-weight:700}.grp-h span{color:var(--muted)}.grp-h span.over{color:var(--down);font-weight:600}
+.zr{display:grid;grid-template-columns:78px 1fr 52px;gap:8px;align-items:center;font-size:12.5px;margin:3px 0}
+.zr .zl{color:var(--fg-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zr .zn{text-align:right;font-variant-numeric:tabular-nums;color:var(--fg-2)}
+.zr.zero .zl,.zr.zero .zn{color:var(--down)}
+.zr.else .zl,.zr.else .zn{color:var(--muted)}
+.bar{position:relative;height:8px;border-radius:5px;background:var(--surface-3);overflow:hidden}
+.bar i{position:absolute;top:0;bottom:0;left:0;border-radius:5px;background:var(--gold)}
+.bar i.sec{background:repeating-linear-gradient(135deg,rgb(var(--acc-rgb)/.55) 0 3px,rgb(var(--acc-rgb)/.22) 3px 6px)}
+.bar .cap{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--down);opacity:.7}
+.legend{display:flex;gap:12px;font-size:11.5px;color:var(--muted);margin-top:8px;flex-wrap:wrap}
+.legend i{display:inline-block;width:14px;height:7px;border-radius:3px;background:var(--gold);margin-right:5px;vertical-align:middle}
+.legend i.sec{background:repeating-linear-gradient(135deg,rgb(var(--acc-rgb)/.55) 0 3px,rgb(var(--acc-rgb)/.22) 3px 6px)}
+.miss{font-size:13px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.miss>span:first-child{color:var(--fg-2);margin-right:2px}
+.mz{border:1px dashed rgb(var(--down-rgb)/.6);color:#ffb3ac;background:transparent;border-radius:var(--pill);padding:4px 10px;font-size:12.5px;font-weight:600}
+.mz.else{border-color:var(--line-2);color:var(--muted);font-weight:500}
+/* cảnh báo */
+.warn{display:flex;gap:10px;padding:12px;border-radius:var(--r);background:rgb(var(--warn-rgb)/.08);border:1px solid rgb(var(--warn-rgb)/.35);margin-bottom:10px}
+.warn.cap{background:rgb(var(--down-rgb)/.08);border-color:rgb(var(--down-rgb)/.4)}
+.warn .wi{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-weight:800;background:rgb(var(--warn-rgb)/.2);color:var(--almost);flex:none;font-size:13px}
+.warn.cap .wi{background:rgb(var(--down-rgb)/.2);color:var(--down)}
+.warn b{display:block;font-size:14px}.warn p{margin:3px 0 8px;font-size:13px;color:var(--fg-2)}
+.fixes{display:flex;flex-direction:column;gap:6px}
+.fix{text-align:left;border:1px solid var(--line-2);background:var(--surface-2);border-radius:11px;padding:8px 10px;font-size:13px;font-weight:600}
+.fix small{display:block;font-weight:500;color:var(--muted);font-size:12px}
+.ack{background:none;border:0;color:var(--muted);font-size:12.5px;padding:6px 0 0;text-decoration:underline}
+.more-w{font-size:12.5px;color:var(--muted);margin:-4px 0 10px}
+/* bài */
+.exl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.ex{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r-sm);background:var(--surface-2);border:1px solid var(--line);text-align:left;width:100%}
+.ex .n{flex:1;min-width:0}.ex .n b{display:block;font-size:14px;font-weight:600}
+.ex .tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.tag{font-size:11.5px;padding:2px 8px;border-radius:var(--pill);background:var(--surface-3);color:var(--fg-2)}
+.tag.z{background:rgb(var(--acc-rgb)/.16);color:var(--gold-hi)}
+.tag.ang{background:rgba(157,184,255,.14);color:var(--hold)}
+.tag.dupt{background:rgb(var(--warn-rgb)/.16);color:var(--almost)}
+.ex .s{font-weight:700;font-variant-numeric:tabular-nums;color:var(--fg-2);font-size:13px;white-space:nowrap}
+.alts{font-size:12px;color:var(--muted);margin:4px 0 0 12px}
+.alts span{color:var(--fg-2)}
+.addrow{display:flex;gap:8px;margin-top:10px}
+/* sheet */
+.sheet{position:fixed;inset:0;z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet-bg{position:absolute;inset:0;background:rgba(0,0,0,.66)}
+.panel{position:relative;width:100%;max-width:560px;max-height:92vh;max-height:92dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--surface);border-radius:22px 22px 0 0;padding:10px 16px max(20px,env(safe-area-inset-bottom));border-top:1px solid var(--line-2)}
+.grab{width:42px;height:5px;border-radius:3px;background:var(--surface-3);margin:0 auto 10px}
+.panel h3{font-size:19px;margin:4px 0 4px}
+.sub{font-size:13px;color:var(--fg-2);margin:0 0 12px}
+.sec-l{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:16px 0 8px}
+.angs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:6px}
+.angs button{border:1px solid var(--line-2);background:var(--surface-2);border-radius:12px;padding:8px 10px;text-align:left;font-size:13px;font-weight:600}
+.angs button small{display:block;font-weight:500;font-size:11.5px;color:var(--muted)}
+.angs button[aria-pressed="true"]{background:#efe1c8;color:#1d1610;border-color:#efe1c8}
+.angs button[aria-pressed="true"] small{color:#5a4a36}
+.zsum{background:var(--surface-2);border-radius:12px;padding:10px 12px;font-size:13px;margin-top:10px}
+.zsum b{color:var(--gold-hi)}
+.zsum .note{color:var(--almost);margin-top:4px}
+.delta{font-size:13px;margin-top:8px;color:var(--fg-2)}
+.delta b{color:var(--fg)}
+.delta .up{color:var(--up)}.delta .dn{color:var(--down)}
+.step{display:flex;align-items:center;gap:10px}
+.step button{width:38px;height:38px;border-radius:11px;border:1px solid var(--line-2);background:var(--surface-2);font-size:18px;font-weight:700}
+.step b{min-width:28px;text-align:center;font-size:17px}
+.var{border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:10px;margin-bottom:7px}
+.var .vh{display:flex;gap:6px;align-items:baseline;flex-wrap:wrap;font-size:13.5px;font-weight:600}
+.var .vz{font-size:12.5px;color:var(--fg-2);margin:3px 0 8px}
+.var .vz b{color:var(--gold-hi)}
+.var .act{display:flex;gap:6px;flex-wrap:wrap}
+.ax{font-size:11px;font-weight:700;padding:2px 7px;border-radius:var(--pill);background:var(--surface-3);color:var(--fg-2)}
+.fill{font-size:11px;font-weight:700;padding:2px 7px;border-radius:var(--pill);background:rgb(var(--up-rgb)/.16);color:var(--up)}
+.has{font-size:11px;font-weight:700;padding:2px 7px;border-radius:var(--pill);background:var(--surface-3);color:var(--muted)}
+.lib{display:flex;flex-direction:column;gap:6px}
+.lib button{display:flex;justify-content:space-between;gap:8px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface-2);border-radius:12px;padding:10px 12px;font-size:13.5px;font-weight:600}
+.lib button small{display:block;font-weight:500;color:var(--muted);font-size:12px}
+.lib button[aria-pressed="true"]{border-color:var(--gold);background:rgb(var(--acc-rgb)/.12)}
+.same{font-size:11px;font-weight:700;color:var(--up);white-space:nowrap}
+.blocked{font-size:13px;color:var(--down);margin-top:8px}
+.actions{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.actions .btn{flex:1}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#efe1c8;color:#1d1610;font-weight:600;font-size:13.5px;padding:10px 16px;border-radius:12px;z-index:60;max-width:calc(100% - 32px);box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.foot{font-size:12px;color:var(--muted);margin-top:18px}
+.foot a{color:var(--fg-2)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div id="sheet"></div>
+<script>
+(() => {
+/* ===== Vùng cơ (cùng tên với ZONES trong app) ===== */
+const ZONES = [['Ngực', ['Ngực trên', 'Ngực giữa', 'Ngực dưới']], ['Vai', ['Vai trước', 'Vai giữa', 'Vai sau']], ['Tay sau', ['Tay sau đầu dài', 'Tay sau đầu ngoài']]];
+const BIG = {}; ZONES.forEach(([b, zs]) => zs.forEach(z => BIG[z] = b));
+const SHORT = z => z === 'Tay sau đầu dài' ? 'Đầu dài' : z === 'Tay sau đầu ngoài' ? 'Đầu ngoài' : z.replace(/^(Ngực|Vai) /, m => '').replace(/^./, c => c.toUpperCase());
+
+/* ===== Họ động tác: dụng cụ → các góc/hướng [khoá, nhãn, vùng chính] (BR-39.1) ===== */
+const PRESS = [['0', 'Phẳng 0°', 'Ngực giữa'], ['30', 'Dốc lên 15–30°', 'Ngực trên'], ['45', 'Dốc lên 45°', 'Ngực trên'], ['dec', 'Dốc xuống', 'Ngực dưới']];
+const FLY = [['0', 'Phẳng', 'Ngực giữa'], ['30', 'Dốc lên', 'Ngực trên'], ['dec', 'Dốc xuống', 'Ngực dưới']];
+const CABLE = [['lo', 'Dưới lên', 'Ngực trên'], ['mid', 'Ngang', 'Ngực giữa'], ['hi', 'Trên xuống', 'Ngực dưới']];
+const FAM = {
+  press: { n: 'Đẩy ngực', kind: 'Đẩy', alt: 'fly', sec: ['Vai trước', 'Tay sau đầu ngoài'], grip: ['tạ đòn', 'máy Smith'],
+    eq: { 'tạ đơn': PRESS, 'máy Smith': PRESS, 'tạ đòn': PRESS, 'máy': PRESS.filter(a => a[0] !== '45'), 'cáp': [['mid', 'Đứng ngang', 'Ngực giữa'], ['lo', 'Dưới lên', 'Ngực trên']] } },
+  fly: { n: 'Ép ngực', kind: 'Ép', alt: 'press', sec: ['Vai trước'],
+    eq: { 'tạ đơn': FLY, 'cáp': CABLE, 'máy (pec deck)': [['mid', 'Ngồi', 'Ngực giữa']] } },
+  dip: { n: 'Xà kép', kind: 'Đẩy', sec: ['Tay sau đầu ngoài', 'Vai trước'], eq: { 'xà': [['lean', 'Nghiêng người', 'Ngực dưới']], 'máy': [['seat', 'Ngồi', 'Ngực dưới']] } },
+  ohp: { n: 'Đẩy vai', kind: 'Đẩy', sec: ['Tay sau đầu ngoài', 'Vai giữa'], eq: { 'tạ đơn': [['90', 'Ngồi thẳng', 'Vai trước'], ['70', 'Ghế dốc 60–75°', 'Vai trước']], 'máy': [['90', 'Ngồi', 'Vai trước']], 'máy Smith': [['90', 'Ngồi', 'Vai trước']] } },
+  lat: { n: 'Nâng vai ngang', kind: 'Nâng', eq: { 'tạ đơn': [['st', 'Đứng', 'Vai giữa'], ['inc', 'Nằm nghiêng ghế dốc', 'Vai giữa']], 'cáp': [['st', 'Đứng', 'Vai giữa']], 'máy': [['seat', 'Ngồi', 'Vai giữa']] } },
+  rear: { n: 'Bay vai sau', kind: 'Ép', eq: { 'máy (reverse pec deck)': [['seat', 'Ngồi', 'Vai sau']], 'cáp': [['st', 'Đứng', 'Vai sau']], 'tạ đơn': [['bent', 'Cúi người', 'Vai sau']] } },
+  tri: { n: 'Duỗi tay sau', kind: 'Duỗi', eq: { 'cáp': [['down', 'Đẩy xuống', 'Tay sau đầu ngoài'], ['over', 'Qua đầu', 'Tay sau đầu dài']], 'tạ đơn': [['over', 'Qua đầu', 'Tay sau đầu dài'], ['lying', 'Nằm', 'Tay sau đầu dài']] } }
+};
+const opts = e => FAM[e.fam].eq[e.eq] || [];
+function info(e) {
+  const a = opts(e).find(o => o[0] === e.ang) || opts(e)[0];
+  if (e.grip === 'hẹp') return { main: 'Tay sau đầu ngoài', sec: ['Ngực giữa', 'Vai trước'], a, note: 'Tay hẹp: tay sau làm chính, ngực giữa phụ' };
+  return { main: a[2], sec: FAM[e.fam].sec || [], a, note: e.fam === 'press' && e.ang === '45' ? 'Ở 45° vai trước gánh nhiều hơn hẳn so với 30° — muốn nhắm ngực trên thì 15–30° tốt hơn' : '' };
+}
+function nameOf(e) {
+  const f = FAM[e.fam], { a } = info(e), many = opts(e).length > 1;
+  return `${f.n}${e.grip === 'hẹp' ? ' tay hẹp' : ''}${many ? ' ' + a[1].toLowerCase() : ''}${f.n.toLowerCase().includes(e.eq) ? '' : ' ' + e.eq}`;
+}
+const keyOf = e => [e.fam, e.eq, e.ang, e.grip || ''].join('|');
+const fmt = n => String(Math.round(n * 10) / 10).replace('.', ',');
+let uid = 100; const nid = () => 'e' + (++uid);
+
+/* ===== Dữ liệu mẫu ===== */
+const SAMPLE = () => [
+  { id: 'd1', name: 'Ngực', when: 'Thứ 2', ex: [
+    { id: 'e1', fam: 'press', eq: 'tạ đơn', ang: '30', sets: 3, alts: [] },
+    { id: 'e2', fam: 'press', eq: 'máy Smith', ang: '30', sets: 3, alts: [] },
+    { id: 'e3', fam: 'fly', eq: 'cáp', ang: 'lo', sets: 3, alts: [] },
+    { id: 'e4', fam: 'tri', eq: 'cáp', ang: 'down', sets: 3, alts: [] }] },
+  { id: 'd2', name: 'Đẩy', when: 'Thứ 5', ex: [
+    { id: 'e5', fam: 'dip', eq: 'xà', ang: 'lean', sets: 3, alts: [] },
+    { id: 'e6', fam: 'ohp', eq: 'tạ đơn', ang: '90', sets: 3, alts: [] },
+    { id: 'e7', fam: 'lat', eq: 'tạ đơn', ang: 'st', sets: 3, alts: [] }] }];
+let DAYS = SAMPLE();
+const S = { q2: 'warn', q4: 'week', cap: 11, stackN: 3, stackS: 8, open: 'd1', ack: {} };
+
+/* ===== Hàm thuần (sẽ chuyển vào app: dayZoneLoad, dayBalance, missingZones, variantsOf) ===== */
+function load(exs) {   /* BR-39.3: set chính = 1, set phụ = 0,5 */
+  const z = {}, g = k => z[k] || (z[k] = { d: 0, s: 0, n: 0 });
+  for (const e of exs) { const i = info(e); const m = g(i.main); m.d += e.sets; m.n++; for (const s of i.sec) if (s !== i.main) g(s).s += e.sets * .5; }
+  return z;
+}
+const tot = (z, k) => z[k] ? z[k].d + z[k].s : 0;
+const bigTot = (z, b) => ZONES.find(x => x[0] === b)[1].reduce((a, k) => a + tot(z, k), 0);
+const bigsOf = exs => new Set(exs.map(e => BIG[info(e).main]));
+function missing(day) {   /* BR-39.8 */
+  const z = load(day.ex), out = [], bigs = bigsOf(day.ex);
+  for (const [b, zs] of ZONES) if (bigs.has(b)) for (const k of zs) if (!(z[k] && z[k].d)) {
+    let el = null; if (S.q4 === 'week') for (const d of DAYS) if (d !== day && load(d.ex)[k] && load(d.ex)[k].d) { el = d; break; }
+    out.push({ zone: k, b, el });
+  }
+  return out;
+}
+function warnings(day) {   /* BR-39.5 */
+  const z = load(day.ex), W = [];
+  for (const [b] of ZONES) { const t = bigTot(z, b); if (t > S.cap) W.push({ k: 'cap', b, t }); }
+  for (const [b, zs] of ZONES) for (const k of zs) { const v = z[k]; if (!v || !v.d) continue;
+    const empty = zs.filter(o => o !== k && !(z[o] && z[o].d));
+    if ((v.n >= S.stackN || v.d >= S.stackS) && empty.length) W.push({ k: 'stack', zone: k, b, v, empty }); }
+  for (let i = 0; i < day.ex.length; i++) for (let j = i + 1; j < day.ex.length; j++) {
+    const a = day.ex[i], c = day.ex[j];
+    if (a.fam === c.fam && a.eq !== c.eq && info(a).main === info(c).main && (a.grip || '') === (c.grip || '') && info(a).a[0] === info(c).a[0]) W.push({ k: 'dup', a, c }); }
+  return W;
+}
+const dupIds = day => new Set(warnings(day).filter(w => w.k === 'dup').flatMap(w => [w.a.id, w.c.id]));
+function fixesFor(day, w) {   /* BR-39.6: gợi ý sửa một chạm */
+  const F = [];
+  if (w.k === 'stack') {
+    const dups = dupIds(day), c = day.ex.filter(e => info(e).main === w.zone).sort((a, b) => (dups.has(b.id) - dups.has(a.id)) || day.ex.indexOf(b) - day.ex.indexOf(a));
+    const used = new Set();
+    for (const t of w.empty) for (const e of c) { if (used.has(e.id)) continue; const o = opts(e).find(x => x[2] === t); if (o) { used.add(e.id);
+      F.push({ t: `Đổi ${nameOf(e)} sang ${o[1]}`, s: `→ ${t}`, ap: () => { e.ang = o[0]; }, msg: `Đã đổi sang ${o[1]} · ${t}` }); break; } }
+    if (!F.length && c.length) { const e = c[c.length - 1], other = DAYS.find(d => d !== day); if (other) F.push({ t: `Chuyển ${nameOf(e)} sang ngày ${other.name}`, s: other.when, ap: () => moveEx(day, e, other), msg: `Đã chuyển sang ngày ${other.name}` }); }
+  }
+  if (w.k === 'dup') {
+    const e = w.c, alt = FAM[e.fam].alt;
+    if (alt) { const f2 = FAM[alt], eqs = f2.eq[e.eq] ? [e.eq, ...Object.keys(f2.eq)] : Object.keys(f2.eq);
+      for (const q of eqs) { const o = f2.eq[q].find(x => x[2] === info(e).main); if (o) { F.push({ t: `Đổi ${nameOf(e)} thành ${f2.n.toLowerCase()} ${o[1].toLowerCase()} ${q}`, s: `${f2.kind} thay vì ${FAM[e.fam].kind.toLowerCase()} · vẫn ${info(e).main}`, ap: () => { e.fam = alt; e.eq = q; e.ang = o[0]; e.grip = ''; }, msg: 'Đã đổi kiểu động tác' }); break; } } }
+    const z = load(day.ex), b = BIG[info(e).main], emp = ZONES.find(x => x[0] === b)[1].filter(k => !(z[k] && z[k].d));
+    const o = opts(e).find(x => emp.includes(x[2])); if (o) F.push({ t: `Đổi ${nameOf(e)} sang ${o[1]}`, s: `→ ${o[2]}`, ap: () => { e.ang = o[0]; }, msg: `Đã đổi sang ${o[1]}` });
+  }
+  if (w.k === 'cap') {
+    const c = day.ex.filter(e => BIG[info(e).main] === w.b).sort((a, b) => b.sets - a.sets);
+    if (c[0] && c[0].sets > 2) { const e = c[0]; F.push({ t: `Bớt 1 set ở ${nameOf(e)}`, s: `${e.sets} → ${e.sets - 1} set`, ap: () => { e.sets--; }, msg: 'Đã bớt 1 set' }); }
+    const e = c[c.length - 1], other = DAYS.find(d => d !== day);
+    if (e && other) F.push({ t: `Chuyển ${nameOf(e)} sang ngày ${other.name}`, s: other.when, ap: () => moveEx(day, e, other), msg: `Đã chuyển sang ngày ${other.name}` });
+  }
+  return F;
+}
+function moveEx(from, e, to) { from.ex = from.ex.filter(x => x !== e); to.ex.push(e); }
+const existsIn = (day, cand) => day.ex.some(e => keyOf(e) === keyOf(cand) || (e.alts || []).some(a => keyOf(a) === keyOf(cand)));
+function variantsOf(e, day) {   /* BR-39.9 */
+  const out = [], seen = new Set([keyOf(e)]), miss = missing(day).filter(m => !m.el).map(m => m.zone);
+  const push = (c, ax) => { const k = keyOf(c); if (seen.has(k)) return; seen.add(k); const z = info(c).main; out.push({ c, ax, zone: z, fills: miss.includes(z), has: existsIn(day, c) }); };
+  for (const o of opts(e)) push({ ...e, ang: o[0], grip: '' }, 'Góc');
+  for (const q of Object.keys(FAM[e.fam].eq)) if (q !== e.eq) { const os = FAM[e.fam].eq[q]; const o = os.find(x => x[0] === e.ang) || os.find(x => x[2] === info(e).main) || os[0]; push({ ...e, eq: q, ang: o[0], grip: '' }, 'Dụng cụ'); }
+  const alt = FAM[e.fam].alt; if (alt) for (const q of Object.keys(FAM[alt].eq)) { const o = FAM[alt].eq[q].find(x => x[2] === info(e).main); if (o) push({ fam: alt, eq: q, ang: o[0], grip: '', sets: 3 }, 'Động tác'); }
+  if ((FAM[e.fam].grip || []).includes(e.eq)) push({ ...e, ang: '0', grip: e.grip === 'hẹp' ? '' : 'hẹp' }, 'Tay cầm');
+  const ord = { 'Góc': 0, 'Dụng cụ': 1, 'Động tác': 2, 'Tay cầm': 3 };
+  return out.sort((a, b) => (b.fills - a.fills) || (a.has - b.has) || ord[a.ax] - ord[b.ax]);
+}
+function library(zone, day) {   /* thư viện theo vùng, ưu tiên dụng cụ đang có trong ngày */
+  const eqs = new Set(day.ex.map(e => e.eq)), out = [];
+  for (const [fam, f] of Object.entries(FAM)) for (const [q, os] of Object.entries(f.eq)) for (const o of os) if (o[2] === zone) {
+    const c = { fam, eq: q, ang: o[0], grip: '', sets: 3 }; if (!existsIn(day, c)) out.push({ c, same: eqs.has(q) }); }
+  return out.sort((a, b) => b.same - a.same);
+}
+function deltaHtml(before, after) {
+  const zb = load(before), za = load(after), ks = [...new Set([...Object.keys(zb), ...Object.keys(za)])].filter(k => Math.abs(tot(zb, k) - tot(za, k)) > .01);
+  if (!ks.length) return '<div class="delta">Không đổi vùng cơ.</div>';
+  ks.sort((a, b) => Object.keys(BIG).indexOf(a) - Object.keys(BIG).indexOf(b));
+  return `<div class="delta">Ngày này: ${ks.map(k => { const a = tot(zb, k), c = tot(za, k); return `<b>${k}</b> ${fmt(a)} → <span class="${c > a ? 'up' : 'dn'}">${fmt(c)}</span>`; }).join(' · ')}</div>`;
+}
+const overCap = exs => { const z = load(exs); return ZONES.map(x => x[0]).filter(b => bigTot(z, b) > S.cap); };
+
+/* ===== Giao diện ===== */
+const $ = s => document.querySelector(s), esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+let FIX = [], ui = {};
+function balHtml(day) {
+  const z = load(day.ex), bigs = new Set(Object.keys(z).filter(k => tot(z, k) > 0).map(k => BIG[k])), mx = Math.max(S.cap, 10);
+  const miss = missing(day), elseZ = Object.fromEntries(miss.filter(m => m.el).map(m => [m.zone, m.el]));
+  let h = `<div class="bal"><div class="bal-h"><b>Cân vùng cơ</b><span>set quy đổi · trần ${S.cap}/nhóm/buổi</span></div>`;
+  for (const [b, zs] of ZONES) { if (!bigs.has(b)) continue; const t = bigTot(z, b), main = bigsOf(day.ex).has(b);
+    h += `<div class="grp"><div class="grp-h"><b>${b}</b><span class="${t > S.cap ? 'over' : ''}">${fmt(t)} / ${S.cap}${main ? '' : ' · chỉ phụ'}</span></div>`;
+    for (const k of zs) { const v = z[k] || { d: 0, s: 0 }; if (!main && !v.d && !v.s) continue;
+      const zero = main && !v.d, cls = zero ? (elseZ[k] ? 'else' : 'zero') : '';
+      h += `<div class="zr ${cls}"><span class="zl">${SHORT(k)}</span><span class="bar"><i style="width:${Math.min(100, (v.d + v.s) / mx * 100)}%" class="sec"></i><i style="width:${Math.min(100, v.d / mx * 100)}%"></i></span><span class="zn">${v.d ? fmt(v.d) : ''}${v.s ? (v.d ? '+' : '') + fmt(v.s) : ''}${!v.d && !v.s ? (elseZ[k] ? '–' : '0') : ''}</span></div>`; }
+    h += `</div>`; }
+  h += `<div class="legend"><span><i></i>set trực tiếp</span><span><i class="sec"></i>set phụ ×0,5</span></div>`;
+  if (miss.length) h += `<div class="miss"><span>Còn thiếu:</span>${miss.map(m => `<button class="mz ${m.el ? 'else' : ''}" data-act="add" data-day="${day.id}" data-z="${esc(m.zone)}">${esc(m.zone)}${m.el ? ` · có ở ngày ${esc(m.el.name)}` : ''}</button>`).join('')}</div>`;
+  return h + `</div>`;
+}
+function warnHtml(day) {
+  const W = warnings(day); if (!W.length) return '';
+  const sig = JSON.stringify(day.ex.map(keyOf).concat(day.ex.map(e => e.sets)));
+  if (S.ack[day.id] === sig) return `<p class="more-w">${W.length} cảnh báo đã ẩn · <button class="ack" data-act="unack" data-day="${day.id}" style="padding:0">hiện lại</button></p>`;
+  let h = '';
+  for (const w of W.slice(0, 2)) {
+    const fx = fixesFor(day, w).map(f => { FIX.push({ day, f }); return `<button class="fix" data-act="fix" data-i="${FIX.length - 1}">${esc(f.t)}<small>${esc(f.s)}</small></button>`; }).join('');
+    if (w.k === 'cap') h += `<div class="warn cap"><span class="wi">!</span><div><b>${w.b} ${fmt(w.t)} set quy đổi — vượt trần ${S.cap}</b><p>Sau khoảng ${S.cap} set/nhóm cơ/buổi, set thêm hầu như không giúp tăng cơ mà còn làm mệt. Bớt set hoặc dời sang ngày khác.</p><div class="fixes">${fx}</div></div></div>`;
+    if (w.k === 'stack') h += `<div class="warn"><span class="wi">≡</span><div><b>Dồn ${w.zone}: ${w.v.n} bài · ${fmt(w.v.d)} set</b><p>${w.empty.join(', ')} đang 0 set trong buổi. Đổi góc một bài là chuyển được sang vùng trống, không cần đổi máy.</p><div class="fixes">${fx}</div></div></div>`;
+    if (w.k === 'dup') h += `<div class="warn"><span class="wi">=</span><div><b>Hai bài gần như trùng</b><p>${esc(nameOf(w.a))} và ${esc(nameOf(w.c))}: cùng ${FAM[w.a.fam].kind.toLowerCase()}, cùng góc, cùng ${info(w.a).main}, chỉ khác dụng cụ.</p><div class="fixes">${fx}</div></div></div>`;
+  }
+  if (W.length > 2) h += `<p class="more-w">+${W.length - 2} cảnh báo khác (mỗi ngày hiện tối đa 2)</p>`;
+  return h + `<button class="ack" data-act="ack" data-day="${day.id}" style="margin:-4px 0 10px">Đã hiểu, ẩn cảnh báo của ngày này</button>`;
+}
+function render() {
+  FIX = [];
+  let h = `<div class="top"><span class="logo">ĐN</span><div><b>Giáo Án Địa Ngục</b><small>Bản demo PA-50 · cân vùng cơ</small></div></div>
+  <div class="demo-note"><b>Bản demo</b> với dữ liệu mẫu: không lưu, không đụng giáo án thật. Thử: chạm một bài để đổi góc và xem biến thể, bấm nút trong cảnh báo, chạm “Còn thiếu”.</div>
+  <details class="try" ${S.tryOpen ? 'open' : ''}><summary data-act="try">Thử các phương án Q2–Q4 <span>chạm để mở</span></summary><div class="tryg">
+    <div><div class="lab">Q2 · Khi vượt trần</div><div class="seg">${[['warn', 'Chỉ nhắc'], ['block', 'Chặn lưu']].map(([k, l]) => `<button data-act="opt" data-k="q2" data-v="${k}" aria-pressed="${S.q2 === k}">${l}</button>`).join('')}</div></div>
+    <div><div class="lab">Q3 · Trần mỗi nhóm cơ / buổi (set quy đổi)</div><div class="seg">${[9, 11, 13].map(v => `<button data-act="opt" data-k="cap" data-v="${v}" aria-pressed="${S.cap === v}">${v}</button>`).join('')}</div></div>
+    <div><div class="lab">Q3 · Dồn một vùng khi có từ</div><div class="seg">${[[2, 6], [3, 8], [4, 10]].map(([n, s]) => `<button data-act="opt" data-k="stack" data-v="${n},${s}" aria-pressed="${S.stackN === n}">${n} bài / ${s} set</button>`).join('')}</div></div>
+    <div><div class="lab">Q4 · “Còn thiếu” tính theo</div><div class="seg">${[['week', 'Cả tuần'], ['day', 'Từng buổi']].map(([k, l]) => `<button data-act="opt" data-k="q4" data-v="${k}" aria-pressed="${S.q4 === k}">${l}</button>`).join('')}</div></div>
+    <div><button class="btn sm ghost" data-act="reset">Đặt lại dữ liệu mẫu</button></div>
+  </div></details>
+  <h2>Lịch tập</h2>`;
+  DAYS.forEach((d, i) => {
+    const open = S.open === d.id, W = warnings(d), sets = d.ex.reduce((a, e) => a + e.sets, 0), dups = dupIds(d);
+    h += `<article class="day ${open ? 'open' : ''}"><button class="day-h" data-act="toggle" data-day="${d.id}"><span class="num">0${i + 1}</span><span class="t"><b>${esc(d.name)}</b><span class="meta">${d.when} · ${d.ex.length} bài · ${sets} set</span></span>${W.length ? `<span class="wbadge">${W.length} cảnh báo</span>` : '<span class="okbadge">Cân đối</span>'}<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m9 6 6 6-6 6"/></svg></button>`;
+    if (open) {
+      h += `<div class="day-b">${balHtml(d)}${warnHtml(d)}<ol class="exl">`;
+      for (const e of d.ex) { const i2 = info(e);
+        h += `<li><button class="ex" data-act="edit" data-day="${d.id}" data-id="${e.id}"><span class="n"><b>${esc(nameOf(e))}</b><span class="tags"><span class="tag z">${esc(i2.main)}</span>${opts(e).length > 1 ? `<span class="tag ang">${esc(i2.a[1])}</span>` : ''}${dups.has(e.id) ? '<span class="tag dupt">gần trùng</span>' : ''}</span></span><span class="s">${e.sets} set</span></button>${e.alts.length ? `<div class="alts">Bài thay thế: <span>${e.alts.map(a => esc(nameOf(a))).join(' · ')}</span></div>` : ''}</li>`; }
+      h += `</ol><div class="addrow"><button class="btn gold sm" data-act="add" data-day="${d.id}">+ Thêm bài</button></div></div>`;
+    }
+    h += `</article>`;
+  });
+  h += `<p class="foot">Cơ sở: góc ghế theo EMG (Rodríguez-Ridao 2020) — ngực trên mạnh nhất ở 30°, ngực giữa ở 0°, vai trước tăng rõ từ 45°. Trần ~11 set quy đổi/nhóm/buổi (Remmert 2025). Ngưỡng là mặc định, chờ đối chiếu chuyên môn trước khi đưa vào app.</p>`;
+  $('#app').innerHTML = h;
+}
+/* ----- Sửa bài: góc, dụng cụ, biến thể ----- */
+function editSheet() {
+  const { day, id, draft } = ui, e0 = day.ex.find(x => x.id === id), e = draft, i = info(e);
+  const after = day.ex.map(x => x.id === id ? e : x), oc = overCap(after), block = S.q2 === 'block' && oc.length;
+  const vs = variantsOf(e, { ...day, ex: after });
+  let h = `<h3>Sửa bài</h3><p class="sub">${esc(nameOf(e))}</p>
+    <div class="sec-l">Dụng cụ</div><div class="seg">${Object.keys(FAM[e.fam].eq).map(q => `<button data-act="d-eq" data-v="${esc(q)}" aria-pressed="${e.eq === q}">${esc(q)}</button>`).join('')}</div>`;
+  if (opts(e).length > 1) h += `<div class="sec-l">Góc ghế / hướng kéo</div><div class="angs">${opts(e).map(o => `<button data-act="d-ang" data-v="${o[0]}" aria-pressed="${e.ang === o[0] && e.grip !== 'hẹp'}">${esc(o[1])}<small>→ ${esc(o[2])}</small></button>`).join('')}</div>`;
+  if ((FAM[e.fam].grip || []).includes(e.eq)) h += `<div class="sec-l">Tay cầm</div><div class="seg">${[['', 'Thường'], ['hẹp', 'Hẹp (tay sau)']].map(([k, l]) => `<button data-act="d-grip" data-v="${k}" aria-pressed="${(e.grip || '') === k}">${l}</button>`).join('')}</div>`;
+  h += `<div class="zsum">Vùng chính: <b>${esc(i.main)}</b>${i.sec.length ? ` · phụ (×0,5): ${i.sec.filter(s => s !== i.main).join(', ')}` : ''}${i.note ? `<div class="note">${esc(i.note)}</div>` : ''}</div>`;
+  h += `<div class="sec-l">Số set</div><div class="step"><button data-act="d-set" data-v="-1">−</button><b>${e.sets}</b><button data-act="d-set" data-v="1">+</button></div>`;
+  h += deltaHtml(day.ex, after);
+  if (oc.length) h += `<div class="blocked">${oc.join(', ')} vượt trần ${S.cap} set quy đổi${block ? ' — chế độ “Chặn lưu” không cho lưu' : ' (chỉ nhắc, vẫn lưu được)'}.</div>`;
+  h += `<div class="actions"><button class="btn gold" data-act="d-save" ${block ? 'disabled' : ''}>Lưu</button><button class="btn ghost" data-act="close">Huỷ</button></div>`;
+  h += `<div class="sec-l">Biến thể · cùng động tác, đổi một yếu tố</div>`;
+  h += vs.map((v, k) => `<div class="var"><div class="vh"><span class="ax">${v.ax}</span>${esc(nameOf(v.c))}${v.fills ? '<span class="fill">Lấp chỗ thiếu</span>' : ''}${v.has ? '<span class="has">Đã có</span>' : ''}</div><div class="vz">→ <b>${esc(v.zone)}</b></div>${v.has ? '' : `<div class="act"><button class="btn sm" data-act="v-day" data-k="${k}">Thêm vào ngày</button><button class="btn sm ghost" data-act="v-alt" data-k="${k}">Làm bài thay thế</button></div>`}</div>`).join('');
+  h += `<p class="sub" style="margin-top:10px">Mỗi biến thể là một bài riêng: mức tạ, lịch sử và gợi ý lên tạ riêng. Bài thay thế nằm chung ô với bài này; giữ bài chính quá 6 tuần thì app gợi ý đổi sang bài thay thế lâu chưa tập.</p>`;
+  ui.vs = vs; openSheet(h);
+}
+/* ----- Thêm bài: vùng còn thiếu ----- */
+function addSheet() {
+  const { day } = ui, miss = missing(day); if (!ui.z && miss[0]) ui.z = (miss.find(m => !m.el) || miss[0]).zone;
+  let h = `<h3>Thêm bài · ngày ${esc(day.name)}</h3>`;
+  h += miss.length ? `<p class="sub">Còn thiếu trong ngày này — chạm để xem bài phù hợp:</p><div class="seg">${miss.map(m => `<button data-act="a-z" data-v="${esc(m.zone)}" aria-pressed="${ui.z === m.zone}">${esc(m.zone)}${m.el ? ` · có ở ngày ${esc(m.el.name)}` : ''}</button>`).join('')}</div>` : `<p class="sub">Ngày này đã đủ các vùng của những nhóm cơ đang tập.</p>`;
+  h += `<div class="sec-l">Hoặc chọn vùng khác</div><div class="seg">${ZONES.flatMap(x => x[1]).filter(k => !miss.some(m => m.zone === k)).map(k => `<button data-act="a-z" data-v="${esc(k)}" aria-pressed="${ui.z === k}">${esc(k)}</button>`).join('')}</div>`;
+  if (ui.z) {
+    const L = library(ui.z, day);
+    h += `<div class="sec-l">Bài cho ${esc(ui.z)} · dụng cụ đang có trong ngày xếp trước</div><div class="lib">${L.map((x, k) => `<button data-act="a-pick" data-k="${k}" aria-pressed="${ui.pick === k}"><span>${esc(nameOf(x.c))}<small>${FAM[x.c.fam].kind} · ${esc(x.c.eq)}</small></span>${x.same ? '<span class="same">Cùng dụng cụ</span>' : ''}</button>`).join('') || '<p class="sub">Các bài cho vùng này đã có trong ngày.</p>'}</div>`;
+    ui.L = L;
+    if (ui.pick != null && L[ui.pick]) {
+      const c = { ...L[ui.pick].c, id: nid(), alts: [] }, after = [...day.ex, c], oc = overCap(after), block = S.q2 === 'block' && oc.length;
+      ui.cand = c;
+      h += `<div class="zsum" style="margin-top:12px">Thêm <b>${esc(nameOf(c))}</b> · 3 set${deltaHtml(day.ex, after)}${oc.length ? `<div class="blocked">${oc.join(', ')} vượt trần ${S.cap}${block ? ' — chế độ “Chặn lưu” không cho thêm' : ' (chỉ nhắc)'}.</div>` : ''}</div>`;
+      h += `<div class="actions"><button class="btn gold" data-act="a-add" ${block ? 'disabled' : ''}>Thêm vào ngày</button><button class="btn ghost" data-act="close">Đóng</button></div>`;
+    }
+  }
+  if (ui.pick == null) h += `<div class="actions"><button class="btn ghost" data-act="close">Đóng</button></div>`;
+  openSheet(h);
+}
+function openSheet(h) { const keep = $('.panel') ? $('.panel').scrollTop : 0; $('#sheet').innerHTML = `<div class="sheet"><div class="sheet-bg" data-act="close"></div><div class="panel"><div class="grab"></div>${h}</div></div>`; if (ui.keep) $('.panel').scrollTop = keep; ui.keep = false; }
+function closeSheet() { $('#sheet').innerHTML = ''; ui = {}; }
+function toast(m) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = m; document.body.appendChild(t); setTimeout(() => t.remove(), 2200); }
+const dayById = id => DAYS.find(d => d.id === id);
+
+document.addEventListener('click', ev => {
+  const t = ev.target.closest('[data-act]'); if (!t) return; const a = t.dataset.act;
+  if (a === 'try') { S.tryOpen = !t.parentElement.open; return; }
+  if (a === 'toggle') { S.open = S.open === t.dataset.day ? null : t.dataset.day; render(); }
+  else if (a === 'opt') { const k = t.dataset.k, v = t.dataset.v; if (k === 'cap') S.cap = +v; else if (k === 'stack') { const [n, s] = v.split(','); S.stackN = +n; S.stackS = +s; } else S[k] = v; render(); }
+  else if (a === 'reset') { DAYS = SAMPLE(); S.ack = {}; S.open = 'd1'; render(); toast('Đã đặt lại dữ liệu mẫu'); }
+  else if (a === 'fix') { const x = FIX[+t.dataset.i]; x.f.ap(); render(); toast(x.f.msg); }
+  else if (a === 'ack') { const d = dayById(t.dataset.day); S.ack[d.id] = JSON.stringify(d.ex.map(keyOf).concat(d.ex.map(e => e.sets))); render(); }
+  else if (a === 'unack') { delete S.ack[t.dataset.day]; render(); }
+  else if (a === 'edit') { const d = dayById(t.dataset.day), e = d.ex.find(x => x.id === t.dataset.id); ui = { day: d, id: e.id, draft: { ...e, alts: e.alts } }; editSheet(); }
+  else if (a === 'd-eq') { const e = ui.draft, os = FAM[e.fam].eq[t.dataset.v], o = os.find(x => x[0] === e.ang) || os.find(x => x[2] === info(e).main) || os[0]; e.eq = t.dataset.v; e.ang = o[0]; if (!(FAM[e.fam].grip || []).includes(e.eq)) e.grip = ''; ui.keep = true; editSheet(); }
+  else if (a === 'd-ang') { ui.draft.ang = t.dataset.v; ui.draft.grip = ''; ui.keep = true; editSheet(); }
+  else if (a === 'd-grip') { ui.draft.grip = t.dataset.v; if (t.dataset.v) ui.draft.ang = '0'; ui.keep = true; editSheet(); }
+  else if (a === 'd-set') { ui.draft.sets = Math.max(1, Math.min(8, ui.draft.sets + +t.dataset.v)); ui.keep = true; editSheet(); }
+  else if (a === 'd-save') { const d = ui.day, k = d.ex.findIndex(x => x.id === ui.id); d.ex[k] = { ...ui.draft }; closeSheet(); render(); toast('Đã lưu bài'); }
+  else if (a === 'v-day' || a === 'v-alt') {
+    const v = ui.vs[+t.dataset.k], c = { ...v.c, id: nid(), sets: 3, alts: [] }, d = ui.day, e = d.ex.find(x => x.id === ui.id);
+    if (a === 'v-day') { if (S.q2 === 'block' && overCap([...d.ex, c]).length) { toast('Chặn lưu: thêm bài này sẽ vượt trần'); return; } d.ex.push(c); toast('Đã thêm vào ngày: ' + nameOf(c)); }
+    else { delete c.alts; e.alts.push(c); ui.draft.alts = e.alts; toast('Đã thêm bài thay thế: ' + nameOf(c)); }
+    render(); ui.keep = true; editSheet();
+  }
+  else if (a === 'add') { ui = { day: dayById(t.dataset.day), z: t.dataset.z || null, pick: null }; addSheet(); }
+  else if (a === 'a-z') { ui.z = t.dataset.v; ui.pick = null; ui.keep = true; addSheet(); }
+  else if (a === 'a-pick') { ui.pick = +t.dataset.k; ui.keep = true; addSheet(); }
+  else if (a === 'a-add') { const d = ui.day; d.ex.push(ui.cand); const n = nameOf(ui.cand); closeSheet(); S.open = d.id; render(); toast('Đã thêm: ' + n); }
+  else if (a === 'close') closeSheet();
+});
+render();
+})();
+</script>
+</body>
+</html>
