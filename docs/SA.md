@@ -370,3 +370,7 @@ Bản đồ BR: BR-27.1–27.12 trong [BR.md](BR.md).
 - `holdOf(ex, g)` (trước `suggestRaw`): bài `hold` và gợi ý gốc là `up` → `kind:'hold'`, `kg` = mức hiện tại (`prev`), cờ `hlvHold` làm `suggest()` bỏ qua kế hoạch tuần.
 - `sy.planAt[hvId]` ghi thời điểm `hubPushPlans` gửi thành công; `viewPlan` tra `sy.map` ngược để biết học viên có thẻ, rồi hiện dòng trạng thái và `render(true)` khi gửi xong ở tab Lịch tập.
 - `exSheet`: công tắc `#f-hold` và ô `#f-hlvnote` chỉ hiện khi `hubRole()==='hlv'`; máy khác chỉ đọc ghi chú. `CACHE` gadn-v81.
+
+## Học viên đã tập (PA-45 · B)
+- `ui.planView` ('plan' | 'done') chỉ có khi HLV đang xem học viên. `viewPlan` trả về `viewDoneWeeks()` khi chế độ là done; `viewDoneWeeks` dùng `weekDaysOf(-k)` (k = 0..7) và đếm `dayId` khác nhau có trong `state.days`.
+- `sessionSheet`: kế hoạch lấy từ `findEx(en.exId)` (sets × repTarget); làm = số set không phải `dr`. Không đổi dữ liệu hay máy chủ. `CACHE` gadn-v82.

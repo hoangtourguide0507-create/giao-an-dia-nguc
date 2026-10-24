@@ -326,3 +326,7 @@ Ngoài phạm vi PA-40: đổi công thức hồi phục, đổi cảnh báo đa
 - **BR-30.1 Khoá mức tạ**: HLV khoá một bài (`hold`): app không tự lên tạ bài đó, gợi ý là GIỮ ở mức hiện tại. Bỏ khoá thì gợi ý trở lại bình thường. Chỉ HLV đặt; học viên thấy chip "HLV khoá" trong Lịch tập. *Test:* `giaoan-hlv.spec.mjs` (BR-30.1).
 - **BR-30.2 Ghi chú HLV cho bài**: HLV viết ghi chú (tối đa 300 ký tự, `hlvNote`) cho bài; học viên thấy trong Lịch tập và thẻ bài đang tập. Máy không phải HLV chỉ đọc. *Test:* `giaoan-hlv.spec.mjs` (BR-30.2).
 - **BR-30.3 Trạng thái gửi giáo án**: trên Lịch tập của HLV đang xem học viên có thẻ: "Gửi giáo án lần cuối lúc hh:mm" hoặc "Chưa gửi lần nào"; học viên chưa có thẻ QR thì báo "Học viên chưa có thẻ QR". *Test:* `giaoan-hlv.spec.mjs` (BR-30.3).
+
+## Học viên đã tập (PA-45 · B)
+- **BR-31.1 Chế độ Đã tập**: trên Lịch tập của HLV đang xem học viên có chế độ **Giáo án / Đã tập**. Đã tập liệt kê 8 tuần gần nhất, mỗi tuần có số buổi và số ngày giáo án đã tập (ví dụ "2/2 ngày"); chạm một buổi để mở chi tiết. Máy học viên không có chế độ này. *Test:* `theodoi-hlv.spec.mjs` (BR-31.1).
+- **BR-31.2 Kế hoạch cạnh thực tế**: chi tiết buổi tập hiện cho từng bài "Kế hoạch 3×10 · làm 2/3 set"; bài không còn trong giáo án hiện "Kế hoạch —". *Test:* `theodoi-hlv.spec.mjs` (BR-31.2).

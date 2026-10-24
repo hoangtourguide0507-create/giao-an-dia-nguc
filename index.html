@@ -2925,6 +2925,18 @@ function spark(ex) {
   const L = P[P.length - 1];
   return `<svg class="spk" viewBox="0 0 52 16" aria-hidden="true"><polyline pathLength="100" points="${P.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}"/><circle cx="${L[0].toFixed(1)}" cy="${L[1].toFixed(1)}" r="2"/></svg>`;
 }
+function viewDoneWeeks() {
+  const nDays = state.days.length;
+  let h = '';
+  for (let k = 0; k < 8; k++) {
+    const days = weekDaysOf(-k), ss = state.sessions.filter(x => x.date >= days[0] && x.date <= days[6]);
+    const done = new Set(ss.map(x => x.dayId).filter(id => state.days.some(d => d.id === id))).size;
+    h += `<div class="card" style="margin-top:12px"><b>${dm(days[0])} – ${dm(days[6])}</b><p class="note-line">${ss.length} buổi · đã tập ${done}/${nDays} ngày trong giáo án</p>`;
+    if (ss.length) h += `<div class="list">${[...ss].reverse().map(x => `<button type="button" class="li" data-act="open-session" data-id="${x.id}"><span style="min-width:0"><span class="lt">${esc(x.dayName)}</span><span class="ls">${DOW[parseYmd(x.date).getDay()]} ${dm(x.date)}</span></span></button>`).join('')}</div>`;
+    h += `</div>`;
+  }
+  return h;
+}
 function viewPlan() {
   const rc = recommend();
   const dbPending = allExFull().filter(x => isDb(x.ex) && x.ex.each == null);
@@ -2934,6 +2946,8 @@ function viewPlan() {
   const sentLine = !isHlv() || profiles.active === HLV_SELF ? '' : !hvId ? 'Học viên chưa có thẻ QR' : sy.planAt && sy.planAt[hvId] ? `Gửi giáo án lần cuối lúc ${new Date(sy.planAt[hvId]).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : 'Chưa gửi lần nào';
   let h = `<section class="sec"><div class="sec-head"><h2 class="h1">Lịch tập</h2><div class="row" style="gap:6px;flex-wrap:nowrap">${nAll ? `<button class="btn sm" data-act="lib-open">${ICON.book} Kho bài</button>` : ''}<button class="btn sm gold" data-act="add-day">+ Ngày tập</button></div></div>`
   if (sentLine) h += `<p class="note-line">${sentLine}</p>`;
+  if (isHlv() && profiles.active !== HLV_SELF && state.days.length) h += `<div class="seg" role="group" aria-label="Xem giáo án hoặc buổi đã tập">${[['plan', 'Giáo án'], ['done', 'Đã tập']].map(([k, l]) => `<button type="button" data-act="plan-view" data-k="${k}" aria-pressed="${(ui.planView || 'plan') === k}">${l}</button>`).join('')}</div>`;
+  if (ui.planView === 'done' && isHlv() && profiles.active !== HLV_SELF && state.days.length) return h + viewDoneWeeks() + `</section>`;
   if (!state.days.length) return h + `<div class="hero pempty"><div class="h1" style="font-size:24px">Chưa có ngày tập nào</div><p class="meta">Tạo ngày tập như Lưng, Ngực, Chân rồi thêm bài. Hoặc dùng giáo án mẫu 4 ngày.</p>
     <div class="stack" style="margin-top:16px"><button class="btn gold big" data-act="add-day">+ Tạo ngày tập</button><button class="btn big" data-act="onb-sample">Dùng giáo án mẫu</button></div></div></section>`;
   const allX = allEx(), nSets = state.days.reduce((a, d) => a + d.exercises.reduce((b, e) => b + e.sets, 0), 0);
@@ -3350,7 +3364,7 @@ function sessionSheet(id) {
   let h = `<h3 class="sh-title">${esc(s.dayName)}</h3><p class="sh-text">${DOW[parseYmd(s.date).getDay()]} ${dm(s.date)}${s.deload ? ' · deload' : ''}</p>
     <div class="kpis"><div class="kpi"><div class="k">${s.finishedAt ? fmtDur(durOf(s)) : '–'}</div><div class="l">thời gian</div></div><div class="kpi"><div class="k">${st.sets}</div><div class="l">set</div></div><div class="kpi"><div class="k">${fmt(st.vol / 1000, 2)}</div><div class="l">tấn tạ</div></div></div>
     <div class="cmpline">${pv ? `So với lần trước (${dm(pv.date)}): <b>${tons(pst.vol)}</b> → <b>${tons(st.vol)}</b> ${deltaHtml(st.vol, pst.vol)}` : 'Đây là lần đầu tập buổi này.'}</div><div class="tbl-wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>Bài</th><th>Các set</th></tr></thead><tbody>`;
-  for (const en of s.entries) h += `<tr><td>${esc(shortName(en.name))}${en.note ? `<div class="small muted">${esc(en.note)}</div>` : ''}</td><td class="tn">${setsStr(en.sets)}${en.drop ? ` · D ${fmt(en.drop.kg)}×${en.drop.reps}` : ''}</td></tr>`;
+  for (const en of s.entries) { const pe = findEx(en.exId), nDone = en.sets.filter(z => !z.dr).length; h += `<tr><td>${esc(shortName(en.name))}${en.note ? `<div class="small muted">${esc(en.note)}</div>` : ''}<div class="small muted">${pe ? `Kế hoạch ${pe.sets}×${pe.repTarget} · làm ${nDone}/${pe.sets} set` : 'Kế hoạch —'}</div></td><td class="tn">${setsStr(en.sets)}${en.drop ? ` · D ${fmt(en.drop.kg)}×${en.drop.reps}` : ''}</td></tr>`; }
   h += `</tbody></table></div><div class="sh-actions">${canReopen(s) ? `<button class="btn" data-act="reopen-session" data-id="${s.id}">${ICON.play} Mở lại để tập tiếp</button>` : ''}${isHlv() ? '' : `<button class="btn" data-act="share-open" data-d="${s.date}" data-id="${s.id}">${ICON.share} Chia sẻ với PT</button>`}<button class="btn ghost" data-act="close-sheet">Đóng</button><button class="btn ghost danger" data-act="del-session" data-id="${s.id}">Xoá buổi này</button></div>`;
   openSheet(h);
 }
@@ -4849,6 +4863,7 @@ async function copyText(id) {
 /* ---------- xử lý sự kiện ---------- */
 const handlers = {
   'tab': t => { ui.tab = t.dataset.tab; ui.moreSec = null; render(); },
+  'plan-view': t => { ui.planView = t.dataset.k; render(); },
   'start-day': t => startSession(t.dataset.id),
   'pick-day': t => { ui.pick = t.dataset.id; render(true); },
   'more-sec': t => { ui.moreSec = t.dataset.k || null; ui.tab = 'more'; render(); },
