@@ -379,3 +379,13 @@ Bản đồ BR: BR-27.1–27.12 trong [BR.md](BR.md).
 - Nhãn: `comp < 0.8 || (rep !== null && rep < 0.7)` → "Cần xem lại"; `comp ≥ 0.95 && (rep === null || rep ≥ 0.9)` → "Tốt"; còn lại "Ổn".
 - `coachData` thêm `lastQ = sessQuality(last)`; `coachSheet` thêm nhãn `lastQ` vào dòng "Lần cuối" khi có.
 - `sessionSheet` thêm dòng chất lượng khi `isHlv()`. Không đổi máy chủ, không đổi sync. `CACHE` gadn-v83.
+
+## Lịch sử học viên trên máy HLV (PA-45 · 2)
+- `mapSession(days, s)` (đặt sau `planDayMap`): thuần. Giữ `exId` có sẵn; không có thì khớp theo `k` (`exKeys`), rồi theo tên; không khớp → `'~' + shKey(tên)`. `dayId` = `s.dayId` có sẵn, không thì theo `dayName`. Bỏ trường `k` khỏi buổi lưu.
+- `hubApplySession`: sau `cleanPkg` gọi `mapSession(st.days, s)`. `hubFlush`: buổi gửi đi dùng `withKeys(x)` — mỗi bài thêm `k` = `exKeys(findEx(exId))` (hoặc `shKey(exId)` khi không tìm thấy). Máy HV cũ không gửi `k`: HLV khớp theo tên.
+- `mig31(st)` (cạnh `mig29`): khi `settings.mig31` chưa có và có buổi thiếu `exId` thì `mapSession` toàn bộ buổi, rồi đặt cờ. Gọi trong `loadState` (sau `mig29`) và `normState`.
+- `dayOverview(sessions)`: thuần; nhóm buổi đã xong theo `dayName`, lấy kg tốt nhất/gần nhất và so với lần trước. Hiển thị đầu `viewDoneWeeks`.
+- `histLocked()` = `isHlv() && profiles.active !== HLV_SELF`. `render()` bật lớp `body.hist-locked`; CSS ẩn `start-day`, `add-entry`, `#nav-bar .fab`. `startSession` và `'del-session'` chặn bằng `LOCK_MSG`.
+- `planDiff(a, b)`: thuần, nhận giáo án dạng `{n, e}` hoặc `{name, exercises}`; liệt kê ngày/bài thêm, bỏ, đổi số set×rep, đổi tạ khi `kgSetAt` của HLV mới hơn. `hubApplyPlan` (nhánh học viên) ghi `sync.planDiff = {at, items}`; `viewPlan` hiện banner khi `!isHlv()`; `'plan-diff-ok'` xoá.
+- Không đổi máy chủ, không đổi định dạng gói sync (chỉ thêm `k` vào bài của buổi). `CACHE` gadn-v84.
+- Chưa làm: banner ở Trang chủ (hiện ở Lịch tập); HLV thấy học viên đã nhận giáo án (cần ack từ máy chủ).

@@ -338,3 +338,10 @@ Ngoài phạm vi PA-40: đổi công thức hồi phục, đổi cảnh báo đa
 - **BR-32.4 Nhãn chất lượng**: Cần xem lại nếu hoàn thành < 80% hoặc đủ rep < 70%; Tốt nếu hoàn thành ≥ 95% và đủ rep ≥ 90%; còn lại Ổn. Buổi không có set kế hoạch thì không có nhãn. Ngưỡng là mặc định, chờ đối chiếu chuyên môn trước khi duyệt. *Test:* `chatluong-buoi.spec.mjs` (BR-32.4).
 - **BR-32.5 Hiển thị cho HLV**: chi tiết buổi có dòng "Chất lượng: nhãn · hoàn thành … · đủ rep … · cảm giác …"; Bảng HLV: dòng "Lần cuối" của mỗi học viên có thêm nhãn của buổi đó. Máy học viên không thấy nhãn. *Test:* `chatluong-buoi.spec.mjs` (BR-32.5).
 - **Chưa làm (BR-32.6)**: ghi chú HLV cho từng buổi và so thời lượng với thời gian dự kiến.
+
+## Lịch sử học viên trên máy HLV (PA-45 · 2)
+- **BR-33.1 Buổi của học viên gắn đúng bài và ngày giáo án**: buổi về máy HLV được gắn bài theo khoá bài (`k`, máy học viên gửi kèm từ nay), rồi theo tên; ngày theo tên ngày tập. Bài không còn trong giáo án vẫn hiện trong lịch sử theo tên. *Test:* `lichsu-hlv.spec.mjs` (BR-33.1).
+- **BR-33.2 Tổng quan theo ngày tập**: trên Đã tập của hồ sơ học viên (máy HLV) có khối "Theo ngày tập": mỗi ngày có số buổi và ngày gần nhất; mỗi bài có kg tốt nhất, kg gần nhất và ▲ ▼ so với buổi trước. *Test:* `lichsu-hlv.spec.mjs` (BR-33.2).
+- **BR-33.3 HLV không ghi lịch sử học viên**: trên hồ sơ học viên (máy HLV, không phải hồ sơ HLV tự tập) ẩn nút Tập ngày này, nút thêm buổi, và chặn bắt đầu buổi, xoá buổi (thông báo "Học viên tự ghi buổi tập…"). Hồ sơ HLV vẫn tập được. *Test:* `lichsu-hlv.spec.mjs` (BR-33.2, BR-33.3); `profiles.spec.mjs` (Phòng HLV).
+- **BR-33.4 Học viên thấy giáo án HLV vừa chỉnh**: khi nhận giáo án mới từ HLV, máy học viên hiện banner "HLV vừa chỉnh giáo án" kèm danh sách ngày/bài đổi (thêm/bỏ ngày, bài, số set×rep, tạ); bấm Đã xem thì ẩn. *Test:* `lichsu-hlv.spec.mjs` (BR-33.4).
+- **BR-33.5 Buổi cũ được gắn lại**: buổi cũ của hồ sơ chưa có bài (về trước đây) được gắn lại bài và ngày một lần khi hồ sơ được mở. *Test:* `lichsu-hlv.spec.mjs` (BR-33.5).
