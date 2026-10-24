@@ -1287,6 +1287,7 @@ body.resting{padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) 
 :root[data-anim="on"] .prog i{background-size:200% 100%;animation:flow 4s linear infinite}
 @keyframes flow{to{background-position:-200% 0}}
 @media (max-width:370px){.tix .h1{font-size:26px}.tfoot{flex-wrap:wrap}.tgo{width:100%}.mini .mv{font-size:23px}.stepper input{font-size:19px}}
+body.hist-locked [data-act="start-day"], body.hist-locked [data-act="add-entry"], body.hist-locked #nav-bar .fab { display: none !important; }  /* BR-33.3 */
 </style>
 </head>
 <body>
@@ -1611,7 +1612,7 @@ function loadState(s) {
   if (!Array.isArray(state.pains)) state.pains = [];
   if (!Array.isArray(state.musclePain)) state.musclePain = [];   /* PA-40: báo cơ chưa phục hồi, [{ m, at }] */
   if (!state.weekPlans || typeof state.weekPlans !== 'object') state.weekPlans = {};
-  sets3(state); warmAll(state); mig29(state);
+  sets3(state); warmAll(state); mig29(state); mig31(state);
   /* PA-22: chỉ còn Hổ Phách và Đen Tuyền; lần đầu chuyển mọi người sang Hổ Phách */
   /* VD-32: hồ sơ trống (người mới) giữ nguyên lựa chọn; chỉ dữ liệu cũ có sẵn mới bị chuyển */
   const fresh22 = !(s.settings && s.settings.skin22) && !state.days.length && !state.sessions.length;
@@ -1819,6 +1820,7 @@ function render(keepScroll) {
   const tabChanged = ui.tab !== lastTab; lastTab = ui.tab;
   document.documentElement.dataset.fx = state.settings.fxOff ? 'off' : 'on';
   document.documentElement.dataset.anim = animOn() ? 'on' : 'off';
+  document.body.classList.toggle('hist-locked', histLocked());   /* BR-33.3 */
   if (document.documentElement.dataset.skin !== (state.settings.skin || 'amber')) applySkin(state.settings.skin);
   const v = $('#view');
   v.innerHTML = ui.tab === 'home' ? (isHlv() ? viewTeam() : '') + viewHome() : ui.tab === 'today' ? viewToday() : ui.tab === 'plan' ? viewPlan() : ui.tab === 'week' ? viewWeek() : ui.tab === 'body' ? viewBody() : ui.tab === 'photos' ? viewPhotos() : viewMore();
@@ -2654,6 +2656,7 @@ function makeEntry(ex) {
     drop: null };
 }
 function startSession(dayId, exIds) {
+  if (histLocked()) { toast(LOCK_MSG); return; }   /* BR-33.3 */
   if (state.active) { ui.tab = 'today'; render(); return; }
   ui.focusEx = null; ui.heroPh = 0;
   const d = exIds ? null : findDay(dayId);
@@ -2935,6 +2938,8 @@ function viewDoneWeeks() {
     if (ss.length) h += `<div class="list">${[...ss].reverse().map(x => `<button type="button" class="li" data-act="open-session" data-id="${x.id}"><span style="min-width:0"><span class="lt">${esc(x.dayName)}</span><span class="ls">${DOW[parseYmd(x.date).getDay()]} ${dm(x.date)}</span></span></button>`).join('')}</div>`;
     h += `</div>`;
   }
+  const ov = dayOverview(state.sessions);
+  if (ov.length) h = `<div class="card" style="margin-top:12px"><b>Theo ngày tập</b>${ov.map(g => `<div class="ovday"><b>${esc(g.name)}</b><p class="note-line">${g.n} buổi · gần nhất ${dm(g.last)}</p>${g.ex.map(e => `<p class="note-line">${esc(e.name)} · tốt nhất ${e.best} kg · gần nhất ${e.lastKg} kg${e.prevKg == null ? '' : e.lastKg > e.prevKg ? ' ▲' : e.lastKg < e.prevKg ? ' ▼' : ' ='}</p>`).join('')}</div>`).join('')}</div>` + h;   /* BR-33.2 */
   return h;
 }
 function viewPlan() {
@@ -2946,6 +2951,7 @@ function viewPlan() {
   const sentLine = !isHlv() || profiles.active === HLV_SELF ? '' : !hvId ? 'Học viên chưa có thẻ QR' : sy.planAt && sy.planAt[hvId] ? `Gửi giáo án lần cuối lúc ${new Date(sy.planAt[hvId]).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : 'Chưa gửi lần nào';
   let h = `<section class="sec"><div class="sec-head"><h2 class="h1">Lịch tập</h2><div class="row" style="gap:6px;flex-wrap:nowrap">${nAll ? `<button class="btn sm" data-act="lib-open">${ICON.book} Kho bài</button>` : ''}<button class="btn sm gold" data-act="add-day">+ Ngày tập</button></div></div>`
   if (sentLine) h += `<p class="note-line">${sentLine}</p>`;
+  if (sy.planDiff && !isHlv()) h += `<div class="banner"><span class="bi">!</span><div><b>HLV vừa chỉnh giáo án</b><p>${sy.planDiff.items.map(esc).join(' · ')}</p><button class="btn sm" data-act="plan-diff-ok">Đã xem</button></div></div>`;   /* BR-33.4 */
   if (isHlv() && profiles.active !== HLV_SELF && state.days.length) h += `<div class="seg" role="group" aria-label="Xem giáo án hoặc buổi đã tập">${[['plan', 'Giáo án'], ['done', 'Đã tập']].map(([k, l]) => `<button type="button" data-act="plan-view" data-k="${k}" aria-pressed="${(ui.planView || 'plan') === k}">${l}</button>`).join('')}</div>`;
   if (ui.planView === 'done' && isHlv() && profiles.active !== HLV_SELF && state.days.length) return h + viewDoneWeeks() + `</section>`;
   if (!state.days.length) return h + `<div class="hero pempty"><div class="h1" style="font-size:24px">Chưa có ngày tập nào</div><p class="meta">Tạo ngày tập như Lưng, Ngực, Chân rồi thêm bài. Hoặc dùng giáo án mẫu 4 ngày.</p>
@@ -3748,8 +3754,10 @@ function withState(st, fn) { const keep = state; state = st; try { return fn(); 
 /* PA-10: đổi mọi bài về 3 set (1 lần cho mỗi hồ sơ) */
 function sets3(st) { if (!st || !st.settings || st.settings.sets3) return st; for (const d of st.days || []) for (const e of d.exercises || []) { e.sets = 3; for (const a2 of e.alts || []) a2.sets = 3; } st.settings.sets3 = 1; return st; }
 function warmAll(st) { if (!st || !st.settings || st.settings.warmAll) return st; for (const d of st.days || []) for (const e of d.exercises || []) { e.warmup = true; for (const a2 of e.alts || []) a2.warmup = true; } st.settings.warmAll = 1; return st; }
+/* BR-33.5 (mig31): buổi cũ của học viên (về từ máy chủ, chưa có exId) được gắn lại bài và ngày theo giáo án hiện có */
+function mig31(st) { if (!st || !st.settings || st.settings.mig31) return st; if ((st.sessions || []).some(s => (s.entries || []).some(en => !en.exId))) st.sessions = st.sessions.map(s => mapSession(st.days || [], s)); st.settings.mig31 = true; return st; }
 function mig29(st) { if (!st || !st.settings || st.settings.mig29) return st; if (st.settings.pace === 'slow') st.settings.pace = 'std'; if (st.settings.progMode === 'double') st.settings.progMode = 'linear'; st.settings.mig29 = 1; return st; } /* PA-29: giao diện không còn chỗ chọn Thận trọng / Tăng theo rep → dữ liệu cũ về mặc định, một lần */
-function normState(raw) { return raw ? mig29(warmAll(sets3({ ...freshState(), ...raw, pains: raw.pains || [], settings: { ...freshState().settings, ...(raw.settings || {}) } }))) : null; }
+function normState(raw) { return raw ? mig31(mig29(warmAll(sets3({ ...freshState(), ...raw, pains: raw.pains || [], settings: { ...freshState().settings, ...(raw.settings || {}) } })))) : null; }
 function coachData(st) {
   return withState(st, () => {
     const today = ymd(), S = state.sessions, from7 = addDays(today, -6), mon = today.slice(0, 7);
@@ -4319,7 +4327,7 @@ async function hubFlush() {
   const dels = Object.entries(syncDelOf(state).s).filter(([id, t]) => gone[id] !== t).slice(0, 20);
   if (!todo.length && !dels.length) return;
   hubBusy = true;
-  const recs = todo.map(x => ({ k: 'buoi:' + x.id, id: x.id, t: hubRev(x), vai: 'hv', d: JSON.stringify(x) }))
+  const recs = todo.map(x => ({ k: 'buoi:' + x.id, id: x.id, t: hubRev(x), vai: 'hv', d: JSON.stringify(withKeys(x)) }))
     .concat(dels.map(([id, t]) => ({ k: 'buoi:' + id, id, t, vai: 'hv', xoa: 1, d: '{}' })));
   const fresh = todo.filter(x => !sy.at || hubRev(x) >= sy.at), last = fresh[fresh.length - 1];
   const ev = last && fresh.length <= 3 ? { title: `${sy.ten || 'Học viên'} vừa tập xong`, body: `${last.dayName} · ${last.entries.length} bài · ${last.entries.reduce((a, e) => a + e.sets.length, 0)} set`, tag: 'buoi-' + last.id } : null;
@@ -4722,6 +4730,59 @@ async function hubPushPlans(quiet) {
 const planDayHash = d => strHash(JSON.stringify({ n: d.n, e: (d.e || []).map(e => ({ name: e.name, muscle: e.muscle, zone: e.zone, type: e.type, sets: e.sets, repTarget: e.repTarget, repMin: e.repMin, repMax: e.repMax, dropSet: e.dropSet, step: e.step, rest: e.rest, each: e.each, warmup: e.warmup, targetKg: e.targetKg, setup: e.setup })) }));
 const cleanPlanOf = plan => cleanPkg({ app: 'gadn-sync', role: 'coach', link: {}, plan, sessions: [], del: {} }).plan;
 const planDayMap = plan => Object.fromEntries(plan.map(d => [d.n, planDayHash(d)]));
+/* BR-33.1: buổi của học viên về máy HLV không có exId/dayId (cleanPkg bỏ). Gắn bài theo khoá (k) rồi theo tên; ngày theo dayName. Bài lạ giữ id mồ côi '~tên' để gom theo tên. */
+function mapSession(days, s) {
+  const exs = days.flatMap(d => d.exercises.flatMap(e => [e, ...(e.alts || [])]));
+  const day = days.find(d => d.name === s.dayName);
+  const entries = (s.entries || []).map(en => {
+    const { k, ...r } = en;
+    if (r.exId) return r;
+    let m = k && k.length ? exs.find(x => [...exKeys(x)].some(q => k.includes(q))) : null;
+    if (!m) m = exs.find(x => x.name.toLowerCase() === String(r.name || '').toLowerCase());
+    return { ...r, exId: m ? m.id : '~' + shKey(r.name || '') };
+  });
+  return { ...s, dayId: s.dayId || (day ? day.id : 'custom'), entries };
+}
+/* BR-33.1: mỗi bài của buổi gửi kèm khoá (exKeys) để máy HLV khớp đúng bài trong giáo án */
+const withKeys = x => ({ ...x, entries: x.entries.map(en => { const ex = findEx(en.exId); return { ...en, k: [...(ex ? exKeys(ex) : [shKey(en.exId)])] }; }) });
+/* BR-33.3: hồ sơ học viên trên máy HLV chỉ xem; buổi tập do học viên ghi */
+const histLocked = () => isHlv() && profiles.active !== HLV_SELF;
+const LOCK_MSG = 'Học viên tự ghi buổi tập. HLV chỉ xem lịch sử ở đây.';
+/* BR-33.2: tổng quan theo ngày tập: mỗi ngày (theo tên) có số buổi, buổi gần nhất; mỗi bài có kg tốt nhất, kg gần nhất và xu hướng */
+function dayOverview(sessions) {
+  const by = new Map();
+  for (const s of sessions.filter(x => x.finishedAt).sort((a, b) => a.startedAt - b.startedAt)) {
+    if (!by.has(s.dayName)) by.set(s.dayName, { name: s.dayName, n: 0, last: null, ex: new Map() });
+    const g = by.get(s.dayName); g.n++; g.last = s.date;
+    for (const en of s.entries) {
+      const sets = en.sets.filter(x => x.reps > 0); if (!sets.length) continue;
+      const top = Math.max(...sets.map(x => x.kg));
+      const e = g.ex.get(en.name) || { name: en.name, best: 0, lastKg: null, prevKg: null };
+      e.prevKg = e.lastKg; e.lastKg = top; e.best = Math.max(e.best, top);
+      g.ex.set(en.name, e);
+    }
+  }
+  return [...by.values()].map(g => ({ ...g, ex: [...g.ex.values()] })).sort((a, b) => b.last.localeCompare(a.last));
+}
+/* BR-33.4: liệt kê ngày và bài HLV đổi (a = máy này, b = bản HLV); giáo án dạng {n, e} hoặc {name, exercises} */
+function planDiff(a, b) {
+  const nm = d => d.n ?? d.name, es = d => d.e ?? d.exercises, out = [];
+  const A = new Map(a.map(d => [nm(d), d])), B = new Map(b.map(d => [nm(d), d]));
+  for (const d of b) {
+    const o = A.get(nm(d));
+    if (!o) { out.push(`Thêm ngày ${nm(d)}`); continue; }
+    const oe = new Map(es(o).map(x => [x.name, x])), ne = new Map(es(d).map(x => [x.name, x]));
+    for (const x of es(d)) {
+      const y = oe.get(x.name);
+      if (!y) { out.push(`Thêm ${x.name} vào ${nm(d)}`); continue; }
+      if (y.sets !== x.sets || y.repTarget !== x.repTarget) out.push(`${x.name}: ${y.sets}×${y.repTarget} → ${x.sets}×${x.repTarget}`);
+      if ((x.kgSetAt || 0) > (y.kgSetAt || 0) && x.currentKg !== y.currentKg) out.push(`${x.name}: tạ ${y.currentKg ?? '—'} → ${x.currentKg ?? '—'}`);
+    }
+    for (const y of es(o)) if (!ne.has(y.name)) out.push(`Bỏ ${y.name} khỏi ${nm(d)}`);
+  }
+  for (const o of a) if (!B.has(nm(o))) out.push(`Bỏ ngày ${nm(o)}`);
+  return out;
+}
 async function hubApplyPlan(rec) {
   let J = null; try { J = JSON.parse(rec.d); } catch (e) {}
   if (!J || !Array.isArray(J.plan)) return;
@@ -4749,6 +4810,7 @@ async function hubApplyPlan(rec) {
   for (const n of names) if (!R.has(n) && !conflicts.includes(n)) delete nb[n];
   state.sync.planDays = nb; state.sync.planBase = planKey(after);
   state.sync.conflict = conflicts.length ? { plan: RP, t: rec.t, days: conflicts } : null;
+  const diff = planDiff(localPlan, RP); if (diff.length) sy.planDiff = { at: Date.now(), items: diff.slice(0, 30) };   /* BR-33.4 */
   sy.planT = rec.t; save(); render(true);
 }
 /* áp giáo án của HLV vào máy (gộp bằng syncMerge) và ghi nhận bản đã thống nhất */
@@ -4780,6 +4842,7 @@ async function hubApplySession(pid, rec) {
     /* dữ liệu từ máy khác: làm sạch như gói đồng bộ Drive (cleanPkg) trước khi ghi */
     let s = null; try { s = cleanPkg({ app: 'gadn-sync', role: 'student', sessions: [JSON.parse(rec.d)] }).sessions[0]; } catch (e) {}
     if (!s) return;
+    s = mapSession(st.days || [], s);   /* BR-33.1 */
     const i = st.sessions.findIndex(x => x.id === s.id);
     if (i >= 0 && hubRev(st.sessions[i]) >= rec.t) return;
     if (i >= 0) st.sessions[i] = s; else st.sessions.push(s);
@@ -4881,6 +4944,7 @@ async function copyText(id) {
 const handlers = {
   'tab': t => { ui.tab = t.dataset.tab; ui.moreSec = null; render(); },
   'plan-view': t => { ui.planView = t.dataset.k; render(); },
+  'plan-diff-ok': () => { if (state.settings.sync) state.settings.sync.planDiff = null; save(); render(true); },   /* BR-33.4 */
   'start-day': t => startSession(t.dataset.id),
   'pick-day': t => { ui.pick = t.dataset.id; render(true); },
   'more-sec': t => { ui.moreSec = t.dataset.k || null; ui.tab = 'more'; render(); },
@@ -5099,7 +5163,7 @@ const handlers = {
   'allex': () => allExSheet(''),
   'mus-toggle': t => { ui.musOpen = !t.parentElement.open; t.parentElement.open = ui.musOpen; },
   'open-session': t => sessionSheet(t.dataset.id),
-  'del-session': t => confirmSheet({ title: 'Xoá buổi tập này?', text: 'Buổi tập sẽ bị xoá khỏi lịch sử và không thể khôi phục.', ok: 'Xoá buổi tập', danger: true,
+  'del-session': t => histLocked() ? toast(LOCK_MSG) : confirmSheet({ title: 'Xoá buổi tập này?', text: 'Buổi tập sẽ bị xoá khỏi lịch sử và không thể khôi phục.', ok: 'Xoá buổi tập', danger: true,
     onOk: () => { markDelSession(t.dataset.id); state.sessions = state.sessions.filter(s => s.id !== t.dataset.id); save(); render(true); } }),
   'prog': t => { ui.progEx = t.dataset.id; progressSheet(); },
   'pm': t => { ui.pm = t.dataset.k; const y = $('#sheet-body').scrollTop; progressSheet(); $('#sheet-body').scrollTop = y; },
@@ -5364,7 +5428,7 @@ async function purgeStored() {
   if (h.startsWith('#nhap=')) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} toast(OLD_CODE); }
   if ('serviceWorker' in navigator && location.protocol === 'https:' && document.documentElement.dataset.pwa === '1') { navigator.serviceWorker.register('sw.js').catch(() => {}); }
 })();
-window.__sota = { suggest, sessQuality, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
+window.__sota = { mapSession, planDiff, dayOverview, suggest, sessQuality, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
 })();
 </script>
 </body>
