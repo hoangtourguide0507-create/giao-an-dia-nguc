@@ -201,6 +201,13 @@ ok(!(await doi('since=0', H)).j.recs.some(r => r.hv === 'lan-7k3f'), 'Xoá học
   const gd = await goi('Bearer a.' + AK, '?d=1');
   ok(JSON.parse(gd.j.recs.find(r => r.hv === 'bo-9q8w' && r.k === 'plan@hlv').d).plan.length === 2, 'Admin: d=1 kèm nội dung gốc để sao lưu');
   ok((await api('/s/tt', null, H, 'GET')).j.seq === seq0, 'Admin: chỉ đọc, seq không đổi');
+  const bs = (id, date, sets) => ({ k: 'buoi:' + id, id, t: T + 9100, vai: 'hv', d: JSON.stringify({ id, date, dayName: 'Ngực', finishedAt: 1, entries: [{ muscle: 'Ngực', sets: Array(sets).fill({ kg: 1, reps: 1 }), drop: sets === 3 ? { kg: 1, reps: 1 } : null }] }) });
+  const dkBo = (await api('/s/noi', { i: 'bo-9q8w', k: kBo, tb: 'máy' })).j.dk;
+  await api('/s/ghi', { hv: 'bo-9q8w', recs: [bs('b1', '2026-10-20', 3), bs('b2', '2026-10-20', 2), bs('b3', '2026-10-27', 5)] }, V('bo-9q8w', dkBo));
+  const bt = await api('/s/admin/buoi?tu=2026-10-19&den=2026-10-25', null, 'Bearer a.' + AK, 'GET'), bo = bt.j.hv && bt.j.hv.find(x => x.hv === 'bo-9q8w');
+  ok(bt.s === 200 && bo && bo.soBuoi === 2 && bo.tongNhom['Ngực'] === 6, 'Admin buoi: chỉ buổi trong tuần; set mỗi nhóm cơ gồm cả drop (4 + 2)');
+  ok(bo && bo.trungNgayTen.length === 1 && bo.trungNgayTen[0].n === 2, 'Admin buoi: báo hai buổi trùng ngày + tên buổi');
+  ok((await api('/s/admin/buoi?tu=x&den=y', null, 'Bearer a.' + AK, 'GET')).s === 400 && (await api('/s/admin/buoi?tu=2026-10-19&den=2026-10-25', null, H, 'GET')).s === 401, 'Admin buoi: ngày sai → 400; khoá HLV → 401');
   ok((await api('/s/admin/giao-an', {}, 'Bearer a.' + AK)).s === 404, 'Admin: POST chưa có (D1 chỉ đọc) → 404');
   delete env.ADMIN_HASH;
 }
