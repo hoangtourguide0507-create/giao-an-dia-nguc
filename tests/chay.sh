@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Kiểm thử nhẹ (không dùng trình duyệt): cú pháp, service worker, máy chủ đồng bộ/thông báo.
+# Kiểm thử nhẹ (không dùng trình duyệt): cú pháp, service worker, máy chủ đồng bộ/thông báo, tìm hình minh hoạ.
 # Test giao diện (Playwright) chạy riêng: npm run test:app  hoặc  npx playwright test <tên-file>
 set -u
 cd "$(dirname "$0")/.."
@@ -9,4 +9,5 @@ npm run -s test:sw >/dev/null 2>&1 && echo "✓ service worker" || { echo "✗ s
 node tests/test_push_server.mjs | grep -q FAIL && { echo "✗ push-server"; FAIL=1; } || echo "✓ push-server"
 node tests/test_hub_sync.mjs 2>/dev/null | grep -q FAIL && { echo "✗ hub-sync (máy chủ đồng bộ)"; FAIL=1; } || echo "✓ hub-sync (máy chủ đồng bộ)"
 node tests/test_hub_pa33b.mjs 2>/dev/null | grep -q FAIL && { echo "✗ hub-passkey-anh"; FAIL=1; } || echo "✓ hub-passkey-anh"
+node tests/test_minh_hoa.mjs | grep -q FAIL && { echo "✗ hình minh hoạ (tên gọi máy)"; FAIL=1; } || echo "✓ hình minh hoạ (tên gọi máy)"
 exit $FAIL

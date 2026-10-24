@@ -20,7 +20,7 @@
 - Giao diện và nội dung viết bằng tiếng Việt.
 
 ## Kiểm thử
-- `bash tests/chay.sh`: bộ nhẹ, không dùng trình duyệt — kiểm cú pháp, service worker và 3 kiểm thử máy chủ (push-server, hub-sync, passkey/ảnh). Phải xanh trước khi đẩy nhánh và trước khi gộp.
+- `bash tests/chay.sh`: bộ nhẹ, không dùng trình duyệt — kiểm cú pháp, service worker, 3 kiểm thử máy chủ (push-server, hub-sync, passkey/ảnh) và tìm hình minh hoạ. Phải xanh trước khi đẩy nhánh và trước khi gộp.
 - Từ 24/10/2026 Playwright **không còn nằm trong cổng bắt buộc** (bộ Python `tests/test_pa*.py` và `chuan_bi.py` đã xoá). `npm run test:app` là bộ giao diện duy nhất, chạy trên Chromium với khung nhìn iPhone 13 (không cần iPhone thật hay WebKit); khi PA đụng giao diện thì chạy file liên quan: `npx playwright test <tên-file>`; cả bộ chỉ chạy khi chủ repo yêu cầu.
 - **Playwright chỉ viết hoặc chạy trên local hoặc remote** (phiên trên máy chủ, tương tác qua điện thoại được). **Trong môi trường cloud (container tạm của claude.ai/code) không viết và không chạy Playwright**, dù yêu cầu có nói gì — `tests/app/*.spec.mjs`, `npm run test:app`. Khi đó báo cáo ghi rõ phần Playwright chưa làm, để chủ repo chạy trên local hoặc remote. Các kiểm tra nhẹ (`npm run check`, `npm run test:sw`) vẫn chạy được trên cloud. Chi tiết: [README](README.md#quy-tắc-cho-ai-test-playwright).
 - **PA gỡ hoặc đổi tính năng phải dọn test trong chính PA đó**: xoá test, helper và dữ liệu giả của tính năng đã bỏ (đừng giữ test chỉ khẳng định "không còn X"; việc dọn dữ liệu cũ thì giữ test migration). Điều kiện xong: `grep -rni <tên tính năng> tests/` không còn dòng nào ngoài test migration, và `docs/SA.md` §12 khớp.

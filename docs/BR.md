@@ -197,9 +197,11 @@ Test: `tests/app/drive.spec.mjs` (mã kiểu cũ bị từ chối), `tests/app/e
 Test: `tests/app/guide.spec.mjs`
 
 - **BR-16.1** Bảng hướng dẫn: vùng cơ, hình minh hoạ 2 tư thế (Free Exercise DB, tự tìm theo tên bài — thư viện ~870 bài), lực (đẩy/kéo/giữ) và dụng cụ, **hình người trước/sau tô nhóm cơ chính/phụ**, điểm form (lời nhắc riêng của người dùng lên đầu + lời nhắc theo kiểu động tác), link tìm video YouTube, **video của tôi** (quay/chọn ≤ 120 MB, lưu trên máy, xoá), link video riêng, cảnh báo an toàn.
-- **BR-16.2** Đổi hình minh hoạ: gợi ý theo tên, tìm bằng tiếng Anh, chọn, hoặc không dùng hình.
+- **BR-16.2** Đổi hình minh hoạ: gợi ý theo tên, tìm bằng tiếng Anh hoặc tên ở phòng gym (BR-16.5), chọn, hoặc không dùng hình.
 - **BR-16.3** Hình đã xem được lưu lại để dùng offline.
 - **BR-16.4 Thư viện hình offline**: tải 1 lần 2 gói (~20 MB, 873 bài × 2 tư thế), báo tiến độ MB/số hình, ghi nhớ đã tải, tải lại được; lỗi mạng hoặc tải được một phần thì báo rõ.
+- **BR-16.5 Tìm hình theo tên gọi ở phòng gym** (PA-49): bảng tên gọi tiếng Việt + tiếng Anh phòng gym cho các máy có hình (pec fly/pec deck, reverse pec deck, hack squat, chest press thường/dốc lên/dốc xuống, shoulder press máy, leg press, leg extension, leg curl, abductor/adductor, row máy, high row, lat pulldown, máy xà kép, cuốn tay máy, duỗi tay sau máy, nhún vai máy, gập bụng máy, nhón bắp chân máy, deadlift máy, reverse hyper, GHD, ép cáp). Kết quả theo tên gọi đứng đầu ô *Chọn hình minh hoạ*, và được dùng khi tự gán hình cho bài chưa có hình; cụm dài hơn thắng ("reverse pec deck" ra máy vai sau). Bài đã có hình không bị đổi.
+- **BR-16.6 Nhãn tên gọi quen** (PA-49): tên gốc khó hiểu có nhãn đi kèm trong danh sách chọn và bảng hướng dẫn, ví dụ "Butterfly · Pec deck / Pec fly", "Hack Squat · Máy hack squat". Thư viện bài: *Máy xà kép ngồi* dùng hình máy xà kép (`Dip_Machine`).
 
 ## BR-17 Báo cáo tháng — **ĐÃ BỎ (PA-14)**
 - **BR-17.1** Báo cáo tháng (ảnh PNG, lời nhắn HLV, xuất Excel .csv) bị gỡ vì trùng với Tiến độ; các nút "Báo cáo" ở Tiến độ và thẻ học viên không còn. Test và mã liên quan đã xoá.

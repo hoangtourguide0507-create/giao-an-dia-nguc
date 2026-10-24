@@ -62,7 +62,7 @@ Script chính là một IIFE, chia thành các khối (tiêu đề `/* ---------
 | Sự kiện | khối `handlers` | Bảng `handlers` (~186 hành động), ủy quyền `click` theo `data-act`, `input` theo `data-bind`, `change` (file, checkbox), `keydown` Esc, `visibilitychange`, `pagehide`, `beforeinstallprompt`, đồng hồ 1 giây |
 | Khởi động | cuối script | Mở IndexedDB → nạp hồ sơ + trạng thái → `render` → đọc trạng thái gói hình → `hubSync` sau 1,6 s → `pushRegSoon` → tự mở kế hoạch tuần → đăng ký service worker (chỉ https) |
 
-`window.__sota` lộ một số hàm thuần (`suggest`, `roadmap`, `exHistory`, `baseKg`, `warmSets`, `recommend`, `muscleLoad`, `switchProfile`, `findEx`, `slotOf`, `autoGid`, `guideSheet`, `exdbMatch`) và getter `state/ui/profiles` để gỡ lỗi và kiểm thử.
+`window.__sota` lộ một số hàm thuần (`suggest`, `roadmap`, `exHistory`, `baseKg`, `warmSets`, `recommend`, `muscleLoad`, `switchProfile`, `findEx`, `slotOf`, `autoGid`, `guideSheet`, `exdbMatch`, `exdbSearch`) và getter `state/ui/profiles` để gỡ lỗi và kiểm thử.
 
 ### Mô hình hiển thị
 - `render()` vẽ lại toàn bộ `#view` bằng chuỗi HTML theo `ui.tab` (`viewHome`/`viewSession` — `viewToday` chọn một trong hai —, `viewPlan`, `viewWeek` (kèm Cơ thể/Ảnh qua `progTabs`), `viewMore`); vai máy `isHlv()` = `hubRole() === 'hlv'` (BR-25); trong buổi tập dùng `refreshExCard(i)` để chỉ thay một thẻ bài (giữ con trỏ ô ghi chú).
@@ -157,7 +157,8 @@ suggestBase = chưa có lịch sử hoặc mức tự nhập mới hơn → star
 - Khối lượng: `Σ kg × rep` (+ drop), × 2 nếu tạ đơn ghi mỗi tay. Kỷ lục: `bestE1 > max lịch sử + 0,01`.
 - Cơ thể: `fatKg = weight × bodyFat/100`, `leanKg = weight − fatKg`; mốc so sánh `refOf` = lần đo cuối của tháng trước, không có thì lần đầu; ngưỡng 0,3 kg.
 - Vùng cơ: `ZONES` (12 nhóm lớn → vùng), `ZRULES` (regex theo tên tiếng Việt/Anh), `LIBZ` từ thư viện.
-- Tìm hình minh hoạ: `exdbMatch` dịch từ khoá Việt → Anh (`VI_EN`), so khớp token với 870+ bài Free Exercise DB (`EXDB` nhúng); tự gán khi điểm ≥ 0,75.
+- Tìm hình minh hoạ: `exdbMatch` dịch từ khoá Việt → Anh (`enQuery` + `VI_EN`), so khớp token với 870+ bài Free Exercise DB (`EXDB` nhúng); tự gán khi điểm ≥ 0,75 (`LIB_GID` của thư viện bài vẫn ưu tiên trước).
+- Tên gọi ở phòng gym (PA-49, BR-16.5/16.6): `EXDB_ALIAS = [[cụm…], [gid…]]`, `aliasIds(text)` chuẩn hoá chữ thường (giữ dấu, bỏ ký tự khác chữ/số), khớp cụm theo ranh giới từ, xếp theo cụm khớp dài nhất, bỏ trùng, chỉ giữ gid có trong `EXDB`. `exdbMatch` đặt các gid này lên đầu với điểm 1; `exdbSearch(q, k)` (ô *Chọn hình minh hoạ*) = `aliasIds(q)` rồi khớp tiền tố từ (chuỗi có dấu dịch qua `enQuery`). `EXDB_AKA` → `exdbGet(id).aka` (nhãn hiện trong danh sách chọn và bảng hướng dẫn). Không đổi dữ liệu, không đổi đồng bộ. Test: `tests/test_minh_hoa.mjs` (Node, trong `tests/chay.sh`).
 
 ## 5. Luồng buổi tập
 
