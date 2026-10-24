@@ -9,6 +9,8 @@
  * Không có lệnh tạo HLV: chỉ ai giữ QR HLV (khoá trong QR) mới là HLV.
  */
 
+import { handleAdmin } from './admin.js';
+
 const enc = new TextEncoder();
 export const MAX_DEV = 5, MAX_RECS = 200, PAGE = 500, MAX_BUOI = 256 * 1024, MAX_PLAN = 1024 * 1024, MAX_CT = 4096;
 /* PA-48 · BR-37: thông tin cơ thể do học viên ghi, HLV chỉ đọc: số đo (do@hv, mỗi lần đo một bản ghi), ảnh body (anh@hv, ảnh nằm ở kho /s/anh), chiều cao/giới tính (ho-so@hv) */
@@ -42,7 +44,7 @@ export function schema(sql) {
 }
 
 export function seqNow(sql) { const r = one(sql, "SELECT v FROM meta WHERE k = 'seq'"); return r ? r.v : 0; }
-function nextSeq(sql) { const s = seqNow(sql) + 1; sql.exec("INSERT INTO meta(k, v) VALUES('seq', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v", s); return s; }
+export function nextSeq(sql) { const s = seqNow(sql) + 1; sql.exec("INSERT INTO meta(k, v) VALUES('seq', ?) ON CONFLICT(k) DO UPDATE SET v = excluded.v", s); return s; }
 
 /* Xác định người gọi từ header Authorization. Trả null nếu sai, máy bị đẩy/thu hồi hoặc học viên bị khoá. */
 export async function whoIs(sql, env, h) {
@@ -306,6 +308,7 @@ export async function handle(ctx, req, p, u) {
   if (p === '/s/pk/thach' && m === 'POST') return thach(sql);
   if (p === '/s/pk/vao' && m === 'POST') return pkVao(sql, env, await req.json().catch(() => ({})));
 
+  if (p.startsWith('/s/admin/')) return handleAdmin(ctx, req, p, u);
   const auth = await whoIs(sql, env, req.headers.get('Authorization'));
   if (!auth) return fail(401, 'Chưa đăng nhập hoặc máy đã bị thu hồi');
   const key = m + ' ' + p;
