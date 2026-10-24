@@ -1700,9 +1700,10 @@ function suggestBase(ex) {
     text: `Tuần deload: <strong>${fmt(kg)} kg</strong>, vẫn giữ nguyên số set. Tuần sau quay lại ${fmt(W)} kg.` }; }
   return state.settings.progMode === 'double' ? suggestDouble(ex, H, W) : suggestLinear(ex, H, W);
 }
-function suggestRaw(ex) { const g = suggestP(ex); return ex && ex.each ? { ...g, text: String(g.text).replace(/ kg\b(?!\/)/g, ' kg/tay') } : g; }
+function holdOf(ex, g) { if (!ex || !ex.hold || g.kind !== 'up' || !(g.prev > 0)) return g; return { ...g, kind: 'hold', label: 'GIỮ', kg: g.prev, reps: Array.from({ length: ex.sets }, () => ex.repTarget), hlvHold: true, text: `HLV khoá mức tạ bài này: giữ <strong>${fmt(g.prev)} kg</strong>, không tự lên tạ.` }; }
+function suggestRaw(ex) { const g = holdOf(ex, suggestP(ex)); return ex && ex.each ? { ...g, text: String(g.text).replace(/ kg\b(?!\/)/g, ' kg/tay') } : g; }
 function suggest(ex) {
-  const g = suggestRaw(ex), p = ui.wpDraft ? null : wpCur(); if (!p || !ex || !p.kg || p.kg[ex.id] == null || g.skip) return g;
+  const g = suggestRaw(ex), p = ui.wpDraft ? null : wpCur(); if (!p || !ex || !p.kg || p.kg[ex.id] == null || g.skip || g.hlvHold) return g;
   const k = p.kg[ex.id], dec = (p.dec || {})[ex.id];
   const kind = g.kind === 'up' && dec === 'hold' ? 'hold' : g.kind;
   return { ...g, kind, kg: k, planned: true, label: kind === 'up' ? 'TĂNG TẠ' : g.kind === 'deload' ? 'DELOAD' : 'ĐÃ DUYỆT', text: `Kế hoạch tuần đã duyệt: <strong>${fmt(k)}${U(ex)}</strong>${dec === 'hold' && g.kind === 'up' ? ' (bạn chọn giữ mức cũ tuần này)' : dec === 'custom' ? ' (bạn tự chỉnh)' : ''}. ` + String(g.text) };
@@ -2602,7 +2603,7 @@ function entryCard(en, i) {
   let h = `<article class="ex focus beam${ui.arriveEx === en.exId ? ' arrive' : ''}" data-i="${i}">${exHero(ex, i, a ? a.entries.length : 1)}`;
   const thumb = '';
   const tReps = en.sets[0] ? en.sets[0].reps : sg.reps[0];
-  h += `<div class="ex-body"><div class="ex-head">${thumb}<div class="mid"><div class="ex-name">${esc(ex.name)}</div><div class="ex-sub">${esc(ex.muscle)} · ${ex.sets}×${ex.repTarget || 10} · nghỉ ${fmtDur(restOf(ex) * 1000)}</div>${ex.ghost ? '' : `<button type="button" class="gbtn" data-act="guide" data-id="${ex.id}">${GUIDE_ICO} Hướng dẫn & nhóm cơ</button>`}</div></div>${formCueHtml(ex, en, 'l' + i)}
+  h += `<div class="ex-body"><div class="ex-head">${thumb}<div class="mid"><div class="ex-name">${esc(ex.name)}</div><div class="ex-sub">${esc(ex.muscle)} · ${ex.sets}×${ex.repTarget || 10} · nghỉ ${fmtDur(restOf(ex) * 1000)}</div>${ex.hlvNote ? `<div class="ex-sub">HLV: ${esc(ex.hlvNote)}</div>` : ''}${ex.ghost ? '' : `<button type="button" class="gbtn" data-act="guide" data-id="${ex.id}">${GUIDE_ICO} Hướng dẫn & nhóm cơ</button>`}</div></div>${formCueHtml(ex, en, 'l' + i)}
     <div class="target"><div><div class="tl">${last ? 'Lần trước · ' + dm(last.date) : 'Lần trước'}</div><div class="tv shine">${last ? `${fmt(wt(last))}<small>${U(ex)} × ${last.sets.filter(x => !x.dr).map(s => s.reps).join('·')}${effList(last.sets).length ? ` <span class="effl">· ${effList(last.sets).join('·')}</span>` : ''}</small>` : '<small>Chưa tập · tự chọn mức tạ</small>'}</div>${sugChip(ex, sg)}</div></div>`;
   if (ex.setup) h += `<details class="setup"><summary>Cách chỉnh máy ›</summary><p>${esc(ex.setup)}</p></details>`;
   if (needsWarm(en, i)) h += `<div class="warm"><div class="warm-h">${ICON.flame} ${warmKind(en, i) === 'feel' ? 'Set làm quen máy' : 'Set khởi động'}<span>không tính vào khối lượng</span></div><div class="warm-sets" id="warm-${i}">${warmInner(en, i)}</div></div>`;
@@ -2924,12 +2925,29 @@ function spark(ex) {
   const L = P[P.length - 1];
   return `<svg class="spk" viewBox="0 0 52 16" aria-hidden="true"><polyline pathLength="100" points="${P.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ')}"/><circle cx="${L[0].toFixed(1)}" cy="${L[1].toFixed(1)}" r="2"/></svg>`;
 }
+function viewDoneWeeks() {
+  const nDays = state.days.length;
+  let h = '';
+  for (let k = 0; k < 8; k++) {
+    const days = weekDaysOf(-k), ss = state.sessions.filter(x => x.date >= days[0] && x.date <= days[6]);
+    const done = new Set(ss.map(x => x.dayId).filter(id => state.days.some(d => d.id === id))).size;
+    h += `<div class="card" style="margin-top:12px"><b>${dm(days[0])} – ${dm(days[6])}</b><p class="note-line">${ss.length} buổi · đã tập ${done}/${nDays} ngày trong giáo án</p>`;
+    if (ss.length) h += `<div class="list">${[...ss].reverse().map(x => `<button type="button" class="li" data-act="open-session" data-id="${x.id}"><span style="min-width:0"><span class="lt">${esc(x.dayName)}</span><span class="ls">${DOW[parseYmd(x.date).getDay()]} ${dm(x.date)}</span></span></button>`).join('')}</div>`;
+    h += `</div>`;
+  }
+  return h;
+}
 function viewPlan() {
   const rc = recommend();
   const dbPending = allExFull().filter(x => isDb(x.ex) && x.ex.each == null);
   const nm = curProf().name;
   const nAll = allExFull().length, dueN = state.days.reduce((a, d) => a + d.exercises.filter(rotDue).length, 0);
-  let h = `<section class="sec"><div class="sec-head"><h2 class="h1">Lịch tập</h2><div class="row" style="gap:6px;flex-wrap:nowrap">${nAll ? `<button class="btn sm" data-act="lib-open">${ICON.book} Kho bài</button>` : ''}<button class="btn sm gold" data-act="add-day">+ Ngày tập</button></div></div>`;
+  const sy = state.settings.sync || {}, hvId = isHlv() && profiles.active !== HLV_SELF ? Object.keys(sy.map || {}).find(k => sy.map[k] === profiles.active) : null;
+  const sentLine = !isHlv() || profiles.active === HLV_SELF ? '' : !hvId ? 'Học viên chưa có thẻ QR' : sy.planAt && sy.planAt[hvId] ? `Gửi giáo án lần cuối lúc ${new Date(sy.planAt[hvId]).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : 'Chưa gửi lần nào';
+  let h = `<section class="sec"><div class="sec-head"><h2 class="h1">Lịch tập</h2><div class="row" style="gap:6px;flex-wrap:nowrap">${nAll ? `<button class="btn sm" data-act="lib-open">${ICON.book} Kho bài</button>` : ''}<button class="btn sm gold" data-act="add-day">+ Ngày tập</button></div></div>`
+  if (sentLine) h += `<p class="note-line">${sentLine}</p>`;
+  if (isHlv() && profiles.active !== HLV_SELF && state.days.length) h += `<div class="seg" role="group" aria-label="Xem giáo án hoặc buổi đã tập">${[['plan', 'Giáo án'], ['done', 'Đã tập']].map(([k, l]) => `<button type="button" data-act="plan-view" data-k="${k}" aria-pressed="${(ui.planView || 'plan') === k}">${l}</button>`).join('')}</div>`;
+  if (ui.planView === 'done' && isHlv() && profiles.active !== HLV_SELF && state.days.length) return h + viewDoneWeeks() + `</section>`;
   if (!state.days.length) return h + `<div class="hero pempty"><div class="h1" style="font-size:24px">Chưa có ngày tập nào</div><p class="meta">Tạo ngày tập như Lưng, Ngực, Chân rồi thêm bài. Hoặc dùng giáo án mẫu 4 ngày.</p>
     <div class="stack" style="margin-top:16px"><button class="btn gold big" data-act="add-day">+ Tạo ngày tập</button><button class="btn big" data-act="onb-sample">Dùng giáo án mẫu</button></div></div></section>`;
   const allX = allEx(), nSets = state.days.reduce((a, d) => a + d.exercises.reduce((b, e) => b + e.sets, 0), 0);
@@ -2966,7 +2984,7 @@ function viewPlan() {
         if (slotName(ex) || alts.length) h += `<div class="slotl">${esc(slotName(ex) || ex.muscle)}${due ? `<button type="button" class="rot" data-act="rot-open">⟳ Đến lúc đổi bài</button>` : ''}</div>`;
         const sub = b == null ? '<span class="none">Điền mức tạ</span>' : sg.kind === 'up' ? `<span><span class="upn">▲</span> ${fmt(sg.kg)} tuần này</span>` : sg.next ? `<span>▲ ${fmt(sg.next)} tuần sau</span>` : ex.targetKg ? `<span style="color:var(--muted)">mục tiêu ${fmt(ex.targetKg)}</span>` : '';
         h += `<div class="exr"><span class="exn">${j + 1}</span><button type="button" class="exr-main" data-act="edit-ex" data-day="${d.id}" data-id="${ex.id}">${thumbHtml(ex)}
-          <span class="t"><span class="n">${esc(ex.name)}${ex.each ? '<span class="dbtag">MỖI TAY</span>' : ''}</span><span class="m">${esc(ex.muscle)} · ${ex.sets}×${ex.repTarget}${ex.dropSet ? ' + 3 drop' : ''} · nghỉ ${fmtDur(restOf(ex) * 1000)}</span></span>
+          <span class="t"><span class="n">${esc(ex.name)}${ex.each ? '<span class="dbtag">MỖI TAY</span>' : ''}${ex.hold ? ' <span class="chip">HLV khoá</span>' : ''}</span><span class="m">${esc(ex.muscle)} · ${ex.sets}×${ex.repTarget}${ex.dropSet ? ' + 3 drop' : ''} · nghỉ ${fmtDur(restOf(ex) * 1000)}</span>${ex.hlvNote ? `<span class="m">HLV: ${esc(ex.hlvNote)}</span>` : ''}</span>
           <span class="exr-kg"><b>${kgHtml(b, ex)}</b>${sub}${spark(ex)}</span></button>
           <div class="mv"><button type="button" data-act="move-ex" data-day="${d.id}" data-id="${ex.id}" data-d="-1" aria-label="Đưa lên" ${j === 0 ? 'disabled' : ''}>${ICON.up}</button>
           <button type="button" data-act="move-ex" data-day="${d.id}" data-id="${ex.id}" data-d="1" aria-label="Đưa xuống" ${j === d.exercises.length - 1 ? 'disabled' : ''}>${ICON.down}</button></div></div>`;
@@ -3095,6 +3113,9 @@ function exSheet() {
       <p class="fhint" style="align-self:end;padding-bottom:6px">Nấc nhỏ nhất của máy hoặc quả tạ, ví dụ 2,5 kg; tạ đơn thường 1–2 kg mỗi quả.</p>
       ${hasHist ? `<p class="fhint full">Ô “Đang tập” tự cập nhật sau mỗi buổi. Sửa tay nếu bạn đã tập mức khác ở ngoài app.</p>` : ''}
     </div><div id="f-road" style="margin-top:12px"></div></div>
+    ${hubRole() === 'hlv' ? `<div class="fsec"><span class="eyebrow">Giáo án của HLV</span><div class="formgrid">
+      <label class="toggle full"><span>Khoá mức tạ<br><span class="fhint">Học viên giữ mức này, app không tự lên tạ bài này.</span></span><input type="checkbox" id="f-hold" ${d.hold ? 'checked' : ''}></label>
+      <label class="f full">Ghi chú cho học viên<input class="inp" id="f-hlvnote" maxlength="300" value="${esc(d.hlvNote || '')}" placeholder="Ví dụ: dừng ở 2 rep trước khi hỏng"></label></div></div>` : (d.hold || d.hlvNote) ? `<div class="fsec"><span class="eyebrow">Từ HLV</span>${d.hold ? '<p class="fhint">HLV khoá mức tạ bài này.</p>' : ''}${d.hlvNote ? `<p>${esc(d.hlvNote)}</p>` : ''}</div>` : ''}
     <div class="fsec"><span class="eyebrow">Set & rep</span><div class="formgrid">
       <label class="f">Số set<input class="inp" id="f-sets" inputmode="numeric" value="${d.sets}"></label>
       <label class="f">Rep mục tiêu<input class="inp" id="f-rtgt" inputmode="numeric" value="${d.repTarget}"></label>
@@ -3122,6 +3143,7 @@ function readDraft() {
   if ($('#f-rmax')) d.repMax = num(v('#f-rmax'));
   d.step = num(v('#f-step')); d.rest = +v('#f-rest'); d.dropSet = $('#f-drop').checked; d.warmup = $('#f-warm').checked; d.setup = (v('#f-setup') || '').trim();
   d.curIn = num(v('#f-cur')); d.targetKg = num(v('#f-tgt')); if ($('#f-slot')) d.slot = v('#f-slot'); if ($('#f-each')) d.each = $('#f-each').checked;
+  if ($('#f-hold')) { d.hold = $('#f-hold').checked; d.hlvNote = (v('#f-hlvnote') || '').trim(); }
 }
 function roadHtml(ex, r) {
   if (!r) return '';
@@ -3170,6 +3192,22 @@ function sessStats(x) {
   let sets = 0, vol = 0;
   for (const en of x.entries) { sets += en.sets.length + (en.drop ? 1 : 0); vol += mul(en) * (en.sets.reduce((a, y) => a + (y.kg || 0) * y.reps, 0) + (en.drop ? (en.drop.kg || 0) * (en.drop.reps || 0) : 0)); }
   return { sets, vol };
+}
+function sessQuality(x) {
+  let plan = 0, done = 0, repOk = 0; const eff = { e: 0, m: 0, h: 0, f: 0 };
+  for (const en of x.entries) {
+    const pe = findEx(en.exId); if (!pe) continue;
+    plan += pe.sets;
+    for (const z of en.sets) {
+      if (z.dr) continue;
+      done++; if (z.reps >= pe.repTarget) repOk++;
+      if (z.ef && eff[z.ef] !== undefined) eff[z.ef]++;
+    }
+  }
+  if (!plan) return null;
+  const comp = Math.min(1, done / plan), rep = done ? repOk / done : null;
+  const label = comp < 0.8 || (rep !== null && rep < 0.7) ? 'Cần xem lại' : comp >= 0.95 && (rep === null || rep >= 0.9) ? 'Tốt' : 'Ổn';
+  return { plan, done, repOk, comp, rep, eff, label };
 }
 function prevSame(x) {
   let best = null;
@@ -3338,11 +3376,12 @@ function progressSheet() {
 }
 function sessionSheet(id) {
   const s = state.sessions.find(x => x.id === id); if (!s) return;
-  const st = sessStats(s), pv = prevSame(s), pst = pv && sessStats(pv);
+  const st = sessStats(s), pv = prevSame(s), pst = pv && sessStats(pv), q = sessQuality(s);
   let h = `<h3 class="sh-title">${esc(s.dayName)}</h3><p class="sh-text">${DOW[parseYmd(s.date).getDay()]} ${dm(s.date)}${s.deload ? ' · deload' : ''}</p>
     <div class="kpis"><div class="kpi"><div class="k">${s.finishedAt ? fmtDur(durOf(s)) : '–'}</div><div class="l">thời gian</div></div><div class="kpi"><div class="k">${st.sets}</div><div class="l">set</div></div><div class="kpi"><div class="k">${fmt(st.vol / 1000, 2)}</div><div class="l">tấn tạ</div></div></div>
+    ${q && isHlv() ? `<div class="cmpline"><b>Chất lượng: ${q.label}</b> · Hoàn thành ${q.done}/${q.plan} set (${Math.round(q.comp * 100)}%)${q.done ? ` · Đủ rep ${q.repOk}/${q.done} set` : ''}${Object.values(q.eff).some(Boolean) ? ' · Cảm giác: ' + Object.entries(q.eff).filter(([, n]) => n).map(([k, n]) => `${EFF[k].t} ${n}`).join(' · ') : ''}</div>` : ''}
     <div class="cmpline">${pv ? `So với lần trước (${dm(pv.date)}): <b>${tons(pst.vol)}</b> → <b>${tons(st.vol)}</b> ${deltaHtml(st.vol, pst.vol)}` : 'Đây là lần đầu tập buổi này.'}</div><div class="tbl-wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>Bài</th><th>Các set</th></tr></thead><tbody>`;
-  for (const en of s.entries) h += `<tr><td>${esc(shortName(en.name))}${en.note ? `<div class="small muted">${esc(en.note)}</div>` : ''}</td><td class="tn">${setsStr(en.sets)}${en.drop ? ` · D ${fmt(en.drop.kg)}×${en.drop.reps}` : ''}</td></tr>`;
+  for (const en of s.entries) { const pe = findEx(en.exId), nDone = en.sets.filter(z => !z.dr).length; h += `<tr><td>${esc(shortName(en.name))}${en.note ? `<div class="small muted">${esc(en.note)}</div>` : ''}<div class="small muted">${pe ? `Kế hoạch ${pe.sets}×${pe.repTarget} · làm ${nDone}/${pe.sets} set` : 'Kế hoạch —'}</div></td><td class="tn">${setsStr(en.sets)}${en.drop ? ` · D ${fmt(en.drop.kg)}×${en.drop.reps}` : ''}</td></tr>`; }
   h += `</tbody></table></div><div class="sh-actions">${canReopen(s) ? `<button class="btn" data-act="reopen-session" data-id="${s.id}">${ICON.play} Mở lại để tập tiếp</button>` : ''}${isHlv() ? '' : `<button class="btn" data-act="share-open" data-d="${s.date}" data-id="${s.id}">${ICON.share} Chia sẻ với PT</button>`}<button class="btn ghost" data-act="close-sheet">Đóng</button><button class="btn ghost danger" data-act="del-session" data-id="${s.id}">Xoá buổi này</button></div>`;
   openSheet(h);
 }
@@ -3719,7 +3758,7 @@ function coachData(st) {
     const sg = allEx().map(x => ({ ...x, sg: suggest(x.ex) }));
     const last = S.reduce((a, b) => !a || b.startedAt > a.startedAt ? b : a, null);
     const B = [...(state.body || [])].filter(e => e.weight != null).sort((a, b) => a.date.localeCompare(b.date));
-    return { n7: w7.length, sets7, vol7, nMonth: mo.length, total: S.length, last, lastSt: last ? sessStats(last) : null, gap: last ? daysBetween(last.date, today) : null, active: !!state.active,
+    return { n7: w7.length, sets7, vol7, nMonth: mo.length, total: S.length, last, lastSt: last ? sessStats(last) : null, lastQ: last ? sessQuality(last) : null,gap: last ? daysBetween(last.date, today) : null, active: !!state.active,
       ups: sg.filter(x => x.sg.kind === 'up'), almost: sg.filter(x => x.sg.kind === 'almost'), downs: sg.filter(x => x.sg.kind === 'down'),
       pains: activePains(), nDays: state.days.length, w: B.length ? B[B.length - 1] : null };
   });
@@ -3742,7 +3781,7 @@ async function coachSheet() {
     if (c.almost.length) L.push(['', '◔', `Sắp tăng: ${nm(c.almost)}`]);
     if (c.downs.length) L.push(['down', '▼', `Đang chững, cần giảm tạ: <b>${nm(c.downs)}</b>`]);
     if (!L.length) L.push(['ok', '✓', 'Tập đều, chưa có gì cần xử lý.']);
-    if (c.last) L.push(['', '·', `Lần cuối: <b>${esc(c.last.dayName)}</b> · ${ago(c.last.date)} · ${c.lastSt.sets} set · ${tons(c.lastSt.vol)}`]);
+    if (c.last) L.push(['', '·', `Lần cuối: <b>${esc(c.last.dayName)}</b> · ${ago(c.last.date)} · ${c.lastSt.sets} set · ${tons(c.lastSt.vol)}${c.lastQ ? ` · <b>${c.lastQ.label}</b>` : ''}`]);
     L.push(['', '·', `Tháng này <b>${c.nMonth} buổi</b> · tổng ${c.total} buổi${c.w ? ` · cân nặng <b>${fmt(c.w.weight)} kg</b> (${dm(c.w.date)})` : ''}`]);
     h += L.map(([k, i, t]) => `<span class="cl ${k}"><i>${i}</i><span>${t}</span></span>`).join('') + `</button>`;
   }
@@ -3969,7 +4008,7 @@ function unb64u(str) { str = str.replace(/-/g, '+').replace(/_/g, '/'); while (s
 /* ===== Đồng bộ hai chiều HLV ⇄ học viên (PA-1 + PA-2) =====
    Chỉ đụng tới đúng một hồ sơ. Buổi tập cộng dồn theo mã, mức tạ theo buổi mới nhất,
    cấu trúc giáo án theo HLV, ảnh cộng dồn, xoá có ghi dấu để máy kia xoá theo. */
-const SYNC_STRUCT = ['name', 'muscle', 'zone', 'type', 'sets', 'repTarget', 'repMin', 'repMax', 'dropSet', 'step', 'rest', 'restV', 'setup', 'each', 'warmup', 'targetKg'];
+const SYNC_STRUCT = ['name', 'muscle', 'zone', 'type', 'sets', 'repTarget', 'repMin', 'repMax', 'dropSet', 'step', 'rest', 'restV', 'setup', 'each', 'warmup', 'targetKg', 'hold', 'hlvNote'];
 const sRev = s => s.finishedAt || s.startedAt || 0;
 function strHash(s) { let h = 0x811c9dc5; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 0x01000193); } return (h >>> 0).toString(36) + '_' + s.length.toString(36); }
 /* PA-25: mã băm cũ có dấu “.” (máy chủ Drive từ chối) → đổi sang “_”; cùng nội dung thì cùng mã mới */
@@ -4012,7 +4051,7 @@ function cleanEx(x) {
   const type = TYPES[x.type] ? x.type : 'upper', repMin = cNum(x.repMin, 1, 50, 8), repMax = Math.max(repMin, cNum(x.repMax, 1, 50, 12));
   return { i: (Array.isArray(x.i) ? x.i : []).map(v => cStr(v, 40)).filter(Boolean).slice(0, 12), name: cStr(x.name || 'Bài tập', 80), muscle: MUSCLES.includes(x.muscle) ? x.muscle : 'Khác', zone: x.zone == null ? x.zone : cStr(x.zone, 40), type,
     sets: cNum(x.sets, 1, 10, 3), repTarget: cNum(x.repTarget, repMin, 50, Math.min(repMax, 10)), repMin, repMax, dropSet: !!x.dropSet, step: cNum(x.step, 0.25, 50, TYPES[type].step),
-    rest: cNum(x.rest, 0, 600, 0), restV: 2, setup: cStr(x.setup, 1000), each: !!x.each, warmup: x.warmup == null ? true : !!x.warmup, targetKg: x.targetKg == null ? null : cNum(x.targetKg, 0, 1000, null),
+    rest: cNum(x.rest, 0, 600, 0), restV: 2, setup: cStr(x.setup, 1000), each: !!x.each, warmup: x.warmup == null ? true : !!x.warmup, targetKg: x.targetKg == null ? null : cNum(x.targetKg, 0, 1000, null), hold: !!x.hold, hlvNote: cStr(x.hlvNote, 300),
     currentKg: x.currentKg == null ? null : cNum(x.currentKg, 0, 1000, null), kgSetAt: x.kgSetAt ? cNum(x.kgSetAt, 0, 9e15, 0) : 0, fs: !!x.fs,
     ph: (Array.isArray(x.ph) ? x.ph : []).map(v => cStr(normHash(v), 30)).slice(0, 12), o: cStr(x.o, 40), ms: /^\d{4}-\d\d-\d\d$/.test(x.ms || '') ? x.ms : '', l: Array.isArray(x.l) ? x.l.slice(0, 20).map(cleanEx) : [] };
 }
@@ -4671,7 +4710,7 @@ async function hubPushPlans(quiet) {
       if (!plan.length && H[hvId] === undefined) { H[hvId] = h; sy.planH = H; continue; }   /* chưa từng đồng bộ mà trống: không gửi giáo án trống đè bản trên máy chủ */
       const ev = quiet ? null : { title: 'HLV vừa cập nhật giáo án', body: 'Mở app để xem bản mới', tag: 'plan' };
       const r = await hubCall('/s/ghi', { hv: hvId, recs: [{ k: 'plan@hlv', id: 'plan', t: Date.now(), vai: 'hlv', d: JSON.stringify({ plan }) }], ev, backfill: !!quiet });
-      if (r.s === 200) { H[hvId] = h; sy.planH = H; save(); }
+      if (r.s === 200) { H[hvId] = h; sy.planH = H; sy.planAt = { ...(sy.planAt || {}), [hvId]: Date.now() }; save(); if (ui.tab === 'plan') render(true); }
     }
   } catch (e) { /* giáo án vẫn còn trên máy */ }
 }
@@ -4841,6 +4880,7 @@ async function copyText(id) {
 /* ---------- xử lý sự kiện ---------- */
 const handlers = {
   'tab': t => { ui.tab = t.dataset.tab; ui.moreSec = null; render(); },
+  'plan-view': t => { ui.planView = t.dataset.k; render(); },
   'start-day': t => startSession(t.dataset.id),
   'pick-day': t => { ui.pick = t.dataset.id; render(true); },
   'more-sec': t => { ui.moreSec = t.dataset.k || null; ui.tab = 'more'; render(); },
@@ -5035,7 +5075,7 @@ const handlers = {
     const changedKg = d.curIn != null && d.curIn !== prevBase;
     const repMax = Math.max(Math.round(d.repTarget), Math.round(d.repMax || 12));
     const ex = { id: d.id, name: d.name, muscle: d.muscle, type: d.type, sets: Math.round(d.sets), repTarget: Math.round(d.repTarget), repMin: Math.round(d.repMin), repMax,
-      dropSet: d.dropSet, warmup: d.warmup, step: d.step, rest: d.rest, setup: d.setup, photos: d.photos, zone: d.zone || null, gid: d.name === d.nameOrig ? d.gid : (LIB_GID[d.name] || undefined), cues: d.cues || '', vid: d.vid || null, vlink: d.vlink || '', targetKg: d.targetKg, each: !!d.each, restV: 2,
+      dropSet: d.dropSet, warmup: d.warmup, step: d.step, rest: d.rest, setup: d.setup, photos: d.photos, zone: d.zone || null, hold: !!d.hold, hlvNote: d.hlvNote || '', gid: d.name === d.nameOrig ? d.gid : (LIB_GID[d.name] || undefined), cues: d.cues || '', vid: d.vid || null, vlink: d.vlink || '', targetKg: d.targetKg, each: !!d.each, restV: 2,
       ...(d.altOf ? {} : { alts: d.alts || [], slot: (d.slot || '').trim(), mainSince: d.mainSince || ymd() }),
       currentKg: changedKg ? d.curIn : (d.isNew ? null : d.currentKg), kgSetAt: changedKg ? Date.now() : (d.kgSetAt || null) };
     [...d.orig, ...d.added].filter(id => !d.photos.includes(id)).forEach(id => LDB.del('photos', id));
@@ -5324,7 +5364,7 @@ async function purgeStored() {
   if (h.startsWith('#nhap=')) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} toast(OLD_CODE); }
   if ('serviceWorker' in navigator && location.protocol === 'https:' && document.documentElement.dataset.pwa === '1') { navigator.serviceWorker.register('sw.js').catch(() => {}); }
 })();
-window.__sota = { suggest, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
+window.__sota = { suggest, sessQuality, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
 })();
 </script>
 </body>
