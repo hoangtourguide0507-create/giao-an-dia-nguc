@@ -32,6 +32,7 @@ flowchart LR
 | `sw.js` | Service worker: cache vỏ app, network-first cho trang, cache-first cho tài nguyên, font; hiện thông báo đẩy và mở lại app khi bấm thông báo |
 | `push-server/` (`src/index.js`, `wrangler.toml`, `HUONG-DAN.md`) | Máy chủ Web Push trên Cloudflare Workers (§7.6) |
 | `thiet-ke/pa22-mockup.html` | Bản mockup thiết kế PA-22 (tham khảo, không phát hành vào app) |
+| `thiet-ke/pa50-demo.html` | Bản demo PA-50 cân vùng cơ, góc tập, vùng còn thiếu, biến thể (dữ liệu mẫu, không phát hành vào app) |
 | `.claude/agents/*.md` | Các agent làm việc của dự án (duyệt PA, kiểm chứng y khoa, kiểm thử, máy chủ, triển khai PA, UX/UI) |
 | `manifest.webmanifest`, `icon-*.png`, `apple-touch-icon.png` | PWA |
 | `exdb-1.bin`, `exdb-2.bin` | 2 gói hình minh hoạ offline (định dạng GAP1, §9) |
