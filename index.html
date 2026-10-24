@@ -3280,6 +3280,31 @@ function periodStats(from, to) {
   for (const x of ss) { const st = sessStats(x); sets += st.sets; vol += st.vol; for (const en of x.entries) per[en.muscle] = (per[en.muscle] || 0) + en.sets.length + (en.drop ? 1 : 0); }
   return { ss, sets, vol, per, ups: upCount(ss) };
 }
+/* PA-49 · BR-38: kỳ so sánh cùng độ dài ngày. Kỳ đang diễn ra chỉ so khoảng ngày đã qua; tháng dài ngắn khác nhau thì lấy cả tháng trước và quy về trung bình theo ngày (scale) */
+function comparePeriod(mode, off, today) {
+  today = today || ymd();
+  if (mode !== 'month') {
+    const t = parseYmd(today), mon = addDays(today, -((t.getDay() + 6) % 7) + off * 7), end = addDays(mon, 6), to = off === 0 ? today : end, n = daysBetween(mon, to) + 1, pFrom = addDays(mon, -7);
+    return { from: mon, to, pFrom, pTo: addDays(pFrom, n - 1), scale: 1 };
+  }
+  const t = parseYmd(today), y = t.getFullYear(), m = t.getMonth() + off, len = new Date(y, m + 1, 0).getDate(), pl = new Date(y, m, 0).getDate();
+  const n = off === 0 ? t.getDate() : len, pn = off === 0 ? Math.min(n, pl) : pl;
+  return { from: ymd(new Date(y, m, 1)), to: ymd(new Date(y, m, n)), pFrom: ymd(new Date(y, m - 1, 1)), pTo: ymd(new Date(y, m - 1, pn)), scale: n / pn };
+}
+/* PA-49 · BR-38.2–38.4: sức mạnh = tạ (kg × rep, tạ đơn ×2, drop tính) của bài trong buổi; chỉ bài có ở cả hai kỳ; bài lặp lấy trung bình theo buổi; % lệch từng bài rồi trung bình đều */
+function strengthCompare(ssCur, ssPrev) {
+  const avg = ss => {
+    const m = new Map();
+    for (const x of ss) for (const en of x.entries) {
+      const v = mul(en) * (en.sets.reduce((a, y) => a + (y.kg || 0) * y.reps, 0) + (en.drop ? (en.drop.kg || 0) * (en.drop.reps || 0) : 0)); if (!(v > 0)) continue;
+      const k = slotKeyOf(en), e = m.get(k.key) || { name: k.name, sum: 0, n: 0 }; e.sum += v; e.n++; m.set(k.key, e);
+    }
+    return m;
+  };
+  const C = avg(ssCur), Pm = avg(ssPrev), rows = [];
+  for (const [key, c] of C) { const p = Pm.get(key); if (!p) continue; const cv = c.sum / c.n, pv = p.sum / p.n; rows.push({ key, name: c.name, c: cv, p: pv, pct: (cv / pv - 1) * 100 }); }
+  return { n: rows.length, pct: rows.length ? rows.reduce((a, r) => a + r.pct, 0) / rows.length : null, rows };
+}
 const dlt = (a, b, f) => { if (!b && !a) return ''; const d = a - b; return `<span class="dl delta ${d > 0 ? 'good' : d < 0 ? 'bad' : 'flat'}">${d > 0 ? '▲' : d < 0 ? '▼' : '='} ${f ? f(Math.abs(d)) : Math.abs(d)}</span>`; };
 /* Tiến độ gồm 3 mục: Sức mạnh (tab week), Cơ thể (body), Ảnh (photos) */
 function progTabs() {
@@ -3287,18 +3312,19 @@ function progTabs() {
   return `<div class="seg ptabs" role="group" aria-label="Mục tiến độ">${[['week', 'Sức mạnh'], ['body', 'Cơ thể'], ['photos', 'Ảnh']].map(([k, l]) => `<button type="button" data-act="tab" data-tab="${k}" aria-pressed="${cur === k}">${l}</button>`).join('')}</div>`;
 }
 function viewPhotos() { return `<section class="sec" style="margin-bottom:0"><div class="sec-head"><h2 class="h1">Tiến độ</h2></div>${progTabs()}</section>` + viewBodyPhotos(); }
-function tonTix(P, S, Q, mode) {
-  const tons = S.vol / 1000, pct = Q.vol > 0 ? Math.round((S.vol - Q.vol) / Q.vol * 100) : null;
+function tonTix(P, S, SC, mode) {
+  const tons = S.vol / 1000, pct = SC.pct == null ? null : Math.round(SC.pct);
   return `<section class="hero tix ton"><div class="eyebrow">Tổng tạ · ${esc(P.label)}</div><div class="meta" style="margin-top:12px">Đã nâng</div>
     <div><span class="big tn">${fmt(tons, tons >= 10 ? 1 : 2)}</span><span class="unit">TẤN</span></div><div class="tcut"></div>
     <div class="tfoot"><div class="why">${S.ss.length} buổi · ${S.sets} set${pct != null ? ` · ${pct >= 0 ? '+' : ''}${pct}% so với ${mode === 'month' ? 'tháng' : 'tuần'} trước` : ''}</div>${pct != null ? `<span class="badge ${pct >= 0 ? 'up' : 'down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct)}%</span>` : ''}</div></section>`;
 }
 function viewWeek() {
   const mode = ui.pmode === 'month' ? 'month' : 'week', off = mode === 'month' ? (ui.monthOff || 0) : ui.weekOff, today = ymd();
-  const P = periodOf(mode, off), S = periodStats(P.from, P.to), Q = periodStats(P.prev[0], P.prev[P.prev.length - 1]);
+  const P = periodOf(mode, off), C = comparePeriod(mode, off, today), S = periodStats(P.from, P.to), Q = periodStats(C.pFrom, C.pTo), SC = strengthCompare(S.ss, Q.ss), qn = v => r2(v * C.scale), cnt = v => fmt(v, 1);
+  const spct = SC.pct == null ? '' : (() => { const r = Math.round(SC.pct); return `<span class="dl delta ${r > 0 ? 'good' : r < 0 ? 'bad' : 'flat'}">${r > 0 ? '▲' : r < 0 ? '▼' : '='} ${Math.abs(r)}%</span>`; })();
   const tonsN = v => fmt(v / 1000, v >= 10000 ? 1 : 2);
   let h = `<section class="sec"><div class="sec-head" style="margin-bottom:12px"><h2 class="h1">Tiến độ</h2>${isHlv() ? `<button class="btn sm" data-act="coach">${ICON.users} Bảng HLV</button>` : ''}</div>${progTabs()}
-    ${tonTix(P, S, Q, mode)}
+    ${tonTix(P, S, SC, mode)}
     <div class="seg pmode" role="group" aria-label="Xem theo">${[['week', 'Theo tuần'], ['month', 'Theo tháng']].map(([k, l]) => `<button type="button" data-act="pmode" data-k="${k}" aria-pressed="${mode === k}">${l}</button>`).join('')}</div>
     <div class="weeknav"><button class="btn" data-act="period" data-d="-1" aria-label="Trước">${ICON.chevL}</button>
     <div><div class="wl">${P.label}</div><div class="small muted" style="text-align:center">${P.sub}</div></div>
@@ -3312,9 +3338,9 @@ function viewWeek() {
       return `<button type="button" class="${l2 ? 'on' : ''} ${d === today ? 'td' : ''}" ${l2 ? `data-act="day-sheet" data-d="${d}" style="--dc:${DAYC[di % DAYC.length]}"` : 'disabled'}>${parseYmd(d).getDate()}${l2 ? `<i>${esc(dayAbbr(l2.dayName))}</i>` : ''}</button>`; }).join('')}</div>`;
   }
   const cmpL = mode === 'month' ? 'so với tháng trước' : 'so với tuần trước';
-  h += `<div class="kpis k4"><div class="kpi"><div class="k">${S.ss.length}</div><div class="l">buổi</div>${dlt(S.ss.length, Q.ss.length)}</div><div class="kpi"><div class="k">${S.sets}</div><div class="l">set</div>${dlt(S.sets, Q.sets)}</div>
-    <div class="kpi"><div class="k">${tonsN(S.vol)}</div><div class="l">tấn tạ</div>${dlt(S.vol, Q.vol, v => tonsN(v))}</div><div class="kpi"><div class="k">${S.ups}</div><div class="l">bài lên tạ</div></div></div>
-    <p class="small muted" style="margin:10px 0 0">Mũi tên: ${cmpL}. Tấn tạ = tổng kg × rep mọi set${allEx().some(x => x.ex.each) ? ' (tạ đơn tính cả 2 tay)' : ''}.</p></div></section>`;
+  h += `<div class="kpis k4"><div class="kpi"><div class="k">${S.ss.length}</div><div class="l">buổi</div>${dlt(S.ss.length, qn(Q.ss.length), cnt)}</div><div class="kpi"><div class="k">${S.sets}</div><div class="l">set</div>${dlt(S.sets, qn(Q.sets), cnt)}</div>
+    <div class="kpi"><div class="k">${tonsN(S.vol)}</div><div class="l">tấn tạ</div>${spct}</div><div class="kpi"><div class="k">${S.ups}</div><div class="l">bài lên tạ</div></div></div>
+    <p class="small muted" style="margin:10px 0 0">Mũi tên: ${cmpL}, cùng khoảng ngày. Tấn tạ: % lệch trung bình của các bài đã tập ở cả hai kỳ. Tấn tạ = tổng kg × rep mọi set${allEx().some(x => x.ex.each) ? ' (tạ đơn tính cả 2 tay)' : ''}.</p></div></section>`;
   // set mỗi nhóm cơ
   const mset = new Set([...state.days.flatMap(d => d.exercises.map(e => e.muscle)), ...Object.keys(S.per)]);
   const muscles = MUSCLES.filter(m => mset.has(m));
@@ -5613,7 +5639,7 @@ async function purgeStored() {
   if (h.startsWith('#nhap=')) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} toast(OLD_CODE); }
   if ('serviceWorker' in navigator && location.protocol === 'https:' && document.documentElement.dataset.pwa === '1') { navigator.serviceWorker.register('sw.js').catch(() => {}); }
 })();
-window.__sota = { mapSession, planDiff, dayOverview, planFromHistory, suggest, sessQuality, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
+window.__sota = { comparePeriod, strengthCompare, mapSession, planDiff, dayOverview, planFromHistory, suggest, sessQuality, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
 })();
 </script>
 </body>

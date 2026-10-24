@@ -138,11 +138,17 @@ Test: `tests/app/progress.spec.mjs`
 
 - **BR-09.0** Mục **Tiến độ** có 3 tab con: *Sức mạnh* (nội dung nhóm này) · *Cơ thể* (BR-10.1–10.5) · *Ảnh* (BR-10.6). Thẻ đầu tab Sức mạnh là thẻ "vé" tóm tắt kỳ đang xem; nút "Bảng HLV" (chỉ máy HLV) mở bảng cả nhóm.
 - **BR-09.1** Xem **theo tuần** (chấm 7 ngày) hoặc **theo tháng** (lịch tháng, ngày có buổi tô màu theo ngày tập và viết tắt tên; bấm mở buổi); lùi/tiến kỳ (không vượt kỳ hiện tại).
-- **BR-09.2** 4 chỉ số: buổi · set · tấn tạ (Σ kg × rep, tạ đơn ×2, drop tính) · bài lên tạ; mũi tên so với kỳ trước.
+- **BR-09.2** 4 chỉ số: buổi · set · tấn tạ (Σ kg × rep, tạ đơn ×2, drop tính) · bài lên tạ. Mũi tên so với kỳ trước **cùng khoảng ngày** (BR-38.1) và, riêng tấn tạ, là **% lệch sức mạnh** (BR-38.2–38.4).
 - **BR-09.3 Nhóm cơ**: set mỗi nhóm (tháng: trung bình mỗi tuần), vùng mục tiêu 10–20 set/tuần, trạng thái Thiếu/Đạt/Cao.
 - **BR-09.4 Vùng cơ 4 tuần**: số set 28 ngày theo vùng cơ chi tiết (ngực trên/giữa/dưới, 3 đầu vai…), vùng chính chưa tập, cặp lệch (ngực trên < 40% ngực giữa, vai sau < 40% vai trước, đùi sau < 40% đùi trước, lưng giữa < 40% xô).
 - **BR-09.5 Từng bài**: "Tiến bộ nhiều nhất" (3 bài), "Đang chững" (giảm/đau, 4 bài); "Tất cả bài" theo nhóm cơ có tìm kiếm. Chi tiết bài: nhãn gợi ý, lộ trình 8 tuần, biểu đồ Mức tạ / 1RM ước tính / Khối lượng (rê để xem giá trị), bảng 40 buổi gần nhất (set, cảm giác, ghi chú, drop, deload), nút sửa.
 - **BR-09.6** Danh sách buổi trong kỳ: thời lượng, số set, tấn tạ, so lần trước. Xem buổi: chỉ số, so lần trước, bảng set; **Mở lại** (BR-03.14); **Xoá** (xác nhận, ghi dấu xoá để đồng bộ).
+
+- **BR-38.1 Kỳ so sánh cùng khoảng ngày** (PA-49): tuần/tháng đang diễn ra chỉ so với đúng khoảng ngày đã qua của kỳ trước (T2→thứ N tuần trước; ngày 1→D tháng trước). Kỳ đã qua so cả kỳ với cả kỳ liền trước. Hai kỳ dài ngắn khác nhau (tháng): lấy cả tháng trước, nhân số buổi/set kỳ trước với `ngày kỳ này / ngày kỳ trước` (trung bình theo ngày). *Test:* `progress.spec.mjs` (BR-38.1).
+- **BR-38.2 Sức mạnh chỉ so bài chung**: bài phải có buổi ở cả hai kỳ; bài chính/thay thế cùng ô tính một bài. *Test:* `progress.spec.mjs` (BR-38.2).
+- **BR-38.3 Bài lặp lấy trung bình theo buổi**: sức mạnh một bài trong một buổi = kg × rep mọi set (tạ đơn ×2, drop tính, như tấn tạ); mỗi kỳ lấy trung bình trên các buổi có bài. Deload vẫn tính. *Test:* `progress.spec.mjs` (BR-38.3).
+- **BR-38.4 Độ lệch**: % lệch từng bài chung rồi trung bình đều (bài nhỏ ngang bài lớn). Không có bài chung thì không hiện %. Hiện ở thẻ vé "Tổng tạ" và mũi tên ô tấn tạ. Số "x tấn" vẫn là tổng thật của kỳ. *Test:* `progress.spec.mjs` (BR-38.4).
+- **BR-38.5** Mũi tên buổi và set so cùng khoảng ngày (BR-38.1). Không có dòng chú thích khoảng ngày. Chỉ đổi cách tính hiển thị, dữ liệu không đổi.
 
 ## BR-10 Cơ thể & ảnh (Tiến độ → Cơ thể / Ảnh)
 Test: `tests/app/body.spec.mjs`, `tests/app/home.spec.mjs`

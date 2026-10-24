@@ -217,7 +217,7 @@ test('BR-38.4 strengthCompare: % từng bài rồi trung bình đều; không b�
   expect(zero).toMatchObject({ n: 0, pct: null });
 });
 
-test('BR-38.3 strengthCompare: công thức cũ — tạ đơn ×2, drop tính; bài chính/thay thế cùng ô gộp một bài', async ({ app, page }) => {
+test('BR-38.3 strengthCompare: công thức cũ — tạ đơn ×2, drop tính', async ({ app, page }) => {
   await app.seed({ state: history().st });
   const e = (sets, extra) => SS([['Tạ đơn', sets, { each: true, ...(extra || {}) }]]);
   const r = await sc(page, e([[10, 10]], { drop: { kg: 5, reps: 10 } }), e([[10, 10]]));
