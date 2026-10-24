@@ -1287,7 +1287,7 @@ body.resting{padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) 
 :root[data-anim="on"] .prog i{background-size:200% 100%;animation:flow 4s linear infinite}
 @keyframes flow{to{background-position:-200% 0}}
 @media (max-width:370px){.tix .h1{font-size:26px}.tfoot{flex-wrap:wrap}.tgo{width:100%}.mini .mv{font-size:23px}.stepper input{font-size:19px}}
-body.hist-locked [data-act="start-day"], body.hist-locked [data-act="add-entry"] { display: none !important; }  /* BR-33.3 */
+body.plan-locked :is([data-act="add-day"], [data-act="rename-day"], [data-act="del-day"], [data-act="move-day"], [data-act="move-ex"], [data-act="add-ex"], [data-act="add-alt"], [data-act="make-main"], [data-act="rot-open"], [data-act="rot-hold"], [data-act="rot-swap"], [data-act="onb-sample"], [data-act="onb-new"], [data-act="prof-copy"], [data-act="lib-open"], [data-act="other-open"]) { display: none !important; }  /* BR-35.3 */
 </style>
 </head>
 <body>
@@ -1820,7 +1820,7 @@ function render(keepScroll) {
   const tabChanged = ui.tab !== lastTab; lastTab = ui.tab;
   document.documentElement.dataset.fx = state.settings.fxOff ? 'off' : 'on';
   document.documentElement.dataset.anim = animOn() ? 'on' : 'off';
-  document.body.classList.toggle('hist-locked', histLocked());   /* BR-33.3 */
+  document.body.classList.toggle('plan-locked', planLocked());   /* BR-35.3 */
   if (document.documentElement.dataset.skin !== (state.settings.skin || 'amber')) applySkin(state.settings.skin);
   const v = $('#view');
   v.innerHTML = ui.tab === 'home' ? (isHlv() ? viewTeam() : '') + viewHome() : ui.tab === 'today' ? viewToday() : ui.tab === 'plan' ? viewPlan() : ui.tab === 'week' ? viewWeek() : ui.tab === 'body' ? viewBody() : ui.tab === 'photos' ? viewPhotos() : viewMore();
@@ -2063,7 +2063,7 @@ function viewHome() {
   else nid = state.days[0].id;
   if (doneToday.length) { const lastS = doneToday.reduce((a2, b2) => (b2.finishedAt || 0) > (a2.finishedAt || 0) ? b2 : a2), ls2 = sessStats(lastS);
     h += `<div class="restcard"><span class="bi">${ICON.check}</span><div><b>Hôm nay đã tập ${esc(doneToday.map(s => s.dayName).join(', '))}</b>${ls2.sets} set · ${fmtDur(durOf(lastS))}. Bấm nhầm “Kết thúc” hoặc muốn tập thêm thì mở lại buổi này — các set đã ghi vẫn giữ nguyên.
-      <div class="row"><button class="btn sm" data-act="reopen-session" data-id="${lastS.id}">${ICON.play} Tập tiếp</button><button class="btn sm" data-act="open-session" data-id="${lastS.id}">Xem lại</button></div></div></div>`; }
+      <div class="row">${histLocked() ? '' : `<button class="btn sm" data-act="reopen-session" data-id="${lastS.id}">${ICON.play} Tập tiếp</button>`}<button class="btn sm" data-act="open-session" data-id="${lastS.id}">Xem lại</button></div></div></div>`; }
   const nd = findDay(nid), l = lastSessionOfDay(nid), ent = rc.list.find(x => x.d.id === nid);
   const nsets = nd.exercises.reduce((a, e) => a + e.sets, 0);
   const pSkip = nd.exercises.filter(e => suggest(e).skip), pLow = nd.exercises.filter(e => { const g = suggest(e); return g.kind === 'pain' && !g.skip; });
@@ -2121,6 +2121,7 @@ function addExSheet() {
     <div class="sh-actions"><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`);
 }
 function onboarding() {
+  if (planLocked()) return waitPlanHtml();
   return `<section class="hero"><div class="eyebrow">Chào mừng đến Giáo Án Địa Ngục</div><div class="h1">Cuốn sổ tạ trong túi bạn</div>
     <p class="sub">Tạo các ngày tập, điền mức tạ đang tập, chụp ảnh máy. Mỗi tuần app nhắc bạn nên lên bao nhiêu kg cho từng bài.</p>
     <div class="stack" style="margin-top:18px"><button class="btn gold big" data-act="onb-new">Tạo ngày tập đầu tiên</button>
@@ -2640,6 +2641,17 @@ function syncDrops(en) {
   ds.forEach((d, k) => { if (!d.done && !d.m && d.kg !== kgs[k]) { d.kg = kgs[k]; ch = true; } });
   return ch;
 }
+/* BR-36: sau khi xong set i, các set làm việc chưa tập và chưa tự sửa tay nhận kg của set vừa xong; rep chỉ giảm theo set vừa xong (không tự tăng). Trả về chỉ số các set đã đổi. */
+function adjustLaterSets(en, i) {
+  const s = en.sets[i], out = []; if (!s || !s.done || isDrop(s)) return out;
+  for (let j = i + 1; j < en.sets.length; j++) {
+    const t = en.sets[j]; if (isDrop(t) || t.done || t.man) continue;
+    const kg = s.kg != null ? s.kg : t.kg, reps = Math.min(t.reps ?? s.reps, s.reps);
+    if (t.kg !== kg || t.reps !== reps) { t.kg = kg; t.reps = reps; out.push(j); }
+  }
+  return out;
+}
+const syncSetInputs = e => state.active.entries[e].sets.forEach((x, k) => ['kg', 'reps'].forEach(f => { const ip = $(`input[data-bind="set"][data-e="${e}"][data-s="${k}"][data-f="${f}"]`); if (ip && document.activeElement !== ip) ip.value = fmtIn(x[f]); }));
 /* gợi ý tạ: 1 dòng nhỏ, không tự điền */
 function sugChip(ex, sg) {
   if (!sg || sg.kg == null) return '';
@@ -2656,7 +2668,7 @@ function makeEntry(ex) {
     drop: null };
 }
 function startSession(dayId, exIds) {
-  if (histLocked()) { toast(LOCK_MSG); return; }   /* BR-33.3 */
+  if (histLocked()) { lockedStart(); return; }   /* BR-35.1 */
   if (state.active) { ui.tab = 'today'; render(); return; }
   ui.focusEx = null; ui.heroPh = 0;
   const d = exIds ? null : findDay(dayId);
@@ -2894,8 +2906,9 @@ function saveSession() {
   save(); stopRest(); releaseWake(); closeSheet(); render(); toast('Đã lưu buổi tập');
 }
 const durOf = x => Math.max(0, (x.finishedAt || Date.now()) - x.startedAt - (x.paused || 0));
-const canReopen = x => !!x && !state.active && (x.date === ymd() || Date.now() - (x.finishedAt || 0) < 6 * 3600e3);
+const canReopen = x => !!x && !state.active && !histLocked() && (x.date === ymd() || Date.now() - (x.finishedAt || 0) < 6 * 3600e3);
 function reopenSession(id) {
+  if (histLocked()) { toast(LOCK_MSG); return; }   /* BR-35.2 */
   if (state.active) { toast('Đang có buổi tập dở. Kết thúc hoặc huỷ buổi đó trước.'); return; }
   const x = state.sessions.find(z => z.id === id); if (!x) return;
   const entries = x.entries.map(en => {
@@ -2938,7 +2951,7 @@ function viewDoneWeeks() {
     if (ss.length) h += `<div class="list">${[...ss].reverse().map(x => `<button type="button" class="li" data-act="open-session" data-id="${x.id}"><span style="min-width:0"><span class="lt">${esc(x.dayName)}</span><span class="ls">${DOW[parseYmd(x.date).getDay()]} ${dm(x.date)}</span></span></button>`).join('')}</div>`;
     h += `</div>`;
   }
-  const ov = dayOverview(state.sessions);
+  const ov = dayOverview(state.sessions, slotKeyOf);
   if (ov.length) h = `<div class="card" style="margin-top:12px"><b>Theo ngày tập</b>${ov.map(g => `<div class="ovday"><b>${esc(g.name)}</b><p class="note-line">${g.n} buổi · gần nhất ${dm(g.last)}</p>${g.ex.map(e => `<p class="note-line">${esc(e.name)} · tốt nhất ${e.best} kg · gần nhất ${e.lastKg} kg${e.prevKg == null ? '' : e.lastKg > e.prevKg ? ' ▲' : e.lastKg < e.prevKg ? ' ▼' : ' ='}</p>`).join('')}</div>`).join('')}</div>` + h;   /* BR-33.2 */
   return h;
 }
@@ -2954,7 +2967,9 @@ function viewPlan() {
   if (sy.planDiff && !isHlv()) h += `<div class="banner"><span class="bi">!</span><div><b>HLV vừa chỉnh giáo án</b><p>${sy.planDiff.items.map(esc).join(' · ')}</p><button class="btn sm" data-act="plan-diff-ok">Đã xem</button></div></div>`;   /* BR-33.4 */
   const hasHist = histLocked() && (state.days.length || state.sessions.length), pv = ui.planView || (state.days.length ? 'plan' : 'done');
   if (hasHist) h += `<div class="seg" role="group" aria-label="Xem giáo án hoặc buổi đã tập">${[['plan', 'Giáo án'], ['done', 'Đã tập']].map(([k, l]) => `<button type="button" data-act="plan-view" data-k="${k}" aria-pressed="${pv === k}">${l}</button>`).join('')}</div>`;
+  if (hasHist && !state.days.length) h += `<div class="banner"><span class="bi">!</span><div><b>Học viên chưa có giáo án</b><p>Tạo giáo án từ các buổi học viên đã tập, rồi chỉnh lại cho phù hợp.</p><button class="btn sm gold" data-act="plan-from-history">Tạo giáo án từ lịch sử</button></div></div>`;   /* BR-35.6 */
   if (pv === 'done' && hasHist) return h + viewDoneWeeks() + `</section>`;
+  if (!state.days.length && planLocked()) return h + waitPlanHtml() + `</section>`;
   if (!state.days.length) return h + `<div class="hero pempty"><div class="h1" style="font-size:24px">Chưa có ngày tập nào</div><p class="meta">Tạo ngày tập như Lưng, Ngực, Chân rồi thêm bài. Hoặc dùng giáo án mẫu 4 ngày.</p>
     <div class="stack" style="margin-top:16px"><button class="btn gold big" data-act="add-day">+ Tạo ngày tập</button><button class="btn big" data-act="onb-sample">Dùng giáo án mẫu</button></div></div></section>`;
   const allX = allEx(), nSets = state.days.reduce((a, d) => a + d.exercises.reduce((b, e) => b + e.sets, 0), 0);
@@ -3040,7 +3055,7 @@ function swapSheet(i) {
     return `<button type="button" class="li swr" data-act="swap-do" data-e="${i}" data-id="${x.id}" data-same="${sameSlot ? 1 : 0}">${thumbHtml(x)}<span style="min-width:0;flex:1"><span class="lt">${esc(x.name)}</span><span class="ls">${H ? `lần trước ${fmt(wt(H))}${U(x)} · ${ago(H.date)}` : 'chưa tập lần nào'}</span></span><span class="lr"><span class="big">${sg.kg != null ? fmt(sg.kg) : '—'}</span><br><span class="ls">hôm nay</span></span></button>`; };
   openSheet(`<h3 class="sh-title">Đổi “${esc(shortName(en.name))}”</h3><p class="sh-text">Máy bận hoặc muốn đổi góc tập. Bài mới dùng mức tạ và lịch sử riêng của nó.</p>
     ${same.length ? `<div class="eyebrow" style="margin:14px 0 8px">Cùng ô${so && slotName(so.main) ? ' · ' + esc(slotName(so.main)) : ''}</div><div class="list">${same.map(x => row(x, true)).join('')}</div>
-      <label class="toggle" style="margin-top:10px"><span>Đặt làm bài chính của ô từ nay</span><input type="checkbox" id="swap-main"></label>` : ''}
+      ${planLocked() ? '' : '<label class="toggle" style="margin-top:10px"><span>Đặt làm bài chính của ô từ nay</span><input type="checkbox" id="swap-main"></label>'}` : ''}
     ${other.length ? `<div class="eyebrow" style="margin:16px 0 8px">Bài khác cùng nhóm ${esc(en.muscle)}</div><div class="list">${other.slice(0, 12).map(x => row(x, false)).join('')}</div>` : ''}
     ${!same.length && !other.length ? `<div class="empty">Chưa có bài thay thế cho bài này. Trong Giáo án, mở ngày tập và bấm “Thêm bài thay thế”.</div>` : ''}
     <div class="sh-actions"><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
@@ -3120,6 +3135,7 @@ function exSheet() {
       <p class="fhint" style="align-self:end;padding-bottom:6px">Nấc nhỏ nhất của máy hoặc quả tạ, ví dụ 2,5 kg; tạ đơn thường 1–2 kg mỗi quả.</p>
       ${hasHist ? `<p class="fhint full">Ô “Đang tập” tự cập nhật sau mỗi buổi. Sửa tay nếu bạn đã tập mức khác ở ngoài app.</p>` : ''}
     </div><div id="f-road" style="margin-top:12px"></div></div>
+    ${histLocked() && !d.isNew ? exLstHtml(d) : ''}
     ${hubRole() === 'hlv' ? `<div class="fsec"><span class="eyebrow">Giáo án của HLV</span><div class="formgrid">
       <label class="toggle full"><span>Khoá mức tạ<br><span class="fhint">Học viên giữ mức này, app không tự lên tạ bài này.</span></span><input type="checkbox" id="f-hold" ${d.hold ? 'checked' : ''}></label>
       <label class="f full">Ghi chú cho học viên<input class="inp" id="f-hlvnote" maxlength="300" value="${esc(d.hlvNote || '')}" placeholder="Ví dụ: dừng ở 2 rep trước khi hỏng"></label></div></div>` : (d.hold || d.hlvNote) ? `<div class="fsec"><span class="eyebrow">Từ HLV</span>${d.hold ? '<p class="fhint">HLV khoá mức tạ bài này.</p>' : ''}${d.hlvNote ? `<p>${esc(d.hlvNote)}</p>` : ''}</div>` : ''}
@@ -4127,7 +4143,7 @@ async function syncMerge(L0, P, choices) {
       for (const { ex, d, alt } of pool) {
         if (used.has(ex)) continue;
         const fromCoach = !!ex.srcId && !ex.fromStudent;   /* gói từ máy chủ luôn là của HLV đã nối */
-        if (fromCoach || [...exKeys(ex)].some(k => P.del.e[k])) { R.dropEx++; continue; }
+        if (fromCoach || (choices && choices.replace) || [...exKeys(ex)].some(k => P.del.e[k])) { R.dropEx++; continue; }
         if (alt) continue;
         let day = days.find(x => x.name === d.name); if (!day) { day = { ...d, exercises: [] }; days.push(day); }
         day.exercises.push(ex);
@@ -4317,7 +4333,7 @@ const HLV_SELF = 'sl:tu-tap';
 /* máy HLV: các hồ sơ có giáo án cần gửi: học viên (theo thẻ) và hồ sơ tập của HLV */
 const planTargets = sy => { const t = Object.entries(sy.map || {}); const self = hlvSelf(); if (self && sy.selfMade && profiles.list.some(p => p.id === self)) t.push([HLV_SELF, self]); return t; };
 let hubT = 0, hubBusy = false;
-function hubFlushSoon() { clearTimeout(hubT); hubT = setTimeout(() => { hubFlush(); hubOwnPlan(); }, 1500); }
+function hubFlushSoon() { clearTimeout(hubT); hubT = setTimeout(hubFlush, 1500); }
 /* gửi buổi đã tập và buổi đã xoá. Thông báo "vừa tập xong" chỉ cho buổi mới; buổi trước khi nối máy đi kèm backfill, không báo */
 async function hubFlush() {
   const role = hubRole(), hid = role === 'hv' ? (state.settings.sync || {}).i : role === 'hlv' && hlvSelf() === profiles.active ? HLV_SELF : '';
@@ -4360,8 +4376,8 @@ function hubCardHtml() {
     const pend = state.sessions.filter(x => x.finishedAt && sent[x.id] !== hubRev(x)).length;
     const stLine = sy.lastErr && (!sy.lastOk || sy.lastErr > sy.lastOk) ? 'Chưa gửi được: không liên lạc được máy chủ. Sẽ thử lại tự động.'
       : pend ? `Chờ gửi ${pend} buổi.` : sy.lastOk ? `Đã gửi xong · lần cuối lúc ${hhmm(sy.lastOk)}.` : 'Chưa gửi buổi nào.';
-    if (sy.loi) return hubConflictHtml() + `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p><b style="color:var(--down)">Không đồng bộ được: máy chủ không còn công nhận máy này.</b> Có thể thẻ QR đã bị thu hồi hoặc khoá, hoặc máy chủ vừa được làm mới. Dữ liệu trên máy vẫn còn nguyên, đừng đăng xuất.</p><p>Nhắn HLV để nhận thẻ QR mới rồi chạm <i>Nối lại bằng thẻ QR</i>; các buổi đã tập sẽ tự gửi lại.</p><div class="row"><button class="btn gold" data-act="hub-reg">Nối lại bằng thẻ QR</button></div></div>`;
-    return hubConflictHtml() + `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã nối với HLV ${esc(sy.ten || '')}. ${stLine}</p></div>`;
+    if (sy.loi) return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p><b style="color:var(--down)">Không đồng bộ được: máy chủ không còn công nhận máy này.</b> Có thể thẻ QR đã bị thu hồi hoặc khoá, hoặc máy chủ vừa được làm mới. Dữ liệu trên máy vẫn còn nguyên, đừng đăng xuất.</p><p>Nhắn HLV để nhận thẻ QR mới rồi chạm <i>Nối lại bằng thẻ QR</i>; các buổi đã tập sẽ tự gửi lại.</p><div class="row"><button class="btn gold" data-act="hub-reg">Nối lại bằng thẻ QR</button></div></div>`;
+    return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã nối với HLV ${esc(sy.ten || '')}. ${stLine}</p></div>`;
   }
   if ((state.settings.sync || {}).loi) return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p><b style="color:var(--down)">Không đồng bộ được: máy chủ không còn công nhận máy này.</b> Khoá HLV có thể đã đổi hoặc máy chủ được cài lại. Dữ liệu trên máy vẫn còn nguyên.</p><p>Chạm <i>Quét lại mã HLV</i> và quét mã QR HLV hiện hành.</p><div class="row"><button class="btn gold" data-act="hub-reg">Quét lại mã HLV</button></div></div>`;
   return `<div class="card set-card"><h3>Máy chủ đồng bộ mới</h3><p>Đã đăng ký làm HLV. Thêm học viên bằng thẻ QR; thẻ dùng được lâu dài.</p>
@@ -4620,7 +4636,7 @@ async function hubPull() {
       for (const rec of r.j.recs) {
         if (role === 'hv') { if (rec.k === 'plan@hlv' && rec.t > (sy.planT || 0)) await hubApplyPlan(rec); }
         else if (rec.k.startsWith('buoi:') && sy.map && sy.map[rec.hv]) await hubApplySession(sy.map[rec.hv], rec);
-        else if ((rec.k === 'plan@hlv' || rec.k === 'plan@hv') && sy.map && sy.map[rec.hv]) await hubAdoptPlan(sy.map[rec.hv], rec);
+        else if (rec.k === 'plan@hlv' && sy.map && sy.map[rec.hv]) await hubAdoptPlan(sy.map[rec.hv], rec);
         else if (rec.k === 'dau@hv' && sy.map && sy.map[rec.hv]) await hubApplyPain(sy.map[rec.hv], rec);
       }
       con = !!r.j.con && r.j.recs.length > 0;
@@ -4683,7 +4699,7 @@ async function hubPushSessionsTo(hvId, pid) {
 async function hubSync() {
   const role = hubRole(); if (!role) return;
   if (role === 'hlv') { await hubSelfResolve(); await hubAdopt(); await hubEnsure(); await hubPushPlans(); await hubPullSelf(); await hubSelfNameSync(); }
-  await hubPull(); await hubOwnPlan(); await hubFlush();
+  await hubPull(); await hubFlush();
 }
 /* khoá so sánh giáo án: bỏ mức tạ hiện tại (đổi mỗi buổi tập, không phải thay đổi giáo án) */
 const planKey = plan => { const strip = e => ({ ...e, currentKg: undefined, kgSetAt: undefined, l: (e.l || []).map(strip) }); return strHash(JSON.stringify(plan.map(d => ({ n: d.n, e: (d.e || []).map(strip) })))); };
@@ -4705,17 +4721,6 @@ async function hubApplyPain(pid, rec) {
   if (pid === profiles.active) { save(); render(true); return; }
   st.updatedAt = Date.now(); await LDB.put('kv', stateKey(pid), clone(st));
 }
-/* BR-34.1: học viên gửi giáo án của mình (plan@hv) để HLV xem; chỉ gửi khi đổi và không trống. HLV chỉ nhận vào hồ sơ còn chưa có ngày tập (hubAdoptPlan). */
-async function hubOwnPlan() {
-  if (hubRole() !== 'hv' || !navigator.onLine || hubHold()) return;
-  const sy = state.settings.sync;
-  try {
-    const plan = await serPlan(state, false, {}); if (!plan.length) return;
-    const h = planKey(plan); if (sy.ownH === h) return;
-    const r = await hubCall('/s/ghi', { hv: sy.i, recs: [{ k: 'plan@hv', id: 'plan', t: Date.now(), vai: 'hv', d: JSON.stringify({ plan }) }], backfill: true });
-    if (r.s === 200) { sy.ownH = h; save(); }
-  } catch (e) { /* mất mạng: lần sau gửi lại */ }
-}
 function hubPlanSoon() { clearTimeout(hubPlanT); hubPlanT = setTimeout(hubPushPlans, 1500); }
 /* quiet: gửi giáo án lần đầu khi chuyển học viên, không báo */
 async function hubPushPlans(quiet) {
@@ -4734,14 +4739,8 @@ async function hubPushPlans(quiet) {
     }
   } catch (e) { /* giáo án vẫn còn trên máy */ }
 }
-/* Giáo án: so 3 phía — bản đã thống nhất lần trước (planBase), bản trên máy, bản trên máy chủ.
-   Chỉ khi cả máy này và HLV cùng đổi thì hỏi người dùng (xem hubConflictHtml). Buổi tập không cần hỏi: xem hubApplySession. */
-/* PA-40 · Q9: gộp giáo án theo từng ngày. Mỗi ngày so 3 phía: bản đã thống nhất (planDays), bản máy này, bản HLV.
-   Ngày chỉ một bên đổi thì tự gộp; chỉ ngày mà cả hai bên cùng đổi mới đưa vào conflict để anh chọn. */
-/* so bản giáo án của một ngày: chỉ các thông số bài tập; không tính mã bài, mức tạ hiện tại và cờ nội bộ */
-const planDayHash = d => strHash(JSON.stringify({ n: d.n, e: (d.e || []).map(e => ({ name: e.name, muscle: e.muscle, zone: e.zone, type: e.type, sets: e.sets, repTarget: e.repTarget, repMin: e.repMin, repMax: e.repMax, dropSet: e.dropSet, step: e.step, rest: e.rest, each: e.each, warmup: e.warmup, targetKg: e.targetKg, setup: e.setup })) }));
+/* BR-35.4: giáo án đi một chiều HLV → học viên; bản của HLV thay hẳn bản trên máy học viên (không so ba phía, không hộp thoại xung đột). */
 const cleanPlanOf = plan => cleanPkg({ app: 'gadn-sync', role: 'coach', link: {}, plan, sessions: [], del: {} }).plan;
-const planDayMap = plan => Object.fromEntries(plan.map(d => [d.n, planDayHash(d)]));
 /* BR-33.1: buổi của học viên về máy HLV không có exId/dayId (cleanPkg bỏ). Gắn bài theo khoá (k) rồi theo tên; ngày theo dayName. Bài lạ giữ id mồ côi '~tên' để gom theo tên. */
 function mapSession(days, s) {
   const exs = days.flatMap(d => d.exercises.flatMap(e => [e, ...(e.alts || [])]));
@@ -4759,9 +4758,24 @@ function mapSession(days, s) {
 const withKeys = x => ({ ...x, entries: x.entries.map(en => { const ex = findEx(en.exId); return { ...en, k: [...(ex ? exKeys(ex) : [shKey(en.exId)])] }; }) });
 /* BR-33.3: hồ sơ học viên trên máy HLV chỉ xem; buổi tập do học viên ghi */
 const histLocked = () => isHlv() && profiles.active !== HLV_SELF;
+/* BR-35.3: máy học viên (đã nối HLV) không sửa giáo án; HLV quản lý. Máy không có vai (tự tập) giữ nguyên quyền sửa. */
+const planLocked = () => hubRole() === 'hv';
+const PLAN_ACTS = new Set(['add-day', 'rename-day', 'del-day', 'move-day', 'move-ex', 'add-ex', 'add-alt', 'make-main', 'rot-open', 'rot-hold', 'rot-swap', 'onb-sample', 'onb-new', 'prof-copy', 'lib-open', 'other-open', 'save-ex', 'del-ex']);
+const waitPlanHtml = () => `<div class="hero pempty"><div class="h1" style="font-size:24px">Chờ HLV gửi giáo án</div><p class="meta">Giáo án do HLV của bạn soạn và gửi. Khi có giáo án mới, app tự nhận trong vài giây.</p></div>`;
+function kgSheet(ex) {
+  openSheet(`<h3 class="sh-title">${esc(shortName(ex.name))}</h3><p class="sh-text">Giáo án do HLV quản lý. Bạn chỉ chỉnh mức tạ đang tập.</p>
+    <label class="f full" style="margin-top:12px"><span>Đang tập <span class="unit u-kg">${ex.each ? 'kg/tay' : 'kg'}</span></span><input class="inp kg" id="f-cur" inputmode="decimal" value="${fmtIn(baseKg(ex))}"></label>
+    <div class="sh-actions"><button class="btn gold big" data-act="save-kg" data-id="${ex.id}">Lưu</button><button class="btn ghost" data-act="close-sheet">Huỷ</button></div>`);
+}
 const LOCK_MSG = 'Học viên tự ghi buổi tập. HLV chỉ xem lịch sử ở đây.';
+/* BR-35.1: HLV luôn tập trên hồ sơ của chính mình; bấm Tập ở hồ sơ học viên thì chuyển về hồ sơ HLV rồi mở bảng chọn buổi theo giáo án của HLV */
+async function lockedStart() {
+  if (!hlvSelf()) { toast('Chưa có hồ sơ HLV'); return; }
+  await switchProfile(HLV_SELF); ui.tab = 'today'; render(); toast('Đã chuyển về hồ sơ HLV');
+  if (!state.active) startPickSheet();
+}
 /* BR-33.2: tổng quan theo ngày tập: mỗi ngày (theo tên) có số buổi, buổi gần nhất; mỗi bài có kg tốt nhất, kg gần nhất và xu hướng */
-function dayOverview(sessions) {
+function dayOverview(sessions, keyOf = en => ({ key: en.name, name: en.name })) {
   const by = new Map();
   for (const s of sessions.filter(x => x.finishedAt).sort((a, b) => a.startedAt - b.startedAt)) {
     if (!by.has(s.dayName)) by.set(s.dayName, { name: s.dayName, n: 0, last: null, ex: new Map() });
@@ -4769,12 +4783,39 @@ function dayOverview(sessions) {
     for (const en of s.entries) {
       const sets = en.sets.filter(x => x.reps > 0); if (!sets.length) continue;
       const top = Math.max(...sets.map(x => x.kg));
-      const e = g.ex.get(en.name) || { name: en.name, best: 0, lastKg: null, prevKg: null };
+      const ki = keyOf(en), e = g.ex.get(ki.key) || { name: ki.name, best: 0, lastKg: null, prevKg: null };
       e.prevKg = e.lastKg; e.lastKg = top; e.best = Math.max(e.best, top);
-      g.ex.set(en.name, e);
+      g.ex.set(ki.key, e);
     }
   }
   return [...by.values()].map(g => ({ ...g, ex: [...g.ex.values()] })).sort((a, b) => b.last.localeCompare(a.last));
+}
+/* BR-35.8: bài chính và bài thay thế cùng ô gộp một dòng (tên bài chính); bài không còn trong giáo án gom theo tên */
+const slotKeyOf = en => { const so = slotOf(en.exId); return so ? { key: so.main.id, name: so.main.name } : { key: 'n:' + String(en.name).toLowerCase(), name: en.name }; };
+/* BR-35.6: dựng giáo án từ lịch sử tập: mỗi tên ngày → một ngày, mỗi bài (theo tên) → một bài theo buổi gần nhất chứa bài đó */
+function planFromHistory(sessions) {
+  const days = new Map();
+  for (const s of [...sessions].sort((a, b) => a.startedAt - b.startedAt)) {
+    if (!days.has(s.dayName)) days.set(s.dayName, new Map());
+    const g = days.get(s.dayName);
+    for (const en of s.entries) {
+      const W = en.sets.filter(z => !z.dr && z.reps > 0); if (!W.length) continue;
+      g.set(en.name.toLowerCase(), { en, W, drop: en.sets.some(z => z.dr) || !!(en.drop && en.drop.reps > 0), first: g.has(en.name.toLowerCase()) ? g.get(en.name.toLowerCase()).first : g.size });
+    }
+  }
+  return [...days.entries()].map(([name, g]) => ({ id: uid(), name, exercises: [...g.values()].sort((a, b) => a.first - b.first).map(({ en, W, drop }) => {
+    const x = newEx(en.name), reps = Math.round(W[0].reps);
+    return { ...x, muscle: MUSCLES.includes(en.muscle) && en.muscle !== 'Khác' ? en.muscle : x.muscle, each: !!en.each, sets: Math.max(1, Math.min(10, W.length)), repTarget: Math.min(50, reps), repMin: Math.max(1, Math.min(x.repMin, reps)), repMax: Math.max(x.repMax, reps), dropSet: drop, currentKg: Math.max(...W.map(z => z.kg || 0)) || null };
+  }) })).filter(d => d.exercises.length);
+}
+/* BR-35.7: HLV sửa bài của học viên thấy lịch sử gần đây của bài và bài cùng ô */
+function exLstHtml(ex) {
+  const so = slotOf(ex.id), ids = so ? [so.main, ...(so.main.alts || [])].map(x => x.id) : [ex.id];
+  const all = state.sessions.filter(s => s.finishedAt).flatMap(s => s.entries.filter(en => ids.includes(en.exId)).map(en => ({ s, en }))).sort((a, b) => b.s.startedAt - a.s.startedAt);
+  const W = en => en.sets.filter(z => !z.dr && z.reps > 0);
+  if (!all.length) return '<div class="fsec"><span class="eyebrow">Lịch sử gần đây</span><p class="fhint">Học viên chưa tập bài này.</p></div>';
+  const best = Math.max(...all.flatMap(({ en }) => W(en).map(z => z.kg || 0)));
+  return `<div class="fsec"><span class="eyebrow">Lịch sử gần đây</span>${all.slice(0, 3).map(({ s, en }) => `<p class="note-line">${dm(s.date)} · ${en.name === ex.name ? '' : esc(shortName(en.name)) + ' · '}${W(en).map(z => `${fmt(z.kg)}×${z.reps}`).join(' · ')}</p>`).join('')}<p class="fhint">Tốt nhất ${fmt(best)} kg</p></div>`;
 }
 /* BR-33.4: liệt kê ngày và bài HLV đổi (a = máy này, b = bản HLV); giáo án dạng {n, e} hoặc {name, exercises} */
 function planDiff(a, b) {
@@ -4800,47 +4841,23 @@ async function hubApplyPlan(rec) {
   if (!J || !Array.isArray(J.plan)) return;
   /* giáo án từ máy chủ đưa qua cùng bước làm sạch như gói Drive, để so sánh đúng với giáo án trên máy */
   let RP = null; try { RP = cleanPlanOf(J.plan); } catch (e) {}
-  if (!RP) return;
+  if (!RP || (!RP.length && state.days.length)) return;   /* giáo án trống của HLV không xoá giáo án đang tập */
   const sy = state.settings.sync; state.sync = state.sync || { sent: {} };
   const localPlan = cleanPlanOf(await serPlan(state, false, {}));
-  if (planKey(localPlan) === planKey(RP)) { state.sync.planBase = planKey(localPlan); state.sync.planDays = planDayMap(RP); state.sync.conflict = null; sy.planT = rec.t; save(); return; }
-  /* máy trống (chưa có giáo án): nhận thẳng */
-  if (!state.days.length) { await applyRemotePlan(RP, rec.t); return; }
-  const base = state.sync.planDays || {}, L = new Map(localPlan.map(d => [d.n, d])), R = new Map(RP.map(d => [d.n, d]));
-  const names = [...new Set([...RP.map(d => d.n), ...localPlan.map(d => d.n)])];
-  const out = [], conflicts = [];
-  for (const n of names) {
-    const ld = L.get(n), rd = R.get(n), lh = ld && planDayHash(ld), rh = rd && planDayHash(rd), bh = base[n];
-    if (lh === rh) { if (ld) out.push(ld); continue; }
-    if (lh === bh) { if (rd) out.push(rd); continue; }          /* chỉ HLV đổi (hoặc HLV xoá ngày): nhận */
-    if (rh === bh) { if (ld) out.push(ld); continue; }          /* chỉ máy này đổi: giữ */
-    conflicts.push(n); if (ld) out.push(ld);                   /* cả hai cùng đổi: giữ bản máy này tới khi anh chọn */
-  }
-  await applyRemotePlan(out, rec.t);
-  const after = await serPlan(state, false, {}), nb = { ...base };
-  for (const n of names) if (!conflicts.includes(n)) { const d = after.find(x => x.n === n); if (d) nb[n] = planDayHash(d); else delete nb[n]; }
-  for (const n of names) if (!R.has(n) && !conflicts.includes(n)) delete nb[n];
-  state.sync.planDays = nb; state.sync.planBase = planKey(after);
-  state.sync.conflict = conflicts.length ? { plan: RP, t: rec.t, days: conflicts } : null;
-  const diff = planDiff(localPlan, RP); if (diff.length) sy.planDiff = { at: Date.now(), items: diff.slice(0, 30) };   /* BR-33.4 */
-  sy.planT = rec.t; save(); render(true);
+  if (planKey(localPlan) === planKey(RP)) { state.sync.planBase = planKey(localPlan); sy.planT = rec.t; save(); return; }
+  const diff = state.days.length ? planDiff(localPlan, RP) : [];   /* BR-33.4 */
+  await applyRemotePlan(RP, rec.t);
+  if (diff.length) sy.planDiff = { at: Date.now(), items: diff.slice(0, 30) };
+  save(); render(true);
 }
 /* áp giáo án của HLV vào máy (gộp bằng syncMerge) và ghi nhận bản đã thống nhất */
 async function applyRemotePlan(plan, t) {
   let P = null; try { P = cleanPkg({ app: 'gadn-sync', role: 'coach', link: {}, plan, sessions: [], del: {} }); } catch (e) { return; }
-  const { st } = await syncMerge(state, P, {});
+  const { st } = await syncMerge(state, P, { replace: true });   /* BR-35.4: bản HLV thay hẳn */
   state.sync = state.sync || { sent: {} };
   state.days = st.days; state.settings.sync.planT = t;
   state.sync.planBase = planKey(await serPlan(state, false, {}));
   save(); render(true);
-}
-function hubConflictHtml() {
-  const c = state.sync && state.sync.conflict; if (!c || !c.days || !c.days.length) return '';
-  const L = new Map(state.days.map(d => [d.name, d.exercises.length])), R = new Map(c.plan.map(d => [d.n, (d.e || []).length]));
-  const rows = c.days.map(n => `<div class="row" style="align-items:center;justify-content:space-between;gap:8px"><span><b>${esc(n)}</b><br><span class="small muted">Máy này ${L.get(n) ?? '—'} bài · HLV ${R.get(n) ?? '—'} bài</span></span>
-    <span class="row" style="gap:6px"><button class="btn sm gold" data-act="hub-conflict-day" data-n="${esc(n)}" data-v="remote">Dùng bản HLV</button><button class="btn sm" data-act="hub-conflict-day" data-n="${esc(n)}" data-v="local">Giữ bản máy này</button></span></div>`).join('');
-  return `<div class="card set-card"><h3>${c.days.length} ngày khác với HLV</h3>
-    <p>Ngày dưới đây đã đổi cả trên máy này lẫn ở HLV. Các ngày còn lại đã được gộp tự động. Chọn bản giữ lại cho từng ngày:</p>${rows}</div>`;
 }
 /* chỉ nhận bản mới hơn bản đã có; buổi của hồ sơ đang mở được ghi qua state để không bị ghi đè */
 async function hubApplySession(pid, rec) {
@@ -4956,12 +4973,19 @@ async function copyText(id) {
 const handlers = {
   'tab': t => { ui.tab = t.dataset.tab; ui.moreSec = null; render(); },
   'plan-view': t => { ui.planView = t.dataset.k; render(); },
+  'plan-from-history': () => {   /* BR-35.6 */
+    if (!histLocked() || state.days.length) return;
+    state.days = planFromHistory(state.sessions);
+    state.sessions = state.sessions.map(s => mapSession(state.days, { ...s, dayId: state.days.some(d => d.id === s.dayId) ? s.dayId : undefined, entries: s.entries.map(en => findEx(en.exId) ? en : { ...en, exId: undefined }) }));
+    ui.planView = 'plan'; ui.openDay = state.days[0] && state.days[0].id; save(); render();
+    toast(`Đã tạo ${state.days.length} ngày tập từ lịch sử. Chỉnh xong, giáo án tự gửi cho học viên.`);
+  },
   'plan-diff-ok': () => { if (state.settings.sync) state.settings.sync.planDiff = null; save(); render(true); },   /* BR-33.4 */
   'start-day': t => startSession(t.dataset.id),
   'pick-day': t => { ui.pick = t.dataset.id; render(true); },
   'more-sec': t => { ui.moreSec = t.dataset.k || null; ui.tab = 'more'; render(); },
   'todos': () => todosSheet(),
-  'start-pick': () => histLocked() ? toast(LOCK_MSG) : startPickSheet(),
+  'start-pick': () => histLocked() ? lockedStart() : startPickSheet(),
   'custom-open': () => { ui.customSel = new Set(); customSheet(); },
   'custom-toggle': t => { const id = t.dataset.id; if (ui.customSel.has(id)) ui.customSel.delete(id); else ui.customSel.add(id); t.setAttribute('aria-pressed', ui.customSel.has(id)); const b = $('#custom-go'); if (b) { b.disabled = !ui.customSel.size; b.innerHTML = `${ICON.play} Bắt đầu (${ui.customSel.size} bài${ui.customSel.size ? ' · ' + minTxt(dayEst([...ui.customSel].map(findEx).filter(Boolean))) : ''})`; } },
   'custom-start': () => startSession(null, [...ui.customSel]),
@@ -5012,7 +5036,7 @@ const handlers = {
     const { e, s, f } = t.dataset; const set = getSet(+e, s); if (!set) return;
     const ex = exOrSnap(state.active.entries[+e]);
     const d = +t.dataset.d * (f === 'kg' ? (ex.step > 0 ? ex.step : 1) : 1);
-    set[f] = Math.max(0, r2((set[f] ?? 0) + d));
+    set[f] = Math.max(0, r2((set[f] ?? 0) + d)); if (f === 'kg' || f === 'reps') set.man = 1;
     const inp = $(`input[data-bind="set"][data-e="${e}"][data-s="${s}"][data-f="${f}"]`); if (inp) inp.value = fmtIn(set[f]);
     if (f === 'kg') { refreshWarm(+e); if (isDrop(set)) set.m = 1; else if (syncDrops(state.active.entries[+e])) state.active.entries[+e].sets.forEach((d, k) => { if (d.dr) { const ip = $(`input[data-bind="set"][data-e="${e}"][data-s="${k}"][data-f="kg"]`); if (ip) ip.value = fmtIn(d.kg); } }); }
     sfx('step'); vibe(6);
@@ -5030,6 +5054,10 @@ const handlers = {
     if (set.done) { t.classList.remove('pop'); row.classList.remove('flash'); void t.offsetWidth; t.classList.add('pop'); row.classList.add('flash'); sfx('check'); vibe([35, 40, 60]); }
     else { sfx('uncheck'); vibe(10); }
     markCurrent();
+    if (set.done && s !== 'drop' && !isDrop(set)) {   /* BR-36 */
+      const en1 = state.active.entries[+e], ch = adjustLaterSets(en1, +s);
+      if (ch.length) { syncDrops(en1); syncSetInputs(+e); refreshWarm(+e); toast(`${ch.length > 1 ? `Set ${ch[0] + 1}–${ch[ch.length - 1] + 1}` : `Set ${ch[0] + 1}`} chỉnh theo set ${+s + 1} · ${fmt(set.kg)} kg × ${set.reps}`); }
+    }
     if (set.done) { const en0 = state.active.entries[+e], ex = exOrSnap(en0), nx = en0.sets[+s + 1]; if (s !== 'drop' && !isDrop(set) && !isDrop(nx)) startRest(restOf(ex), shortName(ex.name)); else { if (rest.end > Date.now()) stopRest(); if (isDrop(nx)) toast('Vào drop set ngay, không nghỉ'); } requestWake(); }
     refreshCue(+e); updateProgress(); save();
     if (set.done && +e === focusIdx() && entryDone(state.active.entries[+e])) { ui.stampEx = state.active.entries[+e].exId; refreshExCard(+e); ui.stampEx = null; vibe([60, 50, 90]);
@@ -5094,7 +5122,7 @@ const handlers = {
   'each-conv': t => { const ex = findEx(t.dataset.id); if (!ex) return; const f = +t.dataset.f; if (f !== 1) convEach(ex, f, !!ex.each); else convEach(ex, 1, !!ex.each); save(); closeSheet(); render(true); toast(f === 1 ? 'Giữ nguyên số cũ' : 'Đã đổi lịch sử của bài này'); },
   'move-ex': t => { const d = findDay(t.dataset.day); const i = d.exercises.findIndex(e => e.id === t.dataset.id), j = i + +t.dataset.d; if (j < 0 || j >= d.exercises.length) return; [d.exercises[i], d.exercises[j]] = [d.exercises[j], d.exercises[i]]; const sy = syncActive(); save(); render(true); if (sy) toast('Đã cập nhật thứ tự buổi đang tập'); },
   'add-ex': t => { ui.nb = {}; ui.draft = { ...newEx(''), dayId: t.dataset.day, isNew: true, added: [], orig: [] }; exSheet(); },
-  'edit-ex': t => { const ex = findEx(t.dataset.id); if (!ex) return; const so = slotOf(ex.id); ui.nb = {};
+  'edit-ex': t => { const ex = findEx(t.dataset.id); if (!ex) return; if (planLocked()) { kgSheet(ex); return; } const so = slotOf(ex.id); ui.nb = {};
     ui.draft = { ...ex, photos: [...ex.photos], dayId: so.day.id, altOf: so.isMain ? null : so.main.id, isNew: false, added: [], orig: [...ex.photos], eachOrig: !!ex.each }; exSheet(); },
   'nbz': t => { ui.nb = { z: ui.nb && ui.nb.z === t.dataset.v ? '' : t.dataset.v }; const box = $('#nb-box'); if (box) { box.innerHTML = nbHtml(); hydratePhotos(box); } if ($('#f-zone') && ui.nb.z) $('#f-zone').value = ui.nb.z; },
   'zlib': t => applyLibPick(t.dataset.v),
@@ -5161,6 +5189,12 @@ const handlers = {
     ui.openDay = day.id; ui.draft = null; save(); closeSheet(); render(true); toast('Đã lưu bài tập');
     if (!d.isNew && !!d.each !== !!d.eachOrig && exHistory(d.id).length) eachConvSheet(ex, !!d.eachOrig);
   },
+  'save-kg': t => {   /* BR-35.3: học viên chỉ chỉnh mức tạ đang tập, không phải giáo án */
+    const ex = findEx(t.dataset.id), v = num($('#f-cur').value); if (!ex) return;
+    if (!(v >= 0)) { toast('Mức tạ không hợp lệ'); return; }
+    if (v !== baseKg(ex)) { ex.currentKg = v; ex.kgSetAt = Date.now(); }
+    save(); closeSheet(); render(true); toast('Đã lưu mức tạ');
+  },
   'del-ex': () => { const d = ui.draft, cur = findEx(d.id), hasAlts = !d.altOf && cur && (cur.alts || []).length;
     confirmSheet({ title: `Xoá “${esc(d.name)}”?`, text: hasAlts ? `Bài thay thế “${esc(shortName(cur.alts[0].name))}” sẽ lên làm bài chính của ô này. Lịch sử đã tập vẫn được giữ.` : 'Bài tập và ảnh máy sẽ bị xoá khỏi giáo án. Lịch sử đã tập vẫn được giữ.', ok: 'Xoá bài tập', danger: true,
     onOk: () => { const day = findDay(d.dayId); const gone = findEx(d.id); markDelEx(gone);
@@ -5222,18 +5256,6 @@ const handlers = {
     const id2 = Object.keys(state.settings.sync.map || {}).find(k => state.settings.sync.map[k] === t.dataset.id);
     if (!id2) { toast('Chưa tạo được thẻ QR cho học viên này. Kiểm tra mạng và thử lại.'); return; }
     hubCardsSheet([{ name: p.name, code: hubCodeOf(id2, await hubKey(id2, 0)) }]);
-  },
-  'hub-conflict-day': async t => {
-    const c = state.sync && state.sync.conflict; const n = t.dataset.n; if (!c || !c.days.includes(n)) return;
-    const R = c.plan.find(d => d.n === n), local = await serPlan(state, false, {});
-    if (t.dataset.v === 'remote') {   /* thay đúng ngày đó bằng bản HLV, các ngày khác giữ nguyên */
-      const k = local.findIndex(d => d.n === n);
-      const np = R ? (k < 0 ? [...local, R] : local.map((d, j) => j === k ? R : d)) : local.filter(d => d.n !== n);
-      await applyRemotePlan(np, c.t);
-    }
-    state.sync.planDays = { ...(state.sync.planDays || {}), [n]: R ? planDayHash(R) : undefined }; if (!R) delete state.sync.planDays[n];
-    state.sync.conflict = { ...c, days: c.days.filter(x => x !== n) }; if (!state.sync.conflict.days.length) state.sync.conflict = null;
-    save(); render(true); toast(t.dataset.v === 'remote' ? `Đã dùng bản HLV cho ${n}` : `Đã giữ bản máy này cho ${n}`);
   },
   'hub-add-go': () => hubAddGo(),
                       'qr-close': () => { clearInterval(ui.qrT); qrStop(); closeSheet(); },
@@ -5324,6 +5346,7 @@ const handlers = {
 };
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-act]'); if (!t || t.disabled) return;
+  if (planLocked() && PLAN_ACTS.has(t.dataset.act)) { e.preventDefault(); toast('Giáo án do HLV quản lý'); return; }   /* BR-35.3 */
   const f = handlers[t.dataset.act]; if (f) { e.preventDefault(); f(t, e); }
 });
 document.addEventListener('input', e => {
@@ -5336,7 +5359,7 @@ document.addEventListener('input', e => {
   if (t.id === 'cmp-range') { setCompare(+t.value); return; }
   if (ui.draft && ['f-cur', 'f-tgt', 'f-step', 'f-sets', 'f-rtgt', 'f-rmin'].includes(t.id)) draftRoad();
   if (!b) return;
-  if (b === 'set' && state.active) { const set = getSet(+t.dataset.e, t.dataset.s); if (set) { set[t.dataset.f] = num(t.value); if (t.dataset.f === 'kg') { refreshWarm(+t.dataset.e); const en2 = state.active.entries[+t.dataset.e]; if (isDrop(set)) set.m = 1; else if (syncDrops(en2)) en2.sets.forEach((d, k) => { if (d.dr) { const ip = $(`input[data-bind="set"][data-e="${t.dataset.e}"][data-s="${k}"][data-f="kg"]`); if (ip) ip.value = fmtIn(d.kg); } }); } save(); } }
+  if (b === 'set' && state.active) { const set = getSet(+t.dataset.e, t.dataset.s); if (set) { set[t.dataset.f] = num(t.value); if (t.dataset.f === 'kg' || t.dataset.f === 'reps') set.man = 1; if (t.dataset.f === 'kg') { refreshWarm(+t.dataset.e); const en2 = state.active.entries[+t.dataset.e]; if (isDrop(set)) set.m = 1; else if (syncDrops(en2)) en2.sets.forEach((d, k) => { if (d.dr) { const ip = $(`input[data-bind="set"][data-e="${t.dataset.e}"][data-s="${k}"][data-f="kg"]`); if (ip) ip.value = fmtIn(d.kg); } }); } save(); } }
   else if (b === 'note' && state.active) { state.active.entries[+t.dataset.e].note = t.value; save(); }
   else if (b === 'setting') { const k = t.dataset.k; state.settings[k] = ['name', 'pushServer'].includes(k) ? t.value : num(t.value);
     if (k === 'name') { curProf().name = t.value.trim() || 'Người tập'; clearTimeout(profT); profT = setTimeout(() => { saveProfiles(); if (profiles.active === HLV_SELF) hubSelfNameSync(); }, 600); }
@@ -5440,7 +5463,7 @@ async function purgeStored() {
   if (h.startsWith('#nhap=')) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} toast(OLD_CODE); }
   if ('serviceWorker' in navigator && location.protocol === 'https:' && document.documentElement.dataset.pwa === '1') { navigator.serviceWorker.register('sw.js').catch(() => {}); }
 })();
-window.__sota = { mapSession, planDiff, dayOverview, suggest, sessQuality, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
+window.__sota = { mapSession, planDiff, dayOverview, planFromHistory, suggest, sessQuality, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
 })();
 </script>
 </body>

@@ -58,7 +58,7 @@ test('BR-33.5 · buổi cũ của hồ sơ không còn exId: mở hồ sơ là g
 });
 
 /* BR-33.2 · tổng quan theo ngày tập cho HLV, và BR-33.3 · không có nút tập trên hồ sơ học viên */
-test('BR-33.2 · HLV mở hồ sơ học viên → Đã tập hiện tổng quan theo ngày; BR-33.3 · không có nút Tập ngày này', async ({ app, hub, device }) => {
+test('BR-33.2 · HLV mở hồ sơ học viên → Đã tập hiện tổng quan theo ngày; BR-33.3 · nút Tập vẫn còn ở thanh dưới', async ({ app, hub, device }) => {
   const { P } = await linkLan(app, hub, device, P => [session(P.days[0], TODAY, [[P.days[0].exercises[0], [[40, 8]]]])]);
   const d = P.days[0];
   await expect.poll(async () => (await app.idb('kv', 'state:p2'))?.sessions?.length ?? 0, { timeout: 45000 }).toBe(1);
@@ -68,12 +68,8 @@ test('BR-33.2 · HLV mở hồ sơ học viên → Đã tập hiện tổng quan
   await expect(app.view()).toContainText('Theo ngày tập');
   await expect(app.view()).toContainText(d.name);
   await expect(app.view()).toContainText(d.exercises[0].name);
-  /* nút Tập ở thanh dưới vẫn còn (giữ bố cục menu); bấm vào chỉ báo HLV chỉ xem */
+  /* nút Tập ở thanh dưới vẫn còn (giữ bố cục menu); bấm vào chuyển về hồ sơ HLV: xem huong-du-lieu.spec.mjs (BR-35.1) */
   await expect(app.page.locator('#nav-bar .fab')).toBeVisible();
-  await app.page.locator('#nav-bar .fab').click();
-  await expect(app.toast()).toContainText('HLV chỉ xem');
-  await app.click('plan-view', '[data-k="plan"]');
-  await expect(app.act('start-day').first()).toBeHidden();
 });
 
 /* BR-33.4 · hàm thuần planDiff: liệt kê ngày/bài HLV đổi */
@@ -107,19 +103,6 @@ test('BR-33.4 · HLV đổi giáo án → máy học viên hiện “HLV vừa c
   await expect(hv.view()).toContainText('Ngày đổi');
   await hv.click('plan-diff-ok');
   await expect(hv.view()).not.toContainText('HLV vừa chỉnh giáo án');
-});
-
-/* BR-34.1 · học viên có giáo án riêng mà hồ sơ trên máy HLV còn trống: HLV nhận giáo án và thấy lịch sử */
-test('BR-34.1 · giáo án riêng của học viên về máy HLV khi hồ sơ trên máy HLV còn trống; Lịch tập hiện ngày tập và lịch sử', async ({ app, hub, device }) => {
-  const { P } = await linkLan(app, hub, device, P => [session(P.days[0], TODAY, [[P.days[0].exercises[0], [[40, 8]]]])], []);
-  await expect.poll(async () => (await app.idb('kv', 'state:p2'))?.days?.length ?? 0, { timeout: 45000 }).toBe(P.days.length);
-  await expect.poll(async () => (await app.idb('kv', 'state:p2'))?.sessions?.length ?? 0, { timeout: 45000 }).toBe(1);
-  await app.page.evaluate(() => window.__sota.switchProfile('p2'));
-  await app.tab('plan');
-  await expect(app.view()).toContainText(P.days[0].name);
-  await app.click('plan-view', '[data-k="done"]');
-  await expect(app.view()).toContainText('Theo ngày tập');
-  await expect(app.view()).toContainText(P.days[0].exercises[0].name);
 });
 
 /* BR-34.2 · hồ sơ học viên có buổi tập nhưng chưa có ngày tập: Lịch tập vẫn hiện lịch sử, không trống */
