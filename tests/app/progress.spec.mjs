@@ -25,9 +25,13 @@ test('theo tuần: chấm ngày tập, 4 chỉ số so với tuần trước, l�
   await expect(app.view().locator('.dots div.today')).toContainText('21');
   const k = app.view().locator('.kpis .kpi');
   await expect(k.nth(0)).toContainText('2');
-  /* tuần trước cũng 2 buổi */
-  await expect(k.nth(0).locator('.delta')).toContainText('= 0');
-  await expect(k.nth(1).locator('.delta')).toContainText('▲ 2');
+  /* BR-38.1/38.5: hôm nay T4 → chỉ so T2–T4 tuần trước (1 buổi, 5 set) */
+  await expect(k.nth(0).locator('.delta')).toContainText('▲ 1');
+  await expect(k.nth(1).locator('.delta')).toContainText('▲ 7');
+  /* BR-38.2/38.4: chỉ bench, fly chung; bench −18,5 %, fly 0 % → trung bình đều −9 % */
+  await expect(k.nth(2).locator('.delta')).toContainText('▼ 9%');
+  await expect(app.view().locator('.hero.ton')).toContainText('-9% so với tuần trước');
+  await expect(app.view()).not.toContainText('So với 1');
   await expect(k.nth(3)).toContainText('2'); /* bài lên tạ: bench 40→42,5, lat 45→47,5 */
   await expect(app.act('period', '[data-d="1"]')).toBeDisabled();
   await app.click('period', '[data-d="-1"]');
@@ -161,4 +165,72 @@ test('Tiến độ → từng bài: nhãn gợi ý (lên tạ, đang đau, tuầ
   await app.tab('week'); await app.click('allex');
   await app.sheet().locator('details.grp summary', { hasText: 'Tay sau' }).click();
   await expect(app.sheet().locator(`[data-act="prog"][data-id="${P.push.id}"]`)).toContainText('Tuần deload');
+});
+
+/* ---- PA-49 · BR-38: so theo ngày, sức mạnh chỉ so bài chung ---- */
+const cp = (page, mode, off, today) => page.evaluate(([m, o, t]) => window.__sota.comparePeriod(m, o, t), [mode, off, today]);
+const sc = (page, cur, prev) => page.evaluate(([c, p]) => window.__sota.strengthCompare(c, p), [cur, prev]);
+const SS = list => list.map(([name, sets, extra]) => ({ entries: [{ exId: 'x-' + name, name, sets: sets.map(([kg, reps]) => ({ kg, reps })), drop: null, each: false, ...(extra || {}) }] }));
+
+test('BR-38.1 comparePeriod: kỳ đang diễn ra chỉ so đúng khoảng ngày đã trôi qua', async ({ app, page }) => {
+  await app.seed({ state: history().st });
+  expect(await cp(page, 'week', 0, '2026-10-24')).toMatchObject({ from: '2026-10-19', to: '2026-10-24', pFrom: '2026-10-12', pTo: '2026-10-17', scale: 1 });
+  expect(await cp(page, 'week', 0, '2026-10-19')).toMatchObject({ from: '2026-10-19', to: '2026-10-19', pFrom: '2026-10-12', pTo: '2026-10-12' });
+  expect(await cp(page, 'week', 0, '2026-10-25')).toMatchObject({ to: '2026-10-25', pTo: '2026-10-18' });
+  expect(await cp(page, 'month', 0, '2026-10-24')).toMatchObject({ from: '2026-10-01', to: '2026-10-24', pFrom: '2026-09-01', pTo: '2026-09-24', scale: 1 });
+  /* kỳ đã qua: cả kỳ so cả kỳ liền trước */
+  expect(await cp(page, 'week', -1, '2026-10-24')).toMatchObject({ from: '2026-10-12', to: '2026-10-18', pFrom: '2026-10-05', pTo: '2026-10-11', scale: 1 });
+});
+
+test('BR-38.1/Q3 comparePeriod: tháng dài ngắn khác nhau → cả tháng trước, quy về trung bình theo ngày', async ({ app, page }) => {
+  await app.seed({ state: history().st });
+  const a = await cp(page, 'month', 0, '2026-10-31'); /* tháng 9 chỉ 30 ngày */
+  expect(a).toMatchObject({ from: '2026-10-01', to: '2026-10-31', pFrom: '2026-09-01', pTo: '2026-09-30' });
+  expect(a.scale).toBeCloseTo(31 / 30, 6);
+  const b = await cp(page, 'month', 0, '2026-03-30'); /* tháng 2/2026 có 28 ngày */
+  expect(b).toMatchObject({ pFrom: '2026-02-01', pTo: '2026-02-28' });
+  expect(b.scale).toBeCloseTo(30 / 28, 6);
+  const c = await cp(page, 'month', -1, '2026-10-24'); /* tháng 9 (30) so tháng 8 (31) */
+  expect(c).toMatchObject({ from: '2026-09-01', to: '2026-09-30', pFrom: '2026-08-01', pTo: '2026-08-31' });
+  expect(c.scale).toBeCloseTo(30 / 31, 6);
+});
+
+test('BR-38.2/38.3 strengthCompare: chỉ bài chung; bài lặp lấy trung bình theo buổi', async ({ app, page }) => {
+  await app.seed({ state: history().st });
+  /* B: kỳ trước 1 buổi 1000; kỳ này 2 buổi 1200 và 1400 → TB 1300 (+30 %); A chỉ kỳ này, C chỉ kỳ trước */
+  const r = await sc(page, SS([['A', [[50, 10]]], ['B', [[120, 10]]], ['B', [[140, 10]]]]), SS([['B', [[100, 10]]], ['C', [[80, 10]]]]));
+  expect(r.n).toBe(1);
+  expect(r.rows).toHaveLength(1);
+  expect(r.rows[0]).toMatchObject({ name: 'B', c: 1300, p: 1000 });
+  expect(r.pct).toBeCloseTo(30, 6);
+});
+
+test('BR-38.4 strengthCompare: % từng bài rồi trung bình đều; không bài chung → null', async ({ app, page }) => {
+  await app.seed({ state: history().st });
+  /* bài nhỏ 100 → 120 (+20 %), bài nặng 10000 → 10000 (0 %) → +10 %, không phải ~+0,2 % theo tổng */
+  const r = await sc(page, SS([['Nhỏ', [[10, 12]]], ['Nặng', [[100, 100]]]]), SS([['Nhỏ', [[10, 10]]], ['Nặng', [[100, 100]]]]));
+  expect(r.n).toBe(2);
+  expect(r.pct).toBeCloseTo(10, 6);
+  const none = await sc(page, SS([['A', [[50, 10]]]]), SS([['B', [[50, 10]]]]));
+  expect(none).toMatchObject({ n: 0, pct: null });
+  const zero = await sc(page, SS([['A', [[50, 10]]]]), SS([['A', [[0, 10]]]]));
+  expect(zero).toMatchObject({ n: 0, pct: null });
+});
+
+test('BR-38.3 strengthCompare: công thức cũ — tạ đơn ×2, drop tính; bài chính/thay thế cùng ô gộp một bài', async ({ app, page }) => {
+  await app.seed({ state: history().st });
+  const e = (sets, extra) => SS([['Tạ đơn', sets, { each: true, ...(extra || {}) }]]);
+  const r = await sc(page, e([[10, 10]], { drop: { kg: 5, reps: 10 } }), e([[10, 10]]));
+  expect(r.rows[0]).toMatchObject({ c: 300, p: 200 });
+  expect(r.pct).toBeCloseTo(50, 6);
+});
+
+test('BR-38: chỉ tính hiển thị, không đổi dữ liệu', async ({ app, page }) => {
+  await app.seed({ state: history().st });
+  await app.tab('week');
+  const before = await page.evaluate(() => JSON.stringify(window.__sota.state));
+  await cp(page, 'month', 0, '2026-10-31');
+  await page.evaluate(() => window.__sota.strengthCompare(window.__sota.state.sessions, window.__sota.state.sessions));
+  await app.click('pmode', '[data-k="month"]');
+  expect(await page.evaluate(() => JSON.stringify(window.__sota.state))).toBe(before);
 });
