@@ -63,13 +63,6 @@ class App {
   toast() { return this.page.locator('#toast'); }
   /* chờ toast tự ẩn (tua nhanh đồng hồ) để nó không che nút */
   async toastGone() { await this.page.clock.fastForward(8000); await expect(this.toast()).toBeHidden(); }
-  /* ghi lại các lần app mở liên kết ngoài (shortcuts://…) mà không để trình duyệt test điều hướng thật */
-  async navSpy() {
-    const cdp = await this.page.context().newCDPSession(this.page); await cdp.send('Page.enable');
-    const urls = []; cdp.on('Page.frameRequestedNavigation', e => { if (!/^https?:/.test(e.url)) urls.push(e.url); }); return urls;
-  }
-  /* bấm nút mà nút đó mở liên kết ngoài: bấm bằng sự kiện DOM để Playwright không chờ điều hướng */
-  async tap(locator) { await locator.first().evaluate(el => setTimeout(() => el.click(), 0)); await this.page.waitForTimeout(100); }
   /* chờ app ghi xuống IndexedDB (save() trễ 300 ms) */
   async flushed() { await this.page.waitForTimeout(400); }
 }

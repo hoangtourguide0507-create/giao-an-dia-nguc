@@ -288,7 +288,6 @@ tests/
                      flushed); fixture gas (máy chủ Drive thật, §12.3) và device (thêm máy thứ hai/ba có dữ liệu riêng)
     data.mjs       – dựng dữ liệu mẫu đúng định dạng app (ex, day, session, state, basicPlan, jpegWithExif…)
     calc.mjs       – chạy hàm thuần của app (window.__sota) trên trạng thái dựng sẵn
-    cloud.mjs      – giả lập window.claude (db/user/downloads) lưu trong sessionStorage, dùng để kiểm tra app không ghi gì lên tài khoản (PA-41)
     notify.mjs     – giả lập Notification, PushManager, service worker và máy chủ thông báo
   app/*.spec.mjs   – 21 file theo BR (dòng đầu mỗi file ghi mã BR)
   sw/sw.test.mjs   – test sw.js bằng node:test trong vm với self/caches/fetch giả
@@ -333,7 +332,7 @@ Chạy `npm run check`, `npm run test:sw`, `tests/test_push_server.mjs`, `tests/
 | BR-15 Sao lưu | `backup.spec.mjs` |
 | BR-16 Hướng dẫn | `guide.spec.mjs` |
 | BR-17 Báo cáo tháng (đã bỏ) | — |
-| BR-18 (đã bỏ, PA-41) | `cloud.spec.mjs` (kiểm tra đã gỡ) |
+| BR-18 (đã bỏ, PA-41) | — (test và helper đã xoá 24/10/2026) |
 | BR-19 Offline | `tests/sw/sw.test.mjs` |
 | BR-20 Dữ liệu cũ | `misc.spec.mjs` |
 | BR-21 Tài khoản đăng nhập | `account.spec.mjs`, `drive.spec.mjs` |
