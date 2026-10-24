@@ -4,7 +4,8 @@
 
 ## Duyệt theo cây phương án
 - `main` là bản chính thức, GitHub Pages dựng app từ `main` / `(root)` (Source: *Deploy from a branch*).
-- **Không commit trực tiếp vào `main`.** Mọi thay đổi commit trên nhánh rồi mới `git merge --no-ff` vào `main`. Hook `.git/hooks/pre-commit` chặn commit trên `main` (trừ lúc đang merge); hook `.git/hooks/post-merge` chạy toàn bộ kiểm thử sau mỗi lần gộp vào `main` và cảnh báo nếu đỏ.
+- **Không commit trực tiếp vào `main`.** Mọi thay đổi commit trên nhánh rồi mới `git merge --no-ff` vào `main`. Hook `.git/hooks/pre-commit` chặn commit trên `main` (trừ lúc đang merge). Không dùng hook `post-merge`.
+- **Sau mỗi lần `git merge` vào `main`, agent tự chạy `bash tests/chay.sh`** (bộ nhẹ, vài giây) ngay trong cùng lượt, không chờ nhắc. Đỏ thì báo cáo ngay, chưa đẩy `main` lên GitHub, sửa nguyên nhân (không làm yếu test) bằng commit trên nhánh rồi gộp lại. Không tự chạy cả bộ Playwright sau khi gộp.
 - Mỗi yêu cầu thay đổi là một nhánh riêng `pa-<số>-<tên-ngắn>`, rẽ từ `main` (hoặc từ một PA khác khi chủ repo yêu cầu rẽ tiếp).
 - Nhánh `pa-<số>-<tên>` chỉ gộp vào `main` khi chủ repo nhắn "Duyệt PA-x". Gộp bằng `git merge --no-ff`.
 - Nhánh khác (tài liệu, ADR, sửa lỗi ngoài PA…) gộp vào `main` không cần lệnh duyệt, cũng bằng `git merge --no-ff`.
