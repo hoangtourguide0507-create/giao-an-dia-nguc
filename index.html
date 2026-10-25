@@ -650,9 +650,9 @@ input[type=checkbox],input[type=radio]{font-size:inherit}
 .bal-miss button.else{border-color:var(--line-2);color:var(--muted);font-weight:500}
 .bal-miss.in-sheet{border-top:0;margin:0 0 4px;padding-top:0}
 .bal-w{display:flex;gap:10px;padding:12px;border-radius:14px;margin:0 0 10px;background:rgb(var(--warn-rgb) / .08);border:1px solid rgb(var(--warn-rgb) / .35)}
-.bal-w.cap{background:rgb(var(--down-rgb) / .08);border-color:rgb(var(--down-rgb) / .4)}
+.bal-w.bw-cap{background:rgb(var(--down-rgb) / .08);border-color:rgb(var(--down-rgb) / .4)}
 .bal-w .wi{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-weight:800;font-size:13px;flex:none;background:rgb(var(--warn-rgb) / .2);color:var(--almost)}
-.bal-w.cap .wi{background:rgb(var(--down-rgb) / .2);color:var(--down)}
+.bal-w.bw-cap .wi{background:rgb(var(--down-rgb) / .2);color:var(--down)}
 .bal-w b{display:block;font-size:14px}.bal-w p{margin:3px 0 8px;font-size:13px;color:var(--fg-2)}
 .bal-fixes{display:flex;flex-direction:column;gap:6px}
 .bal-fix{text-align:left;border:1px solid var(--line-2);background:var(--surface-2);border-radius:11px;padding:8px 10px;font-size:13px;font-weight:600;color:var(--fg)}
@@ -2330,8 +2330,10 @@ function zoneCard() {
   return h;
 }
 /* ===== PA-50 · BR-39: cân vùng cơ trong ngày tập, góc tập, vùng còn thiếu, biến thể =====
-   Ngưỡng mặc định (chờ kiem-chung-y-khoa): trần ~11 set quy đổi/nhóm cơ/buổi (Remmert 2025); góc ghế theo EMG Rodríguez-Ridao 2020. */
-const BAL = { cap: 11, stackN: 3, stackS: 8 };
+   Trần set/nhóm cơ/buổi do người dùng chọn (BR-39.11, PA-51): 11 · 14 (mặc định) · 16 · 0 = tắt.
+   Tham khảo: Remmert và cs. 2025 (bản thảo SportRxiv, chưa bình duyệt) — sau ~11 set quy đổi lợi ích tăng cơ thêm khó thấy, dữ liệu ở mức cao còn ít.
+   Góc ghế theo EMG Rodríguez-Ridao 2020. Ngưỡng dồn vùng chờ kiem-chung-y-khoa. */
+const BAL = { cap: 14, stackN: 3, stackS: 8 }, BAL_CAPS = [11, 14, 16, 0];
 const EQS = [['máy Smith', /smith/], ['tạ đòn', /tạ đòn|barbell/], ['tạ EZ', /tạ ez|ez.?bar/], ['tạ đơn', /tạ đơn|dumbbell/], ['cáp', /cáp|cable/], ['máy', /máy|machine|pec deck|lever/], ['dây kháng lực', /dây kháng lực|band/]];
 const eqOf = name => { const n = String(name || '').toLowerCase(); for (const [k, re] of EQS) if (re.test(n)) return k; return ''; };
 const FAMS = [['tri', /đẩy ngực tay hẹp|close.?grip (bench|barbell|press)|xà kép thẳng|triceps dip|chống ghế|bench dip|máy xà kép/], ['rear', /bay vai sau|vai sau|rear delt|reverse pec|reverse fly|face pull|kéo cáp mặt/],
@@ -2380,9 +2382,9 @@ const bigTot = (z, b) => ((ZONES.find(x => x[0] === b) || [])[1] || []).reduce((
 const KEYZ = new Set([...ZKEY, 'Ngực dưới']);
 const covered = (z, k) => (z[k] && z[k].d > 0) || zTot(z, k) >= 3;
 const DUPF = new Set(['press', 'fly', 'cfly', 'ohp']);
-function dayBalance(day) {   /* BR-39.5: vượt trần · dồn một vùng · gần trùng */
+function dayBalance(day, cap = BAL.cap) {   /* BR-39.5: vượt trần (cap 0 = tắt) · dồn một vùng · gần trùng */
   const exs = day.exercises || [], z = dayLoad(exs), W = [];
-  for (const [b] of ZONES) { const t = bigTot(z, b); if (t > BAL.cap) W.push({ kind: 'cap', big: b, total: t }); }
+  if (cap) for (const [b] of ZONES) { const t = bigTot(z, b); if (t > cap) W.push({ kind: 'cap', big: b, total: t }); }
   for (const [b, zs] of ZONES) for (const [k] of zs) { const v = z[k]; if (!v || !v.d) continue;
     const empty = zs.map(x => x[0]).filter(o => o !== k && KEYZ.has(o) && !covered(z, o));
     if ((v.n >= BAL.stackN || v.d >= BAL.stackS) && empty.length) W.push({ kind: 'stack', zone: k, big: b, n: v.n, sets: v.d, empty }); }
@@ -3102,6 +3104,8 @@ function viewDoneWeeks() {
   return h;
 }
 /* ===== PA-50 · BR-39 giao diện: thanh cân vùng cơ, cảnh báo + sửa một chạm, chip góc, xem trước, biến thể ===== */
+const balCap = () => { const v = state.settings.balCap; return BAL_CAPS.includes(v) ? v : BAL.cap; };   /* BR-39.11 */
+const capTxt = c => c ? `${c} set/nhóm cơ/buổi` : 'Tắt';
 const ZS = z => { const t = ZSHORT(ZBIG[z], z).replace(/, trong$/, ''); return t.charAt(0).toUpperCase() + t.slice(1); };
 const balSig = d => d.exercises.map(e => [e.id, zoneOf(e), e.sets, angleOf(e) || ''].join(':')).join('|');
 function balFixes(d, w) {
@@ -3127,15 +3131,15 @@ function balFixes(d, w) {
   }
   return F.slice(0, 2);
 }
-const balWarnN = d => planLocked() || !d.exercises.length || (ui.balAck || {})[d.id] === balSig(d) ? 0 : dayBalance(d).length;
+const balWarnN = d => planLocked() || !d.exercises.length || (ui.balAck || {})[d.id] === balSig(d) ? 0 : dayBalance(d, balCap()).length;
 function balHtml(d) {
   if (!d.exercises.length) return '';
-  const z = dayLoad(d.exercises), mx = Math.max(BAL.cap, 9), miss = missingZones(d, state.days), elseZ = Object.fromEntries(miss.filter(m => m.elsewhere).map(m => [m.zone, m.elsewhere]));
+  const cap = balCap(), z = dayLoad(d.exercises), mx = Math.max(cap || 16, 9), miss = missingZones(d, state.days), elseZ = Object.fromEntries(miss.filter(m => m.elsewhere).map(m => [m.zone, m.elsewhere]));
   const mains = new Set(d.exercises.map(e => ZBIG[zoneOf(e)]).filter(Boolean));
-  let h = `<div class="bal"><div class="bal-h"><b>Cân vùng cơ</b><span>set quy đổi · trần ${BAL.cap}/nhóm/buổi</span></div>`;
+  let h = `<div class="bal"><div class="bal-h"><b>Cân vùng cơ</b><span>set quy đổi · ${cap ? `trần ${cap}/nhóm/buổi` : 'không đặt trần'}</span></div>`;
   for (const [b, zs] of ZONES) {
     const t = bigTot(z, b), main = mains.has(b); if (!t || (!main && t < 3)) continue;
-    h += `<div class="bal-g"><div class="bal-gh"><b>${b}</b><span class="${t > BAL.cap ? 'over' : ''}">${fmt(t)} / ${BAL.cap}${main ? '' : ' · chỉ set phụ'}</span></div>`;
+    h += `<div class="bal-g"><div class="bal-gh"><b>${b}</b><span class="${cap && t > cap ? 'over' : ''}">${fmt(t)}${cap ? ' / ' + cap : ' set'}${main ? '' : ' · chỉ set phụ'}</span></div>`;
     for (const [k] of zs) {
       const v = z[k] || { d: 0, s: 0 }, key = main && KEYZ.has(k); if (!v.d && !v.s && !key) continue;
       const cls = key && !covered(z, k) ? (elseZ[k] ? 'else' : 'zero') : '';
@@ -3147,16 +3151,16 @@ function balHtml(d) {
   if (miss.length && !planLocked()) h += `<div class="bal-miss"><span>Còn thiếu:</span>${miss.map(m => `<button type="button" class="${m.elsewhere ? 'else' : ''}" data-act="add-ex" data-day="${d.id}" data-z="${esc(m.zone)}">${esc(m.zone)}${m.elsewhere ? ` · có ở ngày ${esc(m.elsewhere)}` : ''}</button>`).join('')}</div>`;
   h += `</div>`;
   if (planLocked()) return h;
-  const W = dayBalance(d); if (!W.length) return h;
+  const W = dayBalance(d, cap); if (!W.length) return h;
   if ((ui.balAck || {})[d.id] === balSig(d)) return h + `<p class="bal-more">${W.length} cảnh báo cân vùng cơ đã ẩn · <button type="button" class="bal-lnk" data-act="bal-unack" data-day="${d.id}">hiện lại</button></p>`;
   const nm = id => esc(shortName((d.exercises.find(x => x.id === id) || {}).name || ''));
   const seen = new Set();
   for (const w of W.slice(0, 2)) {
     const fx = balFixes(d, w).filter(f => { const k = f.k + f.id + f.v + f.to; if (seen.has(k)) return false; seen.add(k); return true; }).map(f => `<button type="button" class="bal-fix" data-act="bal-fix" data-day="${d.id}" data-k="${f.k}" data-id="${f.id}" data-v="${f.v || ''}" data-to="${f.to || ''}">${esc(f.t)}<small>${esc(f.s)}</small></button>`).join('');
-    const [ic, t, p] = w.kind === 'cap' ? ['!', `${w.big} ${fmt(w.total)} set quy đổi, vượt trần ${BAL.cap}`, `Sau khoảng ${BAL.cap} set cho một nhóm cơ trong một buổi, set thêm hầu như không giúp tăng cơ mà chỉ thêm mệt. Bớt set hoặc dời sang ngày khác.`]
+    const [ic, t, p] = w.kind === 'cap' ? ['!', `${w.big} ${fmt(w.total)} set quy đổi, vượt trần ${cap} bạn đặt`, `Tham khảo: một phân tích năm 2025 (bản thảo, chưa bình duyệt) thấy sau khoảng 11 set quy đổi cho một nhóm cơ trong một buổi, lợi ích tăng cơ thêm khó thấy; dữ liệu ở mức set cao còn ít, người tập lâu năm có thể cần nhiều hơn. Đổi hoặc tắt trần ở <button type="button" class="bal-lnk" data-act="more-sec" data-k="bal">Tài khoản → Cân vùng cơ</button>.`]
       : w.kind === 'stack' ? ['≡', `Dồn ${w.zone}: ${w.n} bài · ${fmt(w.sets)} set`, `${w.empty.join(', ')} đang trống trong buổi. Đổi góc một bài là chuyển được sang vùng trống, không cần đổi máy.`]
       : ['=', 'Hai bài gần như trùng', `${nm(w.a)} và ${nm(w.b)}: cùng kiểu động tác, cùng góc, cùng vùng cơ, chỉ khác dụng cụ.`];
-    h += `<div class="bal-w ${w.kind}"><span class="wi">${ic}</span><div><b>${t}</b><p>${p}</p>${fx ? `<div class="bal-fixes">${fx}</div>` : ''}</div></div>`;
+    h += `<div class="bal-w bw-${w.kind}"><span class="wi">${ic}</span><div><b>${t}</b><p>${p}</p>${fx ? `<div class="bal-fixes">${fx}</div>` : ''}</div></div>`;
   }
   if (W.length > 2) h += `<p class="bal-more">+${W.length - 2} cảnh báo khác</p>`;
   return h + `<button type="button" class="bal-lnk bal-ack" data-act="bal-ack" data-day="${d.id}">Đã hiểu, ẩn cảnh báo của ngày này</button>`;
@@ -3175,8 +3179,8 @@ function balPrev() {   /* BR-39.4: xem trước số set theo vùng khi thêm/s�
   const before = day.exercises, after = d.isNew ? [...before, me] : before.map(e => e.id === d.id ? me : e);
   const zb = dayLoad(before), za = dayLoad(after), ks = ZONES.flatMap(x => x[1].map(y => y[0])).filter(k => Math.abs(zTot(zb, k) - zTot(za, k)) > .01);
   if (!ks.length) return;
-  const over = ZONES.map(x => x[0]).filter(b => bigTot(za, b) > BAL.cap && bigTot(za, b) > bigTot(zb, b));
-  box.innerHTML = `<div class="bal-prev">${d.isNew ? 'Thêm bài này' : 'Sau khi lưu'} · ngày ${esc(day.name)}: ${ks.map(k => { const a = zTot(zb, k), c = zTot(za, k); return `<b>${esc(k)}</b> ${fmt(a)} → <span class="${c > a ? 'up' : 'dn'}">${fmt(c)}</span>`; }).join(' · ')}${over.length ? `<div class="over">${over.join(', ')} vượt trần ${BAL.cap} set quy đổi/buổi (chỉ nhắc, vẫn lưu được).</div>` : ''}</div>`;
+  const cap = balCap(), over = cap ? ZONES.map(x => x[0]).filter(b => bigTot(za, b) > cap && bigTot(za, b) > bigTot(zb, b)) : [];
+  box.innerHTML = `<div class="bal-prev">${d.isNew ? 'Thêm bài này' : 'Sau khi lưu'} · ngày ${esc(day.name)}: ${ks.map(k => { const a = zTot(zb, k), c = zTot(za, k); return `<b>${esc(k)}</b> ${fmt(a)} → <span class="${c > a ? 'up' : 'dn'}">${fmt(c)}</span>`; }).join(' · ')}${over.length ? `<div class="over">${over.join(', ')} vượt trần ${cap} set quy đổi/buổi bạn đặt (chỉ nhắc, vẫn lưu được).</div>` : ''}</div>`;
 }
 function missChipsHtml(d) {
   const day = findDay(d.dayId); if (!day || !day.exercises.length) return ''; const miss = missingZones(day, state.days); if (!miss.length) return '';
@@ -3967,6 +3971,10 @@ function viewMore() {
     <div class="seg" role="group" aria-label="Nhịp nghỉ" style="margin-top:6px">${Object.entries(REST_MODES).map(([k, m]) => `<button type="button" data-act="rest-mode" data-k="${k}" aria-pressed="${(st.restMode || 'std') === k}">${m.label}</button>`).join('')}</div>
     <p class="small muted" style="margin:10px 0 0">${restMode().desc} Bài nào cần riêng thì chỉnh trong bài đó.</p>
     <details class="wpkeep"><summary>Căn cứ</summary><p class="note-line">Nhịp rep: tổng quan của Schoenfeld và cộng sự (2015) cho thấy mỗi rep 0,5–8 giây đều giúp cơ phát triển tương đương; ACSM khuyên tốc độ vừa phải, có kiểm soát. Nghỉ: từ 60 giây trở lên là đủ cho phát triển cơ, trên 90 giây chỉ giúp thêm ít, trừ bài nặng như squat, deadlift. Thời gian dự kiến của buổi = set + nghỉ + khởi động bài lớn (~3 phút) + đổi máy (~1 phút/bài).</p></details></div>`],
+    bal: ['Cân vùng cơ', () => `<div class="card set-card"><h3>Trần set cho một nhóm cơ mỗi buổi</h3><p>Ngày tập vượt trần thì Lịch tập nhắc (không chặn). Set phụ của bài nhiều khớp tính nửa set; trần tính riêng từng nhóm cơ (Ngực, Lưng…), không phải cả buổi.</p>
+    <div class="seg" role="group" aria-label="Trần set mỗi nhóm cơ mỗi buổi" style="margin-top:6px">${BAL_CAPS.map(c => `<button type="button" data-act="bal-cap" data-k="${c}" aria-pressed="${balCap() === c}">${c || 'Tắt'}</button>`).join('')}</div>
+    <p class="small muted" style="margin:10px 0 0">Đang đặt: <b>${capTxt(balCap())}</b>. Cảnh báo dồn một vùng và bài gần trùng vẫn hiện dù tắt trần.</p>
+    <details class="wpkeep"><summary>Căn cứ</summary><p class="note-line">Remmert và cộng sự (Đại học Florida Atlantic, 2025, bản thảo trên SportRxiv, chưa bình duyệt) tổng hợp nhiều nghiên cứu: tăng set mỗi buổi thì cơ tăng thêm nhưng chậm dần; sau khoảng 11 set quy đổi cho một nhóm cơ trong một buổi, số liệu không còn thấy rõ lợi ích thêm. Chính tác giả ghi rằng dữ liệu ở mức set cao còn ít và chưa rõ tập nhiều hơn có lợi hay không. Vì vậy app để bạn tự chọn: 11 nếu muốn bám nghiên cứu, 14–16 nếu đã tập lâu năm và phục hồi tốt.</p></details></div>`],
     form: ['Lưu ý form khi tập', () => `<div class="card set-card"><h3>Lưu ý form khi tập</h3><p>Điểm form · tránh chấn thương hiện ở đầu mỗi bài khi ${esc(curProf().name)} tập.</p>
     <div class="seg" role="group" aria-label="Mức lưu ý form" style="margin-top:6px">${Object.entries(FORM_LV).map(([k, m]) => `<button type="button" data-act="form-lv" data-k="${k}" aria-pressed="${formLv() === k}">${m.label}</button>`).join('')}</div>
     <p class="small muted" style="margin:10px 0 0">${FORM_LV[formLv()].desc}</p></div>`],
@@ -4007,6 +4015,7 @@ function viewMore() {
   ${syncCardHtml()}
   <div class="gh">Tập luyện</div><div class="card grp">
     ${row('pace', 'clock', 'Nhịp nghỉ & nhịp rep', `Nghỉ ${restMode().label.toLowerCase()} · set 10 rep ≈ ${setSec(10)} giây`)}
+    ${row('bal', 'alert', 'Cân vùng cơ', `Trần ${capTxt(balCap()).toLowerCase()}`)}
     ${row('form', 'alert', 'Lưu ý form khi tập', FORM_LV[formLv()].label)}
     ${row('height', 'ruler', 'Chỉ số cơ thể', st.height ? `Cao ${fmt(st.height)} cm` : 'Chưa nhập chiều cao')}
     ${row('notif', 'bell', 'Thông báo', np === 'granted' ? 'Đang bật' : np === 'denied' ? 'Đã chặn trong Cài đặt iPhone' : 'Chưa bật')}
@@ -5389,6 +5398,7 @@ const handlers = {
   'plan-diff-ok': () => { if (state.settings.sync) state.settings.sync.planDiff = null; save(); render(true); },   /* BR-33.4 */
   'start-day': t => startSession(t.dataset.id),
   'pick-day': t => { ui.pick = t.dataset.id; render(true); },
+  'bal-cap': t => { state.settings.balCap = +t.dataset.k; save(); render(); toast(`Trần set mỗi nhóm cơ: ${capTxt(+t.dataset.k).toLowerCase()}`); },
   'more-sec': t => { ui.moreSec = t.dataset.k || null; ui.tab = 'more'; render(); },
   'todos': () => todosSheet(),
   'start-pick': () => histLocked() ? lockedStart() : startPickSheet(),

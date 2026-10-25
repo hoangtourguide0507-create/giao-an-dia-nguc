@@ -59,13 +59,18 @@ const st = W.find(w => w.kind === 'stack');
 ok('dồn vùng: Ngực trên 3 bài · 9 set, trống Ngực giữa + Ngực dưới', st && st.zone === 'Ngực trên' && st.n === 3 && st.sets === 9 && st.empty.join() === 'Ngực giữa,Ngực dưới', st);
 const dup = W.find(w => w.kind === 'dup');
 ok('gần trùng: đẩy dốc lên tạ đơn và Smith', dup && dup.a === D.exercises[0].id && dup.b === D.exercises[1].id, dup);
-ok('chưa vượt trần 11 khi Ngực 9 set', !W.some(w => w.kind === 'cap'), W);
+ok('chưa vượt trần khi Ngực 9 set', !W.some(w => w.kind === 'cap'), W);
 const big = { id: 'd3', name: 'Ngực nặng', exercises: [ex(INC_DB), ex('Đẩy ngực tạ đòn (Bench press)'), ex('Ép ngực máy (Pec deck)'), ex('Đẩy ngực dốc xuống tạ đơn (Decline dumbbell press)')] };
-const cap = A.dayBalance(big).find(w => w.kind === 'cap');
-ok('vượt trần: Ngực 12 set > 11', cap && cap.big === 'Ngực' && cap.total === 12, A.dayBalance(big));
+const cap = A.dayBalance(big, 11).find(w => w.kind === 'cap');
+ok('BR-39.11 trần đặt 11: Ngực 12 set → vượt trần', cap && cap.big === 'Ngực' && cap.total === 12, A.dayBalance(big, 11));
+ok('BR-39.11 trần mặc định 14: Ngực 12 set → không cảnh báo', !A.dayBalance(big).some(w => w.kind === 'cap'), A.dayBalance(big));
+const big15 = { exercises: [...big.exercises, ex('Ép cáp (Cable fly)')] };
+ok('BR-39.11 trần mặc định 14: Ngực 15 set → vượt trần', (A.dayBalance(big15).find(w => w.kind === 'cap') || {}).total === 15, A.dayBalance(big15));
+ok('BR-39.11 trần 16: Ngực 15 set → không cảnh báo', !A.dayBalance(big15, 16).some(w => w.kind === 'cap'));
+ok('BR-39.11 tắt trần (0): không bao giờ cảnh báo vượt trần, vẫn cảnh báo dồn/trùng', !A.dayBalance(big15, 0).some(w => w.kind === 'cap') && A.dayBalance(D, 0).some(w => w.kind === 'stack'));
 ok('ngày cân đối không có cảnh báo dồn', !A.dayBalance({ exercises: [ex(INC_DB), ex('Đẩy ngực tạ đòn (Bench press)'), ex('Ép cáp từ trên xuống (High-to-low cable fly)')] }).some(w => w.kind === 'stack'));
 ok('khác góc không bị coi là trùng (tạ đơn 30° + Smith phẳng)', !A.dayBalance({ exercises: [ex(INC_DB), ex('Đẩy ngực máy Smith (Smith bench press)')] }).some(w => w.kind === 'dup'));
-ok('ngưỡng mặc định: trần 11, dồn 3 bài / 8 set', A.BAL.cap === 11 && A.BAL.stackN === 3 && A.BAL.stackS === 8, A.BAL);
+ok('ngưỡng mặc định: trần 14, dồn 3 bài / 8 set', A.BAL.cap === 14 && A.BAL.stackN === 3 && A.BAL.stackS === 8, A.BAL);
 
 /* BR-39.8 vùng còn thiếu, tính theo cả tuần */
 const d1 = nguc(), d2 = day2(), miss = A.missingZones(d1, [d1, d2]);
