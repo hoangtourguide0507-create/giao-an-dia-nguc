@@ -627,6 +627,9 @@ input[type=checkbox],input[type=radio]{font-size:inherit}
 .mpain{margin:0 0 10px;padding:10px 12px;border-radius:14px;background:var(--surface-2)}
 .mpain-h{display:block;font-size:12px;font-weight:700;color:var(--fg-2);margin-bottom:8px}
 .mpain-l{display:flex;flex-wrap:wrap;gap:6px}
+/* PA-53 · BR-41 kcal */
+.cmpline.kcal b{color:var(--gold-hi)}
+.kcalw{display:flex;gap:8px;align-items:flex-end;margin-top:10px}.kcalw .f{flex:1;min-width:0}
 /* PA-52 · BR-40 kiểm tra giáo án tuần */
 .negcard{margin-bottom:14px;padding:0}
 .negcard>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer}
@@ -2478,6 +2481,26 @@ function suggestFor(zone, days, cap, add = 2) {   /* BR-40.3: ngày nên thêm (
   const ex = LIB2.filter(x => x[1] === zone && !has.has(x[0])).sort((a, b) => ((b[2] === 'iso') - (a[2] === 'iso')) || (eqs.has(eqOf(b[0])) - eqs.has(eqOf(a[0]))) || (!!b[3] - !!a[3])).slice(0, 3).map(x => x[0]);
   return { day, ex };
 }
+/* ===== PA-53 · BR-41: kcal vận động của buổi tập (ước tính) =====
+   MET theo 2024 Adult Compendium of Physical Activities: 02054 tạ nhiều bài 8–15 rep 3,5 · 02052 squat/deadlift 5,0 · 02050 tạ cường độ cao 6,0 · 02055 circuit/superset 5,8.
+   Kcal vận động (giống "Active kcal" của đồng hồ) = (MET − 1) × cân nặng (kg) × giờ. Số tạ chỉ dùng để chỉnh MET (bài chân nặng, set sát giới hạn, nghỉ ngắn). */
+const KMET = { base: 3.5, lower: 5, hard: 1, max: 6, circuit: 5.8, circuitSec: 70, perSetMin: 6, padMin: 10 };
+function sessMet(entries, typeOf, durMs) {
+  let n = 0, sum = 0, hard = 0, rated = 0;
+  for (const en of entries || []) { const lo = typeOf(en) === 'lower';
+    for (const z of en.sets || []) { if (z.done === false || !(z.reps > 0)) continue; n++; sum += lo ? KMET.lower : KMET.base; if (!z.dr && z.ef) { rated++; if (z.ef === 'h' || z.ef === 'f') hard++; } } }
+  if (!n) return null;
+  let met = sum / n; const why = [];
+  if (rated && hard / rated >= .5) { met += KMET.hard; why.push('nhiều set sát giới hạn'); }
+  if (durMs && durMs / n / 1000 <= KMET.circuitSec) { met = Math.max(met, KMET.circuit); why.push('nghỉ ngắn, tính như circuit'); }
+  return { met: Math.round(Math.min(KMET.max, met) * 10) / 10, n, why };
+}
+function sessKcal(s, kg, typeOf) {
+  if (!s || !s.finishedAt || !(kg > 0)) return null;
+  const raw = Math.max(0, s.finishedAt - s.startedAt - (s.paused || 0)), M = sessMet(s.entries, typeOf, raw); if (!M) return null;
+  const capMs = (M.n * KMET.perSetMin + KMET.padMin) * 60000, ms = Math.min(raw, capMs);   /* quên bấm kết thúc: tối đa 6 phút/set (gồm nghỉ dài bài chân) + 10 phút */
+  return { kcal: Math.round((M.met - 1) * kg * ms / 3.6e6), met: M.met, min: Math.round(ms / 60000), trimmed: raw > capMs, why: M.why, kg };
+}
 /* video hướng dẫn */
 function enName(ex) {
   const m = /\(([^)]+)\)\s*$/.exec(ex.name || ''); if (m) return m[1];
@@ -3078,6 +3101,26 @@ function beep() { sfx('alarm'); }
 async function requestWake() { try { if (!wake && 'wakeLock' in navigator && document.visibilityState === 'visible') { wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release', () => { wake = null; }); } } catch (e) { wake = null; } }
 function releaseWake() { try { wake && wake.release(); } catch (e) {} wake = null; }
 
+/* ===== PA-53 · BR-41 giao diện: kcal vận động ===== */
+const enType = en => { const e = findEx(en.exId); return e ? e.type : /squat|deadlift|đạp đùi|leg press|chùng|lunge|hip thrust/i.test(en.name || '') ? 'lower' : 'upper'; };
+function bodyKgAt(date) { let best = null, bd = 1e9; for (const e of state.body || []) if (e.weight > 0) { const d = Math.abs(daysBetween(e.date, date)); if (d < bd) { bd = d; best = e; } } return best ? best.weight : null; }
+function kcalOf(s) { if (s.kcalW > 0) return { kcal: Math.round(s.kcalW), watch: true }; return sessKcal(s, bodyKgAt(s.date || ymd()), enType); }
+function kcalLine(s) {
+  const k = kcalOf(s);
+  if (!k) return (state.body || []).some(e => e.weight > 0) ? '' : `<div class="cmpline kcal">Nhập cân nặng ở tab <b>Cơ thể</b> để app ước tính kcal buổi tập.</div>`;
+  if (k.watch) return `<div class="cmpline kcal"><b>${fmt(k.kcal, 0)} kcal</b> vận động · số từ đồng hồ</div>`;
+  return `<div class="cmpline kcal">Khoảng <b>${fmt(k.kcal, 0)} kcal</b> vận động · ước tính: ${fmt(k.kg)} kg × ${k.min} phút × MET ${fmt(k.met, 1)}${k.why.length ? ` (${k.why.join(', ')})` : ''}${k.trimmed ? `. Chỉ tính ${k.min} phút vì buổi dài bất thường, có thể quên bấm kết thúc` : ''}.</div>`;
+}
+function kcalBox(s) {
+  const edit = !histLocked();
+  return `${kcalLine(s)}${edit ? `<div class="kcalw"><label class="f">Kcal đồng hồ báo <span class="unit">tuỳ chọn, thay cho số ước tính</span><input class="inp" id="kcal-w" inputmode="numeric" placeholder="Chưa nhập" value="${s.kcalW > 0 ? Math.round(s.kcalW) : ''}"></label><button type="button" class="btn sm" data-act="kcal-w" data-id="${s.id}">Lưu</button></div>` : ''}
+    <details class="wpkeep"><summary>Cách tính kcal</summary><p class="note-line">Kcal vận động (giống “Active kcal” của đồng hồ) = (MET − 1) × cân nặng gần ngày tập nhất × thời gian buổi (bấm bắt đầu → kết thúc, trừ lúc tạm dừng). MET theo bảng 2024 Adult Compendium of Physical Activities: tập tạ nhiều bài 8–15 rep 3,5; bài chân nhiều khớp (squat, deadlift, đạp đùi) 5,0; một nửa số set trở lên chấm Sát/Hỏng thì +1; nghỉ rất ngắn (≤ 70 giây mỗi set gồm nghỉ) tính như circuit 5,8; tối đa 6,0. Chỉ số tạ thì không đủ để tính kcal: công nâng tạ rất nhỏ so với năng lượng cả buổi, nên số tạ chỉ dùng để chỉnh MET. Đây là ước tính, có thể lệch nhiều so với thực tế.</p></details>`;
+}
+function kcalPeriod(ss) {
+  const ks = ss.map(kcalOf).filter(Boolean); if (!ks.length) return '';
+  const t = ks.reduce((a, k) => a + k.kcal, 0), w = ks.filter(k => k.watch).length;
+  return `<p class="small muted" style="margin:6px 0 0">Kcal vận động: khoảng <b>${fmt(t, 0)} kcal</b> · ${ks.length} buổi${w ? `, ${w} từ đồng hồ` : ''}${ks.length < ss.length ? `, ${ss.length - ks.length} buổi chưa tính được` : ''} · ước tính theo MET.</p>`;
+}
 function finishSummary() {
   const a = state.active; let sets = 0, vol = 0; const prs = [];
   for (const en of a.entries) {
@@ -3096,7 +3139,7 @@ function finishSummary() {
   let h = `<h3 class="sh-title">Kết thúc ${esc(a.dayName)}?</h3>${undone ? `<div class="warnbox"><b>Còn ${undone} set chưa bấm ✓</b>${undoneEx ? ` (${undoneEx} bài chưa tập)` : ''}. Các set này sẽ không được lưu. Nếu bấm nhầm, chọn “Tập tiếp”.</div>` : ''}
     <div class="kpis" style="margin-top:14px"><div class="kpi"><div class="k">${fmtDur(durOf(a))}</div><div class="l">thời gian</div></div>
     <div class="kpi"><div class="k">${sets}</div><div class="l">set</div></div><div class="kpi"><div class="k">${fmt(vol / 1000, 2)}</div><div class="l">tấn tạ</div></div></div>
-    <div class="cmpline">${a.est ? `Dự kiến ${minTxt(a.est)}, thực tế <b>${Math.round(durOf(a) / 60000)} phút</b> · trung bình <b>${fmtDur(durOf(a) / sets)}</b> mỗi set (gồm nghỉ). ` : ''}${tot ? `<b>${met}/${tot}</b> bài đạt đủ set × rep mục tiêu. ` : ''}${pv ? `Tổng tạ so với lần trước (${dm(pv.date)}): <b>${tons(pvol)}</b> → <b>${tons(vol)}</b> ${deltaHtml(vol, pvol)}` : 'Lần đầu tập buổi này.'}</div>`;
+    ${kcalLine({ ...a, finishedAt: Date.now() })}<div class="cmpline">${a.est ? `Dự kiến ${minTxt(a.est)}, thực tế <b>${Math.round(durOf(a) / 60000)} phút</b> · trung bình <b>${fmtDur(durOf(a) / sets)}</b> mỗi set (gồm nghỉ). ` : ''}${tot ? `<b>${met}/${tot}</b> bài đạt đủ set × rep mục tiêu. ` : ''}${pv ? `Tổng tạ so với lần trước (${dm(pv.date)}): <b>${tons(pvol)}</b> → <b>${tons(vol)}</b> ${deltaHtml(vol, pvol)}` : 'Lần đầu tập buổi này.'}</div>`;
   if (prs.length) { h += `<div class="eyebrow" style="margin-top:18px">Kỷ lục mới · 1RM ước tính</div>`; for (const p of prs) h += `<div class="pr"><span>${esc(shortName(p.name))}</span><span class="tn"><b style="color:var(--up)">${fmt(p.best)} kg</b> <span class="muted">(trước ${fmt(p.prev)})</span></span></div>`; }
   h += undone ? `<div class="sh-actions"><button class="btn gold big" data-act="close-sheet">${ICON.play} Tập tiếp</button><button class="btn" data-act="save-session">Vẫn lưu buổi tập</button></div>`
     : `<div class="sh-actions"><button class="btn gold big" data-act="save-session">Lưu buổi tập</button><button class="btn ghost" data-act="close-sheet">Tập tiếp</button></div>`;
@@ -3679,7 +3722,7 @@ function viewWeek() {
   const cmpL = mode === 'month' ? 'so với tháng trước' : 'so với tuần trước';
   h += `<div class="kpis k4"><div class="kpi"><div class="k">${S.ss.length}</div><div class="l">buổi</div>${dlt(S.ss.length, qn(Q.ss.length), cnt)}</div><div class="kpi"><div class="k">${S.sets}</div><div class="l">set</div>${dlt(S.sets, qn(Q.sets), cnt)}</div>
     <div class="kpi"><div class="k">${tonsN(S.vol)}</div><div class="l">tấn tạ</div>${spct}</div><div class="kpi"><div class="k">${S.ups}</div><div class="l">bài lên tạ</div></div></div>
-    <p class="small muted" style="margin:10px 0 0">Mũi tên: ${cmpL}, cùng khoảng ngày. Tấn tạ: % lệch trung bình của các bài đã tập ở cả hai kỳ. Tấn tạ = tổng kg × rep mọi set${allEx().some(x => x.ex.each) ? ' (tạ đơn tính cả 2 tay)' : ''}.</p></div></section>`;
+    <p class="small muted" style="margin:10px 0 0">Mũi tên: ${cmpL}, cùng khoảng ngày. Tấn tạ: % lệch trung bình của các bài đã tập ở cả hai kỳ. Tấn tạ = tổng kg × rep mọi set${allEx().some(x => x.ex.each) ? ' (tạ đơn tính cả 2 tay)' : ''}.</p>${kcalPeriod(S.ss)}</div></section>`;
   // set mỗi nhóm cơ
   const mset = new Set([...state.days.flatMap(d => d.exercises.map(e => e.muscle)), ...Object.keys(S.per)]);
   const muscles = MUSCLES.filter(m => mset.has(m));
@@ -3771,7 +3814,7 @@ function sessionSheet(id) {
   let h = `<h3 class="sh-title">${esc(s.dayName)}</h3><p class="sh-text">${DOW[parseYmd(s.date).getDay()]} ${dm(s.date)}${s.deload ? ' · deload' : ''}</p>
     <div class="kpis"><div class="kpi"><div class="k">${s.finishedAt ? fmtDur(durOf(s)) : '–'}</div><div class="l">thời gian</div></div><div class="kpi"><div class="k">${st.sets}</div><div class="l">set</div></div><div class="kpi"><div class="k">${fmt(st.vol / 1000, 2)}</div><div class="l">tấn tạ</div></div></div>
     ${q && isHlv() ? `<div class="cmpline"><b>Chất lượng: ${q.label}</b> · Hoàn thành ${q.done}/${q.plan} set (${Math.round(q.comp * 100)}%)${q.done ? ` · Đủ rep ${q.repOk}/${q.done} set` : ''}${Object.values(q.eff).some(Boolean) ? ' · Cảm giác: ' + Object.entries(q.eff).filter(([, n]) => n).map(([k, n]) => `${EFF[k].t} ${n}`).join(' · ') : ''}</div>` : ''}
-    <div class="cmpline">${pv ? `So với lần trước (${dm(pv.date)}): <b>${tons(pst.vol)}</b> → <b>${tons(st.vol)}</b> ${deltaHtml(st.vol, pst.vol)}` : 'Đây là lần đầu tập buổi này.'}</div><div class="tbl-wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>Bài</th><th>Các set</th></tr></thead><tbody>`;
+    ${kcalBox(s)}<div class="cmpline">${pv ? `So với lần trước (${dm(pv.date)}): <b>${tons(pst.vol)}</b> → <b>${tons(st.vol)}</b> ${deltaHtml(st.vol, pst.vol)}` : 'Đây là lần đầu tập buổi này.'}</div><div class="tbl-wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>Bài</th><th>Các set</th></tr></thead><tbody>`;
   for (const en of s.entries) { const pe = findEx(en.exId), nDone = en.sets.filter(z => !z.dr).length; h += `<tr><td>${esc(shortName(en.name))}${en.note ? `<div class="small muted">${esc(en.note)}</div>` : ''}<div class="small muted">${pe ? `Kế hoạch ${pe.sets}×${pe.repTarget} · làm ${nDone}/${pe.sets} set` : 'Kế hoạch —'}</div></td><td class="tn">${setsStr(en.sets)}${en.drop ? ` · D ${fmt(en.drop.kg)}×${en.drop.reps}` : ''}</td></tr>`; }
   h += `</tbody></table></div><div class="sh-actions">${canReopen(s) ? `<button class="btn" data-act="reopen-session" data-id="${s.id}">${ICON.play} Mở lại để tập tiếp</button>` : ''}${isHlv() ? '' : `<button class="btn" data-act="share-open" data-d="${s.date}" data-id="${s.id}">${ICON.share} Chia sẻ với PT</button>`}<button class="btn ghost" data-act="close-sheet">Đóng</button><button class="btn ghost danger" data-act="del-session" data-id="${s.id}">Xoá buổi này</button></div>`;
   openSheet(h);
@@ -4459,7 +4502,7 @@ function cleanPkg(raw) {
   const sets = a => (Array.isArray(a) ? a : []).slice(0, 30).map(z => ({ kg: cNum(z && z.kg, 0, 1000, 0), reps: cNum(z && z.reps, 0, 500, 0), ...(z && z.dr ? { dr: cNum(z.dr, 1, 3, 1) } : {}), ...(z && !z.dr && typeof z.ef === 'string' && EFF[z.ef] ? { ef: z.ef } : {}) }));
   const sess = (Array.isArray(raw.sessions) ? raw.sessions : []).slice(0, 2000).map(s => ({
     id: cStr(s.id, 40), date: /^\d{4}-\d\d-\d\d$/.test(s.date || '') ? s.date : ymd(), startedAt: cNum(s.startedAt, 0, 9e15, Date.now()), finishedAt: s.finishedAt ? cNum(s.finishedAt, 0, 9e15, null) : null,
-    paused: cNum(s.paused, 0, 9e9, 0), dayName: cStr(s.dayName || 'Buổi tập', 40), deload: !!s.deload, focus: cStr(s.focus, 60), reopened: cNum(s.reopened, 0, 99, 0), ...(s.est != null ? { est: cNum(s.est, 0, 600, 0) } : {}),
+    paused: cNum(s.paused, 0, 9e9, 0), dayName: cStr(s.dayName || 'Buổi tập', 40), deload: !!s.deload, focus: cStr(s.focus, 60), reopened: cNum(s.reopened, 0, 99, 0), ...(s.est != null ? { est: cNum(s.est, 0, 600, 0) } : {}), ...(s.kcalW > 0 ? { kcalW: cNum(s.kcalW, 0, 5000, 0) } : {}),
     entries: (Array.isArray(s.entries) ? s.entries : []).slice(0, 60).map(en => ({ k: (Array.isArray(en.k) ? en.k : []).map(v => cStr(v, 40)).filter(Boolean).slice(0, 12), name: cStr(en.name || 'Bài tập', 80), muscle: MUSCLES.includes(en.muscle) ? en.muscle : 'Khác',
       note: cStr(en.note, 300), each: !!en.each, sets: sets(en.sets), drop: en.drop ? { kg: cNum(en.drop.kg, 0, 1000, 0), reps: cNum(en.drop.reps, 0, 500, 0) } : null })) })).filter(s => s.id);
   const del = { s: {}, e: {} }; for (const k of ['s', 'e']) for (const [id, t] of Object.entries((raw.del || {})[k] || {}).slice(0, 5000)) { const key = k === 'e' ? shKey(cStr(id, 40)) : cStr(id, 40); del[k][key] = cNum(t, 0, 9e15, 0); }
@@ -5505,6 +5548,10 @@ const handlers = {
   'neg-add': t => { const d = findDay(t.dataset.day), nm = t.dataset.n; if (!d || !nm) return; const n = Math.min(4, Math.max(1, +t.dataset.s || 2)); d.exercises.push({ ...newEx(nm), gid: LIB_GID[nm], sets: n, alts: [], slot: '', mainSince: ymd() }); ui.negOpen = true; save(); render(true); toast(`Đã thêm ${shortName(nm)} vào ngày ${d.name} · ${n} set`); },
   'neg-skip': t => { const s = state.settings, z = t.dataset.z; s.balSkip = [...new Set([...(s.balSkip || []), z])]; ui.negOpen = true; save(); render(true); toast(`Không nhắc ${z === 'Kéo' ? 'cân kéo/đẩy' : z} nữa · bật lại ở Tài khoản → Cân vùng cơ`); },
   'neg-unskip': t => { const s = state.settings; s.balSkip = (s.balSkip || []).filter(z => z !== t.dataset.z); save(); render(); },
+  'kcal-w': t => {   /* BR-41.3 */
+    const s = state.sessions.find(x => x.id === t.dataset.id); if (!s || histLocked()) return; const v = num(($('#kcal-w') || {}).value);
+    if (v != null && !(v >= 0 && v <= 5000)) { toast('Số kcal không hợp lệ'); return; }
+    if (v > 0) s.kcalW = Math.round(v); else delete s.kcalW; save(); sessionSheet(s.id); toast(v > 0 ? `Đã lưu ${Math.round(v)} kcal từ đồng hồ` : 'Đã xoá số kcal đồng hồ, dùng lại số ước tính'); },
   'bal-cap': t => { state.settings.balCap = +t.dataset.k; save(); render(); toast(`Trần set mỗi nhóm cơ: ${capTxt(+t.dataset.k).toLowerCase()}`); },
   'more-sec': t => { ui.moreSec = t.dataset.k || null; ui.tab = 'more'; render(); },
   'todos': () => todosSheet(),
@@ -6010,7 +6057,7 @@ async function purgeStored() {
   if (h.startsWith('#nhap=')) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} toast(OLD_CODE); }
   if ('serviceWorker' in navigator && location.protocol === 'https:' && document.documentElement.dataset.pwa === '1') { navigator.serviceWorker.register('sw.js').catch(() => {}); }
 })();
-window.__sota = { weekPlanLoad, neglected, comparePeriod, strengthCompare, mapSession, planDiff, dayOverview, planFromHistory, suggest, sessQuality, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
+window.__sota = { sessKcal, weekPlanLoad, neglected, comparePeriod, strengthCompare, mapSession, planDiff, dayOverview, planFromHistory, suggest, sessQuality, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
 })();
 </script>
 </body>
