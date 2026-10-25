@@ -627,6 +627,31 @@ input[type=checkbox],input[type=radio]{font-size:inherit}
 .mpain{margin:0 0 10px;padding:10px 12px;border-radius:14px;background:var(--surface-2)}
 .mpain-h{display:block;font-size:12px;font-weight:700;color:var(--fg-2);margin-bottom:8px}
 .mpain-l{display:flex;flex-wrap:wrap;gap:6px}
+/* PA-54 · BR-42 màn chúc mừng kết thúc buổi */
+.fin{position:relative;overflow:hidden;text-align:center;padding:14px 4px 6px;margin-top:-4px;border-radius:20px;background:radial-gradient(90% 60% at 50% 32%,rgb(var(--acc-rgb) / .30),transparent 70%)}
+.fin .fin-tag{font-size:11.5px;font-weight:800;letter-spacing:.18em;color:var(--gold-hi);text-transform:uppercase}
+.fin .fin-day{margin:4px 0 10px;font-size:22px;font-weight:800}
+.fin .flame{display:block;width:78px;height:78px;margin:0 auto;filter:drop-shadow(0 0 22px rgb(var(--acc-rgb) / .75))}
+.fin .flame .f1,.fin .flame .f2{transform-origin:50% 92%;animation:flick 1.1s ease-in-out infinite alternate}
+.fin .flame .f2{animation-duration:.8s}
+@keyframes flick{0%{transform:scale(1,1) rotate(-2deg)}100%{transform:scale(1.05,1.09) rotate(2deg)}}
+.fin .kc{font-size:clamp(60px,20vw,84px);font-weight:800;line-height:1.02;letter-spacing:-.03em;font-variant-numeric:tabular-nums;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;margin-top:2px}
+.fin .kcl{font-size:15px;font-weight:600;color:var(--fg);margin-top:4px}
+.fin .kcs{font-size:12px;color:var(--muted);margin:4px auto 0;max-width:320px}
+.fin .fstats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:18px}
+.fin .fstats>div{background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:10px 6px}
+.fin .fstats b{display:block;font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.fin .fstats span{font-size:12px;color:var(--muted)}
+.fin .fstats .fkg{grid-column:1 / -1;padding:12px 8px}.fin .fstats .fkg b{font-size:30px}
+.fin .fprs{margin-top:12px;font-size:13px;color:var(--fg-2)}.fin .fprs b{color:var(--up);margin-right:4px}
+.fin .fin-ok{width:100%;margin-top:16px}
+.fin .ember{position:absolute;bottom:-8px;width:6px;height:6px;border-radius:50%;background:var(--gold-hi);box-shadow:0 0 8px rgb(var(--acc-hi-rgb) / .9);opacity:0;pointer-events:none;animation:ember 2.8s ease-in infinite;transform:scale(var(--s))}
+@keyframes ember{0%{transform:translateY(0) scale(var(--s));opacity:0}15%{opacity:.95}100%{transform:translate(var(--dx),-430px) scale(.2);opacity:0}}
+.fin .pop{animation:finpop .7s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes finpop{0%{transform:scale(.55);opacity:0}100%{transform:scale(1);opacity:1}}
+.fin .rise{animation:finrise .5s ease-out both;animation-delay:var(--d,0s)}
+@keyframes finrise{0%{transform:translateY(14px);opacity:0}100%{transform:none;opacity:1}}
+[data-anim="off"] .fin *{animation:none!important}[data-anim="off"] .fin .ember{display:none}
 /* PA-53 · BR-41 kcal */
 .cmpline.kcal b{color:var(--gold-hi)}
 .kcalw{display:flex;gap:8px;align-items:flex-end;margin-top:10px}.kcalw .f{flex:1;min-width:0}
@@ -3121,6 +3146,28 @@ function kcalPeriod(ss) {
   const t = ks.reduce((a, k) => a + k.kcal, 0), w = ks.filter(k => k.watch).length;
   return `<p class="small muted" style="margin:6px 0 0">Kcal vận động: khoảng <b>${fmt(t, 0)} kcal</b> · ${ks.length} buổi${w ? `, ${w} từ đồng hồ` : ''}${ks.length < ss.length ? `, ${ss.length - ks.length} buổi chưa tính được` : ''} · ước tính theo MET.</p>`;
 }
+/* ===== PA-54 · BR-42: màn chúc mừng sau khi lưu buổi tập — kcal là điểm nhấn, tổng kg tạ ===== */
+const FLAME = `<svg class="flame" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="flg" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ef5a3c"/><stop offset=".6" stop-color="#f7a33a"/><stop offset="1" stop-color="#ffd27a"/></linearGradient></defs><path class="f1" fill="url(#flg)" d="M32 3c3 11 15 17 15 33a15 15 0 0 1-30 0c0-8 3-13 8-17 0 6 3 10 6 11-2-10 1-19 1-27z"/><path class="f2" fill="#fff1cf" opacity=".9" d="M32 33c2 4 7 7 7 12a7 7 0 0 1-14 0c0-5 4-8 7-12z"/></svg>`;
+const intTxt = v => Math.round(v).toLocaleString('vi-VN');
+function finCount(el, to, ms, f) {
+  if (!el) return; if (!animOn() || !(to > 0)) { el.textContent = f(to); return; }
+  const t0 = performance.now(), step = t => { const k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3); el.textContent = f(k < 1 ? to * e : to); if (k < 1) requestAnimationFrame(step); };
+  el.textContent = f(0); requestAnimationFrame(step);
+}
+function finishFx(s, prs) {
+  const st = sessStats(s), k = kcalOf(s), mins = Math.round(durOf(s) / 60000), nEx = s.entries.length;
+  const embers = animOn() ? Array.from({ length: 16 }, () => `<i class="ember" style="left:${(4 + Math.random() * 92).toFixed(1)}%;--dx:${Math.round(Math.random() * 70 - 35)}px;--s:${(.6 + Math.random() * .8).toFixed(2)};animation-delay:${(Math.random() * 2.6).toFixed(2)}s"></i>`).join('') : '';
+  const hero = k ? `${FLAME}<div class="kc pop" id="fin-kc">${intTxt(k.kcal)}</div><div class="kcl">kcal vận động ${k.watch ? '· từ đồng hồ' : 'đã đốt'}</div>${k.watch ? '' : `<div class="kcs">Ước tính: ${fmt(k.kg)} kg × ${k.min} phút × MET ${fmt(k.met, 1)}</div>`}`
+    : `<div class="kc pop" id="fin-kc">${intTxt(st.vol)}</div><div class="kcl">kg tạ đã nâng</div><div class="kcs">Nhập cân nặng ở tab <b>Cơ thể</b> để xem kcal đã đốt.</div>`;
+  openSheet(`<div class="fin">${embers}<div class="fin-tag rise">Hoàn thành buổi tập</div><h3 class="fin-day rise" style="--d:.05s">${esc(s.dayName)}</h3>${hero}
+    <div class="fstats">${k ? `<div class="fkg rise" style="--d:.45s"><b id="fin-kg">${intTxt(st.vol)} kg</b><span>tổng tạ đã nâng${s.entries.some(e => e.each) ? ' · tạ đơn tính 2 tay' : ''}</span></div>` : ''}
+      <div class="rise" style="--d:.55s"><b>${st.sets}</b><span>set</span></div><div class="rise" style="--d:.65s"><b>${nEx}</b><span>bài</span></div><div class="rise" style="--d:.75s"><b>${mins}</b><span>phút</span></div></div>
+    ${prs && prs.length ? `<div class="fprs rise" style="--d:.85s"><b>Kỷ lục mới</b> ${prs.slice(0, 3).map(p => esc(shortName(p.name)) + ' ' + fmt(p.best) + ' kg').join(' · ')}${prs.length > 3 ? ` +${prs.length - 3}` : ''}</div>` : ''}
+    <button type="button" class="btn gold big rise fin-ok" style="--d:.95s" data-act="close-sheet">Xong</button></div>`);
+  finCount($('#fin-kc'), k ? k.kcal : st.vol, 1700, intTxt);
+  if (k) finCount($('#fin-kg'), st.vol, 1300, v => intTxt(v) + ' kg');
+  sfx('fanfare'); vibe([40, 60, 120]);
+}
 function finishSummary() {
   const a = state.active; let sets = 0, vol = 0; const prs = [];
   for (const en of a.entries) {
@@ -3138,14 +3185,14 @@ function finishSummary() {
   let undone = 0, undoneEx = 0; for (const en of a.entries) { const n = en.sets.filter(x => !x.done).length; undone += n; if (n === en.sets.length) undoneEx++; }
   let h = `<h3 class="sh-title">Kết thúc ${esc(a.dayName)}?</h3>${undone ? `<div class="warnbox"><b>Còn ${undone} set chưa bấm ✓</b>${undoneEx ? ` (${undoneEx} bài chưa tập)` : ''}. Các set này sẽ không được lưu. Nếu bấm nhầm, chọn “Tập tiếp”.</div>` : ''}
     <div class="kpis" style="margin-top:14px"><div class="kpi"><div class="k">${fmtDur(durOf(a))}</div><div class="l">thời gian</div></div>
-    <div class="kpi"><div class="k">${sets}</div><div class="l">set</div></div><div class="kpi"><div class="k">${fmt(vol / 1000, 2)}</div><div class="l">tấn tạ</div></div></div>
+    <div class="kpi"><div class="k">${sets}</div><div class="l">set</div></div><div class="kpi"><div class="k">${intTxt(vol)}</div><div class="l">kg tạ</div></div></div>
     ${kcalLine({ ...a, finishedAt: Date.now() })}<div class="cmpline">${a.est ? `Dự kiến ${minTxt(a.est)}, thực tế <b>${Math.round(durOf(a) / 60000)} phút</b> · trung bình <b>${fmtDur(durOf(a) / sets)}</b> mỗi set (gồm nghỉ). ` : ''}${tot ? `<b>${met}/${tot}</b> bài đạt đủ set × rep mục tiêu. ` : ''}${pv ? `Tổng tạ so với lần trước (${dm(pv.date)}): <b>${tons(pvol)}</b> → <b>${tons(vol)}</b> ${deltaHtml(vol, pvol)}` : 'Lần đầu tập buổi này.'}</div>`;
   if (prs.length) { h += `<div class="eyebrow" style="margin-top:18px">Kỷ lục mới · 1RM ước tính</div>`; for (const p of prs) h += `<div class="pr"><span>${esc(shortName(p.name))}</span><span class="tn"><b style="color:var(--up)">${fmt(p.best)} kg</b> <span class="muted">(trước ${fmt(p.prev)})</span></span></div>`; }
   h += undone ? `<div class="sh-actions"><button class="btn gold big" data-act="close-sheet">${ICON.play} Tập tiếp</button><button class="btn" data-act="save-session">Vẫn lưu buổi tập</button></div>`
     : `<div class="sh-actions"><button class="btn gold big" data-act="save-session">Lưu buổi tập</button><button class="btn ghost" data-act="close-sheet">Tập tiếp</button></div>`;
   h += `<p class="note-line" style="text-align:center">Lưu rồi vẫn mở lại được trong ngày, ở tab Tập.</p>`;
-  openSheet(h);
-  sfx('fanfare'); vibe([40, 60, 80]);
+  openSheet(h); ui.finPrs = prs;
+  vibe([30, 40, 30]);
   if (animOn()) countUp($('#sheet-body'));
   if (prs.length) setTimeout(() => prSlam(prs), 250);
 }
@@ -3159,6 +3206,7 @@ function saveSession() {
   state.active = null; ui.focusEx = null;
   if (!state.settings.cycleStart) state.settings.cycleStart = a.date;
   save(); stopRest(); releaseWake(); closeSheet(); render(); toast('Đã lưu buổi tập');
+  finishFx(a, ui.finPrs); ui.finPrs = null;   /* BR-42 */
 }
 const durOf = x => Math.max(0, (x.finishedAt || Date.now()) - x.startedAt - (x.paused || 0));
 const canReopen = x => !!x && !state.active && !histLocked() && (x.date === ymd() || Date.now() - (x.finishedAt || 0) < 6 * 3600e3);
