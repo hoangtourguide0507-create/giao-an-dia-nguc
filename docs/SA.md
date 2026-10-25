@@ -429,3 +429,7 @@ Bản đồ BR: BR-27.1–27.12 trong [BR.md](BR.md).
 - **Lõi thuần** (sau lõi BR-40): `KMET = { base: 3.5, lower: 5, hard: 1, max: 6, circuit: 5.8, circuitSec: 70, perSetMin: 6, padMin: 10 }`; `sessMet(entries, typeOf, durMs)` → `{ met, n, why }`; `sessKcal(s, kg, typeOf)` → `{ kcal, met, min, trimmed, why, kg }` hoặc `null` (chưa kết thúc, không cân nặng, không set). Test: `tests/test_kcal.mjs` (trong `tests/chay.sh`).
 - **Giao diện:** `enType(en)` (kiểu bài theo giáo án, không có thì đoán theo tên), `bodyKgAt(date)` (lần đo có cân nặng gần nhất), `kcalOf(s)` (`s.kcalW` nếu có), `kcalLine` (màn kết thúc buổi, chi tiết buổi), `kcalBox` (ô nhập + *Cách tính kcal*, ẩn ô nhập khi `histLocked()`), `kcalPeriod` (Tiến độ). Handler `kcal-w`.
 - **Dữ liệu:** buổi có thêm `kcalW` (tuỳ chọn); `cleanPkg` giữ `kcalW`. Không đổi `hubRev` nên sửa `kcalW` sau khi gửi chưa tự gửi lại.
+
+## Màn chúc mừng kết thúc buổi (PA-54 · BR-42)
+- `finishFx(s, prs)` gọi cuối `saveSession()` (sau toast *Đã lưu buổi tập*): mở bằng `openSheet` (đóng bằng `close-sheet`/nút ×/kéo xuống như mọi bảng, nên test cũ `app.closeSheet()` vẫn dùng được). Số liệu: `sessStats` (kg tạ), `kcalOf` (BR-41), `durOf`. `finCount` đếm số bằng `requestAnimationFrame`, bỏ qua khi `!animOn()`. `FLAME` (SVG), `intTxt`. Kỷ lục mới: `finishSummary` lưu `ui.finPrs`.
+- CSS `.fin*` (đốm lửa `ember`, `flick`, `finpop`, `finrise`); `[data-anim="off"]` tắt hết chuyển động. `CACHE` gadn-v93.

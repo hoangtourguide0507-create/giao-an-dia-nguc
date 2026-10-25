@@ -413,3 +413,9 @@ Hướng dữ liệu: **HV → máy chủ → HLV**, giống lịch sử tập (
 - **BR-41.3 Kcal từ đồng hồ** (tuỳ chọn) nhập trong chi tiết buổi; có số này thì dùng thay số ước tính, ghi "số từ đồng hồ"; để trống để quay lại số ước tính. HLV trên hồ sơ học viên chỉ xem.
 - **BR-41.4 Hiển thị**: màn kết thúc buổi, chi tiết buổi (có mục *Cách tính kcal*), tổng kcal của tuần/tháng ở Tiến độ.
 - **BR-41.5** Buổi học viên trên máy HLV tính bằng cân nặng học viên đã đồng bộ (BR-37). Số kcal đồng hồ đi kèm buổi khi buổi được gửi; sửa số này sau khi buổi đã gửi thì chưa tự gửi lại.
+
+## Màn chúc mừng kết thúc buổi (PA-54 · BR-42)
+- **BR-42.1** Bấm *Lưu buổi tập* → hiện bảng **"Hoàn thành buổi tập"**: tên ngày tập; **kcal vận động là điểm nhấn** (số lớn, ngọn lửa, đếm từ 0 lên, đốm lửa bay), dòng cách ước tính; **tổng kg tạ đã nâng** (đếm lên, ghi "tạ đơn tính 2 tay" nếu có); set, bài, phút; kỷ lục mới nếu có; nút *Xong*. Âm thanh và rung khi hiện.
+- **BR-42.2** Chưa có cân nặng → số lớn là tổng kg tạ, kèm nhắc nhập cân nặng ở tab Cơ thể để xem kcal. Có kcal từ đồng hồ thì dùng số đó.
+- **BR-42.3** Tắt hiệu ứng hoặc iPhone bật *Giảm chuyển động* → hiện số ngay, không chuyển động, không đốm lửa.
+- **BR-42.4** Bảng *Kết thúc …?* (trước khi lưu) ghi tổng tạ theo **kg** thay cho tấn; âm thanh chúc mừng chuyển sang lúc lưu.
