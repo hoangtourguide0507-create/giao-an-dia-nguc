@@ -627,6 +627,28 @@ input[type=checkbox],input[type=radio]{font-size:inherit}
 .mpain{margin:0 0 10px;padding:10px 12px;border-radius:14px;background:var(--surface-2)}
 .mpain-h{display:block;font-size:12px;font-weight:700;color:var(--fg-2);margin-bottom:8px}
 .mpain-l{display:flex;flex-wrap:wrap;gap:6px}
+/* PA-52 · BR-40 kiểm tra giáo án tuần */
+.negcard{margin-bottom:14px;padding:0}
+.negcard>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:14px 16px;cursor:pointer}
+.negcard>summary::-webkit-details-marker{display:none}
+.negcard>summary .t{flex:1;min-width:0}.negcard>summary b{display:block}
+.negcard .nsum{display:block;font-size:12.5px;color:var(--muted)}.negcard .nsum.warn{color:var(--almost)}
+.negcard>summary svg{transition:transform .2s;flex:none}.negcard[open]>summary svg{transform:rotate(90deg)}
+.negb{padding:0 16px 14px}
+.negmin{border-top:1px solid var(--line);padding-top:8px}.negmin>summary{font-size:12.5px;color:var(--muted);cursor:pointer;padding:4px 0}
+.negr{padding:10px 0;border-top:1px solid var(--line)}
+.negh{display:flex;align-items:center;gap:8px;justify-content:space-between}
+.negr p{margin:3px 0 6px;font-size:13px;color:var(--fg-2)}
+.negk{font-size:11px;font-weight:700;padding:2px 8px;border-radius:var(--pill);white-space:nowrap}
+.negk.quen{background:rgb(var(--down-rgb) / .15);color:var(--down)}
+.negk.it{background:rgb(var(--warn-rgb) / .16);color:var(--almost)}
+.negk.lech{background:rgb(var(--hold-rgb) / .16);color:var(--hold)}
+.negs{display:flex;flex-direction:column;gap:6px;margin:4px 0 6px}
+.negs>span{font-size:12.5px;color:var(--muted)}
+.negx{display:flex;align-items:center;gap:10px;text-align:left;border:1px solid var(--line-2);background:var(--surface-2);border-radius:11px;padding:6px 10px;font-size:13px;font-weight:600;color:var(--fg)}
+.negx img,.negx .ni{width:44px;height:34px;border-radius:7px;object-fit:cover;background:#fff;flex:none}
+.negx .ni{background:var(--surface-3)}
+.negx span{flex:1;min-width:0}.negx i{font-style:normal;font-weight:800;color:var(--gold);font-size:18px}
 /* PA-50 · BR-39 cân vùng cơ */
 .bal{margin:0 0 10px;padding:12px;border-radius:14px;background:var(--surface-2)}
 .bal-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:12px;color:var(--fg-2);margin-bottom:8px}
@@ -2414,6 +2436,48 @@ function variantsOf(ex, day, days) {   /* BR-39.9: cùng động tác, đổi g�
     out.push({ name: x[0], zone: x[1], gid: x[3] || '', axis, fills: miss.has(x[1]), has: has(x[0]), same: e2 === eq }); }
   return out.sort((a, b) => (b.fills - a.fills) || (a.has - b.has) || AXO[a.axis] - AXO[b.axis] || (b.same - a.same)).slice(0, 12);
 }
+/* ===== PA-52 · BR-40: vùng cơ bị bỏ quên theo cả giáo án tuần =====
+   "Ít": < 4 set quy đổi/tuần — Pelland và cs. 2024 (bản thảo): khoảng 4 set quy đổi/tuần là mức tối thiểu thấy được tăng cơ; Schoenfeld và cs. 2017: ≥ 10 set/tuần cho tăng cơ nhiều nhất.
+   Tỉ lệ lệch cặp là quy ước cân đối của app, không phải ngưỡng nghiên cứu. */
+const NEG = { forgot: 3, low: 4, pairs: [['Vai sau', ['Vai trước'], .5], ['Đùi sau', ['Đùi trước'], .6], ['Lưng giữa', ['Xô'], .5]], pull: [['Xô', 'Lưng giữa', 'Vai sau'], ['Ngực trên', 'Ngực giữa', 'Ngực dưới', 'Vai trước'], .7] };
+const NEGZ = ['Vai sau', 'Lưng giữa', 'Bắp chân', 'Cơ dép', 'Bụng chéo', 'Đùi sau', 'Tay sau đầu dài', 'Ngực trên', 'Đùi trong', 'Đùi ngoài', 'Cẳng tay'];
+function dayFreq(days, sessions, from) {   /* số lần mỗi ngày tập trong tuần = số buổi 4 tuần qua / 4; chưa có buổi nào → 1 */
+  const f = {}; for (const d of days || []) { const n = (sessions || []).filter(s => s.dayId === d.id && s.date >= from).length; f[d.id] = n ? n / 4 : 1; } return f;
+}
+function weekPlanLoad(days, freq) {
+  const z = {};
+  for (const d of days || []) { const k = freq && freq[d.id] != null ? freq[d.id] : 1;
+    for (const [zn, v] of Object.entries(dayLoad(d.exercises))) { const t = z[zn] || (z[zn] = { d: 0, s: 0, n: 0 }); t.d += v.d * k; t.s += v.s * k; t.n += v.n; } }
+  return z;
+}
+function neglected(load, skip) {   /* BR-40.2: bị bỏ quên · ít · lệch cặp */
+  const sk = new Set(skip || []), out = [];
+  for (const k of NEGZ) { if (sk.has(k)) continue; const v = load[k] || { d: 0, s: 0 };
+    if (!v.d && v.s < NEG.forgot) out.push({ zone: k, kind: 'quen', sets: v.d + v.s });
+    else if (v.d + v.s < NEG.low) out.push({ zone: k, kind: 'it', sets: v.d + v.s }); }
+  for (const [a, bs, r] of NEG.pairs) { const o = out.find(x => x.zone === a); if (sk.has(a) || (o && o.kind === 'quen')) continue;
+    const ta = zTot(load, a), tb = bs.reduce((x, b) => x + zTot(load, b), 0); if (!(tb >= 6 && ta < tb * r)) continue;
+    const it = { zone: a, kind: 'lech', sets: ta, vs: bs.join(', '), vsSets: tb }; if (o) Object.assign(o, it); else out.push(it); }   /* "ít" mà lệch cặp thì ghi rõ lệch so với vùng nào */
+  const [P, Q, r] = NEG.pull, tp = P.reduce((x, k) => x + zTot(load, k), 0), tq = Q.reduce((x, k) => x + zTot(load, k), 0);
+  if (!sk.has('Kéo') && tq >= 10 && tp < tq * r) out.push({ zone: 'Lưng giữa', kind: 'lech', sets: tp, vs: 'Đẩy (ngực, vai trước)', vsSets: tq, pull: true });
+  return out;
+}
+function skippedInPlan(planLoad, histLoad, nSess) {   /* BR-40.4: có trong giáo án, 4 tuần qua 0 set */
+  if (nSess < 4) return [];
+  return Object.keys(planLoad).filter(k => planLoad[k].d > 0 && !((histLoad[k] || {}).d > 0));
+}
+const NEG_REL = { 'Bắp chân': ['Đùi trước', 'Đùi sau', 'Mông', 'Bắp chân'], 'Cơ dép': ['Đùi trước', 'Đùi sau', 'Mông', 'Bắp chân'], 'Vai sau': ['Lưng', 'Vai'], 'Lưng giữa': ['Lưng'],
+  'Đùi sau': ['Đùi trước', 'Mông', 'Đùi sau'], 'Tay sau đầu dài': ['Tay sau', 'Ngực', 'Vai'], 'Ngực trên': ['Ngực'], 'Đùi trong': ['Đùi trước', 'Mông', 'Đùi sau', 'Đùi trong'],
+  'Đùi ngoài': ['Mông', 'Đùi trước', 'Đùi sau'], 'Cẳng tay': ['Tay trước', 'Lưng'], 'Bụng chéo': ['Bụng'] };
+function suggestFor(zone, days, cap, add = 2) {   /* BR-40.3: ngày nên thêm (cùng nhóm liên quan, không vượt trần) + 2–3 bài */
+  const big = ZBIG[zone], rel = NEG_REL[zone] || [big], ds = (days || []).filter(d => d.exercises.length);
+  const tot = d => d.exercises.reduce((a, e) => a + (+e.sets || 0), 0), bigs = d => new Set(d.exercises.map(e => ZBIG[zoneOf(e)]).filter(Boolean));
+  const fits = d => !cap || bigTot(dayLoad(d.exercises), big) + add <= cap;
+  const c = ds.filter(fits).map(d => ({ d, r: bigs(d).has(big) ? 2 : rel.some(b => bigs(d).has(b)) ? 1 : 0 })).sort((a, b) => b.r - a.r || tot(a.d) - tot(b.d));
+  if (!c.length) return null; const day = c[0].d, eqs = new Set(day.exercises.map(e => eqOf(e.name)).filter(Boolean)), has = new Set(ds.flatMap(d => d.exercises.flatMap(e => [e.name, ...(e.alts || []).map(x => x.name)])));   /* không gợi ý bài đã có ở bất kỳ ngày nào */
+  const ex = LIB2.filter(x => x[1] === zone && !has.has(x[0])).sort((a, b) => ((b[2] === 'iso') - (a[2] === 'iso')) || (eqs.has(eqOf(b[0])) - eqs.has(eqOf(a[0]))) || (!!b[3] - !!a[3])).slice(0, 3).map(x => x[0]);
+  return { day, ex };
+}
 /* video hướng dẫn */
 function enName(ex) {
   const m = /\(([^)]+)\)\s*$/.exec(ex.name || ''); if (m) return m[1];
@@ -3192,6 +3256,43 @@ function varHtml(d) {   /* BR-39.9, 39.10 */
   return `<div class="fsec"><span class="eyebrow">Biến thể · cùng động tác, đổi một yếu tố</span><div class="bvars">${vs.map(v => `<div class="bvar">${v.gid ? `<img class="vimg" data-photo="exdb:${v.gid}:0" alt="">` : '<span class="vimg"></span>'}<div class="vt"><div class="vh"><span class="ax">${v.axis}</span>${v.fills ? '<span class="fill">Lấp chỗ thiếu</span>' : ''}${v.has ? '<span class="ax">Đã có</span>' : ''}</div><b>${esc(shortName(v.name))}</b><span class="vz">→ ${esc(v.zone)}</span>${v.has ? '' : `<div class="vact"><button type="button" class="btn sm" data-act="var-add" data-mode="day" data-n="${esc(v.name)}">Thêm vào ngày</button><button type="button" class="btn sm ghost" data-act="var-add" data-mode="alt" data-n="${esc(v.name)}">Làm bài thay thế</button></div>`}</div></div>`).join('')}</div>
     <p class="fhint">Mỗi biến thể là một bài riêng: mức tạ, lịch sử và gợi ý lên tạ riêng. Bài thay thế nằm chung ô với bài này; giữ bài chính quá 6 tuần thì app gợi ý đổi sang bài thay thế lâu chưa tập.</p></div>`;
 }
+/* ===== PA-52 · BR-40 giao diện: thẻ Kiểm tra giáo án tuần ===== */
+function negData() {
+  const from = addDays(ymd(), -27), freq = dayFreq(state.days, state.sessions, from), load = weekPlanLoad(state.days, freq);
+  const skip = state.settings.balSkip || [], list = neglected(load, skip), recent = state.sessions.filter(x => x.date >= from), hist = {};
+  for (const x of recent) for (const en of x.entries || []) { const z = zoneOf(findEx(en.exId)) || guessZone(en.name); if (!z) continue; (hist[z] = hist[z] || { d: 0, s: 0 }).d += (en.sets || []).filter(s => s.done !== false && !s.dr).length; }
+  const old = addDays(ymd(), -14), oldDays = state.days.map(d => ({ ...d, exercises: d.exercises.filter(e => !e.mainSince || e.mainSince <= old) }));   /* bài mới thêm < 2 tuần chưa tính là "hay bỏ" */
+  const skipped = skippedInPlan(weekPlanLoad(oldDays, freq), hist, recent.length).filter(z => !skip.includes(z) && !list.some(o => o.zone === z));
+  return { freq, list, skipped };
+}
+const NEG_MINOR = ['Cơ dép', 'Đùi trong', 'Đùi ngoài', 'Cẳng tay'];
+function negAddSets(o, f) {   /* đủ để lên mức "ít" (hoặc tỉ lệ cặp) trong một tuần, 2–4 set */
+  const need = o.kind === 'lech' ? o.vsSets * (o.pull ? NEG.pull[2] : (NEG.pairs.find(x => x[0] === o.zone) || [, , .5])[2]) - o.sets : NEG.low - o.sets;
+  return Math.min(4, Math.max(2, Math.ceil(need / (f || 1))));
+}
+function negRow(o, freq, cap, lock) {
+  const lab = o.kind === 'quen' ? 'Bị bỏ quên' : o.kind === 'it' ? 'Ít' : 'Lệch';
+  const desc = o.kind === 'lech' ? `${o.pull ? 'Kéo (xô, lưng giữa, vai sau)' : esc(o.zone)} ${fmt(o.sets)} · ${esc(o.vs)} ${fmt(o.vsSets)} set/tuần` : `${fmt(o.sets)} set/tuần`;
+  let sg = lock ? null : suggestFor(o.zone, state.days, cap, 2), n = 2;
+  if (sg) { n = negAddSets(o, freq[sg.day.id]); sg = suggestFor(o.zone, state.days, cap, n) || sg; n = negAddSets(o, freq[sg.day.id]); }
+  let h = `<div class="negr"><div class="negh"><b>${o.pull ? 'Kéo / Đẩy' : esc(o.zone)}</b><span class="negk ${o.kind}">${lab}</span></div><p>${desc}</p>`;
+  if (sg && sg.ex.length) h += `<div class="negs"><span>Thêm vào ngày <b>${esc(sg.day.name)}</b> (${n} set):</span>${sg.ex.map(nm => { const g = LIB_GID[nm]; return `<button type="button" class="negx" data-act="neg-add" data-day="${sg.day.id}" data-n="${esc(nm)}" data-s="${n}">${g ? `<img data-photo="exdb:${g}:0" alt="">` : '<span class="ni"></span>'}<span>${esc(shortName(nm))}</span><i>+</i></button>`; }).join('')}</div>`;
+  return h + `<button type="button" class="bal-lnk" data-act="neg-skip" data-z="${o.pull ? 'Kéo' : esc(o.zone)}">${o.pull ? 'Bỏ qua cân kéo/đẩy' : 'Tôi không tập vùng này'}</button></div>`;
+}
+function negCard() {
+  if (!state.days.some(d => d.exercises.length)) return '';
+  const { list: all, skipped, freq } = negData(), cap = balCap(), lock = planLocked();
+  const quenZ = new Set(all.filter(x => x.kind === 'quen').map(x => x.zone)), list = all.filter(x => !(x.zone === 'Cơ dép' && quenZ.has('Bắp chân')));   /* bắp chân trống thì không nhắc thêm cơ dép */
+  const major = list.filter(x => !NEG_MINOR.includes(x.zone)), minor = list.filter(x => NEG_MINOR.includes(x.zone)), cnt = k => major.filter(x => x.kind === k).length;
+  const sum = [cnt('quen') && `${cnt('quen')} vùng bị bỏ quên`, cnt('it') && `${cnt('it')} vùng ít`, cnt('lech') && `${cnt('lech')} lệch`, skipped.length && `${skipped.length} vùng hay bỏ`, minor.length && `${minor.length} vùng nhỏ`].filter(Boolean).join(' · ') || 'Giáo án tuần cân đối';
+  let h = `<details class="card negcard" ${ui.negOpen ? 'open' : ''}><summary data-act="neg-toggle"><span class="t"><b>Kiểm tra giáo án tuần</b><span class="nsum ${major.length || skipped.length ? 'warn' : ''}">${sum}</span></span>${ICON.chev}</summary><div class="negb">`;
+  for (const o of major) h += negRow(o, freq, cap, lock);
+  if (skipped.length) h += `<div class="negr"><div class="negh"><b>Có trong giáo án, 4 tuần qua chưa tập</b><span class="negk it">Hay bỏ</span></div><p>${skipped.map(esc).join(', ')}. Có thể bạn hay bỏ bài, đổi bài hoặc nghỉ ngày có bài đó.</p></div>`;
+  if (minor.length) h += `<details class="negmin"><summary>Vùng nhỏ chưa tập: ${minor.map(o => esc(o.zone)).join(', ')}</summary>${minor.map(o => negRow(o, freq, cap, lock)).join('')}</details>`;
+  const fr = state.days.filter(d => d.exercises.length).map(d => `${esc(d.name)} ${fmt(freq[d.id], 2)}`).join(' · ');
+  return h + `<p class="note-line">Tính theo giáo án × số buổi mỗi ngày trong 4 tuần qua (${fr} lần/tuần; ngày chưa tập tính 1 lần). Set phụ của bài nhiều khớp tính nửa set.</p>
+    <details class="wpkeep"><summary>Căn cứ</summary><p class="note-line">“Ít” là dưới 4 set quy đổi/tuần: phân tích tổng hợp của Pelland và cộng sự (2024, bản thảo) thấy khoảng 4 set/tuần là mức tối thiểu đo được tăng cơ; muốn tăng nhiều nhất nên từ 10 set/tuần trở lên (Schoenfeld và cộng sự 2017). Các tỉ lệ lệch (vai sau ≥ 50% vai trước, đùi sau ≥ 60% đùi trước, lưng giữa ≥ 50% xô, kéo ≥ 70% đẩy) là quy ước cân đối của app, không phải ngưỡng nghiên cứu.</p></details></div></details>`;
+}
 function viewPlan() {
   const rc = recommend();
   const dbPending = allExFull().filter(x => isDb(x.ex) && x.ex.each == null);
@@ -3219,6 +3320,7 @@ function viewPlan() {
   if (nOther) h += `<div class="banner"><span class="bi">?</span><div><b>${nOther} bài chưa có nhóm cơ (đang để “Khác”)</b><p>App không tính được độ hồi phục cho các bài này. Gán nhóm cơ để gợi ý buổi tập chính xác hơn.</p><button class="btn sm gold" data-act="other-open">Gán nhóm cơ</button></div></div>`;
   if (dueN) h += `<div class="banner"><span class="bi">⟳</span><div><b>${dueN} ô bài đã giữ bài chính hơn 6 tuần</b><p>Nên đổi sang bài thay thế lâu chưa tập để cơ có kích thích mới. Tuần deload là lúc đổi hợp lý nhất.</p><button class="btn sm gold" data-act="rot-open">Xem gợi ý đổi bài</button></div></div>`;
   if (dbPending.length) h += `<div class="banner"><span class="bi">${ICON.swap}</span><div><b>${dbPending.length} bài tạ đơn: đang ghi tổng hay mỗi tay?</b><p>Ví dụ cầm 2 quả 12,5 kg: ghi 12,5 (mỗi tay) dễ hiểu hơn 25 (tổng). Chọn một lần, app đổi luôn số cũ cho đúng.</p><button class="btn sm gold" data-act="db-setup">Thiết lập tạ đơn</button></div></div>`;
+  h += negCard();   /* BR-40 */
   const order = state.days.map((d, i) => ({ d, i, r: dayReady(d, rc.last) })).sort((a, b) => b.r - a.r || a.i - b.i);
   order.forEach(({ d, i }, pos) => {
     const open = ui.openDay === d.id, dc = DAYC[i % DAYC.length], ent = rc.list.find(x => x.d.id === d.id);
@@ -3974,6 +4076,7 @@ function viewMore() {
     bal: ['Cân vùng cơ', () => `<div class="card set-card"><h3>Trần set cho một nhóm cơ mỗi buổi</h3><p>Ngày tập vượt trần thì Lịch tập nhắc (không chặn). Set phụ của bài nhiều khớp tính nửa set; trần tính riêng từng nhóm cơ (Ngực, Lưng…), không phải cả buổi.</p>
     <div class="seg" role="group" aria-label="Trần set mỗi nhóm cơ mỗi buổi" style="margin-top:6px">${BAL_CAPS.map(c => `<button type="button" data-act="bal-cap" data-k="${c}" aria-pressed="${balCap() === c}">${c || 'Tắt'}</button>`).join('')}</div>
     <p class="small muted" style="margin:10px 0 0">Đang đặt: <b>${capTxt(balCap())}</b>. Cảnh báo dồn một vùng và bài gần trùng vẫn hiện dù tắt trần.</p>
+    ${(st.balSkip || []).length ? `<div class="small muted" style="margin-top:14px;font-weight:700">Vùng không nhắc trong “Kiểm tra giáo án tuần”</div><div class="qpick">${st.balSkip.map(z => `<button type="button" data-act="neg-unskip" data-z="${esc(z)}">${esc(z === 'Kéo' ? 'Cân kéo/đẩy' : z)} · bật lại</button>`).join('')}</div>` : ''}
     <details class="wpkeep"><summary>Căn cứ</summary><p class="note-line">Remmert và cộng sự (Đại học Florida Atlantic, 2025, bản thảo trên SportRxiv, chưa bình duyệt) tổng hợp nhiều nghiên cứu: tăng set mỗi buổi thì cơ tăng thêm nhưng chậm dần; sau khoảng 11 set quy đổi cho một nhóm cơ trong một buổi, số liệu không còn thấy rõ lợi ích thêm. Chính tác giả ghi rằng dữ liệu ở mức set cao còn ít và chưa rõ tập nhiều hơn có lợi hay không. Vì vậy app để bạn tự chọn: 11 nếu muốn bám nghiên cứu, 14–16 nếu đã tập lâu năm và phục hồi tốt.</p></details></div>`],
     form: ['Lưu ý form khi tập', () => `<div class="card set-card"><h3>Lưu ý form khi tập</h3><p>Điểm form · tránh chấn thương hiện ở đầu mỗi bài khi ${esc(curProf().name)} tập.</p>
     <div class="seg" role="group" aria-label="Mức lưu ý form" style="margin-top:6px">${Object.entries(FORM_LV).map(([k, m]) => `<button type="button" data-act="form-lv" data-k="${k}" aria-pressed="${formLv() === k}">${m.label}</button>`).join('')}</div>
@@ -5175,7 +5278,7 @@ const withKeys = x => ({ ...x, entries: x.entries.map(en => { const ex = findEx(
 const histLocked = () => isHlv() && profiles.active !== HLV_SELF;
 /* BR-35.3: máy học viên (đã nối HLV) không sửa giáo án; HLV quản lý. Máy không có vai (tự tập) giữ nguyên quyền sửa. */
 const planLocked = () => hubRole() === 'hv';
-const PLAN_ACTS = new Set(['ang-pick', 'bal-fix', 'var-add', 'add-day', 'rename-day', 'del-day', 'move-day', 'move-ex', 'add-ex', 'add-alt', 'make-main', 'rot-open', 'rot-hold', 'rot-swap', 'onb-sample', 'onb-new', 'prof-copy', 'lib-open', 'other-open', 'save-ex', 'del-ex']);
+const PLAN_ACTS = new Set(['neg-add', 'ang-pick', 'bal-fix', 'var-add', 'add-day', 'rename-day', 'del-day', 'move-day', 'move-ex', 'add-ex', 'add-alt', 'make-main', 'rot-open', 'rot-hold', 'rot-swap', 'onb-sample', 'onb-new', 'prof-copy', 'lib-open', 'other-open', 'save-ex', 'del-ex']);
 const waitPlanHtml = () => `<div class="hero pempty"><div class="h1" style="font-size:24px">Chờ HLV gửi giáo án</div><p class="meta">Giáo án do HLV của bạn soạn và gửi. Khi có giáo án mới, app tự nhận trong vài giây.</p></div>`;
 function kgSheet(ex) {
   openSheet(`<h3 class="sh-title">${esc(shortName(ex.name))}</h3><p class="sh-text">Giáo án do HLV quản lý. Bạn chỉ chỉnh mức tạ đang tập.</p>
@@ -5398,6 +5501,10 @@ const handlers = {
   'plan-diff-ok': () => { if (state.settings.sync) state.settings.sync.planDiff = null; save(); render(true); },   /* BR-33.4 */
   'start-day': t => startSession(t.dataset.id),
   'pick-day': t => { ui.pick = t.dataset.id; render(true); },
+  'neg-toggle': t => { ui.negOpen = !t.parentElement.open; t.parentElement.open = ui.negOpen; },
+  'neg-add': t => { const d = findDay(t.dataset.day), nm = t.dataset.n; if (!d || !nm) return; const n = Math.min(4, Math.max(1, +t.dataset.s || 2)); d.exercises.push({ ...newEx(nm), gid: LIB_GID[nm], sets: n, alts: [], slot: '', mainSince: ymd() }); ui.negOpen = true; save(); render(true); toast(`Đã thêm ${shortName(nm)} vào ngày ${d.name} · ${n} set`); },
+  'neg-skip': t => { const s = state.settings, z = t.dataset.z; s.balSkip = [...new Set([...(s.balSkip || []), z])]; ui.negOpen = true; save(); render(true); toast(`Không nhắc ${z === 'Kéo' ? 'cân kéo/đẩy' : z} nữa · bật lại ở Tài khoản → Cân vùng cơ`); },
+  'neg-unskip': t => { const s = state.settings; s.balSkip = (s.balSkip || []).filter(z => z !== t.dataset.z); save(); render(); },
   'bal-cap': t => { state.settings.balCap = +t.dataset.k; save(); render(); toast(`Trần set mỗi nhóm cơ: ${capTxt(+t.dataset.k).toLowerCase()}`); },
   'more-sec': t => { ui.moreSec = t.dataset.k || null; ui.tab = 'more'; render(); },
   'todos': () => todosSheet(),
@@ -5903,7 +6010,7 @@ async function purgeStored() {
   if (h.startsWith('#nhap=')) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} toast(OLD_CODE); }
   if ('serviceWorker' in navigator && location.protocol === 'https:' && document.documentElement.dataset.pwa === '1') { navigator.serviceWorker.register('sw.js').catch(() => {}); }
 })();
-window.__sota = { comparePeriod, strengthCompare, mapSession, planDiff, dayOverview, planFromHistory, suggest, sessQuality, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
+window.__sota = { weekPlanLoad, neglected, comparePeriod, strengthCompare, mapSession, planDiff, dayOverview, planFromHistory, suggest, sessQuality, roadmap, exHistory, baseKg, warmSets, recommend, muscleLoad, switchProfile, findEx, slotOf, autoGid, guideSheet, exdbMatch, get ui() { return ui; }, get state() { return state; }, get profiles() { return profiles; } };
 })();
 </script>
 </body>
