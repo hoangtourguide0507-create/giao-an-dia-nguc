@@ -406,3 +406,10 @@ Hướng dữ liệu: **HV → máy chủ → HLV**, giống lịch sử tập (
 - **BR-40.4 Có trong giáo án, 4 tuần qua chưa tập**: vùng có bài trong giáo án (bài có từ 2 tuần trở lên) nhưng 4 tuần qua 0 set, khi có ít nhất 4 buổi trong 4 tuần.
 - **BR-40.5 "Tôi không tập vùng này"** / "Bỏ qua cân kéo/đẩy": không nhắc nữa, theo từng người tập; bật lại ở *Tài khoản → Cân vùng cơ*.
 - **BR-40.6** Máy học viên chỉ xem (không có nút thêm bài); HLV thêm được khi soạn cho học viên.
+
+## Kcal vận động của buổi tập (PA-53 · BR-41)
+- **BR-41.1** Mỗi buổi đã kết thúc có **kcal vận động** ước tính (giống "Active kcal" của đồng hồ) = (MET − 1) × cân nặng gần ngày tập nhất (tab Cơ thể) × thời gian buổi (bắt đầu → kết thúc, trừ tạm dừng). Chưa có cân nặng → nhắc nhập ở tab Cơ thể.
+- **BR-41.2 MET theo chính buổi** (2024 Adult Compendium): set bài chân nhiều khớp 5,0, set khác 3,5, lấy trung bình theo số set; ≥ 50% set chấm Sát/Hỏng +1; ≤ 70 giây mỗi set (gồm nghỉ) tính như circuit 5,8; tối đa 6,0. Buổi dài bất thường (quên bấm kết thúc) chỉ tính tối đa 6 phút/set + 10 phút và ghi rõ.
+- **BR-41.3 Kcal từ đồng hồ** (tuỳ chọn) nhập trong chi tiết buổi; có số này thì dùng thay số ước tính, ghi "số từ đồng hồ"; để trống để quay lại số ước tính. HLV trên hồ sơ học viên chỉ xem.
+- **BR-41.4 Hiển thị**: màn kết thúc buổi, chi tiết buổi (có mục *Cách tính kcal*), tổng kcal của tuần/tháng ở Tiến độ.
+- **BR-41.5** Buổi học viên trên máy HLV tính bằng cân nặng học viên đã đồng bộ (BR-37). Số kcal đồng hồ đi kèm buổi khi buổi được gửi; sửa số này sau khi buổi đã gửi thì chưa tự gửi lại.
