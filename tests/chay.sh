@@ -16,4 +16,5 @@ node tests/test_kcal.mjs >/dev/null 2>&1 && echo "✓ kcal buổi tập (BR-41)"
 node tests/test_nghi_bai_tiep.mjs >/dev/null 2>&1 && echo "✓ nghỉ → bài tiếp (BR-43)" || { echo "✗ nghỉ → bài tiếp (BR-43)"; FAIL=1; }
 node tests/test_tang_ta.mjs >/dev/null 2>&1 && echo "✓ tăng tạ theo chuẩn (BR-44)" || { echo "✗ tăng tạ theo chuẩn (BR-44)"; FAIL=1; }
 node tests/test_tai_nha.mjs >/dev/null 2>&1 && echo "✓ giáo án tại nhà (BR-45)" || { echo "✗ giáo án tại nhà (BR-45)"; FAIL=1; }
+node tests/test_tu_trong.mjs >/dev/null 2>&1 && echo "✓ tự trọng / trợ lực / tính giây (BR-46)" || { echo "✗ tự trọng / trợ lực / tính giây (BR-46)"; FAIL=1; }
 exit $FAIL
