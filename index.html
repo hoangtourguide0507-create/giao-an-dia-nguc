@@ -1648,6 +1648,7 @@ function newEx(name) {
   const lib = LIB.find(l => l[0] === name);
   const type = lib ? lib[2] : 'upper';
   return { id: uid(), name, muscle: lib ? lib[1] : 'Khác', zone: lib ? (LIBZ[name] || null) : undefined, type, sets: 3, repTarget: 10, repMin: 8, repMax: 12, dropSet: false,
+    ...(/plank/i.test(name) ? { repMin: 20, repTarget: 30, repMax: 60 } : {}),   /* BR-46: bài tính giây */
     step: /tạ đơn|dumbbell/i.test(name) ? 2 : TYPES[type].step, rest: TYPES[type].rest, setup: '', photos: [], currentKg: null, targetKg: null, kgSetAt: null, warmup: true, restV: 2, each: /tạ đơn|dumbbell/i.test(name) };
 }
 function migrateEx(ex) {
@@ -1817,7 +1818,9 @@ function setsFor(ex) { return ex.sets; } /* PA-10: luôn đúng số set của b
 /* ---------- gợi ý mức tạ ---------- */
 function suggestBase(ex) {
   const H = workHistory(ex);
-  if (isBw(ex)) return suggestBw(ex, H);   /* BR-45 */
+  const W0 = H.length && !manualOverride(ex, H) ? wt(H[0]) : ex.currentKg;   /* BR-45, BR-46 */
+  if (loadMode(ex) === 'assist' && W0 > 0) return suggestAssist(ex, H, W0);
+  if (W0 === 0 || (isBw(ex) && W0 == null)) return suggestBw(ex, H);
   const tgt = ex.repTarget || 10;
   const fill = r => Array(ex.sets).fill(r);
   if (!H.length || manualOverride(ex, H)) {
@@ -1894,7 +1897,7 @@ function suggestDouble(ex, H, W) {
 }
 /* lộ trình các tuần tới, giả định tuần nào cũng đạt đủ rep */
 function roadmap(ex, weeks = 8) {
-  if (isBw(ex)) return null;   /* BR-45: bài tự trọng lên nấc, không lên kg */
+  if (isBw(ex) || loadMode(ex) === 'assist' || baseKg(ex) === 0) return null;   /* BR-45, BR-46: tự trọng lên nấc/rep, máy trợ lực giảm dần — không có lộ trình kg */
   const sg = suggest(ex);
   const base0 = sg.kind === 'deload' ? baseKg(ex) : sg.kg; if (base0 == null) return null;
   const pace = PACE[state.settings.pace] || PACE.std;
@@ -2115,10 +2118,10 @@ function dayWhy(ent, last) {
   return parts.join(' · ');
 }
 const U = ex => ex && ex.each ? ' kg/tay' : ' kg';
-const kgTxt = (v, ex) => v == null ? '—' : v === 0 ? 'Tự trọng' : fmt(v) + U(ex);
-const kgHtml = (v, ex) => v == null ? '—' : v === 0 ? 'Tự trọng' : `${fmt(v)}<small>${ex && ex.each ? 'kg/tay' : 'kg'}</small>`;
+const kgTxt = (v, ex) => v == null ? '—' : v === 0 ? 'Tự trọng' : ex && /máy hỗ trợ|assisted/i.test(ex.name || '') ? fmt(v) + ' kg trợ lực' : fmt(v) + U(ex);
+const kgHtml = (v, ex) => v == null ? '—' : v === 0 ? 'Tự trọng' : `${fmt(v)}<small>${ex && /máy hỗ trợ|assisted/i.test(ex.name || '') ? 'kg trợ lực' : ex && ex.each ? 'kg/tay' : 'kg'}</small>`;
 const isDb = ex => /tạ đơn|dumbbell/i.test(String(ex && ex.name || ''));
-const mul = x => x && x.each ? 2 : 1;
+const mul = x => x && /máy hỗ trợ|assisted/i.test(x.name || '') ? 0 : x && x.each ? 2 : 1;   /* BR-46: kg máy trợ lực không phải tạ nâng */
 function autoName(exs) { const ms = [...new Set(exs.map(e => e.muscle))]; return 'Tự chọn · ' + ms.slice(0, 3).join(' + ') + (ms.length > 3 ? '…' : ''); }
 
 /* ---------- TAB: TẬP ---------- */
@@ -2590,6 +2593,14 @@ const BW = {
   core: { zone: 'Core', type: 'iso', r: [8, 10, 12], lv: [
     ['Dead bug tự trọng (Dead bug)', 'Dead_Bug', 'Nằm ngửa trên thảm, tay duỗi lên trần, gối co 90°. Mỗi bên tính 1 rep.'],
     ['Nâng chân nằm tự trọng (Lying leg raise)', 'Flat_Bench_Lying_Leg_Raise', 'Nằm ngửa trên thảm, tay đặt dọc thân hoặc dưới mông.', 'Bụng thẳng']] },
+  hang: { zone: 'Bụng thẳng', type: 'iso', r: [8, 12, 15], lv: [   /* PA-58: thư viện phòng gym */
+    ['Nâng chân nằm (Lying leg raise)', 'Flat_Bench_Lying_Leg_Raise', 'Nằm ngửa trên ghế phẳng hoặc thảm, tay nắm mép ghế sau đầu.'],
+    ["Nâng gối ghế chống (Captain's chair knee raise)", 'Knee_Hip_Raise_On_Parallel_Bars', 'Lưng áp đệm, hai cẳng tay tì lên tay đỡ, người treo thẳng.'],
+    ["Nâng chân thẳng ghế chống (Captain's chair leg raise)", 'Knee_Hip_Raise_On_Parallel_Bars', 'Như nâng gối nhưng giữ chân gần thẳng, nâng tới ngang hông.'],
+    ['Nâng chân treo (Hanging leg raise)', 'Hanging_Leg_Raise', 'Treo trên xà, tay rộng bằng vai, người không đung đưa.']] },
+  crunch: { zone: 'Bụng thẳng', type: 'iso', r: [10, 15, 20], lv: [
+    ['Gập bụng (Crunch)', 'Crunches', 'Nằm ngửa, gối co, bàn chân đặt sàn.'],
+    ['Gập bụng ghế dốc (Decline crunch)', 'Decline_Crunch', 'Móc chân vào ghế dốc, càng dốc càng khó.']] },
   obl: { zone: 'Bụng chéo', type: 'iso', r: [10, 12, 15], lv: [
     ['Gập bụng chéo trên sàn (Oblique crunch)', 'Oblique_Crunches_-_On_The_Floor', 'Nằm nghiêng hoặc ngửa, gối co. Mỗi bên tính riêng.'],
     ['Russian twist tự trọng (Russian twist)', 'Russian_Twist', 'Ngồi, ngả lưng khoảng 45°, gót chạm sàn; khó hơn thì nhấc gót.']] }
@@ -2604,6 +2615,8 @@ const BW_CUES = {
   hinge: ['Đẩy gót xuống sàn, nâng hông bằng cơ mông', 'Trên cùng: vai – hông – gối thành đường thẳng, không ưỡn lưng', 'Giữ 1–2 giây ở trên rồi hạ chậm', 'Thấy căng đùi sau nhiều hơn mông thì kéo gót gần mông hơn'],
   calf: ['Nhón lên cao hết mức, giữ 1 giây', 'Hạ chậm 2–3 giây cho gót xuống thấp hơn bậc', 'Gối gần thẳng, không nhún gối', 'Vịn tay để giữ thăng bằng, không đẩy bằng tay'],
   core: ['Ép thắt lưng sát sàn suốt động tác', 'Thở ra khi duỗi tay/chân, chuyển động chậm', 'Thắt lưng nhấc khỏi sàn là đã hạ quá xa: thu ngắn biên độ'],
+  hang: ['Cuộn hông lên (nghiêng xương chậu về phía ngực), không chỉ nhấc đùi', 'Không đung đưa người lấy đà; hạ chậm 2–3 giây', 'Thở ra khi nâng, lưng dưới áp đệm/không ưỡn', 'Đau thắt lưng thì về nấc dễ hơn hoặc giảm biên độ'],
+  crunch: ['Cuộn lưng trên lên, thắt lưng vẫn chạm sàn', 'Tay đặt hờ sau tai hoặc ôm tạ trên ngực, không kéo cổ', 'Thở ra khi gập, dừng 1 giây ở trên, hạ chậm', 'Cằm cách ngực một nắm tay'],
   obl: ['Xoay từ lồng ngực, không giật cổ', 'Thở ra khi gập/xoay, chuyển động chậm có kiểm soát', 'Cằm cách ngực một nắm tay', 'Đau thắt lưng thì giữ gót chạm sàn, giảm biên độ xoay']
 };
 const BW_INFO = {};
@@ -2615,17 +2628,45 @@ const HOME_PLAN = [
   ['Tại nhà A', [['push', 2], ['squat', 1], ['row', 0], ['hinge', 0], ['core', 0]]],
   ['Tại nhà B', [['tri', 0], ['lunge', 0], ['row', 0], ['calf', 0], ['obl', 0]]],
   ['Tại nhà C', [['push', 2], ['squat', 1], ['post', 0], ['calf', 0], ['core', 0]]]];
-function bwVerdict(ex, H) {   /* BR-45.3 — thuần: chỉ đọc rep các buổi gần nhất (mới nhất trước) */
-  const f = BW_INFO[ex.name], L = f && BW[f.k]; if (!L) return { kind: 'hold' };
-  const max = ex.repMax || L.r[2], min = ex.repMin || L.r[0], n = ex.sets || 3, next = L.lv[f.i + 1], prev = L.lv[f.i - 1];
+function bwVerdict(ex, H) {   /* BR-45.3, BR-46 — thuần: chỉ đọc rep (hoặc giây) các buổi gần nhất (mới nhất trước) */
+  const f = BW_INFO[ex.name], L = f && BW[f.k], tm = TIMED.test(ex.name || '');
+  const max = tm ? 60 : ex.repMax || (L ? L.r[2] : 15), min = tm ? 20 : ex.repMin || (L ? L.r[0] : 8), n = ex.sets || 3, next = L && L.lv[f.i + 1], prev = L && L.lv[f.i - 1];
   const W = h => (h.sets || []).filter(s => !s.dr);
   const top = h => h && W(h).filter(s => s.reps >= max).length >= n, low = h => h && W(h).some(s => s.reps < min);
   const [a, b] = H || [];
   if (!a) return { kind: 'start' };
-  if (top(a) && top(b)) return next ? { kind: 'level', next: next[0] } : { kind: 'hold', top: true };
+  if (top(a) && top(b)) return next ? { kind: 'level', next: next[0] } : { kind: 'hold', top: true, two: true };
   if (top(a)) return next ? { kind: 'almost', next: next[0] } : { kind: 'hold', top: true };
   if (low(a) && low(b) && prev) return { kind: 'easier', prev: prev[0] };
   return { kind: 'hold' };
+}
+/* PA-58 · BR-46: kiểu tải — kg (tạ thường), load (tự trọng, ôm/đeo thêm tạ được), bw (tự trọng thuần), assist (máy trợ lực: kg càng ít càng nặng), time (tính giây) */
+const ASSIST = /máy hỗ trợ|assisted/i, TIMED = /plank/i;
+const LOADABLE = /hít xà|pull-?up|chin-?up|xà kép|\bdips?\b|^gập bụng( ghế dốc)? \(|^gập bụng$|crunch\)$|duỗi lưng|back extension|chống ghế|bench dip|russian|cầu mông|glute bridge|chùng chân|lunge|bước lên|step-?up|sissy|hít đất|push-?up/i;
+const PURE_BW = /nâng gối|nâng chân|knee raise|leg raise|lăn bánh xe|ab wheel|dead bug|bird dog|superman|nordic|dây kháng lực|band|móc đùi bóng|ball leg curl|chèo người ngược|inverted row|gập bụng chéo|oblique/i;
+const ASSIST_NEXT = { 'Hít xà máy hỗ trợ (Assisted pull-up)': 'Hít xà (Pull-up)', 'Xà kép máy hỗ trợ (Assisted dip machine)': 'Xà kép (Dips)' };
+function loadMode(ex) {
+  const n = String(ex && ex.name || '');
+  if (ASSIST.test(n)) return 'assist'; if (TIMED.test(n)) return 'time';
+  if (ex.bw || /tự trọng/i.test(n)) return 'bw';   /* giáo án tại nhà: không có tạ */
+  if (/cáp|cable|máy|machine/i.test(n) && !/xà kép|hít xà/i.test(n)) return 'kg';
+  if (PURE_BW.test(n)) return 'bw'; if (LOADABLE.test(n)) return 'load';
+  return BW_INFO[n] ? 'bw' : 'kg';
+}
+function loadHint(ex) {
+  const n = String(ex.name || '').toLowerCase();
+  return /gập bụng|crunch|russian/.test(n) ? 'ôm bánh tạ trên ngực' : /hít xà|xà kép|dip|pull/.test(n) ? 'đeo đai tạ hoặc kẹp tạ đơn giữa hai chân' : /duỗi lưng|back ext/.test(n) ? 'ôm bánh tạ trước ngực'
+    : /cầu mông|glute|hip/.test(n) ? 'đặt bánh tạ lên hông' : /hít đất|push/.test(n) ? 'nhờ người đặt bánh tạ lên lưng' : /chống ghế|bench dip/.test(n) ? 'đặt bánh tạ lên đùi' : 'cầm 2 tạ đơn';
+}
+function assistVerdict(ex, H, W) {   /* BR-46.3 — thuần: trợ lực càng ít càng nặng */
+  const tgt = ex.repTarget || 10, min = ex.repMin || 8, n = ex.sets || 3, st = ex.step > 0 ? ex.step : 2.5, dec = Math.max(st, roundStep(W >= 20 ? 5 : 2.5, st));
+  const WS = h => (h.sets || []).filter(s => !s.dr), ok = h => h && WS(h).filter(s => (s.kg || 0) <= W && s.reps >= tgt).length >= n, low = h => h && WS(h).some(s => s.reps < min);
+  const [a, b] = H || [];
+  if (!a) return { kind: 'start', kg: W };
+  if (ok(a) && ok(b)) { const kg = Math.max(0, roundStep(W - dec, st)); return kg <= st ? { kind: 'level', kg: 0, next: ASSIST_NEXT[ex.name] || null } : { kind: 'assist', kg, prev: W }; }
+  if (ok(a)) return { kind: 'almost', kg: W };
+  if (low(a) && low(b)) return { kind: 'assistUp', kg: roundStep(W + dec, st), prev: W };
+  return { kind: 'hold', kg: W };
 }
 /* video hướng dẫn */
 function enName(ex) {
@@ -2982,7 +3023,7 @@ function entryCard(en, i) {
     <div class="target"><div><div class="tl">${last ? 'Lần trước · ' + dm(last.date) : 'Lần trước'}</div><div class="tv shine">${last ? `${fmt(wt(last))}<small>${U(ex)} × ${last.sets.filter(x => !x.dr).map(s => s.reps).join('·')}${effList(last.sets).length ? ` <span class="effl">· ${effList(last.sets).join('·')}</span>` : ''}</small>` : '<small>Chưa tập · tự chọn mức tạ</small>'}</div>${sugChip(ex, sg)}</div></div>`;
   if (ex.setup) h += `<details class="setup"><summary>${isBw(ex) ? 'Cách đặt người' : 'Cách chỉnh máy'} ›</summary><p>${esc(ex.setup)}</p></details>`;
   if (needsWarm(en, i)) h += `<div class="warm"><div class="warm-h">${ICON.flame} ${warmKind(en, i) === 'feel' ? 'Set làm quen máy' : 'Set khởi động'}<span>không tính vào khối lượng</span></div><div class="warm-sets" id="warm-${i}">${warmInner(en, i)}</div></div>`;
-  h += `<div class="sets"><div class="sethead"><span></span><span>${ex.each ? 'Kg mỗi tay' : 'Kg'}</span><span>Rep</span><span></span></div>`;
+  h += `<div class="sets"><div class="sethead"><span></span><span>${kgHead(ex)}</span><span>${TIMED.test(ex.name || '') ? 'Giây' : 'Rep'}</span><span></span></div>`;
   let wn = 0; const fin = entryDone(en);
   if (fin) { const W = workSets(en).filter(x => x.done); h += `<div class="donebar"><span class="stamp${ui.stampEx === en.exId ? ' in' : ''}">XONG</span><span class="ds"><b>${W.length}/${workSets(en).length} set</b> · ${W.map(x => fmt(x.kg || 0) + '×' + x.reps).join(' · ')}</span></div>`; }
   en.sets.forEach((s, j) => { if (s.dr && s.dr === 1) h += `<div class="drophead">Drop set · giảm tạ dần, làm liền không nghỉ</div>`; h += setRow(i, j, s, s.dr ? 'D' + s.dr : ++wn); });
@@ -3026,6 +3067,7 @@ function adjustLaterSets(en, i) {
 const syncSetInputs = e => state.active.entries[e].sets.forEach((x, k) => ['kg', 'reps'].forEach(f => { const ip = $(`input[data-bind="set"][data-e="${e}"][data-s="${k}"][data-f="${f}"]`); if (ip && document.activeElement !== ip) ip.value = fmtIn(x[f]); }));
 /* gợi ý tạ: 1 dòng nhỏ, không tự điền */
 function sugChip(ex, sg) {
+  if (sg && (sg.kind === 'assist' || sg.kind === 'assistUp')) return `<span class="sugchip ${sg.kind === 'assist' ? 'up' : 'down'}">${sg.kind === 'assist' ? '↑ Giảm trợ lực' : '↓ Tăng trợ lực'} còn ${fmt(sg.kg)} kg</span>`;   /* BR-46 */
   if (sg && (sg.kind === 'level' || sg.kind === 'easier')) return `<span class="sugchip ${sg.kind === 'level' ? 'up' : 'down'}">${sg.kind === 'level' ? '↑ Nên lên' : '↓ Nên về'}: ${esc(shortName(sg.nextName || sg.prevName))}</span>`;   /* BR-45 */
   if (!sg || sg.kg == null) return '';
   if (sg.failHold) return `<span class="sugchip">= Giữ ${fmt(sg.kg)}${U(ex).trim()} · lần trước có set hỏng rep</span>`;
@@ -3287,17 +3329,32 @@ function newBw(k, i) {
   const L = BW[k], [nm, gid, setup] = L.lv[i], f = BW_INFO[nm], [mn, tg, mx] = L.r;
   return { ...newEx(nm), muscle: ZBIG[f.zone], zone: f.zone, type: L.type, sets: 3, repMin: mn, repTarget: tg, repMax: mx, step: 1, each: false, currentKg: 0, kgSetAt: null, gid, setup, bw: k, warmup: true, alts: [], slot: '', mainSince: ymd() };
 }
-function suggestBw(ex, H) {
-  const v = bwVerdict(ex, H), max = ex.repMax || 15, tgt = ex.repTarget || 12, fill = r => Array(ex.sets).fill(r), nm = n => esc(shortName(n));
-  if (H.length && isDeload()) return { kind: 'deload', label: 'DELOAD', kg: 0, base: 0, reps: fill(Math.max(ex.repMin || 8, tgt - 4)), text: `Tuần nhẹ: giữ bài này, mỗi set dừng sớm 3–4 rep. Tuần sau tập lại bình thường.` };
-  if (v.kind === 'start') return { kind: 'start', label: 'BẮT ĐẦU', kg: 0, reps: fill(tgt), text: `Bài tự trọng: làm <strong>${ex.sets}×${tgt}</strong>, mỗi set còn dư 2–3 rep. Mọi set đạt ${max} rep trong 2 buổi liền là lên bài khó hơn.` };
-  if (v.kind === 'level') return { kind: 'level', label: 'LÊN NẤC', kg: 0, nextName: v.next, reps: fill(ex.repMin || 8), text: `2 buổi liền đạt ${max} rep mọi set. Lên bài khó hơn: <strong>${nm(v.next)}</strong>; rep tụt về khoảng ${ex.repMin || 8} là bình thường.` };
-  if (v.kind === 'almost') return { kind: 'almost', label: 'SẮP LÊN NẤC', kg: 0, nextName: v.next, reps: fill(max), text: `Đã đạt ${max} rep mọi set. Buổi tới đạt lại là lên <strong>${nm(v.next)}</strong>.` };
-  if (v.kind === 'easier') return { kind: 'easier', label: 'XUỐNG NẤC', kg: 0, prevName: v.prev, reps: fill(tgt), text: `2 buổi liền có set dưới ${ex.repMin || 8} rep. Tạm về bài dễ hơn: <strong>${nm(v.prev)}</strong> để giữ form chuẩn, đủ rep rồi lên lại.` };
-  if (v.top) return { kind: 'hold', label: 'GIỮ', kg: 0, reps: fill(max), text: `Đã ở bài khó nhất của nhóm này. Làm chậm hơn (hạ 3 giây, dừng 1 giây ở dưới) hoặc thêm 1 set.` };
-  const a = H[0], W = (a.sets || []).filter(s => !s.dr), reps = Array.from({ length: ex.sets }, (_, i) => Math.min(max, ((W[i] || W[W.length - 1] || {}).reps || ex.repMin || 8) + 1));
-  return { kind: 'hold', label: 'GIỮ', kg: 0, reps, text: `Giữ bài này, cố thêm 1 rep mỗi set (tới ${max}).` };
+function suggestBw(ex, H) {   /* BR-45, BR-46: bài 0 kg — lên rep/giây, lên nấc, hoặc ôm thêm tạ; không bao giờ gợi ý kg khi bài không đeo được tạ */
+  const v = bwVerdict(ex, H), tm = TIMED.test(ex.name || ''), md = loadMode(ex), u = tm ? 'giây' : 'rep';
+  const max = tm ? 60 : ex.repMax || 15, min = tm ? 20 : ex.repMin || 8, tgt = tm ? 30 : ex.repTarget || 12, fill = r => Array(ex.sets).fill(r), nm = n => esc(shortName(n));
+  if (H.length && isDeload()) return { kind: 'deload', label: 'DELOAD', kg: 0, base: 0, reps: fill(Math.max(min, tgt - (tm ? 10 : 4))), text: `Tuần nhẹ: giữ bài này, mỗi set dừng sớm ${tm ? '10 giây' : '3–4 rep'}. Tuần sau tập lại bình thường.` };
+  if (v.kind === 'start') return { kind: 'start', label: 'BẮT ĐẦU', kg: 0, reps: fill(tgt), text: tm ? `Bài tính giây: giữ <strong>${tgt} giây</strong> mỗi set, ghi số giây vào ô Rep. Mỗi buổi cố thêm 5 giây, tới ${max} giây.` : `Bài tự trọng: làm <strong>${ex.sets}×${tgt}</strong>, mỗi set còn dư 2–3 rep. Mọi set đạt ${max} rep trong 2 buổi liền là ${BW_INFO[ex.name] ? 'lên bài khó hơn' : md === 'load' ? `ôm/đeo thêm tạ (${loadHint(ex)})` : 'làm khó hơn'}.` };
+  if (v.kind === 'level') return { kind: 'level', label: 'LÊN NẤC', kg: 0, nextName: v.next, reps: fill(min), text: `2 buổi liền đạt ${max} ${u} mọi set. Lên bài khó hơn: <strong>${nm(v.next)}</strong>; ${u} tụt về khoảng ${min} là bình thường.${md === 'load' ? ` Hoặc giữ bài này và ôm/đeo thêm 2,5 kg (${loadHint(ex)}).` : ''}` };
+  if (v.kind === 'almost') return { kind: 'almost', label: 'SẮP LÊN NẤC', kg: 0, nextName: v.next, reps: fill(max), text: `Đã đạt ${max} ${u} mọi set. Buổi tới đạt lại là lên <strong>${nm(v.next)}</strong>.` };
+  if (v.kind === 'easier') return { kind: 'easier', label: 'XUỐNG NẤC', kg: 0, prevName: v.prev, reps: fill(tgt), text: `2 buổi liền có set dưới ${min} ${u}. Tạm về bài dễ hơn: <strong>${nm(v.prev)}</strong> để giữ form chuẩn, đủ ${u} rồi lên lại.` };
+  if (v.top && v.two && md === 'load') { const kg = ex.step > 2.5 ? ex.step : 2.5;
+    return { kind: 'up', label: 'TĂNG TẠ', kg, prev: 0, reps: fill(min), text: `2 buổi liền đạt ${max} rep mọi set chỉ với trọng lượng cơ thể. Bài này ôm/đeo thêm tạ được: buổi tới thêm <strong>${fmt(kg)} kg</strong> (${loadHint(ex)}), ghi số kg tạ thêm vào ô Kg.` }; }
+  if (v.top) return { kind: 'hold', label: 'GIỮ', kg: 0, top: true, reps: fill(max), text: tm ? `Giữ được ${max} giây mọi set: làm khó hơn — nâng 1 chân hoặc 1 tay khỏi sàn, hoặc nhờ người đặt bánh tạ lên lưng.`
+    : BW_INFO[ex.name] ? `Đã ở bài khó nhất của nhóm này. Làm chậm hơn (hạ 3 giây, dừng 1 giây) hoặc thêm 1 set.` : /dây|band/i.test(ex.name) ? `Đã đạt ${max} rep: dùng dây cứng hơn hoặc làm chậm hơn.` : `Đã đạt ${max} rep: làm chậm hơn (hạ 3 giây), thêm 1 set, hoặc đổi sang biến thể khó hơn.` };
+  const a = H[0], W = (a.sets || []).filter(s => !s.dr), reps = Array.from({ length: ex.sets }, (_, i) => Math.min(max, ((W[i] || W[W.length - 1] || {}).reps || min) + (tm ? 5 : 1)));
+  return { kind: 'hold', label: 'GIỮ', kg: 0, reps, text: tm ? `Giữ bài này, cố thêm 5 giây mỗi set (tới ${max} giây).` : `Giữ bài này, cố thêm 1 rep mỗi set (tới ${max}).` };
 }
+function suggestAssist(ex, H, W) {   /* BR-46.3 */
+  const v = assistVerdict(ex, H, W), tgt = ex.repTarget || 10, fill = r => Array(ex.sets).fill(r);
+  if (v.kind === 'start') return { kind: 'start', label: 'BẮT ĐẦU', kg: W, reps: fill(tgt), text: `Máy trợ lực: số kg là <strong>trợ lực</strong>, càng ít càng nặng. Bắt đầu ở ${fmt(W)} kg trợ lực, làm ${ex.sets}×${tgt}.` };
+  if (v.kind === 'level') return { kind: 'level', label: 'LÊN NẤC', kg: 0, nextName: v.next || ex.name, reps: fill(ex.repMin || 8), text: `Trợ lực chỉ còn ${fmt(W)} kg mà vẫn đủ ${ex.sets}×${tgt}. ${v.next ? `Chuyển sang <strong>${esc(shortName(v.next))}</strong> không hỗ trợ` : 'Bỏ trợ lực'}; rep tụt là bình thường.` };
+  if (v.kind === 'assist') return { kind: 'assist', label: 'GIẢM TRỢ LỰC', kg: v.kg, prev: W, reps: fill(Math.max(ex.repMin || 8, tgt - 2)), text: `2 buổi liền đủ ${ex.sets}×${tgt}. Giảm trợ lực còn <strong>${fmt(v.kg)} kg</strong> (−${fmt(W - v.kg)}): trợ lực càng ít càng nặng.` };
+  if (v.kind === 'almost') return { kind: 'almost', label: 'SẮP TĂNG', kg: W, reps: fill(tgt), text: `Đủ rep 1 buổi ở ${fmt(W)} kg trợ lực. Buổi tới đạt lại là giảm trợ lực.` };
+  if (v.kind === 'assistUp') return { kind: 'assistUp', label: 'TĂNG TRỢ LỰC', kg: v.kg, prev: W, reps: fill(tgt), text: `2 buổi liền có set dưới ${ex.repMin || 8} rep. Tăng trợ lực lên <strong>${fmt(v.kg)} kg</strong> để giữ form, đủ rep rồi giảm lại.` };
+  const a = H[0], WS = (a.sets || []).filter(s => !s.dr), reps = Array.from({ length: ex.sets }, (_, i) => Math.min(tgt, ((WS[i] || WS[WS.length - 1] || {}).reps || 8) + 1));
+  return { kind: 'hold', label: 'GIỮ', kg: W, reps, text: `Giữ <strong>${fmt(W)} kg trợ lực</strong>, cố đủ ${ex.sets}×${tgt}. Đạt 2 buổi liền là giảm trợ lực.` };
+}
+const kgHead = ex => { const m = loadMode(ex); return m === 'assist' ? 'Kg trợ lực' : m === 'load' || m === 'bw' || m === 'time' ? 'Kg tạ thêm' : ex.each ? 'Kg mỗi tay' : 'Kg'; };
 function bwLadderHtml(ex, id) {
   const f = BW_INFO[ex.name]; if (!f) return '';
   const L = BW[f.k], can = !planLocked() && id && slotOf(id) && slotOf(id).isMain;
@@ -3318,7 +3375,7 @@ function finishSummary() {
     vol += mul(en) * (done.reduce((x, s) => x + (s.kg || 0) * s.reps, 0) + (en.drop && en.drop.done ? (en.drop.kg || 0) * (en.drop.reps || 0) : 0));
     const best = Math.max(0, ...done.map(s => e1rm(s.kg || 0, s.reps)));
     const prev = Math.max(0, ...exHistory(en.exId).map(bestE1));
-    if (best > 0 && prev > 0 && best > prev + 0.01) prs.push({ name: en.name, best, prev });
+    if (best > 0 && prev > 0 && best > prev + 0.01 && !ASSIST.test(en.name || '')) prs.push({ name: en.name, best, prev });
   }
   if (!sets) { confirmSheet({ title: 'Chưa có set nào xong', text: 'Bấm ✓ ở các set đã tập rồi kết thúc. Nếu hôm nay không tập, bạn có thể huỷ buổi này.', ok: 'Huỷ buổi này', danger: true, onOk: discardSession }); return; }
   let met = 0, tot = 0;
@@ -3849,9 +3906,9 @@ function periodOf(mode, off) {
 }
 function periodStats(from, to) {
   const ss = state.sessions.filter(x => x.date >= from && x.date <= to).sort((a, b) => a.startedAt - b.startedAt);
-  let sets = 0, vol = 0; const per = {};
-  for (const x of ss) { const st = sessStats(x); sets += st.sets; vol += st.vol; for (const en of x.entries) per[en.muscle] = (per[en.muscle] || 0) + en.sets.length + (en.drop ? 1 : 0); }
-  return { ss, sets, vol, per, ups: upCount(ss) };
+  let sets = 0, vol = 0, bw = 0; const per = {};
+  for (const x of ss) { const st = sessStats(x); sets += st.sets; vol += st.vol; for (const en of x.entries) { per[en.muscle] = (per[en.muscle] || 0) + en.sets.length + (en.drop ? 1 : 0); bw += mul(en) ? en.sets.filter(z => !(z.kg > 0)).length : en.sets.length; } }
+  return { ss, sets, vol, per, ups: upCount(ss), bw };   /* BR-46.5: bw = set tự trọng (0 kg) + set máy trợ lực, không tính vào tấn tạ */
 }
 /* PA-49 · BR-38: kỳ so sánh cùng độ dài ngày. Kỳ đang diễn ra chỉ so khoảng ngày đã qua; tháng dài ngắn khác nhau thì lấy cả tháng trước và quy về trung bình theo ngày (scale) */
 function comparePeriod(mode, off, today) {
@@ -3889,7 +3946,7 @@ function tonTix(P, S, SC, mode) {
   const tons = S.vol / 1000, pct = SC.pct == null ? null : Math.round(SC.pct);
   return `<section class="hero tix ton"><div class="eyebrow">Tổng tạ · ${esc(P.label)}</div><div class="meta" style="margin-top:12px">Đã nâng</div>
     <div><span class="big tn">${fmt(tons, tons >= 10 ? 1 : 2)}</span><span class="unit">TẤN</span></div><div class="tcut"></div>
-    <div class="tfoot"><div class="why">${S.ss.length} buổi · ${S.sets} set${pct != null ? ` · ${pct >= 0 ? '+' : ''}${pct}% so với ${mode === 'month' ? 'tháng' : 'tuần'} trước, trên ${SC.n} bài tập ở cả hai ${mode === 'month' ? 'tháng' : 'tuần'}` : S.ss.length ? ` · chưa so được: ${mode === 'month' ? 'tháng' : 'tuần'} trước chưa tập các bài này` : ''}</div>${pct != null ? `<span class="badge ${pct >= 0 ? 'up' : 'down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct)}%</span>` : ''}</div></section>`;
+    <div class="tfoot"><div class="why">${S.ss.length} buổi · ${S.sets} set${S.bw ? ` (${S.bw} set tự trọng/trợ lực không tính tấn)` : ''}${pct != null ? ` · ${pct >= 0 ? '+' : ''}${pct}% so với ${mode === 'month' ? 'tháng' : 'tuần'} trước, trên ${SC.n} bài tập ở cả hai ${mode === 'month' ? 'tháng' : 'tuần'}` : S.ss.length ? ` · chưa so được: ${mode === 'month' ? 'tháng' : 'tuần'} trước chưa tập các bài này` : ''}</div>${pct != null ? `<span class="badge ${pct >= 0 ? 'up' : 'down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct)}%</span>` : ''}</div></section>`;
 }
 function viewWeek() {
   const mode = ui.pmode === 'month' ? 'month' : 'week', off = mode === 'month' ? (ui.monthOff || 0) : ui.weekOff, today = ymd();
@@ -3913,7 +3970,7 @@ function viewWeek() {
   const cmpL = mode === 'month' ? 'so với tháng trước' : 'so với tuần trước';
   h += `<div class="kpis k4"><div class="kpi"><div class="k">${S.ss.length}</div><div class="l">buổi</div>${dlt(S.ss.length, qn(Q.ss.length), cnt)}</div><div class="kpi"><div class="k">${S.sets}</div><div class="l">set</div>${dlt(S.sets, qn(Q.sets), cnt)}</div>
     <div class="kpi"><div class="k">${tonsN(S.vol)}</div><div class="l">tấn tạ</div>${spct}</div><div class="kpi"><div class="k">${S.ups}</div><div class="l">bài lên tạ</div></div></div>
-    <p class="small muted" style="margin:10px 0 0">Mũi tên: ${cmpL}, cùng khoảng ngày. Tấn tạ: % lệch trung bình của các bài đã tập ở cả hai kỳ. Tấn tạ = tổng kg × rep mọi set${allEx().some(x => x.ex.each) ? ' (tạ đơn tính cả 2 tay)' : ''}.</p>${kcalPeriod(S.ss)}</div></section>`;
+    <p class="small muted" style="margin:10px 0 0">Mũi tên: ${cmpL}, cùng khoảng ngày. Tấn tạ: % lệch trung bình của các bài đã tập ở cả hai kỳ. Tấn tạ = tổng kg × rep mọi set${allEx().some(x => x.ex.each) ? ' (tạ đơn tính cả 2 tay)' : ''}; bài tự trọng chỉ tính phần tạ ôm/đeo thêm, máy trợ lực không tính.</p>${kcalPeriod(S.ss)}</div></section>`;
   // set mỗi nhóm cơ
   const mset = new Set([...state.days.flatMap(d => d.exercises.map(e => e.muscle)), ...Object.keys(S.per)]);
   const muscles = MUSCLES.filter(m => mset.has(m));
@@ -3941,11 +3998,14 @@ function viewWeek() {
   return h + `</section>`;
 }
 /* PA-56 · BR-44.3: nhãn ngắn, dễ hiểu */
-const SG_TAG = { level: 'Nên lên bài khó hơn', easier: 'Nên xuống bài dễ hơn', up: 'Nên tăng tạ', almost: 'Sắp tăng', hold: 'Giữ mức tạ', down: 'Nên giảm tạ', deload: 'Tuần nhẹ', pain: 'Đang đau', start: 'Bắt đầu' };
+const SG_TAG = { assist: 'Nên giảm trợ lực', assistUp: 'Nên tăng trợ lực', level: 'Nên lên bài khó hơn', easier: 'Nên xuống bài dễ hơn', up: 'Nên tăng tạ', almost: 'Sắp tăng', hold: 'Giữ mức tạ', down: 'Nên giảm tạ', deload: 'Tuần nhẹ', pain: 'Đang đau', start: 'Bắt đầu' };
 function sgShort(ex, sg) {
   const t = SG_TAG[sg.kind]; if (!t) return '';
+  if (sg.kg === 0 && (sg.kind === 'hold' || sg.kind === 'start')) return `<b class="sgt hold">${sg.top ? 'Làm khó hơn' : TIMED.test(ex.name || '') ? 'Thêm giây' : 'Thêm rep'}</b>`;   /* BR-46: bài 0 kg không nói "mức tạ" */
   if (sg.kind === 'level' || sg.kind === 'easier') return `<b class="sgt ${sg.kind === 'level' ? 'up' : 'down'}">${t}</b> · ${esc(shortName(sg.nextName || sg.prevName))}`;
   if (sg.kind === 'almost' && sg.nextName) return `<b class="sgt almost">Sắp lên bài khó hơn</b>`;
+  if ((sg.kind === 'assist' || sg.kind === 'assistUp') && sg.prev != null) return `<b class="sgt ${sg.kind === 'assist' ? 'up' : 'down'}">${t}</b> · ${sg.kind === 'assist' ? '−' : '+'}${fmt(Math.abs(sg.kg - sg.prev))} kg`;
+  if (sg.kind === 'up' && sg.prev === 0) return `<b class="sgt up">Nên ôm/đeo thêm tạ</b> · ${fmt(sg.kg)}${U(ex)}`;
   if (sg.kind === 'up' && sg.prev != null && sg.kg > sg.prev) return `<b class="sgt up">${t}</b> · +${fmt(sg.kg - sg.prev)}${U(ex)}`;
   return `<b class="sgt ${sg.kind}">${t}</b>`;
 }
@@ -3954,11 +4014,12 @@ function progHint(ex, sg) {
   switch (sg.kind) {
     case 'up': return `${sgShort(ex, sg)} · lên ${fmt(sg.kg)}${u}`;
     case 'almost': return sgShort(ex, sg);
-    case 'hold': return `${sgShort(ex, sg)} · ${fmt(sg.kg)}${u}`;
+    case 'hold': return sg.kg === 0 ? sgShort(ex, sg) : `${sgShort(ex, sg)} · ${fmt(sg.kg)}${u}`;
     case 'down': return `${sgShort(ex, sg)} · còn ${fmt(sg.kg)}${u}`;
     case 'deload': return `${sgShort(ex, sg)} · ${fmt(sg.kg)}${u}`;
     case 'start': return isBw(ex) ? `${sgShort(ex, sg)} · ${ex.sets}×${ex.repTarget}` : `Bắt đầu ở ${fmt(sg.kg)}${u}`;
     case 'level': case 'easier': return sgShort(ex, sg);
+    case 'assist': case 'assistUp': return `${sgShort(ex, sg)} · còn ${fmt(sg.kg)} kg trợ lực`;
     case 'pain': return `${sgShort(ex, sg)}${sg.kg != null ? ' · ' + fmt(sg.kg) + u : ''}`;
     default: return 'Chưa có mức tạ · chạm để điền';
   }
@@ -4538,7 +4599,7 @@ function weekPlanSheet() {
         <div class="ctl"><button type="button" data-act="wp-dec" data-id="${r.ex.id}" data-v="ok" aria-pressed="${dec === 'ok'}">✓ Theo</button><button type="button" data-act="wp-dec" data-id="${r.ex.id}" data-v="hold" aria-pressed="${dec === 'hold'}">Giữ ${fmt(r.b)}</button>
           <span class="stp"><button type="button" data-act="wp-step" data-id="${r.ex.id}" data-d="-1" aria-label="Giảm">−</button><b>${dec === 'custom' ? fmt(k) : 'Tự chỉnh'}</b><button type="button" data-act="wp-step" data-id="${r.ex.id}" data-d="1" aria-label="Tăng">+</button></span></div></div>`; }
   }
-  if (keep.length) h += `<details class="wpkeep"><summary>${keep.length} bài giữ nguyên mức tạ</summary>${keep.map(r => `<div class="ln"><span>${esc(shortName(r.ex.name))}</span><span>${r.b != null ? fmt(r.b) + U(r.ex) : 'chưa có mức tạ'}${setsFor(r.ex) !== r.ex.sets && r.g.kind !== 'deload' ? ` · ${setsFor(r.ex)} set` : ''}</span></div>`).join('')}</details>`;
+  if (keep.length) h += `<details class="wpkeep"><summary>${keep.length} bài giữ nguyên mức tạ</summary>${keep.map(r => `<div class="ln"><span>${esc(shortName(r.ex.name))}</span><span>${r.b != null ? kgTxt(r.b, r.ex) + (r.g.kind === 'level' ? ' · nên lên bài khó hơn' : '') : 'chưa có mức tạ'}${setsFor(r.ex) !== r.ex.sets && r.g.kind !== 'deload' ? ` · ${setsFor(r.ex)} set` : ''}</span></div>`).join('')}</details>`;
   h += `<div class="sh-actions"><button class="btn gold big" data-act="wp-approve">${ICON.check} Duyệt kế hoạch tuần</button><button class="btn ghost" data-act="wp-later">Để sau</button></div>`;
   const y = $('#sheet').hidden ? 0 : $('#sheet-body').scrollTop; openSheet(h); if (y) $('#sheet-body').scrollTop = y;
 }
