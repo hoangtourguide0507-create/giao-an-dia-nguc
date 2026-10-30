@@ -419,3 +419,8 @@ Hướng dữ liệu: **HV → máy chủ → HLV**, giống lịch sử tập (
 - **BR-42.2** Chưa có cân nặng → số lớn là tổng kg tạ, kèm nhắc nhập cân nặng ở tab Cơ thể để xem kcal. Có kcal từ đồng hồ thì dùng số đó.
 - **BR-42.3** Tắt hiệu ứng hoặc iPhone bật *Giảm chuyển động* → hiện số ngay, không chuyển động, không đốm lửa.
 - **BR-42.4** Bảng *Kết thúc …?* (trước khi lưu) ghi tổng tạ theo **kg** thay cho tấn; âm thanh chúc mừng chuyển sang lúc lưu.
+
+## Hết giờ nghỉ sau set cuối của bài: báo bài kế tiếp (PA-55 · BR-43)
+- **BR-43.1** Bấm ✓ set làm việc cuối của một bài (bài đã xong hết set, kể cả drop) → đồng hồ nghỉ, hộp báo hết giờ và thông báo đẩy ghi **"Sang bài tiếp: <bài kế tiếp chưa xong> · set 1"**, nút **"Sang bài tiếp"**; thanh nghỉ khi hết giờ ghi "Hết giờ nghỉ · sang bài tiếp". Bài kế tiếp chọn cùng thứ tự với nút *Sang bài …* (bài sau chưa xong, hết thì quay lại bài trước chưa xong).
+- **BR-43.2** Bấm *Sang bài tiếp* (hoặc ×) → tắt báo và mở luôn bài kế tiếp.
+- **BR-43.3** Bài còn set chưa xong: giữ như cũ "Vào set tiếp: <bài này>". Xong drop set cuối của bài mà còn bài khác → cũng nghỉ và báo bài kế tiếp. Xong hết mọi bài → không bật đồng hồ nghỉ (đã có nút *Xong hết · Kết thúc buổi tập*).

@@ -433,3 +433,7 @@ Bản đồ BR: BR-27.1–27.12 trong [BR.md](BR.md).
 ## Màn chúc mừng kết thúc buổi (PA-54 · BR-42)
 - `finishFx(s, prs)` gọi cuối `saveSession()` (sau toast *Đã lưu buổi tập*): mở bằng `openSheet` (đóng bằng `close-sheet`/nút ×/kéo xuống như mọi bảng, nên test cũ `app.closeSheet()` vẫn dùng được). Số liệu: `sessStats` (kg tạ), `kcalOf` (BR-41), `durOf`. `finCount` đếm số bằng `requestAnimationFrame`, bỏ qua khi `!animOn()`. `FLAME` (SVG), `intTxt`. Kỷ lục mới: `finishSummary` lưu `ui.finPrs`.
 - CSS `.fin*` (đốm lửa `ember`, `flick`, `finpop`, `finrise`); `[data-anim="off"]` tắt hết chuyển động. `CACHE` gadn-v93.
+
+## Hết giờ nghỉ → bài kế tiếp (PA-55 · BR-43)
+- Hàm thuần `restNext(entries, i)` → `{ kind: 'set'|'next'|'end', i }` (đặt sau `entryDone`, dùng chung cho nút `.nextex` trong `entryCard`) và `restMsg(r, entries)` → `{ body, btn, label, exId }`.
+- `'set-done'`: tính `restNext` sau khi đánh dấu set; `next` → `startRest(restOf(ex), restMsg(...))` (kể cả sau drop set cuối), `end` → `stopRest()`. `startRest` nhận chuỗi (kiểu cũ) hoặc đối tượng `restMsg`, lưu `rest.msg`; `restBody`, `showAlarm` (chữ nút), `tickRest` (nhãn khi hết giờ) đọc `rest.msg`. `'alarm-ok'` có `rest.msg.exId` thì `switchFocusEx` + `scrollFocus`. Test: `tests/test_nghi_bai_tiep.mjs` (trong `tests/chay.sh`). `CACHE` gadn-v94.
