@@ -14,4 +14,5 @@ node tests/test_can_vung_co.mjs | grep -q FAIL && { echo "✗ cân vùng cơ (BR
 node tests/test_vung_bo_quen.mjs | grep -q FAIL && { echo "✗ vùng bị bỏ quên (BR-40)"; FAIL=1; } || echo "✓ vùng bị bỏ quên (BR-40)"
 node tests/test_kcal.mjs | grep -q FAIL && { echo "✗ kcal buổi tập (BR-41)"; FAIL=1; } || echo "✓ kcal buổi tập (BR-41)"
 node tests/test_nghi_bai_tiep.mjs | grep -q FAIL && { echo "✗ nghỉ → bài tiếp (BR-43)"; FAIL=1; } || echo "✓ nghỉ → bài tiếp (BR-43)"
+node tests/test_tang_ta.mjs | grep -q FAIL && { echo "✗ tăng tạ theo chuẩn (BR-44)"; FAIL=1; } || echo "✓ tăng tạ theo chuẩn (BR-44)"
 exit $FAIL

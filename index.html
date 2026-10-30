@@ -652,6 +652,8 @@ input[type=checkbox],input[type=radio]{font-size:inherit}
 .fin .rise{animation:finrise .5s ease-out both;animation-delay:var(--d,0s)}
 @keyframes finrise{0%{transform:translateY(14px);opacity:0}100%{transform:none;opacity:1}}
 [data-anim="off"] .fin *{animation:none!important}[data-anim="off"] .fin .ember{display:none}
+/* PA-56 · BR-44 nhãn gợi ý */
+.sgt.up{color:var(--up)}.sgt.down,.sgt.pain{color:var(--down)}.sgt.almost{color:var(--almost)}.sgt.hold,.sgt.deload,.sgt.start{color:var(--fg-2)}
 /* PA-53 · BR-41 kcal */
 .cmpline.kcal b{color:var(--gold-hi)}
 .kcalw{display:flex;gap:8px;align-items:flex-end;margin-top:10px}.kcalw .f{flex:1;min-width:0}
@@ -1769,7 +1771,13 @@ const bestE1 = h => Math.max(0, ...h.sets.map(s => e1rm(s.kg || 0, s.reps)));
 const volOf = h => mul(h) * (h.sets.reduce((a, s) => a + (s.kg || 0) * s.reps, 0) + (h.drop ? (h.drop.kg || 0) * h.drop.reps : 0));
 function roundStep(v, step) { step = step > 0 ? step : 1; return Math.max(0, r2(Math.round(v / step) * step)); }
 /* PA-10: mỗi lần lên đúng 1 nấc tạ của máy (bước tăng của bài), không tính theo % */
-function incFor(ex, W) { return ex.step > 0 ? ex.step : 1; }
+/* PA-56 · BR-44.2: mức tăng theo chuẩn (quy tắc 2-for-2, NSCA/CSCS): thân trên 1–2,5 kg, thân dưới 2,5–5 kg, 2–10% mức đang tập; tối thiểu 1 nấc */
+function incFor(ex, W) {
+  const st = ex.step > 0 ? ex.step : 1, db = ex.each || isDb(ex);
+  let inc = db ? 2 : ex.type === 'lower' ? (W >= 40 ? 5 : 2.5) : ex.type === 'iso' ? (W >= 20 ? 2 : 1) : 2.5;
+  const cap = W > 0 ? r2(Math.floor(W * 0.1 / st + 1e-9) * st) : Infinity;   /* không quá 10%, làm tròn xuống theo nấc */
+  return Math.max(st, Math.min(roundStep(inc, st), cap));
+}
 /* lịch sử bỏ qua buổi deload; mức tạ người dùng tự nhập được ưu tiên nếu mới hơn buổi tập gần nhất */
 const workHistory = ex => exHistory(ex.id).filter(h => !h.deload);
 function manualOverride(ex, H) { return ex.currentKg != null && !!ex.kgSetAt && (!H.length || ex.kgSetAt > H[0].t); }
@@ -3447,7 +3455,7 @@ function viewPlan() {
         const b = baseKg(ex), sg = sgs[j], alts = ex.alts || [], openA = !!(ui.altOpen || {})[ex.id], due = rotDue(ex), pick = due ? rotPick(ex) : null;
         h += `<li class="slot ${anim ? 'rv-now' : ''}" style="--i:${j}">`;
         if (slotName(ex) || alts.length) h += `<div class="slotl">${esc(slotName(ex) || ex.muscle)}${due ? `<button type="button" class="rot" data-act="rot-open">⟳ Đến lúc đổi bài</button>` : ''}</div>`;
-        const sub = b == null ? '<span class="none">Điền mức tạ</span>' : sg.kind === 'up' ? `<span><span class="upn">▲</span> ${fmt(sg.kg)} tuần này</span>` : sg.next ? `<span>▲ ${fmt(sg.next)} tuần sau</span>` : ex.targetKg ? `<span style="color:var(--muted)">mục tiêu ${fmt(ex.targetKg)}</span>` : '';
+        const sub = b == null ? '<span class="none">Điền mức tạ</span>' : SG_TAG[sg.kind] && sg.kind !== 'start' ? `<span class="sgs">${sgShort(ex, sg)}</span>` : ex.targetKg ? `<span style="color:var(--muted)">mục tiêu ${fmt(ex.targetKg)}</span>` : '';   /* BR-44.3 */
         h += `<div class="exr"><span class="exn">${j + 1}</span><button type="button" class="exr-main" data-act="edit-ex" data-day="${d.id}" data-id="${ex.id}">${thumbHtml(ex)}
           <span class="t"><span class="n">${esc(ex.name)}${ex.each ? '<span class="dbtag">MỖI TAY</span>' : ''}${ex.hold ? ' <span class="chip">HLV khoá</span>' : ''}</span><span class="m">${esc(ex.muscle)} · ${ex.sets}×${ex.repTarget}${ex.dropSet ? ' + 3 drop' : ''} · nghỉ ${fmtDur(restOf(ex) * 1000)}</span>${ex.hlvNote ? `<span class="m">HLV: ${esc(ex.hlvNote)}</span>` : ''}${angTagHtml(ex)}</span>
           <span class="exr-kg"><b>${kgHtml(b, ex)}</b>${sub}${spark(ex)}</span></button>
@@ -3575,8 +3583,7 @@ function exSheet() {
       <label class="toggle full"><span>Tạ đơn · ghi kg <b>mỗi tay</b><br><span class="fhint">Cầm 2 quả 12,5 kg thì ghi 12,5. Tổng khối lượng tự nhân đôi.</span></span><input type="checkbox" id="f-each" ${d.each ? 'checked' : ''}></label>
       <label class="f"><span>Đang tập <span class="unit u-kg">${d.each ? 'kg/tay' : 'kg'}</span></span><input class="inp kg" id="f-cur" inputmode="decimal" value="${fmtIn(d.isNew ? d.currentKg : baseKg(d))}" placeholder="40"></label>
       <label class="f"><span>Mục tiêu <span class="unit u-kg">${d.each ? 'kg/tay' : 'kg'}</span></span><input class="inp kg" id="f-tgt" inputmode="decimal" value="${fmtIn(d.targetKg)}" placeholder="Tuỳ chọn"></label>
-      <label class="f"><span>Nấc tạ của máy <span class="unit u-kg">${d.each ? 'kg/tay' : 'kg'}</span></span><input class="inp" id="f-step" inputmode="decimal" value="${fmtIn(d.step)}"><span class="stepchips">${[1, 2, 2.5, 5, 10].map(v => `<button type="button" data-act="step-pick" data-v="${v}" aria-pressed="${+d.step === v}">${fmt(v)}</button>`).join('')}</span><span class="fhint">Mỗi lần gợi ý lên tạ là đúng 1 nấc này</span></label>
-      <p class="fhint" style="align-self:end;padding-bottom:6px">Nấc nhỏ nhất của máy hoặc quả tạ, ví dụ 2,5 kg; tạ đơn thường 1–2 kg mỗi quả.</p>
+      <input type="hidden" id="f-step" value="${fmtIn(d.step)}">
       ${hasHist ? `<p class="fhint full">Ô “Đang tập” tự cập nhật sau mỗi buổi. Sửa tay nếu bạn đã tập mức khác ở ngoài app.</p>` : ''}
     </div><div id="f-road" style="margin-top:12px"></div></div>
     ${histLocked() && !d.isNew ? exLstHtml(d) : ''}
@@ -3758,7 +3765,7 @@ function tonTix(P, S, SC, mode) {
   const tons = S.vol / 1000, pct = SC.pct == null ? null : Math.round(SC.pct);
   return `<section class="hero tix ton"><div class="eyebrow">Tổng tạ · ${esc(P.label)}</div><div class="meta" style="margin-top:12px">Đã nâng</div>
     <div><span class="big tn">${fmt(tons, tons >= 10 ? 1 : 2)}</span><span class="unit">TẤN</span></div><div class="tcut"></div>
-    <div class="tfoot"><div class="why">${S.ss.length} buổi · ${S.sets} set${pct != null ? ` · ${pct >= 0 ? '+' : ''}${pct}% so với ${mode === 'month' ? 'tháng' : 'tuần'} trước` : ''}</div>${pct != null ? `<span class="badge ${pct >= 0 ? 'up' : 'down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct)}%</span>` : ''}</div></section>`;
+    <div class="tfoot"><div class="why">${S.ss.length} buổi · ${S.sets} set${pct != null ? ` · ${pct >= 0 ? '+' : ''}${pct}% so với ${mode === 'month' ? 'tháng' : 'tuần'} trước, trên ${SC.n} bài tập ở cả hai ${mode === 'month' ? 'tháng' : 'tuần'}` : S.ss.length ? ` · chưa so được: ${mode === 'month' ? 'tháng' : 'tuần'} trước chưa tập các bài này` : ''}</div>${pct != null ? `<span class="badge ${pct >= 0 ? 'up' : 'down'}">${pct >= 0 ? '▲' : '▼'} ${Math.abs(pct)}%</span>` : ''}</div></section>`;
 }
 function viewWeek() {
   const mode = ui.pmode === 'month' ? 'month' : 'week', off = mode === 'month' ? (ui.monthOff || 0) : ui.weekOff, today = ymd();
@@ -3809,16 +3816,23 @@ function viewWeek() {
     h += `</div>`; }
   return h + `</section>`;
 }
+/* PA-56 · BR-44.3: nhãn ngắn, dễ hiểu */
+const SG_TAG = { up: 'Nên tăng tạ', almost: 'Sắp tăng', hold: 'Giữ mức tạ', down: 'Nên giảm tạ', deload: 'Tuần nhẹ', pain: 'Đang đau', start: 'Bắt đầu' };
+function sgShort(ex, sg) {
+  const t = SG_TAG[sg.kind]; if (!t) return '';
+  if (sg.kind === 'up' && sg.prev != null && sg.kg > sg.prev) return `<b class="sgt up">${t}</b> · +${fmt(sg.kg - sg.prev)}${U(ex)}`;
+  return `<b class="sgt ${sg.kind}">${t}</b>`;
+}
 function progHint(ex, sg) {
   const u = U(ex);
   switch (sg.kind) {
-    case 'up': return `<b style="color:var(--up)">▲ Lên ${fmt(sg.kg)}${u} buổi tới</b>`;
-    case 'almost': return sg.next ? `Đạt đủ rep · sắp lên ${fmt(sg.next)}${u}` : 'Đạt đủ rep · sắp lên tạ';
-    case 'hold': return `Giữ ${fmt(sg.kg)}${u} · cố đủ ${ex.sets}×${ex.repTarget || 10}`;
-    case 'down': return `<b style="color:var(--down)">▼ Nên giảm còn ${fmt(sg.kg)}${u}</b>`;
-    case 'deload': return `Tuần deload · ${fmt(sg.kg)}${u}`;
+    case 'up': return `${sgShort(ex, sg)} · lên ${fmt(sg.kg)}${u}`;
+    case 'almost': return sgShort(ex, sg);
+    case 'hold': return `${sgShort(ex, sg)} · ${fmt(sg.kg)}${u}`;
+    case 'down': return `${sgShort(ex, sg)} · còn ${fmt(sg.kg)}${u}`;
+    case 'deload': return `${sgShort(ex, sg)} · ${fmt(sg.kg)}${u}`;
     case 'start': return `Bắt đầu ở ${fmt(sg.kg)}${u}`;
-    case 'pain': return `<b style="color:var(--down)">${sg.label.toLowerCase()}</b>${sg.kg != null ? ' · ' + fmt(sg.kg) + u : ''}`;
+    case 'pain': return `${sgShort(ex, sg)}${sg.kg != null ? ' · ' + fmt(sg.kg) + u : ''}`;
     default: return 'Chưa có mức tạ · chạm để điền';
   }
 }
@@ -3855,7 +3869,7 @@ function allExSheet(q) {
 function progressSheet() {
   const ex = findEx(ui.progEx); if (!ex) return;
   const H = exHistory(ex.id), sg = suggest(ex);
-  let h = `<h3 class="sh-title">${esc(ex.name)}</h3><p class="sh-text"><span class="badge ${sg.kind}">${sg.label}</span> ${sg.text}</p>
+  let h = `<h3 class="sh-title">${esc(ex.name)}</h3><p class="sh-text"><span class="badge ${sg.kind}">${SG_TAG[sg.kind] || sg.label}</span> ${sg.text}</p>
     <div class="eyebrow" style="margin-bottom:10px">Lộ trình tăng tạ 8 tuần tới</div>${roadHtml(ex, roadmap(ex, 8)) || '<p class="eta">Điền mức tạ đang tập trong Giáo án để xem lộ trình.</p>'}
     <div class="chips" style="margin-top:18px">${[['kg', 'Mức tạ'], ['e1', '1RM ước tính'], ['vol', 'Khối lượng']].map(([k, l]) => `<button type="button" data-act="pm" data-k="${k}" aria-pressed="${ui.pm === k}">${l}</button>`).join('')}</div>
     <div class="chart" id="prog-chart"></div>`;

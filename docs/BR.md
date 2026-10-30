@@ -424,3 +424,9 @@ Hướng dữ liệu: **HV → máy chủ → HLV**, giống lịch sử tập (
 - **BR-43.1** Bấm ✓ set làm việc cuối của một bài (bài đã xong hết set, kể cả drop) → đồng hồ nghỉ, hộp báo hết giờ và thông báo đẩy ghi **"Sang bài tiếp: <bài kế tiếp chưa xong> · set 1"**, nút **"Sang bài tiếp"**; thanh nghỉ khi hết giờ ghi "Hết giờ nghỉ · sang bài tiếp". Bài kế tiếp chọn cùng thứ tự với nút *Sang bài …* (bài sau chưa xong, hết thì quay lại bài trước chưa xong).
 - **BR-43.2** Bấm *Sang bài tiếp* (hoặc ×) → tắt báo và mở luôn bài kế tiếp.
 - **BR-43.3** Bài còn set chưa xong: giữ như cũ "Vào set tiếp: <bài này>". Xong drop set cuối của bài mà còn bài khác → cũng nghỉ và báo bài kế tiếp. Xong hết mọi bài → không bật đồng hồ nghỉ (đã có nút *Xong hết · Kết thúc buổi tập*).
+
+## Bỏ nấc tạ, tăng tạ theo chuẩn, nhãn ngắn (PA-56 · BR-44)
+- **BR-44.1** Bỏ ô *Nấc tạ của máy* trong Thêm/Sửa bài. Nấc tự theo dụng cụ (tạ đơn 2 kg/tay, tạ đòn/máy/cáp 2,5 kg, cô lập 1 kg) như mặc định cũ; bài cũ giữ nấc đã lưu.
+- **BR-44.2** Mức tăng khi đủ điều kiện lên tạ (quy tắc giữ nguyên) theo chuẩn 2-for-2 (NSCA/CSCS): thân trên +2,5 kg; tạ đơn +2 kg/tay; thân dưới +5 kg khi đang ≥ 40 kg, dưới 40 kg +2,5 kg; cô lập +2 kg khi ≥ 20 kg, dưới đó +1 kg; không quá 10% mức đang tập (làm tròn xuống theo nấc), tối thiểu 1 nấc. Lộ trình 8 tuần và Kế hoạch tuần dùng cùng mức tăng.
+- **BR-44.3** Nhãn ngắn: **Nên tăng tạ · +5 kg**, **Sắp tăng**, **Giữ mức tạ**, **Nên giảm tạ**, **Tuần nhẹ**, **Đang đau** — ở dòng bài trong Lịch tập, gợi ý từng bài ở Tiến độ và nhãn trong bảng chi tiết bài (câu giải thích dài vẫn ở bảng chi tiết).
+- **BR-44.4** Tiến độ · Tổng tạ: có so sánh thì ghi thêm "trên N bài tập ở cả hai tuần/tháng"; có buổi nhưng không có bài chung với kỳ trước thì ghi "chưa so được: tuần trước chưa tập các bài này".
