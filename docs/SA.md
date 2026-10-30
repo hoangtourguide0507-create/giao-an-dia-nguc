@@ -453,3 +453,6 @@ Bản đồ BR: BR-27.1–27.12 trong [BR.md](BR.md).
 - Thuần (sau `bwVerdict`): `ASSIST`, `TIMED`, `LOADABLE`, `PURE_BW`, `ASSIST_NEXT`, `loadMode(ex)` → `kg|load|bw|assist|time`, `loadHint(ex)`, `assistVerdict(ex, H, W)`. `bwVerdict` tổng quát cho bài không có nấc và bài giây (trần 60, sàn 20), trả cờ `two` khi đạt trần 2 buổi. `BW` thêm họ `hang`, `crunch` dùng tên trong thư viện phòng gym.
 - `suggestBase`: `W0` = kg buổi gần nhất (hoặc mức nhập tay); `assist` & `W0 > 0` → `suggestAssist`; `W0 === 0` hoặc bài tự trọng chưa có mức → `suggestBw` (viết lại: bài giây, ôm thêm tạ, làm khó hơn). Kind mới `assist`, `assistUp`. `roadmap` null cho tự trọng/trợ lực/0 kg. `mul` = 0 cho máy trợ lực (không vào tấn tạ, `strengthCompare`); PR bỏ qua máy trợ lực. `kgHead`, `kgTxt`/`kgHtml` (trợ lực), `periodStats.bw`. `newEx` bài plank mặc định 20/30/60 giây.
 - Test: `tests/test_tu_trong.mjs` (trong `tests/chay.sh`). `CACHE` gadn-v97.
+
+## Giáo án mẫu (PA-59 · BR-47)
+`TPLS`, `tplDays(k)`, `tplSheet()`, `tplApply(k, 'add'|'replace')` (replace: `markDelEx` + dọn ảnh/video như `del-day`); handler `tpl-open`, `tpl-use` (trong `PLAN_ACTS`). Nút `.tpllink` trong `viewPlan` khi `!planLocked()`. `CACHE` gadn-v98.
