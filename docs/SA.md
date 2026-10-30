@@ -437,3 +437,8 @@ Bản đồ BR: BR-27.1–27.12 trong [BR.md](BR.md).
 ## Hết giờ nghỉ → bài kế tiếp (PA-55 · BR-43)
 - Hàm thuần `restNext(entries, i)` → `{ kind: 'set'|'next'|'end', i }` (đặt sau `entryDone`, dùng chung cho nút `.nextex` trong `entryCard`) và `restMsg(r, entries)` → `{ body, btn, label, exId }`.
 - `'set-done'`: tính `restNext` sau khi đánh dấu set; `next` → `startRest(restOf(ex), restMsg(...))` (kể cả sau drop set cuối), `end` → `stopRest()`. `startRest` nhận chuỗi (kiểu cũ) hoặc đối tượng `restMsg`, lưu `rest.msg`; `restBody`, `showAlarm` (chữ nút), `tickRest` (nhãn khi hết giờ) đọc `rest.msg`. `'alarm-ok'` có `rest.msg.exId` thì `switchFocusEx` + `scrollFocus`. Test: `tests/test_nghi_bai_tiep.mjs` (trong `tests/chay.sh`). `CACHE` gadn-v94.
+
+## Bỏ nấc tạ, tăng tạ theo chuẩn, nhãn ngắn (PA-56 · BR-44)
+- `incFor(ex, W)` theo BR-44.2 (dùng ở `suggestLinear`, `suggestDouble`, `roadmap`). `ex.step` vẫn là nấc làm tròn, nay là `<input type="hidden" id="f-step">` do các handler cũ tự điền theo dụng cụ/kiểu bài.
+- `SG_TAG`, `sgShort(ex, sg)`; `progHint`, dòng `sub` trong `viewPlan`, nhãn `.badge` trong bảng chi tiết bài dùng nhãn ngắn. Trường `label` trong kết quả `suggest` **giữ nguyên** (TĂNG TẠ, GIỮ…) cho tương thích test/dữ liệu.
+- `tonTix`: dòng "chưa so được"/"trên N bài". Test: `tests/test_tang_ta.mjs` (trong `tests/chay.sh`). `CACHE` gadn-v95.
