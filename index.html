@@ -2747,6 +2747,17 @@ function switchFocusEx(exId) {
 /* xong bài đang tập: chờ một nhịp rồi thu gọn và mở bài kế tiếp chưa xong */
 function scrollFocus() { requestAnimationFrame(() => { const el = document.querySelector('article.ex.focus'); if (el) el.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth', block: 'start' }); }); }
 const entryDone = en => en.sets.length > 0 && en.sets.every(x => x.done) && (!en.drop || en.drop.done);
+/* BR-43: nghỉ xong thì vào đâu — set tiếp của bài này, hay bài kế tiếp chưa xong (cùng thứ tự với nút "Sang bài …") */
+function restNext(entries, i) {
+  const en = entries[i]; if (!en || !entryDone(en)) return { kind: 'set', i };
+  const order = [...entries.keys()].filter(k => k > i).concat([...entries.keys()].filter(k => k < i)), k = order.find(k2 => !entryDone(entries[k2]));
+  return k == null ? { kind: 'end' } : { kind: 'next', i: k };
+}
+function restMsg(r, entries) {
+  const en = entries[r.i], nm = en ? String(en.name).replace(/\s*\(.*\)\s*$/, '') : '';
+  if (r.kind === 'next') return { body: `Sang bài tiếp: ${nm} · set 1`, btn: 'Sang bài tiếp', label: 'sang bài tiếp', exId: en.exId };
+  return { body: `Vào set tiếp: ${nm}`, btn: 'Vào set tiếp', label: 'vào set tiếp', exId: null };
+}
 const untouched = en => !en.sets.some(x => x.done) && !(en.drop && en.drop.done);
 function syncActive(opt) {
   const a = state.active; if (!a) return false; const day = findDay(a.dayId); let ch = false;
@@ -2875,7 +2886,7 @@ function entryCard(en, i) {
   if (fin) { const W = workSets(en).filter(x => x.done); h += `<div class="donebar"><span class="stamp${ui.stampEx === en.exId ? ' in' : ''}">XONG</span><span class="ds"><b>${W.length}/${workSets(en).length} set</b> · ${W.map(x => fmt(x.kg || 0) + '×' + x.reps).join(' · ')}</span></div>`; }
   en.sets.forEach((s, j) => { if (s.dr && s.dr === 1) h += `<div class="drophead">Drop set · giảm tạ dần, làm liền không nghỉ</div>`; h += setRow(i, j, s, s.dr ? 'D' + s.dr : ++wn); });
   if (en.drop) h += setRow(i, 'drop', en.drop, 'D');
-  if (fin) { const A = state.active.entries, order = [...A.keys()].filter(k => k > i).concat([...A.keys()].filter(k => k < i)), k = order.find(k2 => !entryDone(A[k2]));
+  if (fin) { const A = state.active.entries, rn = restNext(A, i), k = rn.kind === 'next' ? rn.i : null;
     h += k == null ? `</div><button class="btn gold big nextex" data-act="finish">${ICON.check} Xong hết · Kết thúc buổi tập</button><div>`
       : `</div><button class="btn gold big nextex" data-act="ex-focus" data-i="${k}">Sang bài ${k + 1}: ${esc(shortName(A[k].name))} ›</button><div>`; }
   h += `</div><div class="tools"><button class="btn sm" data-act="add-set" data-e="${i}">+ Set</button>
@@ -3062,17 +3073,18 @@ function showAlarm() {
   const late = Math.round((Date.now() - rest.end) / 1000);
   $('#alarm-ico').innerHTML = ICON.bell; $('#alarm-t').textContent = restTitle();
   $('#alarm-sub').textContent = (late > 5 ? `Đã hết giờ từ ${late >= 60 ? Math.floor(late / 60) + ' phút ' : ''}${late % 60} giây trước. ` : '') + restBody();
+  $('#alarm [data-act="alarm-ok"]').textContent = rest.msg ? rest.msg.btn : 'Vào set tiếp';
   $('#alarm').hidden = false;
 }
 function startRest(sec, label) {
-  clearTimeout(rest.hideT); clearInterval(rest.iv); rest.fired = false; rest.lastTick = 0; $('#alarm').hidden = true; rest.label = label || ''; rest.who = multi() ? curProf().name : '';
+  clearTimeout(rest.hideT); clearInterval(rest.iv); rest.fired = false; rest.lastTick = 0; $('#alarm').hidden = true; rest.msg = label && typeof label === 'object' ? label : label ? { body: 'Vào set tiếp: ' + label, btn: 'Vào set tiếp', label: 'vào set tiếp', exId: null } : null; rest.who = multi() ? curProf().name : '';
   rest.total = sec * 1000; rest.end = Date.now() + rest.total;
   $('#rest').hidden = false; document.body.classList.add('resting'); $('#rest-l').textContent = 'Đang nghỉ';
   tickRest(); rest.iv = setInterval(tickRest, 250);
   schedulePush(rest.end, restBody(), true);
 }
 const restTitle = () => 'Hết giờ nghỉ' + (rest.who ? ' · ' + rest.who : '');
-const restBody = () => rest.label ? 'Vào set tiếp: ' + rest.label : 'Vào set tiếp theo thôi!';
+const restBody = () => rest.msg ? rest.msg.body : 'Vào set tiếp theo thôi!';
 function notifyRestEnd() {
   /* máy chủ đã hẹn gửi thì thôi; app đang mở thì đã có chuông + bảng báo trong app */
   if (rest.pushed || !state.settings.notify || document.visibilityState !== 'hidden' || !('Notification' in window) || Notification.permission !== 'granted') return;
@@ -3082,7 +3094,7 @@ function notifyRestEnd() {
 }
 function tickRest() {
   const left = rest.end - Date.now();
-  if (left <= 0) { clearInterval(rest.iv); if (!rest.fired && animOn()) { document.body.classList.remove('restflash'); void document.body.offsetWidth; document.body.classList.add('restflash'); setTimeout(() => document.body.classList.remove('restflash'), 2200); } $('#rest-t').textContent = '0:00'; $('#rest-l').textContent = 'Hết giờ nghỉ · vào set tiếp'; $('#rest-bar').style.transform = 'scaleX(0)';
+  if (left <= 0) { clearInterval(rest.iv); if (!rest.fired && animOn()) { document.body.classList.remove('restflash'); void document.body.offsetWidth; document.body.classList.add('restflash'); setTimeout(() => document.body.classList.remove('restflash'), 2200); } $('#rest-t').textContent = '0:00'; $('#rest-l').textContent = 'Hết giờ nghỉ · ' + (rest.msg ? rest.msg.label : 'vào set tiếp'); $('#rest-bar').style.transform = 'scaleX(0)';
     if (rest.fired) return; rest.fired = true;
     vibe([300, 150, 300, 150, 300]); beep(); notifyRestEnd();
     if (document.visibilityState === 'visible') showAlarm(); else rest.pending = true;
@@ -5676,7 +5688,12 @@ const handlers = {
       const en1 = state.active.entries[+e], ch = adjustLaterSets(en1, +s);
       if (ch.length) { syncDrops(en1); syncSetInputs(+e); refreshWarm(+e); toast(`${ch.length > 1 ? `Set ${ch[0] + 1}–${ch[ch.length - 1] + 1}` : `Set ${ch[0] + 1}`} chỉnh theo set ${+s + 1} · ${fmt(set.kg)} kg × ${set.reps}`); }
     }
-    if (set.done) { const en0 = state.active.entries[+e], ex = exOrSnap(en0), nx = en0.sets[+s + 1]; if (s !== 'drop' && !isDrop(set) && !isDrop(nx)) startRest(restOf(ex), shortName(ex.name)); else { if (rest.end > Date.now()) stopRest(); if (isDrop(nx)) toast('Vào drop set ngay, không nghỉ'); } requestWake(); }
+    if (set.done) { const A = state.active.entries, en0 = A[+e], ex = exOrSnap(en0), nx = s === 'drop' ? null : en0.sets[+s + 1], rn = restNext(A, +e);   /* BR-43 */
+      if (isDrop(nx)) { if (rest.end > Date.now()) stopRest(); toast('Vào drop set ngay, không nghỉ'); }
+      else if (rn.kind === 'end') { if (rest.end > Date.now()) stopRest(); }
+      else if (rn.kind === 'next' || (s !== 'drop' && !isDrop(set))) startRest(restOf(ex), restMsg(rn, A));
+      else if (rest.end > Date.now()) stopRest();
+      requestWake(); }
     refreshCue(+e); updateProgress(); save();
     if (set.done && +e === focusIdx() && entryDone(state.active.entries[+e])) { ui.stampEx = state.active.entries[+e].exId; refreshExCard(+e); ui.stampEx = null; vibe([60, 50, 90]);
       const card = $(`#view article.ex[data-i="${e}"]`); if (card && animOn()) { card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); }
@@ -5705,7 +5722,7 @@ const handlers = {
   'rest-sub': () => { const left = rest.end - Date.now(); if (left <= 0) return; if (left <= 15000) { handlers['rest-skip'](); return; } rest.end -= 15000; rest.total = Math.max(rest.total - 15000, rest.end - Date.now()); sfx('step'); vibe(8); tickRest(); schedulePush(rest.end, restBody()); },
   'rest-add': () => { if (rest.end - Date.now() <= 0) { rest.end = Date.now(); rest.total = 0; clearTimeout(rest.hideT); rest.iv = setInterval(tickRest, 250); } rest.end += 15000; rest.total += 15000; rest.fired = false; $('#rest-l').textContent = 'Đang nghỉ'; sfx('step'); vibe(8); tickRest(); schedulePush(rest.end, restBody()); },
   'rest-skip': () => stopRest(),
-  'alarm-ok': () => { $('#alarm').hidden = true; rest.pending = false; stopRest(); },
+  'alarm-ok': () => { const go = rest.msg && rest.msg.exId; $('#alarm').hidden = true; rest.pending = false; stopRest(); if (go && state.active && state.active.entries.some(en => en.exId === go)) { switchFocusEx(go); scrollFocus(); } },   /* BR-43: mở luôn bài kế tiếp */
   'guide': t => guideSheet(t.dataset.id),
   'guide-pick': () => guidePick(''),
   'guide-back': () => guideSheet(ui.guideEx),
