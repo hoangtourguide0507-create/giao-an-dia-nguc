@@ -456,3 +456,8 @@ Bản đồ BR: BR-27.1–27.12 trong [BR.md](BR.md).
 
 ## Giáo án mẫu (PA-59 · BR-47)
 `TPLS`, `tplDays(k)`, `tplSheet()`, `tplApply(k, 'add'|'replace')` (replace: `markDelEx` + dọn ảnh/video như `del-day`); handler `tpl-open`, `tpl-use` (trong `PLAN_ACTS`). Nút `.tpllink` trong `viewPlan` khi `!planLocked()`. `CACHE` gadn-v98.
+
+## Bỏ chữ "tự trọng" (PA-60 · BR-48)
+- `BW_OLD` (tên cũ → tên mới, sau `BW_INFO`): `BW_INFO[tên cũ]` trỏ cùng thông tin; `migrateEx` đổi `ex.name` theo `BW_OLD` (chạy trong `loadState`, cả bài thay thế). `loadMode` nhận cả `/không tạ/`. `VI_EN` thêm "không tạ", "không dụng cụ" → bodyweight (giữ "tự trọng").
+- `kgTxt`/`kgHtml` 0 → "Không tạ"; ô *Lần trước* (`wt(last) === 0`), hàng đổi bài, `Lịch sử gần đây` trong bảng sửa bài. `EXDB_EQ_VI['body only']`, `NB_EQ` → "không tạ".
+- Test: `tests/test_khong_ta.mjs` (dò chữ "tự trọng" ngoài chú thích, bảng tên cũ, từ khoá tìm kiếm, regex `loadMode`). `CACHE` gadn-v99.
