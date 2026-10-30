@@ -442,3 +442,9 @@ Bản đồ BR: BR-27.1–27.12 trong [BR.md](BR.md).
 - `incFor(ex, W)` theo BR-44.2 (dùng ở `suggestLinear`, `suggestDouble`, `roadmap`). `ex.step` vẫn là nấc làm tròn, nay là `<input type="hidden" id="f-step">` do các handler cũ tự điền theo dụng cụ/kiểu bài.
 - `SG_TAG`, `sgShort(ex, sg)`; `progHint`, dòng `sub` trong `viewPlan`, nhãn `.badge` trong bảng chi tiết bài dùng nhãn ngắn. Trường `label` trong kết quả `suggest` **giữ nguyên** (TĂNG TẠ, GIỮ…) cho tương thích test/dữ liệu.
 - `tonTix`: dòng "chưa so được"/"trên N bài". Test: `tests/test_tang_ta.mjs` (trong `tests/chay.sh`). `CACHE` gadn-v95.
+
+## Giáo án tại nhà, bài tự trọng (PA-57 · BR-45)
+- Dữ liệu tĩnh: `BW` (họ → `zone`, `type`, `r` [min, mục tiêu, max], `lv` [tên, gid, cách đặt, vùng?]), `BW_CUES`, `BW_INFO[tên]` = { k, i, gid, setup, zone } (đồng thời ghi `LIB_GID[tên]` để máy học viên tự gắn hình), `HOME_PLAN`. Hàm thuần `bwVerdict(ex, H)` → `start|level|almost|easier|hold(top)`, `bwCues`, `isBw`.
+- `suggestBase` gọi `suggestBw` khi `isBw(ex)` (kind mới `level`, `easier`; `nextName`/`prevName`); `roadmap` trả `null`; `SG_TAG`/`sgShort`/`progHint`/`sugChip` có nhãn nấc; `cuesOf` dùng `bwCues`. `newBw(k, i)`, `bwLadderHtml`, `bwSwitch` (dùng `swapMain`). Handler `home-plan`, `bw-level` (trong `PLAN_ACTS`).
+- Đồng bộ: bài có trường `bw` (họ), thêm vào `SYNC_STRUCT` + `cleanEx`. Không đổi máy chủ.
+- `tests/chay.sh`: các test Node của PA-50 trở đi tính **mã thoát** (test vỡ giữa chừng = đỏ), trước đây chỉ dò chữ FAIL nên test vỡ vẫn báo xanh. Test: `tests/test_tai_nha.mjs`. `CACHE` gadn-v96.
