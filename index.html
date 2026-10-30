@@ -652,6 +652,11 @@ input[type=checkbox],input[type=radio]{font-size:inherit}
 .fin .rise{animation:finrise .5s ease-out both;animation-delay:var(--d,0s)}
 @keyframes finrise{0%{transform:translateY(14px);opacity:0}100%{transform:none;opacity:1}}
 [data-anim="off"] .fin *{animation:none!important}[data-anim="off"] .fin .ember{display:none}
+/* PA-59 · BR-47 giáo án mẫu */
+.tpllink{display:flex;align-items:center;gap:8px;width:100%;margin:0 0 12px;padding:10px 12px;border-radius:12px;border:1px dashed var(--line-2);background:transparent;color:var(--fg-2);font-size:13.5px;font-weight:600;text-align:left}
+.tpllink svg{width:16px;height:16px;flex:none}.tpllink span{margin-left:auto;color:var(--muted)}
+.tpl{display:flex;flex-direction:column;gap:6px;padding:12px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line);margin-top:10px}
+.tpl span{font-size:13px;color:var(--fg-2)}.tpl .row{gap:6px;flex-wrap:wrap;margin-top:4px}
 /* PA-57 · BR-45 bài tự trọng */
 .bwhide{display:none}
 .bwlad{list-style:none;margin:8px 0 6px;padding:0;display:flex;flex-direction:column;gap:6px}
@@ -3592,10 +3597,11 @@ function viewPlan() {
   const sentLine = !isHlv() || profiles.active === HLV_SELF ? '' : !hvId ? 'Học viên chưa có thẻ QR' : sy.planAt && sy.planAt[hvId] ? `Gửi giáo án lần cuối lúc ${new Date(sy.planAt[hvId]).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}` : 'Chưa gửi lần nào';
   let h = `<section class="sec"><div class="sec-head"><h2 class="h1">Lịch tập</h2><div class="row" style="gap:6px;flex-wrap:nowrap">${nAll ? `<button class="btn sm" data-act="lib-open">${ICON.book} Kho bài</button>` : ''}<button class="btn sm gold" data-act="add-day">+ Ngày tập</button></div></div>`
   if (sentLine) h += `<p class="note-line">${sentLine}</p>`;
+  if (!planLocked()) h += `<button type="button" class="tpllink" data-act="tpl-open">${ICON.book} Giáo án mẫu${isHlv() && profiles.active !== HLV_SELF ? ` cho ${esc(curProf().name)}` : ''} · tại nhà / phòng gym <span>›</span></button>`;   /* BR-47 */
   if (sy.planDiff && !isHlv()) h += `<div class="banner"><span class="bi">!</span><div><b>HLV vừa chỉnh giáo án</b><p>${sy.planDiff.items.map(esc).join(' · ')}</p><button class="btn sm" data-act="plan-diff-ok">Đã xem</button></div></div>`;   /* BR-33.4 */
   const hasHist = histLocked() && (state.days.length || state.sessions.length), pv = ui.planView || (state.days.length ? 'plan' : 'done');
   if (hasHist) h += `<div class="seg" role="group" aria-label="Xem giáo án hoặc buổi đã tập">${[['plan', 'Giáo án'], ['done', 'Đã tập']].map(([k, l]) => `<button type="button" data-act="plan-view" data-k="${k}" aria-pressed="${pv === k}">${l}</button>`).join('')}</div>`;
-  if (hasHist && !state.days.length) h += `<div class="banner"><span class="bi">!</span><div><b>Học viên chưa có giáo án</b><p>Tạo giáo án từ các buổi học viên đã tập, rồi chỉnh lại cho phù hợp.</p><button class="btn sm gold" data-act="plan-from-history">Tạo giáo án từ lịch sử</button></div></div>`;   /* BR-35.6 */
+  if (hasHist && !state.days.length) h += `<div class="banner"><span class="bi">!</span><div><b>Học viên chưa có giáo án</b><p>Tạo giáo án từ các buổi học viên đã tập, rồi chỉnh lại cho phù hợp.</p><div class="row" style="gap:6px;flex-wrap:wrap"><button class="btn sm gold" data-act="plan-from-history">Tạo giáo án từ lịch sử</button><button class="btn sm" data-act="tpl-open">Dùng giáo án mẫu</button></div></div></div>`;   /* BR-35.6, BR-47 */
   if (pv === 'done' && hasHist) return h + viewDoneWeeks() + `</section>`;
   if (!state.days.length && planLocked()) return h + waitPlanHtml() + `</section>`;
   if (!state.days.length) return h + `<div class="hero pempty"><div class="h1" style="font-size:24px">Chưa có ngày tập nào</div><p class="meta">Tạo ngày tập như Lưng, Ngực, Chân rồi thêm bài. Hoặc dùng giáo án mẫu 4 ngày.</p>
@@ -3734,6 +3740,26 @@ function dbSheet() {
       <button class="btn sm ${ex.each ? 'gold' : ''}" data-act="db-set" data-id="${ex.id}" data-m="each">${W != null && !ex.each ? 'Số này đã là mỗi tay' : 'Ghi mỗi tay'}</button>
       <button class="btn sm ${ex.each === false ? 'gold' : 'ghost'}" data-act="db-set" data-id="${ex.id}" data-m="total">Ghi tổng</button></div></div>`; }).join('')}
     <div class="sh-actions"><button class="btn ghost" data-act="close-sheet">Xong</button></div>`);
+}
+/* PA-59 · BR-47: giáo án mẫu — dùng cho chính mình hoặc cho học viên (HLV), thêm vào hay thay giáo án hiện có */
+const TPLS = { home: ['Tại nhà · không dụng cụ', '3 buổi toàn thân A/B/C: hít đất, squat, chèo gầm bàn, cầu mông, bụng. Có hình minh hoạ, hướng dẫn form, nấc dễ → khó; không có chống ghế, xà kép.'],
+  gym: ['Phòng gym · 4 ngày', 'Lưng · Ngực + Tay sau · Chân · Vai + Tay trước, 5 bài mỗi ngày.'] };
+const tplDays = k => k === 'home' ? HOME_PLAN.map(([n, list]) => ({ id: uid(), name: n, exercises: list.map(([kk, i]) => newBw(kk, i)) }))
+  : SAMPLE.map(([n, list]) => ({ id: uid(), name: n, sample: true, exercises: list.map(newEx) }));
+function tplSheet() {
+  if (planLocked()) { toast('Giáo án do HLV quản lý'); return; }
+  const has = state.days.length, forHv = isHlv() && profiles.active !== HLV_SELF;
+  openSheet(`<h3 class="sh-title">Giáo án mẫu</h3><p class="sh-text">${forHv ? `Cho học viên <b>${esc(curProf().name)}</b>. Lưu xong tự gửi sang máy học viên.` : `Cho <b>${esc(curProf().name)}</b>. Dùng xong vẫn chỉnh từng bài được.`}</p>
+    ${Object.entries(TPLS).map(([k, [t, d]]) => `<div class="tpl"><b>${t}</b><span>${d}</span><div class="row">${has ? `<button type="button" class="btn sm gold" data-act="tpl-use" data-k="${k}" data-m="replace">Thay giáo án hiện có</button><button type="button" class="btn sm" data-act="tpl-use" data-k="${k}" data-m="add">Thêm vào</button>` : `<button type="button" class="btn sm gold" data-act="tpl-use" data-k="${k}" data-m="add">Dùng giáo án này</button>`}</div></div>`).join('')}
+    ${has ? `<p class="note-line">Thay giáo án: ${has} ngày tập hiện có bị xoá khỏi giáo án; lịch sử các buổi đã tập vẫn giữ nguyên.</p>` : ''}
+    <div class="sh-actions"><button class="btn ghost" data-act="close-sheet">Đóng</button></div>`);
+}
+function tplApply(k, mode) {
+  if (planLocked() || !TPLS[k]) return;
+  if (mode === 'replace') for (const d of state.days) d.exercises.forEach(ex => [ex, ...(ex.alts || [])].forEach(e2 => { markDelEx(e2); (e2.photos || []).forEach(id => LDB.del('photos', id)); if (e2.vid) LDB.del('photos', e2.vid); }));
+  const nd = tplDays(k); state.days = mode === 'replace' ? nd : [...state.days, ...nd];
+  ui.tab = 'plan'; ui.planView = 'plan'; ui.openDay = nd[0].id; save(); closeSheet(); render();
+  toast(`${mode === 'replace' ? 'Đã thay bằng' : 'Đã thêm'} giáo án ${TPLS[k][0].toLowerCase()}${isHlv() && profiles.active !== HLV_SELF ? ' · sẽ gửi sang máy học viên' : ''}`);
 }
 function dayNameSheet(day) {
   openSheet(`<h3 class="sh-title">${day ? 'Đổi tên ngày tập' : 'Ngày tập mới'}</h3>
@@ -5583,7 +5609,7 @@ const withKeys = x => ({ ...x, entries: x.entries.map(en => { const ex = findEx(
 const histLocked = () => isHlv() && profiles.active !== HLV_SELF;
 /* BR-35.3: máy học viên (đã nối HLV) không sửa giáo án; HLV quản lý. Máy không có vai (tự tập) giữ nguyên quyền sửa. */
 const planLocked = () => hubRole() === 'hv';
-const PLAN_ACTS = new Set(['home-plan', 'bw-level', 'neg-add', 'ang-pick', 'bal-fix', 'var-add', 'add-day', 'rename-day', 'del-day', 'move-day', 'move-ex', 'add-ex', 'add-alt', 'make-main', 'rot-open', 'rot-hold', 'rot-swap', 'onb-sample', 'onb-new', 'prof-copy', 'lib-open', 'other-open', 'save-ex', 'del-ex']);
+const PLAN_ACTS = new Set(['tpl-open', 'tpl-use', 'home-plan', 'bw-level', 'neg-add', 'ang-pick', 'bal-fix', 'var-add', 'add-day', 'rename-day', 'del-day', 'move-day', 'move-ex', 'add-ex', 'add-alt', 'make-main', 'rot-open', 'rot-hold', 'rot-swap', 'onb-sample', 'onb-new', 'prof-copy', 'lib-open', 'other-open', 'save-ex', 'del-ex']);
 const waitPlanHtml = () => `<div class="hero pempty"><div class="h1" style="font-size:24px">Chờ HLV gửi giáo án</div><p class="meta">Giáo án do HLV của bạn soạn và gửi. Khi có giáo án mới, app tự nhận trong vài giây.</p></div>`;
 function kgSheet(ex) {
   openSheet(`<h3 class="sh-title">${esc(shortName(ex.name))}</h3><p class="sh-text">Giáo án do HLV quản lý. Bạn chỉ chỉnh mức tạ đang tập.</p>
@@ -5934,6 +5960,10 @@ const handlers = {
   'hero-ph': t => { const a = state.active; if (!a) return; const fi = focusIdx(), ex = exOrSnap(a.entries[fi]); const n = (ex.photos || []).length; if (n < 2) return; ui.heroPh = ((ui.heroPh || 0) + +t.dataset.d + n) % n; refreshExCard(fi); },
   'viewer-close': () => closeViewer(),
   'onb-new': () => { ui.tab = 'plan'; render(); dayNameSheet(null); },
+  'tpl-open': () => tplSheet(),
+  'tpl-use': t => { const k = t.dataset.k, m = t.dataset.m;
+    if (m === 'replace') confirmSheet({ title: 'Thay toàn bộ giáo án?', text: `${state.days.length} ngày tập hiện có sẽ bị xoá khỏi giáo án và thay bằng “${esc(TPLS[k][0])}”. Lịch sử các buổi đã tập vẫn giữ nguyên.`, ok: 'Thay giáo án', danger: true, onOk: () => tplApply(k, 'replace') });
+    else tplApply(k, 'add'); },
   'home-plan': () => {   /* BR-45.1: thêm 3 ngày tập tại nhà vào giáo án đang xem */
     if (planLocked()) { toast('Giáo án do HLV quản lý'); return; }
     const nd = HOME_PLAN.map(([n, list]) => ({ id: uid(), name: n, exercises: list.map(([k, i]) => newBw(k, i)) }));

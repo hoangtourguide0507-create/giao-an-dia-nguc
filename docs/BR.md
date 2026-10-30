@@ -443,3 +443,7 @@ Hướng dữ liệu: **HV → máy chủ → HLV**, giống lịch sử tập (
 - **BR-46.3 Máy trợ lực**: đủ set × rep 2 buổi liền → **Nên giảm trợ lực · −5 kg** (trợ lực ≥ 20 kg, dưới thì −2,5); còn ≤ 1 nấc trợ lực → chuyển sang bài không hỗ trợ; 2 buổi liền hụt rep → **Nên tăng trợ lực**. Không có lộ trình kg, không báo kỷ lục 1RM.
 - **BR-46.4 Nhãn**: cột kg khi tập ghi *Kg tạ thêm* / *Kg trợ lực*, cột rep của plank ghi *Giây*; bài 0 kg ghi *Thêm rep* / *Thêm giây* / *Làm khó hơn* thay cho "Giữ mức tạ"; mức đang tập của máy trợ lực ghi "… kg trợ lực"; Kế hoạch tuần ghi "Tự trọng".
 - **BR-46.5 Tiến độ**: tấn tạ chỉ tính phần tạ ôm/đeo thêm, không tính kg trợ lực; ghi số set tự trọng/trợ lực không tính vào tấn.
+
+## Giáo án mẫu cho mọi hồ sơ, kể cả học viên đã có giáo án (PA-59 · BR-47)
+- **BR-47.1** Lịch tập có dòng **"Giáo án mẫu · tại nhà / phòng gym"** ngay dưới tiêu đề (trên hồ sơ học viên của HLV ghi "Giáo án mẫu cho <tên>"); ẩn trên máy học viên. Banner "Học viên chưa có giáo án" có thêm nút *Dùng giáo án mẫu*.
+- **BR-47.2** Bảng *Giáo án mẫu*: Tại nhà · không dụng cụ (BR-45) và Phòng gym · 4 ngày. Chưa có ngày tập → *Dùng giáo án này*; đã có → **Thay giáo án hiện có** (hỏi xác nhận; ngày cũ xoá khỏi giáo án, lịch sử buổi tập giữ nguyên, bài xoá được ghi để đồng bộ) hoặc **Thêm vào**. Xong mở Lịch tập ở chế độ Giáo án; HLV thì giáo án tự gửi sang máy học viên.
